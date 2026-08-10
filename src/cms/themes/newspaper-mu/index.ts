@@ -184,14 +184,23 @@ const LabMuPro: ThemeStructure = {
           });
         }
       } catch (e) {
-        puckData = {
-          content: [
-            { type: "CustomHTML", props: { id: "RawHTML", html: ctx.pageData.body } }
-          ],
-          root: {},
-          zones: {}
-        };
+        // Fallback
+        puckData = { content: [], root: {}, zones: {} };
       }
+    }
+    
+    // Fallback if puckData is empty OR contains incompatible blocks from other themes
+    const hasNewspaperBlocks = puckData.content && puckData.content.some((item: any) => item.type && item.type.startsWith('Newspaper'));
+    if (!hasNewspaperBlocks) {
+      puckData = {
+        content: [
+          { type: "NewspaperHeader", props: { logoUrl: "/theme-assets/newspaper-mu/images/logo.png", menuItems: [{ label: "Home", url: "/" }, { label: "News", url: "/category/news" }] } },
+          { type: "NewspaperPostGrid", props: { title: "Latest Articles" } },
+          { type: "NewspaperFooter", props: { copyright: "© 2026 cmsMu. All rights reserved." } }
+        ],
+        root: {},
+        zones: {}
+      };
     }
 
     // Generate inner content via PuckRender
