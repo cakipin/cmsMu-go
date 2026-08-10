@@ -118,8 +118,11 @@ const LabMuPro: ThemeStructure = {
         
         <!-- Icons -->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-
         
+        <!-- Newspaper Theme CSS -->
+        <link rel="stylesheet" href="/theme-assets/newspaper-mu/css/font-newspaper.css" type="text/css" media="all">
+        <link rel="stylesheet" href="/theme-assets/newspaper-mu/css/style.css" type="text/css" media="all">
+
         <style>
           :root {
             --primary: ${ctx.site?.theme_primary || '#2563eb'};
