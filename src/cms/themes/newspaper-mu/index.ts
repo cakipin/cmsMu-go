@@ -423,10 +423,40 @@ const LabMuPro: ThemeStructure = {
           // Render SSR dengan React
           contentHtml = ReactDOMServer.renderToString(
             React.createElement(PuckRender, {
-              config: puckConfig,
+              config: puckConfig as any,
               data: puckData
             })
           );
+          
+          // Phase 3: Dynamic Data Integration (D1)
+          if (contentHtml.includes('id="newspaper-post-grid-placeholder"')) {
+             const posts = ctx.data || [];
+             const recentPosts = posts.slice(0, 3);
+             let dynamicHtml = '';
+             
+             if (recentPosts.length > 0) {
+               dynamicHtml = recentPosts.map((p: any) => `
+                 <div class="td-big-grid-wrapper" style="margin-bottom:20px;">
+                    <div class="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
+                        <div class="td-module-image">
+                           <div class="td-module-thumb"><a href="/${p.slug}"><img src="${p.featured_image || 'https://via.placeholder.com/600x400'}" /></a></div>
+                           <div class="td-post-category">${p.category || 'News'}</div>
+                        </div>
+                        <div class="td-meta-info-container">
+                           <div class="td-meta-align">
+                              <h3 class="entry-title"><a href="/${p.slug}">${p.title}</a></h3>
+                           </div>
+                        </div>
+                    </div>
+                 </div>
+               `).join('');
+             } else {
+               dynamicHtml = '<p style="padding: 20px;">Belum ada artikel.</p>';
+             }
+             
+             // Ganti placeholder dengan dynamic html
+             contentHtml = contentHtml.replace(/<!-- NEWSPAPER_POST_GRID_START -->[\s\S]*<!-- NEWSPAPER_POST_GRID_END -->/, dynamicHtml);
+          }
         }
       } catch (e) {
         console.error("Gagal parse Puck JSON di renderPage:", e);

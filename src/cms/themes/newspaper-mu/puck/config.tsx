@@ -76,20 +76,22 @@ export const puckConfig: Config = {
         <div className="td_block_wrap td_block_big_grid_1 td_uid_12_5c82a3b_rand td-grid-style-1 td-hover-1 td-big-grids">
            <div className="td_block_inner">
              <h4 className="block-title"><span>{title}</span></h4>
-             {/* Note: In a real implementation this would fetch posts from D1 database. 
-                 For Puck editor preview we just show a static visual skeleton. */}
-             <div className="td-big-grid-wrapper">
-                <div className="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
-                    <div className="td-module-image">
-                       <div className="td-module-thumb"><a href="#"><img src="https://via.placeholder.com/600x400" /></a></div>
-                       <div className="td-post-category">News</div>
-                    </div>
-                    <div className="td-meta-info-container">
-                       <div className="td-meta-align">
-                          <h3 className="entry-title"><a href="#">Sample Big Post Title for Newspaper Theme</a></h3>
-                       </div>
-                    </div>
-                </div>
+             <div id="newspaper-post-grid-placeholder">
+               <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_START -->`}} />
+               <div className="td-big-grid-wrapper">
+                  <div className="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
+                      <div className="td-module-image">
+                         <div className="td-module-thumb"><a href="#"><img src="https://via.placeholder.com/600x400" /></a></div>
+                         <div className="td-post-category">News</div>
+                      </div>
+                      <div className="td-meta-info-container">
+                         <div className="td-meta-align">
+                            <h3 className="entry-title"><a href="#">Sample Big Post Title for Newspaper Theme</a></h3>
+                         </div>
+                      </div>
+                  </div>
+               </div>
+               <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_END -->`}} />
              </div>
            </div>
         </div>
