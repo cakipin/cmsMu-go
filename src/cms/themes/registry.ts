@@ -5,6 +5,7 @@ import LabmuPro from './labmu-pro';
 import LabmuQuran from './labmu-quran';
 import Wikimu from './wikimu';
 import Hestia from './hestia';
+import NewspaperMu from './newspaper-mu';
 
 
 // 1. Daftar Tema untuk API
@@ -44,6 +45,13 @@ export const availableThemes = [
     "version": "1.0.0",
     "author": "LabMu Dev",
     "description": "Material Design inspired CMS theme clone."
+  },
+  {
+    "id": "newspaper-mu",
+    "name": "Newspaper Theme",
+    "version": "1.0.0",
+    "author": "CmsMu",
+    "description": "Clone of the Newspaper WordPress Theme."
   }
 ];
 
@@ -56,6 +64,7 @@ export const getActiveTheme = (id: string) => {
   'labmu-quran': LabmuQuran,
   'wikimu': Wikimu,
   'hestia': Hestia,
+  'newspaper-mu': NewspaperMu,
   };
   return themes[id] || themes['labmu-default'];
 };

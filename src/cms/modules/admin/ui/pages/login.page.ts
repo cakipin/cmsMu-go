@@ -56,7 +56,7 @@ export const loginPage = `
             } finally {
                 this.isLoading = false;
             }
-        }
+        },
         async loginSso() {
             this.isLoading = true;
             try {

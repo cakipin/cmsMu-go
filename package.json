@@ -8,7 +8,7 @@
   "scripts": {
     "dev": "astro dev",
     "start": "astro dev",
-    "build": "astro build && rm -rf dist/server/wrangler.json .wrangler",
+    "build": "astro build",
     "preview": "npm run build && wrangler pages dev dist",
     "sync": "astro sync",
     "astro": "astro",
@@ -16,7 +16,7 @@
     "format": "prettier --write .",
     "lint": "eslint .",
     "generate-types": "wrangler types",
-    "deploy": "npm run build && rm -rf dist/server/wrangler.json .wrangler && cp -r dist/client/* dist/ && echo \"export { default } from './server/entry.mjs';\" > dist/_worker.js && npx wrangler pages deploy dist --project-name cmsmu --branch main"
+    "deploy": "npm run build && rm -rf dist/server/wrangler.json .wrangler/deploy && cp -r dist/client/* dist/ && echo \"export { default } from './server/entry.mjs';\" > dist/_worker.js && npx wrangler pages deploy dist --project-name cmsmu --branch main"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.1.7",
