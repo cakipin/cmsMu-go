@@ -37,24 +37,32 @@ export const puckConfig: Config = {
             </div>
           </div>
           
+          <div className="td-banner-wrap-full td-logo-wrap-full td-container-wrap">
+            <div className="td-container td-header-row td-header-header">
+              <div className="td-header-sp-logo">
+                <h1 className="td-logo">
+                  <a className="td-main-logo" href="/">
+                    {logoUrl ? <img className="td-retina-data" src={logoUrl} alt="Logo" style={{maxHeight:'50px'}} /> : "NewspaperMu"}
+                  </a>
+                </h1>
+              </div>
+              <div className="td-header-sp-recs">
+                  <div className="td-header-rec-wrap">
+                       {/* Ad space placeholder */}
+                  </div>
+              </div>
+            </div>
+          </div>
+
           <div className="td-header-menu-wrap-full td-container-wrap">
             <div className="td-header-menu-wrap td-header-gradient">
               <div className="td-container td-header-row td-header-main-menu">
-                <div className="td-header-sp-logo">
-                  <h1 className="td-logo">
-                    <a href="/">
-                      {logoUrl ? <img src={logoUrl} alt="Logo" style={{maxHeight:'40px'}} /> : "NewspaperMu"}
-                    </a>
-                  </h1>
-                </div>
-                <div className="td-main-menu-logo td-logo-in-menu">
-                   <div id="td-header-menu" role="navigation">
-                       <ul className="sf-menu">
-                           {(menuItems || []).map((item: any, idx: number) => (
-                             <li key={idx} className="menu-item"><a href={item.url}>{item.label}</a></li>
-                           ))}
-                       </ul>
-                   </div>
+                <div id="td-header-menu" role="navigation">
+                    <ul className="sf-menu">
+                        {(menuItems || []).map((item: any, idx: number) => (
+                          <li key={idx} className="menu-item"><a href={item.url}>{item.label}</a></li>
+                        ))}
+                    </ul>
                 </div>
               </div>
             </div>
@@ -73,27 +81,35 @@ export const puckConfig: Config = {
         categoryId: ""
       },
       render: ({ title }) => (
-        <div className="td_block_wrap td_block_big_grid_1 td_uid_12_5c82a3b_rand td-grid-style-1 td-hover-1 td-big-grids">
-           <div className="td_block_inner">
-             <h4 className="block-title"><span>{title}</span></h4>
-             <div id="newspaper-post-grid-placeholder">
-               <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_START -->`}} />
-               <div className="td-big-grid-wrapper">
-                  <div className="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
-                      <div className="td-module-image">
-                         <div className="td-module-thumb"><a href="#"><img src="https://via.placeholder.com/600x400" /></a></div>
-                         <div className="td-post-category">News</div>
-                      </div>
-                      <div className="td-meta-info-container">
-                         <div className="td-meta-align">
-                            <h3 className="entry-title"><a href="#">Sample Big Post Title for Newspaper Theme</a></h3>
-                         </div>
-                      </div>
-                  </div>
-               </div>
-               <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_END -->`}} />
-             </div>
-           </div>
+        <div className="td-main-content-wrap td-container-wrap">
+            <div className="td-container">
+                <div className="td-pb-row">
+                    <div className="td-pb-span12 td-main-content" role="main">
+                        <div className="td_block_wrap td_block_big_grid_1 td-grid-style-1 td-hover-1 td-big-grids">
+                            <div className="td_block_inner">
+                                <h4 className="block-title"><span>{title}</span></h4>
+                                <div id="newspaper-post-grid-placeholder">
+                                    <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_START -->`}} />
+                                    <div className="td-big-grid-wrapper">
+                                        <div className="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
+                                            <div className="td-module-image">
+                                                <div className="td-module-thumb"><a href="#"><img src="https://via.placeholder.com/600x400" /></a></div>
+                                                <div className="td-post-category">News</div>
+                                            </div>
+                                            <div className="td-meta-info-container">
+                                                <div className="td-meta-align">
+                                                    <h3 className="entry-title"><a href="#">Sample Big Post Title for Newspaper Theme</a></h3>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_END -->`}} />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
       )
     },

@@ -220,38 +220,41 @@ const LabMuPro: ThemeStructure = {
       renderedContent = '<p class="text-red-500 text-center p-8">Gagal merender halaman visual.</p>';
     }
 
-    // Dynamic posts replacement for RecentPosts block
-    if (renderedContent.includes('recent-posts-placeholder')) {
+    // Dynamic posts replacement for NewspaperPostGrid block
+    if (renderedContent.includes('NEWSPAPER_POST_GRID_START')) {
       const posts = ctx.data || [];
-      const recentPosts = posts.slice(0, 3);
+      const recentPosts = posts.slice(0, 5); // Up to 5 posts for big grid
       let dynamicPostsHtml = '';
       
       if (recentPosts.length > 0) {
-        dynamicPostsHtml = recentPosts.map((p: any) => `
-          <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:border-green-100 transition-all duration-300 flex flex-col group cursor-pointer" onclick="window.location.href='/${p.slug}'">
-              <div class="h-48 w-full bg-slate-200 relative overflow-hidden">
-                  <img src="${p.featured_image || 'https://placehold.co/800x400/eee/ccc?text=No+Image'}" alt="${p.title}" class="w-full h-full object-cover group-hover:scale-105 transition duration-500">
-                  <div class="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-xs font-bold text-green-700 shadow-sm">${p.category || 'Berita'}</div>
+        dynamicPostsHtml = '<div class="td-big-grid-wrapper">';
+        dynamicPostsHtml += recentPosts.map((p: any, index: number) => `
+          <div class="td_module_mx5 td-animation-stack td-big-grid-post-${index} td-big-grid-post">
+              <div class="td-module-image">
+                 <div class="td-module-thumb"><a href="/${p.slug}"><img src="${p.featured_image || 'https://placehold.co/600x400/111/ccc?text=No+Image'}" alt="${p.title}" /></a></div>
+                 ${p.category ? `<a href="/category/${p.category.toLowerCase()}" class="td-post-category">${p.category}</a>` : ''}
               </div>
-              <div class="p-6 flex flex-col flex-grow">
-                  <span class="text-sm text-slate-500 mb-2">${new Date(p.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'long', year:'numeric'})}</span>
-                  <h3 class="text-xl font-bold text-slate-900 mb-3 group-hover:text-green-600 transition duration-300">${p.title}</h3>
-                  <p class="text-slate-600 text-sm mb-6 flex-grow leading-relaxed">${(p.body || '').replace(/<[^>]*>?/gm, '').substring(0, 100)}...</p>
-                  <a href="/${p.slug}" class="text-green-600 font-bold text-sm flex items-center gap-1 group-hover:gap-2 transition-all duration-300">
-                      Baca Selengkapnya <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
-                  </a>
+              <div class="td-meta-info-container">
+                 <div class="td-meta-align">
+                    <h3 class="entry-title td-module-title"><a href="/${p.slug}">${p.title}</a></h3>
+                    <div class="td-editor-date">
+                        <span class="td-author-date">
+                            <span class="td-post-date"><time class="entry-date updated td-module-date">${new Date(p.created_at).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'})}</time></span>
+                        </span>
+                    </div>
+                 </div>
               </div>
           </div>
         `).join('');
+        dynamicPostsHtml += '</div>';
       } else {
-        dynamicPostsHtml = '<p class="text-slate-500 col-span-3 text-center">Belum ada artikel yang diterbitkan.</p>';
+        dynamicPostsHtml = '<div class="td-container"><p style="padding: 20px;">No articles published yet.</p></div>';
       }
 
-      // Exact string replacement to avoid HTML corruption from regex
-      const placeholderHtml = '<div class="recent-posts-placeholder"><div class="grid md:grid-cols-3 gap-8"><div class="bg-slate-100 animate-pulse h-80 rounded-2xl"></div><div class="bg-slate-100 animate-pulse h-80 rounded-2xl hidden md:block"></div><div class="bg-slate-100 animate-pulse h-80 rounded-2xl hidden md:block"></div></div></div>';
+      // Replace using Regex to grab everything between the markers
       renderedContent = renderedContent.replace(
-        placeholderHtml,
-        `<div class="grid md:grid-cols-3 gap-8">${dynamicPostsHtml}</div>`
+        /<!-- NEWSPAPER_POST_GRID_START -->[\s\S]*?<!-- NEWSPAPER_POST_GRID_END -->/g,
+        dynamicPostsHtml
       );
     }
 
