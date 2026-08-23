@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/dist/index.css";
-import { puckConfig } from "../cms/themes/labmu-pro/puck/config";
+import { puckConfig as labmuProConfig } from "../cms/themes/labmu-pro/puck/config";
+import { puckConfig as newspaperConfig } from "../cms/themes/newspaper-mu/puck/config";
+import { universalHomeConfig, universalHomeDefault } from "../cms/themes/editor/universal-config";
 
 const defaultHomePuck = {
   content: [
@@ -18,6 +20,21 @@ const defaultHomePuck = {
   zones: {}
 };
 
+const newspaperHomePuck = {
+  content: [
+    { type: 'NewspaperHeader', props: { id: 'NewspaperHeader-1' } },
+    { type: 'NewspaperBigGrid1', props: { id: 'NewspaperBigGrid1-1' } },
+    { type: 'NewspaperFlexBlock', props: { id: 'NewspaperFlexBlock-1' } },
+    { type: 'NewspaperFooter', props: { id: 'NewspaperFooter-1' } }
+  ], root: { props: { editorTheme: 'newspaper-mu' } }, zones: {}
+};
+
+const editorForTheme = (themeId: string) => themeId === 'labmu-pro'
+  ? { config: labmuProConfig, data: defaultHomePuck }
+  : themeId === 'newspaper-mu'
+    ? { config: newspaperConfig, data: newspaperHomePuck }
+    : { config: universalHomeConfig, data: universalHomeDefault(themeId) };
+
 interface ThemeEditorAppProps {
   slug: string;
 }
@@ -27,8 +44,18 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   const [currentData, setCurrentData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pages, setPages] = useState<{id: number, title: string, slug: string}[]>([]);
+  const [themeId, setThemeId] = useState('labmu-default');
 
   useEffect(() => {
+    let activeThemeId = 'labmu-default';
+    const fetchContext = async () => {
+      const res = await fetch('/api/theme-editor/context');
+      if (res.ok) {
+        const result = await res.json();
+        activeThemeId = result.themeId || activeThemeId;
+        setThemeId(activeThemeId);
+      }
+    };
     // Fetch page list
     const fetchPages = async () => {
       try {
@@ -57,8 +84,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
             } catch (e) {
               console.error("Gagal parse body JSON", e);
               if (slug === 'home') {
-                 setInitialData(defaultHomePuck);
-                 setCurrentData(defaultHomePuck);
+                 const fallback = editorForTheme(activeThemeId).data;
+                 setInitialData(fallback);
+                 setCurrentData(fallback);
               } else {
                  setInitialData({ content: [], root: {}, zones: {} });
                  setCurrentData({ content: [], root: {}, zones: {} });
@@ -66,8 +94,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
             }
           } else {
              if (slug === 'home') {
-                 setInitialData(defaultHomePuck);
-                 setCurrentData(defaultHomePuck);
+                 const fallback = editorForTheme(activeThemeId).data;
+                 setInitialData(fallback);
+                 setCurrentData(fallback);
               } else {
                  setInitialData({ content: [], root: {}, zones: {} });
                  setCurrentData({ content: [], root: {}, zones: {} });
@@ -75,8 +104,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
           }
         } else {
            if (slug === 'home') {
-               setInitialData(defaultHomePuck);
-               setCurrentData(defaultHomePuck);
+               const fallback = editorForTheme(activeThemeId).data;
+               setInitialData(fallback);
+               setCurrentData(fallback);
             } else {
                setInitialData({ content: [], root: {}, zones: {} });
                setCurrentData({ content: [], root: {}, zones: {} });
@@ -85,8 +115,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       } catch (error) {
         console.error("Error fetching data:", error);
         if (slug === 'home') {
-           setInitialData(defaultHomePuck);
-           setCurrentData(defaultHomePuck);
+           const fallback = editorForTheme(activeThemeId).data;
+           setInitialData(fallback);
+           setCurrentData(fallback);
         } else {
            setInitialData({ content: [], root: {}, zones: {} });
            setCurrentData({ content: [], root: {}, zones: {} });
@@ -96,8 +127,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       }
     };
 
-    fetchPages();
-    fetchData();
+    (async () => { await fetchContext(); await Promise.all([fetchPages(), fetchData()]); })();
   }, [slug]);
 
   const handlePublish = async (data: any) => {
@@ -105,6 +135,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       const payload = {
         slug: slug,
         body: JSON.stringify(data),
+        theme_id: themeId,
       };
 
       const response = await fetch("/api/theme-editor/page", {
@@ -165,7 +196,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
       <Puck
-        config={puckConfig}
+        config={editorForTheme(themeId).config}
         data={initialData}
         onChange={(data) => setCurrentData(data)}
         onPublish={handlePublish}
@@ -176,6 +207,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
               <a href="/admin" style={{ marginRight: 'auto', color: '#6b7280', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
                 &larr; Kembali ke Admin
               </a>
+              <span style={{ fontSize: 12, color: '#64748b', marginLeft: 12 }}>Theme aktif: <strong>{themeId}</strong></span>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', marginRight: '16px' }}>
                 <select

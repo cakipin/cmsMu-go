@@ -6,34 +6,35 @@ type Bindings = {
 
 const themeEditorRouter = new Hono<{ Bindings: Bindings }>();
 
+async function activeTheme(db: D1Database) {
+  const row: any = await db.prepare('SELECT id FROM themes WHERE active = 1 LIMIT 1').first();
+  return String(row?.id || 'labmu-default');
+}
+
+const homeStorageSlug = (themeId: string) => `__theme_home_${themeId}`;
+
+themeEditorRouter.get('/context', async (c) => {
+  const themeId = await activeTheme(c.env.DB);
+  const setting: any = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'site_homepage_slug'").first();
+  return c.json({ success: true, themeId, homeSlug: setting?.value || 'home', editor: ['labmu-pro', 'newspaper-mu'].includes(themeId) ? themeId : 'universal' });
+});
+
 // GET /api/theme-editor/page?slug=about
 themeEditorRouter.get('/page', async (c) => {
   const slug = c.req.query('slug');
   if (!slug) return c.json({ error: 'Slug required' }, 400);
 
   try {
-    const page: any = await c.env.DB.prepare('SELECT body FROM pages WHERE slug = ?').bind(slug).first();
+    const themeId = await activeTheme(c.env.DB);
+    const storageSlug = slug === 'home' ? homeStorageSlug(themeId) : slug;
+    const page: any = await c.env.DB.prepare('SELECT body FROM pages WHERE slug = ?').bind(storageSlug).first();
     if (page) {
-      return c.json({ success: true, data: page });
+      return c.json({ success: true, data: page, themeId });
     } else {
       if (slug === 'home') {
-        // Pre-fill default layout for the home page so they can edit it immediately
-        const defaultHomePuck = {
-          content: [
-            { type: "SiteHeader", props: { id: "SiteHeader-1" } },
-            { type: "Hero", props: { id: "Hero-1" } },
-            { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
-            { type: "Testimonial", props: { id: "Testimonial-1" } },
-            { type: "RecentPosts", props: { id: "RecentPosts-1" } },
-            { type: "CallToAction", props: { id: "CallToAction-1" } },
-            { type: "SiteFooter", props: { id: "SiteFooter-1" } }
-          ],
-          root: { props: { title: "Beranda Utama" } },
-          zones: {}
-        };
-        return c.json({ success: true, data: { body: JSON.stringify(defaultHomePuck) } });
+        return c.json({ success: true, data: null, themeId });
       }
-      return c.json({ success: true, data: null }); // Data belum ada
+      return c.json({ success: true, data: null, themeId }); // Data belum ada
     }
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -43,7 +44,7 @@ themeEditorRouter.get('/page', async (c) => {
 // GET /api/theme-editor/pages
 themeEditorRouter.get('/pages', async (c) => {
   try {
-    const { results } = await c.env.DB.prepare('SELECT id, title, slug FROM pages ORDER BY title ASC').all();
+    const { results } = await c.env.DB.prepare("SELECT id, title, slug FROM pages WHERE slug NOT LIKE '__theme_home_%' ORDER BY title ASC").all();
     
     // Get homepage slug from settings
     const settingRow = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'site_homepage_slug'").first();
@@ -59,11 +60,14 @@ themeEditorRouter.get('/pages', async (c) => {
 themeEditorRouter.post('/page', async (c) => {
   try {
     const body = await c.req.json();
-    const { slug, body: content } = body;
+    const { slug, body: content, theme_id: requestedTheme } = body;
     if (!slug) return c.json({ error: 'Slug required' }, 400);
+    const themeId = await activeTheme(c.env.DB);
+    if (requestedTheme && requestedTheme !== themeId) return c.json({ error: 'Theme aktif telah berubah. Muat ulang editor.' }, 409);
+    const storageSlug = slug === 'home' ? homeStorageSlug(themeId) : slug;
 
     // Cek apakah halaman sudah ada
-    const exists = await c.env.DB.prepare('SELECT id FROM pages WHERE slug = ?').bind(slug).first();
+    const exists = await c.env.DB.prepare('SELECT id FROM pages WHERE slug = ?').bind(storageSlug).first();
     
     // Judul otomatis (Capitalize slug)
     const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
@@ -72,13 +76,13 @@ themeEditorRouter.post('/page', async (c) => {
       // Update
       await c.env.DB.prepare(`
         UPDATE pages SET body=?, updated_at=datetime('now') WHERE slug=?
-      `).bind(content, slug).run();
+      `).bind(content, storageSlug).run();
     } else {
       // Insert baru
       await c.env.DB.prepare(`
         INSERT INTO pages (title, slug, body, status, created_at, updated_at)
         VALUES (?, ?, ?, 'publish', datetime('now'), datetime('now'))
-      `).bind(title, slug, content).run();
+      `).bind(slug === 'home' ? `Beranda (${themeId})` : title, storageSlug, content).run();
     }
     
     return c.json({ success: true });

@@ -36,6 +36,23 @@ function injectComments(page: string, post: any, comments: any[]) {
   return mainEnd >= 0 ? page.slice(0, mainEnd) + widget + page.slice(mainEnd) : page.replace('</body>', `${widget}</body>`);
 }
 
+function renderUniversalHome(body: string, posts: any[]) {
+  let data: any;
+  try { data = JSON.parse(body); } catch { return null; }
+  if (data?.root?.props?.editorType !== 'universal-home' || !Array.isArray(data.content)) return null;
+  return data.content.map((block: any) => {
+    const props = block.props || {};
+    if (block.type === 'HomeHero') return `<section style="padding:80px 24px;text-align:center;background:${escapeComment(props.background || '#0f766e')};color:${escapeComment(props.textColor || '#fff')}"><small style="text-transform:uppercase;letter-spacing:.14em;font-weight:700">${escapeComment(props.eyebrow)}</small><h1 style="font-size:clamp(2rem,5vw,4rem);margin:14px auto;max-width:900px">${escapeComment(props.title)}</h1><p style="max-width:720px;margin:0 auto 28px;font-size:18px">${escapeComment(props.description)}</p>${props.buttonText ? `<a href="${escapeComment(props.buttonUrl || '#')}" style="display:inline-block;padding:12px 22px;border-radius:8px;background:${escapeComment(props.textColor || '#fff')};color:${escapeComment(props.background || '#0f766e')};font-weight:700">${escapeComment(props.buttonText)}</a>` : ''}</section>`;
+    if (block.type === 'HomeText') return `<section style="max-width:1100px;margin:0 auto;padding:64px 24px;text-align:${props.align === 'center' ? 'center' : 'left'}"><h2 style="font-size:32px">${escapeComment(props.title)}</h2><p style="font-size:17px;line-height:1.8;white-space:pre-wrap">${escapeComment(props.content)}</p></section>`;
+    if (block.type === 'HomeCallToAction') return `<section style="padding:64px 24px;text-align:center;background:${escapeComment(props.background || '#f1f5f9')}"><h2>${escapeComment(props.title)}</h2><p>${escapeComment(props.description)}</p><a href="${escapeComment(props.buttonUrl || '#')}" style="display:inline-block;margin-top:12px;padding:11px 20px;background:#0f172a;color:#fff;border-radius:8px">${escapeComment(props.buttonText)}</a></section>`;
+    if (block.type === 'HomeLatestPosts') {
+      const limit = Math.max(1, Math.min(Number(props.limit) || 6, 12));
+      return `<section style="max-width:1100px;margin:0 auto;padding:48px 24px"><h2>${escapeComment(props.title || 'Artikel Terbaru')}</h2><div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:22px">${posts.slice(0, limit).map(post => `<article style="border:1px solid #e2e8f0;border-radius:12px;overflow:hidden;background:#fff">${post.featured_image ? `<img src="${escapeComment(post.featured_image)}" alt="${escapeComment(post.title)}" style="width:100%;height:170px;object-fit:cover">` : ''}<div style="padding:18px"><h3 style="margin:0 0 10px"><a href="/${escapeComment(post.slug)}">${escapeComment(post.title)}</a></h3><p>${escapeComment(post.excerpt || '')}</p></div></article>`).join('')}</div></section>`;
+    }
+    return '';
+  }).join('');
+}
+
 // --- HELPER DATABASE ---
 async function getGlobalData(db: any) {
     let settings: any = {};
@@ -77,7 +94,11 @@ publicRouter.get('/', async (c) => {
 
         // Check if custom 'home' page exists for overriding texts
         const homeSlug = settings.site_homepage_slug || 'home';
-        const customHome: any = await c.env.DB.prepare("SELECT * FROM pages WHERE slug = ?").bind(homeSlug).first();
+        const themedHome: any = await c.env.DB.prepare("SELECT * FROM pages WHERE slug = ?").bind(`__theme_home_${themeId}`).first();
+        const legacyHome: any = ['labmu-pro', 'newspaper-mu'].includes(themeId)
+          ? await c.env.DB.prepare("SELECT * FROM pages WHERE slug = ?").bind(homeSlug).first()
+          : null;
+        const customHome: any = themedHome || legacyHome;
 
         // Track home page view
         if (customHome) {
@@ -87,6 +108,12 @@ publicRouter.get('/', async (c) => {
         }
 
         const context = { site: settings, menus: menus, data: posts || [], pageData: customHome || null };
+        if (customHome?.body && !['labmu-pro', 'newspaper-mu'].includes(themeId)) {
+            const editableHome = renderUniversalHome(customHome.body, posts || []);
+            if (editableHome && typeof (Renderer as any)._layout === 'function') {
+                return c.html((Renderer as any)._layout(editableHome, 'Beranda', context));
+            }
+        }
         return c.html(Renderer.renderHome(context));
     }
   } catch(e: any) { return c.text('Error: ' + e.message, 500); }

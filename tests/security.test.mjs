@@ -60,3 +60,15 @@ test('post comment toggle is persisted and public comments honor it', async () =
   assert.match(publicRouter, /Number\(content\.allow_comments\) !== 1/);
   assert.match(publicRouter, /id="cmsmu-comments"/);
 });
+
+test('theme editor follows the active theme and isolates homepage data', async () => {
+  const app = await readFile(new URL('../src/components/ThemeEditorApp.tsx', import.meta.url), 'utf8');
+  const editorApi = await readFile(new URL('../src/cms/modules/theme-editor/editor.router.ts', import.meta.url), 'utf8');
+  const publicRouter = await readFile(new URL('../src/cms/modules/public/public.router.ts', import.meta.url), 'utf8');
+  assert.match(app, /api\/theme-editor\/context/);
+  assert.match(app, /editorForTheme\(themeId\)\.config/);
+  assert.match(editorApi, /__theme_home_/);
+  assert.match(editorApi, /Theme aktif telah berubah/);
+  assert.match(publicRouter, /renderUniversalHome/);
+  assert.match(publicRouter, /__theme_home_/);
+});
