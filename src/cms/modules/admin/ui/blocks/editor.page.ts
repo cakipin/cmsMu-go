@@ -214,6 +214,7 @@ export const editorPage = `
                  featured_image: this.form.featured_image || '',
                  featured_image_caption: this.form.featured_image_caption || '',
                  featured_image_alt: this.form.featured_image_alt || '',
+                 allow_comments: Number(this.form.allow_comments) === 1 ? 1 : 0,
                  type: 'post'
              }));
              if(this.form.date) payload.created_at = new Date(this.form.date).toISOString();
@@ -367,7 +368,7 @@ export const editorPage = `
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb;">
                     <span style="font-size:13px; color:#374151; font-weight:500;">Aktifkan Komentar</span>
                     <label class="switch" style="position:relative; display:inline-block; width:40px; height:22px;">
-                        <input type="checkbox" x-model="form.allow_comments" :checked="form.allow_comments == 1" @change="form.allow_comments = $event.target.checked ? 1 : 0" style="opacity:0; width:0; height:0;">
+                        <input type="checkbox" :checked="Number(form.allow_comments) === 1" @change="form.allow_comments = $event.target.checked ? 1 : 0" style="opacity:0; width:0; height:0;">
                         <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;"
                               :style="form.allow_comments == 1 ? 'background-color:#10b981;' : ''">
                             <span style="position:absolute; content:''; height:14px; width:14px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%;"

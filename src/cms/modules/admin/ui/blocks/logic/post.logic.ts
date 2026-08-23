@@ -160,7 +160,7 @@ export const postLogic = {
         this.view = 'add';
         this.editingId = null;
         // Reset Form
-        this.form = { title:'', slug:'', body:'', status:'draft', category:'', tags:'', featured_image:'' };
+        this.form = { title:'', slug:'', body:'', status:'draft', category:'', tags:'', featured_image:'', allow_comments: 1 };
 
         // Load data posts di background agar dropdown terisi
         if (this.posts.length === 0) this.loadPosts();

@@ -231,7 +231,7 @@ if (typeof window !== 'undefined') {
                     type: type || 'post',
                     status: 'publish',
                     date: now.toISOString().slice(0,16),
-                    category: '', tags: '', featured_image: ''
+                    category: '', tags: '', featured_image: '', allow_comments: 1
                 };
 
                 setTimeout(() => {

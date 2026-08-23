@@ -47,3 +47,13 @@ test('build pipeline explicitly disables browser and edge caching', async () => 
   assert.match(pkg.scripts.build, /disable-cache/);
   assert.match(script, /no-store/);
 });
+
+test('post comment toggle is persisted and public comments honor it', async () => {
+  const editor = await readFile(new URL('../src/cms/modules/admin/ui/blocks/editor.page.ts', import.meta.url), 'utf8');
+  const posts = await readFile(new URL('../src/cms/modules/posts/posts.router.ts', import.meta.url), 'utf8');
+  const publicRouter = await readFile(new URL('../src/cms/modules/public/public.router.ts', import.meta.url), 'utf8');
+  assert.match(editor, /allow_comments:\s*Number\(this\.form\.allow_comments\)/);
+  assert.match(posts, /allow_comments\s*=\s*\?/);
+  assert.match(publicRouter, /Number\(content\.allow_comments\) !== 1/);
+  assert.match(publicRouter, /id="cmsmu-comments"/);
+});

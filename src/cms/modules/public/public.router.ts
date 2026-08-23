@@ -1,11 +1,40 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../../types';
 import { getActiveTheme } from '../../themes/registry';
+import { readSession } from '../../middleware/auth';
 
 // Import Helper SEO
 // (SEO Plugin Removed)
 
 const publicRouter = new Hono<{ Bindings: Bindings }>();
+
+const escapeComment = (value: unknown) => String(value ?? '')
+  .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
+  .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
+
+function injectComments(page: string, post: any, comments: any[], user: any) {
+  const items = comments.length ? comments.map(comment => `
+    <article class="cmsmu-comment">
+      <div class="cmsmu-comment-avatar">${escapeComment((comment.user_name || comment.username || 'P').slice(0, 1).toUpperCase())}</div>
+      <div><div class="cmsmu-comment-meta"><strong>${escapeComment(comment.user_name || comment.username || 'Pengguna')}</strong><time>${escapeComment(new Date(comment.created_at).toLocaleDateString('id-ID', { dateStyle: 'medium' }))}</time></div><p>${escapeComment(comment.content)}</p></div>
+    </article>`).join('') : '<p class="cmsmu-comment-empty">Belum ada komentar. Jadilah yang pertama berkomentar.</p>';
+  const form = user ? `
+    <form id="cmsmu-comment-form" class="cmsmu-comment-form">
+      <label for="cmsmu-comment-content">Tulis komentar sebagai <strong>${escapeComment(user.name || user.username)}</strong></label>
+      <textarea id="cmsmu-comment-content" maxlength="2000" required placeholder="Tulis komentar yang relevan dan santun..."></textarea>
+      <div><small>Komentar akan tampil setelah disetujui editor.</small><button type="submit">Kirim komentar</button></div>
+      <p id="cmsmu-comment-status" role="status" aria-live="polite"></p>
+    </form>` : '<p class="cmsmu-comment-login"><a href="/admin/login">Masuk</a> untuk menulis komentar.</p>';
+  const widget = `
+  <section id="cmsmu-comments" class="cmsmu-comments" aria-labelledby="cmsmu-comments-title">
+    <style>
+      .cmsmu-comments{box-sizing:border-box;max-width:800px;margin:48px auto;padding:28px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;color:#1e293b;font-family:system-ui,sans-serif}.cmsmu-comments h2{margin:0 0 24px;font-size:24px}.cmsmu-comment{display:grid;grid-template-columns:42px 1fr;gap:14px;padding:18px 0;border-top:1px solid #e2e8f0}.cmsmu-comment-avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#0d9488;color:#fff;font-weight:700}.cmsmu-comment-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.cmsmu-comment-meta time{color:#64748b;font-size:13px}.cmsmu-comment p{margin:7px 0 0;white-space:pre-wrap;line-height:1.65}.cmsmu-comment-empty,.cmsmu-comment-login{padding:18px;background:#f8fafc;border-radius:8px}.cmsmu-comment-form{margin-top:24px;padding-top:24px;border-top:1px solid #e2e8f0}.cmsmu-comment-form label{display:block;margin-bottom:10px}.cmsmu-comment-form textarea{box-sizing:border-box;width:100%;min-height:120px;padding:12px;border:1px solid #cbd5e1;border-radius:8px;font:inherit}.cmsmu-comment-form>div{display:flex;gap:16px;justify-content:space-between;align-items:center;margin-top:12px}.cmsmu-comment-form button{border:0;border-radius:8px;padding:10px 18px;background:#0d9488;color:#fff;font-weight:700;cursor:pointer}.cmsmu-comment-form button:disabled{opacity:.6;cursor:not-allowed}#cmsmu-comment-status{margin:12px 0 0;font-size:14px}@media(max-width:600px){.cmsmu-comments{margin:32px 14px;padding:20px}.cmsmu-comment-form>div{align-items:flex-start;flex-direction:column}}
+    </style>
+    <h2 id="cmsmu-comments-title">Komentar (${comments.length})</h2>${items}${form}
+  </section>
+  ${user ? `<script>(()=>{const form=document.getElementById('cmsmu-comment-form');if(!form)return;form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');const status=document.getElementById('cmsmu-comment-status');const content=document.getElementById('cmsmu-comment-content').value.trim();if(!content)return;button.disabled=true;status.textContent='Mengirim...';try{const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:${Number(post.id)},content})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Komentar gagal dikirim');status.textContent=result.message;form.reset()}catch(error){status.textContent=error.message}finally{button.disabled=false}})})();</script>` : ''}`;
+  return page.includes('</body>') ? page.replace('</body>', `${widget}</body>`) : page + widget;
+}
 
 // --- HELPER DATABASE ---
 async function getGlobalData(db: any) {
@@ -450,7 +479,15 @@ publicRouter.get('/:slug', async (c) => {
         content.type = type;
         const context = { site: settings, menus, data: content };
         if (type === 'page' && Renderer.renderPage) return c.html(Renderer.renderPage(context));
-        return c.html(Renderer.renderSingle(context));
+        const rendered = Renderer.renderSingle(context);
+        if (Number(content.allow_comments) !== 1) return c.html(rendered);
+        const { results: comments } = await db.prepare(`
+          SELECT c.content, c.created_at, u.name AS user_name, u.username
+          FROM comments c JOIN users u ON u.id = c.user_id
+          WHERE c.post_id = ? AND c.status = 'approved'
+          ORDER BY c.created_at DESC
+        `).bind(content.id).all();
+        return c.html(injectComments(rendered, content, comments || [], await readSession(c)));
     }
 
     return c.html(Renderer.render404({ site: settings, menus, data: null }), 404);
