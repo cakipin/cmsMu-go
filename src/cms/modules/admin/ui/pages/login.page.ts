@@ -78,7 +78,7 @@ export const loginPage = `
         }
      }">
 
-    <div style="width: 100%; max-width: 400px; background: white; padding: 40px; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); border: 1px solid #e2e8f0;">
+    <div data-login-card style="box-sizing:border-box; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:calc(100% - 32px); max-width:400px; max-height:calc(100dvh - 32px); overflow-y:auto; background:white; padding:40px; border-radius:12px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0;">
         <div style="text-align:center; margin-bottom:30px;">
              <h2 style="color: #1e293b; margin: 0; font-size: 24px; font-weight: 800;">LabMu Login</h2>
              <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Masuk ke Dashboard Admin</p>
