@@ -1,16 +1,16 @@
 export const dashboardPage = `
 <div x-show="view==='dash'">
-  
+
   <div class="mb-8 rounded-2xl border border-slate-200 bg-white p-7 shadow-sm border-l-4 border-l-primary relative overflow-hidden">
      <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-primary-light/50 blur-3xl"></div>
-     
+
      <h2 class="text-2xl font-black text-slate-800 mb-2 relative z-10 tracking-tight">Selamat Datang di LabMu, Admin! 👋</h2>
      <p class="text-slate-500 font-medium relative z-10">Sistem berjalan normal. Siap untuk mempublikasikan ide-ide hebat hari ini?</p>
   </div>
 
   <!-- METRIC CARDS -->
   <div class="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4 xl:gap-6">
-      
+
       <!-- Card Item: Articles -->
       <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-primary-light transition-all duration-300" @click="view='posts'; loadPosts()">
         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-primary-light text-primary mb-5">
@@ -23,7 +23,7 @@ export const dashboardPage = `
             </div>
         </div>
       </div>
-      
+
       <!-- Card Item: Pages -->
       <div class="rounded-2xl border border-slate-100 bg-white p-6 shadow-[0_2px_10px_rgba(0,0,0,0.02)] cursor-pointer hover:-translate-y-1 hover:shadow-lg hover:border-indigo-100 transition-all duration-300" @click="view='pages'; loadPages()">
         <div class="flex h-14 w-14 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500 mb-5">
@@ -63,41 +63,86 @@ export const dashboardPage = `
         </div>
       </div>
   </div>
-  
+
   <!-- ANALYTICS ROW 1 -->
   <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-     
+
      <!-- Traffic Statistics Chart -->
-     <div class="xl:col-span-2 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7" x-init="
-         setTimeout(() => {
-             if(typeof ApexCharts !== 'undefined') {
+     <div class="xl:col-span-2 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7" x-effect="
+         if (typeof ApexCharts !== 'undefined' && posts) {
+             const initChart = async () => {
+                 let visitorData = [];
+                 try {
+                     const res = await fetch('/api/stats/history');
+                     const data = await res.json();
+                     visitorData = data.visitors || [];
+                 } catch (e) {}
+
+                 // Hitung statistik 6 bulan terakhir
+                 const months = [];
+                 const postCounts = [];
+                 const pageCounts = [];
+                 const userCounts = [];
+
+                 for (let i = 5; i >= 0; i--) {
+                     const d = new Date();
+                     d.setMonth(d.getMonth() - i);
+                     const monthStr = d.toLocaleString('id-ID', { month: 'short' });
+                     months.push(monthStr);
+
+                     const monthNum = d.getMonth();
+                     const yearNum = d.getFullYear();
+                     const yyyy_mm = \`\${yearNum}-\${String(monthNum + 1).padStart(2, '0')}\`;
+
+                     const pCount = (posts || []).filter(p => {
+                         const pd = new Date(p.created_at);
+                         return pd.getMonth() === monthNum && pd.getFullYear() === yearNum;
+                     }).length;
+
+                     const pgCount = (pages || []).filter(p => {
+                         const pd = new Date(p.created_at);
+                         return pd.getMonth() === monthNum && pd.getFullYear() === yearNum;
+                     }).length;
+
+                     const uCount = visitorData.find(v => v.month === yyyy_mm)?.count || 0;
+
+                     postCounts.push(pCount);
+                     pageCounts.push(pgCount);
+                     userCounts.push(uCount);
+                 }
+
+                 if (window._trafficChart) window._trafficChart.destroy();
                  const options = {
-                     series: [{ name: 'Kunjungan', data: [120, 150, 130, 210, 180, 290, 310] },
-                              { name: 'Pengunjung Unik', data: [80, 95, 85, 140, 120, 190, 210] }],
+                     series: [
+                         { name: 'Artikel', data: postCounts },
+                         { name: 'Halaman', data: pageCounts },
+                         { name: 'Real User', data: userCounts }
+                     ],
                      chart: { type: 'area', height: 350, toolbar: { show: false }, fontFamily: 'inherit' },
-                     colors: ['#0d9488', '#6366f1'],
+                     colors: ['#0d9488', '#6366f1', '#f59e0b'],
                      fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
                      dataLabels: { enabled: false },
                      stroke: { curve: 'smooth', width: 2 },
-                     xaxis: { categories: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'], axisBorder: { show: false }, axisTicks: { show: false } },
-                     yaxis: { show: true },
+                     xaxis: { categories: months, axisBorder: { show: false }, axisTicks: { show: false } },
+                     yaxis: { show: true, min: 0, forceNiceScale: true },
                      grid: { borderColor: '#f8fafc', strokeDashArray: 4, yaxis: { lines: { show: true } } },
                      legend: { position: 'top', horizontalAlign: 'right' }
                  };
-                 const chart = new ApexCharts($el.querySelector('#trafficChart'), options);
-                 chart.render();
-             }
-         }, 500);
+                 window._trafficChart = new ApexCharts($el.querySelector('#trafficChart'), options);
+                 window._trafficChart.render();
+             };
+             initChart();
+         }
      ">
         <div class="flex justify-between items-center mb-6">
             <h4 class="text-lg font-black text-slate-800 flex items-center gap-3">
                 <span class="bg-primary-light text-primary p-2 rounded-lg flex items-center justify-center"><i class="fas fa-chart-line"></i></span>
-                Statistik Trafik (7 Hari Terakhir)
+                Statistik Konten (6 Bulan Terakhir)
             </h4>
         </div>
         <div id="trafficChart"></div>
      </div>
-     
+
      <!-- Real User View & System Status -->
      <div class="xl:col-span-1 flex flex-col gap-6">
          <!-- Real User View -->
@@ -110,13 +155,23 @@ export const dashboardPage = `
                  </span>
                  <span class="text-emerald-400 text-xs font-bold uppercase tracking-wider">Live</span>
              </div>
-             
+
              <h4 class="text-slate-300 font-semibold mb-2">Realtime Users</h4>
              <div class="text-6xl font-black mb-4 flex items-baseline gap-2">
-                <span x-data="{ count: 124 }" x-init="setInterval(() => { count = count + Math.floor(Math.random() * 5) - 2; if(count < 10) count = 10; }, 3000)" x-text="count">124</span>
+                <span x-data="{ count: 0 }" x-init="
+                    const fetchStats = async () => {
+                        try {
+                            const res = await fetch('/api/stats/realtime');
+                            const data = await res.json();
+                            count = data.count || 0;
+                        } catch(e) {}
+                    };
+                    fetchStats();
+                    setInterval(fetchStats, 10000);
+                " x-text="count">0</span>
              </div>
              <p class="text-slate-400 text-sm">Pengunjung aktif di situs saat ini.</p>
-             
+
              <!-- mini bar chart dummy -->
              <div class="mt-6 flex items-end gap-1 h-12 opacity-30">
                  <template x-for="i in 24">
@@ -138,8 +193,8 @@ export const dashboardPage = `
                       <td class="py-3 px-4 text-right"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold">Connected (D1)</span></td>
                    </tr>
                    <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                      <td class="py-3 px-4 font-semibold">Storage</td>
-                      <td class="py-3 px-4 text-right"><span class="bg-amber-100 text-amber-700 px-3 py-1 rounded-full text-[11px] font-bold">Disabled</span></td>
+                      <td class="py-3 px-4 font-semibold">Storage (R2)</td>
+                      <td class="py-3 px-4 text-right"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold">Connected</span></td>
                    </tr>
                    <tr class="hover:bg-slate-50 transition-colors">
                       <td class="py-3 px-4 font-semibold">Version</td>
@@ -153,12 +208,12 @@ export const dashboardPage = `
 
   <!-- ANALYTICS ROW 2 -->
   <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
-     
+
      <!-- Top 10 Popular Posts -->
      <div class="xl:col-span-2 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7">
         <h4 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-3">
-            <span class="bg-rose-50 text-rose-500 p-2 rounded-lg flex items-center justify-center"><i class="fas fa-fire"></i></span>
-            10 Kunjungan Populer
+            <span class="bg-rose-50 text-rose-500 p-2 rounded-lg flex items-center justify-center"><i class="fas fa-file-alt"></i></span>
+            Artikel Terbaru
         </h4>
         <div class="overflow-x-auto no-scrollbar">
             <table class="w-full text-sm text-slate-600 text-left">
@@ -166,38 +221,32 @@ export const dashboardPage = `
                   <tr>
                      <th class="py-4 px-5 font-bold rounded-tl-xl">Judul Artikel</th>
                      <th class="py-4 px-5 font-bold">Kategori</th>
-                     <th class="py-4 px-5 font-bold text-right">Views</th>
-                     <th class="py-4 px-5 font-bold text-center rounded-tr-xl">Trend</th>
+                     <th class="py-4 px-5 font-bold text-center">Views</th>
+                     <th class="py-4 px-5 font-bold">Status</th>
+                     <th class="py-4 px-5 font-bold text-right">Tanggal</th>
                   </tr>
-               </thead>
-               <tbody>
-                  <template x-data="{ 
-                      topPosts: [
-                          { title: 'Cara Mengelola CMSMu dengan Baik', cat: 'Tutorial', views: '12,450', up: true },
-                          { title: 'Pembaruan Fitur Terbaru V1.0.0', cat: 'News', views: '9,230', up: true },
-                          { title: 'Tips Menulis Artikel SEO Friendly', cat: 'Tips', views: '8,110', up: false },
-                          { title: 'Integrasi SSO Muhammadiyah', cat: 'Tech', views: '6,905', up: true },
-                          { title: 'Panduan Mengganti Tema', cat: 'Tutorial', views: '5,420', up: true },
-                          { title: 'Keunggulan Hono.js di Backend', cat: 'Tech', views: '4,100', up: false },
-                          { title: 'Mengenal Alpine.js lebih dalam', cat: 'Tech', views: '3,890', up: true },
-                          { title: 'Cara Mengatur Menu Navigasi', cat: 'Tutorial', views: '2,450', up: true },
-                          { title: 'Mengamankan Database D1', cat: 'Security', views: '1,900', up: false },
-                          { title: 'Galeri Kegiatan Bulan Ini', cat: 'Event', views: '1,200', up: true }
-                      ]
-                  }" x-for="(post, index) in topPosts" :key="index">
-                      <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                          <td class="py-3 px-5 font-semibold text-slate-800" x-text="post.title"></td>
-                          <td class="py-3 px-5">
-                              <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap" x-text="post.cat"></span>
-                          </td>
-                          <td class="py-3 px-5 text-right font-bold text-slate-800" x-text="post.views"></td>
-                          <td class="py-3 px-5 text-center">
-                              <span :class="post.up ? 'text-emerald-500 bg-emerald-50' : 'text-rose-500 bg-rose-50'" class="inline-flex items-center justify-center p-1.5 rounded-lg">
-                                  <i :class="post.up ? 'fas fa-arrow-trend-up' : 'fas fa-arrow-trend-down'"></i>
-                              </span>
-                          </td>
-                      </tr>
-                  </template>
+                </thead>
+                <tbody>
+                   <template x-for="post in (posts || []).slice(0, 10)" :key="post.id">
+                       <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
+                           <td class="py-3 px-5 font-semibold text-slate-800">
+                               <a :href="'/' + post.slug" target="_blank" class="hover:text-primary transition-colors flex items-center gap-2 group" title="Lihat Artikel">
+                                   <span x-text="post.title"></span>
+                                   <i class="fas fa-external-link-alt text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                               </a>
+                           </td>
+                           <td class="py-3 px-5">
+                               <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap" x-text="post.category || 'Uncategorized'"></span>
+                           </td>
+                           <td class="py-3 px-5 text-center">
+                               <span class="font-bold text-slate-700" x-text="post.views || 0"></span>
+                           </td>
+                           <td class="py-3 px-5">
+                               <span :class="post.status === 'publish' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'" class="px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider whitespace-nowrap" x-text="post.status"></span>
+                           </td>
+                           <td class="py-3 px-5 text-right font-medium text-slate-500 text-sm" x-text="formatDate(post.created_at)"></td>
+                       </tr>
+                   </template>
                </tbody>
             </table>
         </div>

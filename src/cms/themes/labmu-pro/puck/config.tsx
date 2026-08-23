@@ -11,14 +11,10 @@ const ImageField = ({ value, onChange, name }: any) => {
     setIsUploading(true);
     const formData = new FormData();
     formData.append('file', file);
-    
+
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
       const res = await fetch('/api/media', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
         body: formData
       });
       const data = await res.json();
@@ -40,18 +36,18 @@ const ImageField = ({ value, onChange, name }: any) => {
         {name ? name.replace(/([A-Z])/g, ' $1').trim() : 'Image Upload'}
       </label>
       {value && <img src={value} alt="Preview" style={{ width: '100%', height: 'auto', marginBottom: 8, borderRadius: 4, border: '1px solid #e5e7eb' }} />}
-      <input 
-        type="file" 
-        accept="image/*" 
-        onChange={handleUpload} 
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleUpload}
         disabled={isUploading}
         style={{ width: '100%', fontSize: 13, display: 'block', marginBottom: 8 }}
       />
       {isUploading && <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Mengunggah...</div>}
-      <input 
-        type="text" 
-        value={value || ''} 
-        onChange={(e) => onChange(e.target.value)} 
+      <input
+        type="text"
+        value={value || ''}
+        onChange={(e) => onChange(e.target.value)}
         placeholder="Atau masukkan URL gambar"
         style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 4, boxSizing: 'border-box' }}
       />
@@ -134,6 +130,20 @@ type Props = {
   Spacer: {
     height: number;
   };
+  MagazineHeader: {
+    logoUrl: string;
+    menuItems: { label: string; url: string }[];
+  };
+  MagazineBigGrid: {
+    title: string;
+    categorySlug: string;
+  };
+  MagazineFlexBlock: {
+    title: string;
+    categorySlug: string;
+    limit: number;
+  };
+  MagazineFooter: {};
 };
 
 export const puckConfig: Config<Props> = {
@@ -371,8 +381,8 @@ export const puckConfig: Config<Props> = {
         backgroundColor: "bg-slate-50"
       },
       render: ({ badgeText, title, titleHighlight, titleColor, description, descriptionColor, primaryButtonText, primaryButtonLink, secondaryButtonText, secondaryButtonLink, backgroundImage, backgroundColor }) => (
-        <section className={`relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden ${backgroundColor || 'bg-slate-50'}`} style={{ 
-          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'radial-gradient(#cbd5e1 1px, transparent 1px)', 
+        <section className={`relative pt-32 pb-20 lg:pt-48 lg:pb-32 overflow-hidden ${backgroundColor || 'bg-slate-50'}`} style={{
+          backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'radial-gradient(#cbd5e1 1px, transparent 1px)',
           backgroundSize: backgroundImage ? 'cover' : '20px 20px',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -556,7 +566,7 @@ export const puckConfig: Config<Props> = {
                 </button>
               </div>
             </div>
-            
+
             <div className="grid md:grid-cols-3 gap-8">
               {testimonials.map((testi, i) => (
                 <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition duration-300 relative">
@@ -617,7 +627,7 @@ export const puckConfig: Config<Props> = {
                 </a>
               </div>
             </div>
-            
+
             <div className="recent-posts-placeholder">
               {/* Fallback layout for builder if recent posts script doesn't run */}
               <div className="grid md:grid-cols-3 gap-8">
@@ -726,6 +736,99 @@ export const puckConfig: Config<Props> = {
       render: ({ height }) => (
         <div style={{ height: `${height}px` }} aria-hidden="true" />
       ),
+    },
+
+    // --- MAGAZINE BLOCKS (Migrated from Newspaper Theme) ---
+    MagazineHeader: {
+      fields: {
+        logoUrl: { type: "text" },
+        menuItems: {
+          type: "array",
+          arrayFields: {
+            label: { type: "text" },
+            url: { type: "text" }
+          }
+        }
+      },
+      defaultProps: {
+        logoUrl: "/theme-assets/labmu-pro/images/logo.png",
+        menuItems: [
+          { label: "Home", url: "/" },
+          { label: "News", url: "/category/news" },
+          { label: "Tech", url: "/category/tech" }
+        ]
+      },
+      render: ({ logoUrl, menuItems }) => (
+        <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_HEADER_START -->`}}></div>
+      )
+    },
+
+    MagazineBigGrid: {
+      fields: {
+        title: { type: "text" },
+        categorySlug: { type: "text" }
+      },
+      defaultProps: {
+        title: "Top Stories",
+        categorySlug: ""
+      },
+      render: ({ title, categorySlug }) => (
+        <section className="w-full max-w-[1140px] mx-auto px-4 py-8 font-sans">
+            <div className="mb-6 relative border-b border-[#222]">
+                <h4 className="bg-black text-white font-bold uppercase text-xs tracking-wider px-4 py-2 m-0 inline-block relative top-[1px]">
+                    {title}
+                </h4>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_BIG_GRID_START:${categorySlug} -->`}} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-1 h-[450px]">
+                <div className="md:col-span-2 bg-slate-900 h-full text-white p-6 flex flex-col justify-end"><span className="text-xl font-bold">Primary Article Preview</span></div>
+                <div className="flex flex-col gap-1 h-full">
+                    <div className="bg-slate-800 h-[223px] text-white p-4 flex flex-col justify-end">Preview 1</div>
+                    <div className="bg-slate-800 h-[223px] text-white p-4 flex flex-col justify-end">Preview 2</div>
+                </div>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_BIG_GRID_END -->`}} />
+        </section>
+      )
+    },
+
+    MagazineFlexBlock: {
+      fields: {
+        title: { type: "text" },
+        categorySlug: { type: "text" },
+        limit: { type: "number" }
+      },
+      defaultProps: {
+        title: "Latest Articles",
+        categorySlug: "",
+        limit: 4
+      },
+      render: ({ title, categorySlug, limit }) => (
+        <section className="w-full max-w-[1140px] mx-auto px-4 py-8 font-sans">
+            <div className="mb-6 relative border-b border-[#222]">
+                <h4 className="bg-green-600 text-white font-bold uppercase text-xs tracking-wider px-4 py-2 m-0 inline-block relative top-[1px]">
+                    {title}
+                </h4>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_FLEX_BLOCK_START:${categorySlug}:${limit} -->`}} />
+            <div className="flex flex-col gap-4">
+                <div className="flex gap-4 h-[120px] bg-slate-100 p-2">
+                    <div className="w-[180px] bg-slate-300"></div>
+                    <div className="flex-1 py-2"><span className="font-bold text-slate-800">Article Title Preview</span></div>
+                </div>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_FLEX_BLOCK_END -->`}} />
+        </section>
+      )
+    },
+
+    MagazineFooter: {
+      fields: {},
+      defaultProps: {},
+      render: () => (
+        <div dangerouslySetInnerHTML={{__html: `<!-- MAGAZINE_FOOTER_START -->`}}></div>
+      )
     }
+
   },
 };

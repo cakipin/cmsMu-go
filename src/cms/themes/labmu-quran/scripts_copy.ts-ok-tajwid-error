@@ -12,12 +12,12 @@ export const clientScripts = `
 
 <script>
 window.state = {
-    dark: localStorage.getItem('dark') === 'true',
-    latin: localStorage.getItem('show_latin') !== 'false',
-    id: localStorage.getItem('show_id') !== 'false',
-    en: localStorage.getItem('show_en') === 'true',
-    qari: localStorage.getItem('qari') || '05',
-    qariName: localStorage.getItem('qariName') || 'Misyari Rasyid'
+    dark: null === 'true',
+    latin: null !== 'false',
+    id: null !== 'false',
+    en: null === 'true',
+    qari: null || '05',
+    qariName: null || 'Misyari Rasyid'
 };
 
 // --- KALENDER & UI (Sama seperti sebelumnya) ---
@@ -77,8 +77,8 @@ window.updateUI = function() {
 };
 
 window.toggleMode = function(key) {
-    if(key === 'theme') { window.state.dark = !window.state.dark; localStorage.setItem('dark', window.state.dark); }
-    else { window.state[key] = !window.state[key]; localStorage.setItem('show_' + key, window.state[key]); }
+    if(key === 'theme') { window.state.dark = !window.state.dark; (void 0); }
+    else { window.state[key] = !window.state[key]; (void 0); }
     window.updateUI();
 };
 
@@ -89,7 +89,7 @@ window.toggleQariMenu = function() {
 
 window.selectQari = function(val, name) {
     window.state.qari = val; window.state.qariName = name;
-    localStorage.setItem('qari', val); localStorage.setItem('qariName', name);
+    (void 0); (void 0);
     window.updateUI();
     var list = document.getElementById('qari-list'); if(list) list.style.display = 'none';
     window.showToast('Qari diganti: ' + name);

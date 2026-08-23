@@ -8,7 +8,7 @@ export const postLogic = {
     async loadPosts() {
         this.isLoading = true;
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             // Path /api/posts sudah terdaftar di src/index.ts
             const res = await fetch('/api/posts', {
                 headers: { 

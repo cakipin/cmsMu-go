@@ -10,7 +10,7 @@ export const mediaLogic = {
 
     async loadMedia() {
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             if (!token) return;
 
             let res = await fetch('/api/media?t=' + Date.now(), { 
@@ -51,7 +51,7 @@ export const mediaLogic = {
         if (!id) { alert('ID File tidak ditemukan. Coba refresh.'); return; }
 
         try { 
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             let res = await fetch('/api/media/' + id, {
                 method: 'DELETE',
                 headers: { 'Authorization': 'Bearer ' + token }
@@ -70,7 +70,7 @@ export const mediaLogic = {
         if(!this.activeMediaItem) return;
         this.isSavingMeta = true;
         try { 
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             
             // Payload mencakup data meta standar dan newFilename untuk proses rename di backend
             const payload = {
@@ -112,7 +112,7 @@ export const mediaLogic = {
         for(let i=0; i<files.length; i++) fd.append('file', files[i]);
         
         try { 
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             let res = await fetch('/api/media', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token },

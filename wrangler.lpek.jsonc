@@ -1,0 +1,46 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
+
+  // =====================================================================
+  // LPEK — Lembaga Pariwisata dan Ekonomi Kreatif Muhammadiyah
+  // Deploy: https://lpek.pages.dev
+  // =====================================================================
+  "name": "lpek",
+  "pages_build_output_dir": "./dist",
+
+  // D1 Database
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "lpek-db",
+      "database_id": "GANTI-DENGAN-ID-D1-LPEK"
+      // Buat DB baru: npx wrangler d1 create lpek-db
+    }
+  ],
+
+  // R2 Storage (Media)
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "lpek-media"
+      // Buat bucket: npx wrangler r2 bucket create lpek-media
+    },
+    {
+      "binding": "BUCKET",
+      "bucket_name": "lpek-media"
+    }
+  ],
+
+  // Observability
+  "observability": {
+    "enabled": true
+  },
+
+  // Environment Variables
+  "vars": {
+    "SITE_NAME": "LPEK Muhammadiyah",
+    "SITE_URL": "https://lpek.pages.dev"
+  }
+}

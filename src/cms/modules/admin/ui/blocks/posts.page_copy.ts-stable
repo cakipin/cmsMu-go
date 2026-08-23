@@ -1,11 +1,11 @@
 export const postsPage = `
 <div x-show="view==='posts'" class="animate-fade"
-     x-data="{ 
+     x-data="{
         // 1. STATE LOKAL (Wajib ada agar tidak error ReferenceError)
-        posts: [], 
-        uniqueCategories: [], 
-        selectedIds: [], 
-        filterCategory: '', 
+        posts: [],
+        uniqueCategories: [],
+        selectedIds: [],
+        filterCategory: '',
         bulkAction: '',
         selectAll: false,
         isLoading: false,
@@ -14,16 +14,16 @@ export const postsPage = `
         async loadData() {
             this.isLoading = true;
             try {
-                const token = localStorage.getItem('labmu_token');
+                const token = '';
                 const res = await fetch('/api/posts?t=' + Date.now(), {
                     headers: { 'Authorization': 'Bearer ' + token }
                 });
-                
+
                 if (!res.ok) throw new Error('Gagal load data');
-                
+
                 const json = await res.json();
                 const rawData = Array.isArray(json) ? json : (json.results || []);
-                
+
                 // FIX: Sanitasi data agar Kategori & Tags muncul di tabel
                 this.posts = rawData.map(p => ({
                     ...p,
@@ -31,9 +31,9 @@ export const postsPage = `
                     category: (p.category && p.category !== 'null' && p.category !== '') ? p.category : 'Uncategorized',
                     tags: (p.tags && p.tags !== 'null' && p.tags !== '') ? p.tags : '-',
                     status: (p.status && p.status.toLowerCase().includes('pub')) ? 'publish' : 'draft',
-                    body: p.body || p.content || '' 
+                    body: p.body || p.content || ''
                 }));
-                
+
                 // Update dropdown kategori secara dinamis
                 const cats = this.posts.map(p => p.category).filter(c => c && c !== 'Uncategorized');
                 this.uniqueCategories = ['Uncategorized', ...new Set(cats)];
@@ -50,7 +50,7 @@ export const postsPage = `
         toggleAll() {
             this.selectAll = !this.selectAll;
             // Filter post yang terlihat saja (jika ada filter kategori)
-            const visiblePosts = this.filterCategory 
+            const visiblePosts = this.filterCategory
                 ? this.posts.filter(p => p.category === this.filterCategory)
                 : this.posts;
             this.selectedIds = this.selectAll ? visiblePosts.map(p => p.id) : [];
@@ -59,14 +59,14 @@ export const postsPage = `
         // 4. EDIT POST (Bridge ke Editor Global)
         editPost(p) {
             // Isi form global (di cmsLogic)
-            this.form = { 
-                ...p, 
+            this.form = {
+                ...p,
                 body: p.body || '',
                 featured_image_caption: p.featured_image_caption || ''
             };
-            
+
             this.editingId = p.id;
-            
+
             // Fix Tanggal Kalender
             if (this.form.created_at) {
                 const d = new Date(this.form.created_at);
@@ -75,8 +75,8 @@ export const postsPage = `
             }
 
             // Pindah View
-            this.view = 'add'; 
-            
+            this.view = 'add';
+
             // Init Editor
             setTimeout(() => {
                 if (typeof window.initCmsEditor === 'function') {
@@ -91,7 +91,7 @@ export const postsPage = `
         async deletePost(id) {
             if(!confirm('Hapus post ini secara permanen?')) return;
             try {
-                const token = localStorage.getItem('labmu_token');
+                const token = '';
                 const res = await fetch('/api/posts/' + id, {
                     method: 'DELETE',
                     headers: { 'Authorization': 'Bearer ' + token }
@@ -109,13 +109,13 @@ export const postsPage = `
         async applyBulkAction() {
             if (this.bulkAction === 'delete' && this.selectedIds.length > 0) {
                 if(confirm('Hapus ' + this.selectedIds.length + ' item terpilih?')) {
-                    const token = localStorage.getItem('labmu_token');
+                    const token = '';
                     // Kirim ID dipisah koma (sesuai router baru)
-                    await fetch('/api/posts/' + this.selectedIds.join(','), { 
+                    await fetch('/api/posts/' + this.selectedIds.join(','), {
                         method: 'DELETE',
                         headers: { 'Authorization': 'Bearer ' + token }
                     });
-                    
+
                     // Reset & Reload
                     this.selectedIds = [];
                     this.selectAll = false;
@@ -128,9 +128,9 @@ export const postsPage = `
             if(!slug) return alert('Slug tidak valid');
             window.open('/' + slug, '_blank');
         }
-     }" 
+     }"
      x-init="loadData()">
-     
+
   <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
     <h2 style="margin:0;">All Posts</h2>
     <div style="display:flex; gap:10px;">
@@ -149,7 +149,7 @@ export const postsPage = `
           <option value="delete">Hapus</option>
       </select>
       <button @click="applyBulkAction()" class="btn" style="padding:4px 12px; font-size:13px;">Apply</button>
-      
+
       <select class="input" style="width:auto; margin:0; padding:4px 8px; font-size:13px; margin-left:10px;" x-model="filterCategory">
           <option value="">Semua Kategori</option>
           <template x-for="cat in uniqueCategories">
@@ -175,19 +175,19 @@ export const postsPage = `
       </thead>
       <tbody>
         <template x-for="p in posts" :key="p.id">
-          <tr x-show="!filterCategory || p.category === filterCategory" 
-              style="border-bottom:1px solid #eee;" 
+          <tr x-show="!filterCategory || p.category === filterCategory"
+              style="border-bottom:1px solid #eee;"
               :style="selectedIds.includes(p.id) ? 'background:#f0f7ff' : ''">
-            
+
             <td style="text-align:center; padding:12px;">
                 <input type="checkbox" :value="p.id" x-model="selectedIds">
             </td>
-            
+
             <td style="padding:12px;">
               <b x-text="p.title" @click="editPost(p)" style="color:#2271b1; font-size:14px; display:block; margin-bottom:4px; cursor:pointer;"></b>
               <div style="font-size:11px; color:#666; font-family:monospace;" x-text="'/'+p.slug"></div>
             </td>
-            
+
             <td style="font-size:12px;">
                 <template x-if="p.created_at">
                     <div>
@@ -198,16 +198,16 @@ export const postsPage = `
                     </div>
                 </template>
             </td>
-            
+
             <td style="font-size:12px; color:#555;" x-text="p.category"></td>
             <td style="font-size:12px; color:#555;" x-text="p.tags"></td>
-            
+
             <td style="text-align:center;">
               <span :style="p.status=='publish' ? 'background:#d1e7dd; color:#0f5132' : 'background:#fff3cd; color:#664d03'"
-                    style="padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold; text-transform:uppercase;" 
+                    style="padding:2px 8px; border-radius:10px; font-size:10px; font-weight:bold; text-transform:uppercase;"
                     x-text="p.status"></span>
             </td>
-            
+
             <td style="padding:8px; text-align:center;">
               <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
                 <button @click="viewPost(p.slug)" title="Lihat" style="color:#2271b1; background:none; border:none; cursor:pointer;">

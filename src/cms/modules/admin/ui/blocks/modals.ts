@@ -14,13 +14,13 @@ export const globalModals = `
     activeMediaItem: null,
     isUploading: false,
     isSavingMeta: false,
-    
+
     // Form Metadata Sementara
-    mediaForm: { 
-        title: '', 
-        alt: '', 
-        caption: '', 
-        description: '' 
+    mediaForm: {
+        title: '',
+        alt: '',
+        caption: '',
+        description: ''
     },
 
     // Callback Callback dari pemanggil
@@ -46,7 +46,7 @@ export const globalModals = `
     // ============================================
     async loadMedia() {
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             const res = await fetch('/api/media', {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
@@ -75,7 +75,7 @@ export const globalModals = `
     onFileSelect(e) {
         const file = e.target.files[0];
         if(!file) return;
-        
+
         // Auto-fill title dari nama file
         this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' ');
         this.uploadFile(file);
@@ -92,18 +92,18 @@ export const globalModals = `
         fd.append('description', this.mediaForm.description);
 
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             const res = await fetch('/api/media', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + token },
                 body: fd
             });
-            
+
             if(res.ok) {
                 const result = await res.json();
                 await this.loadMedia(); // Refresh list
                 this.mediaTab = 'library';
-                
+
                 // Auto-select gambar baru
                 const newUrl = result.url || result.file_url;
                 const newImg = this.mediaList.find(m => m.url === newUrl);
@@ -121,17 +121,17 @@ export const globalModals = `
     async updateMeta() {
         if(!this.activeMediaItem) return;
         this.isSavingMeta = true;
-        
+
         // Update state lokal (optimistic)
         Object.assign(this.activeMediaItem, this.mediaForm);
 
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             await fetch('/api/media/meta', {
                 method: 'POST',
-                headers: { 
+                headers: {
                     'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + token 
+                    'Authorization': 'Bearer ' + token
                 },
                 body: JSON.stringify({
                     key: this.activeMediaItem.key,
@@ -153,26 +153,26 @@ export const globalModals = `
 
 }" x-init="init()">
 
-    <div class="modal-overlay" 
-         x-show="showMediaSelector" 
-         x-cloak 
-         x-transition.opacity 
+    <div class="modal-overlay"
+         x-show="showMediaSelector"
+         x-cloak
+         x-transition.opacity
          style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.8); z-index: 99999; display: flex; justify-content: center; align-items: center;">
-       
-       <div class="modal-box" @click.away="showMediaSelector=false" 
+
+       <div class="modal-box" @click.away="showMediaSelector=false"
             style="background: white; width: 95%; max-width: 1100px; height: 90vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
-          
+
           <div style="padding: 15px 20px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; background: #fff;">
              <div style="display: flex; align-items: center; gap: 15px;">
                  <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #333;">Media Library</h3>
-                 
+
                  <div style="display: flex; background: #f1f5f9; padding: 4px; border-radius: 6px;">
-                    <button @click="mediaTab='library'" 
+                    <button @click="mediaTab='library'"
                             :style="mediaTab==='library' ? 'background:white; box-shadow:0 1px 2px rgba(0,0,0,0.1); font-weight:600; color:#2271b1;' : 'color:#666;'"
                             style="border:none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s;">
                         Library
                     </button>
-                    <button @click="mediaTab='upload'" 
+                    <button @click="mediaTab='upload'"
                             :style="mediaTab==='upload' ? 'background:white; box-shadow:0 1px 2px rgba(0,0,0,0.1); font-weight:600; color:#2271b1;' : 'color:#666;'"
                             style="border:none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 13px; transition: 0.2s;">
                         Upload Baru
@@ -183,19 +183,19 @@ export const globalModals = `
           </div>
 
           <div style="display: flex; flex: 1; overflow: hidden; background: #f0f0f1;">
-              
+
               <div x-show="mediaTab === 'library'" style="display: flex; width: 100%; height: 100%;">
-                  
+
                   <div style="flex: 1; overflow-y: auto; padding: 20px;">
                      <div x-show="mediaList.length === 0" style="text-align: center; padding: 50px; color: #999;">Belum ada media.</div>
-                     
+
                      <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 15px;">
                          <template x-for="m in mediaList" :key="m.key">
-                            <div @click="selectItem(m)" 
+                            <div @click="selectItem(m)"
                                  style="cursor: pointer; border: 3px solid transparent; aspect-ratio: 1; background: white; position: relative; border-radius: 6px; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: transform 0.1s;"
                                  :style="activeMediaItem && activeMediaItem.key === m.key ? 'border-color: #2271b1; box-shadow: 0 0 0 1px #2271b1; transform: scale(0.98);' : 'border-color: transparent;'">
                                <img :src="m.url" loading="lazy" style="width: 100%; height: 100%; object-fit: cover;">
-                               <div x-show="activeMediaItem && activeMediaItem.key === m.key" 
+                               <div x-show="activeMediaItem && activeMediaItem.key === m.key"
                                     style="position: absolute; top: 6px; right: 6px; background: #2271b1; color: white; border-radius: 50%; width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; font-size: 12px;">✓</div>
                             </div>
                          </template>
@@ -203,11 +203,11 @@ export const globalModals = `
                   </div>
 
                   <div style="width: 320px; flex-shrink: 0; background: white; border-left: 1px solid #ddd; display: flex; flex-direction: column; overflow: hidden;">
-                      
+
                       <div x-show="activeMediaItem" style="display: flex; flex-direction: column; height: 100%;">
                           <div style="flex: 1; overflow-y: auto; padding: 20px;">
                               <h4 style="margin: 0 0 15px 0; font-size: 12px; font-weight: 700; text-transform: uppercase; color: #888; letter-spacing: 0.5px;">Attachment Details</h4>
-                              
+
                               <div style="background: #f9f9f9; padding: 15px; border-radius: 6px; border: 1px solid #eee; text-align: center; margin-bottom: 20px;">
                                   <img :src="activeMediaItem?.url" style="max-width: 100%; max-height: 150px; object-fit: contain;">
                                   <div style="margin-top: 8px; font-size: 11px; color: #666; word-break: break-all;" x-text="activeMediaItem?.key?.split('/').pop()"></div>
@@ -252,7 +252,7 @@ export const globalModals = `
 
               <div x-show="mediaTab === 'upload'" style="display: flex; width: 100%; justify-content: center; align-items: center; padding: 40px; overflow-y: auto;">
                   <div style="background: white; padding: 40px; border-radius: 8px; border: 1px solid #eee; width: 100%; max-width: 500px; box-shadow: 0 5px 15px rgba(0,0,0,0.05);">
-                      
+
                       <div style="text-align: center; margin-bottom: 30px;">
                           <h4 style="margin: 0 0 10px 0; font-size: 18px;">Upload Gambar Baru</h4>
                           <p style="margin: 0; font-size: 13px; color: #666;">Pilih file gambar untuk diunggah ke library.</p>

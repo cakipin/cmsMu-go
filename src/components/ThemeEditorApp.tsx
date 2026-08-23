@@ -29,14 +29,10 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   const [pages, setPages] = useState<{id: number, title: string, slug: string}[]>([]);
 
   useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
-    
     // Fetch page list
     const fetchPages = async () => {
       try {
-        const res = await fetch('/api/theme-editor/pages', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const res = await fetch('/api/theme-editor/pages');
         if (res.ok) {
           const result = await res.json();
           if (result.data) setPages(result.data);
@@ -49,11 +45,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
     // Fetch data from database
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}`, {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        });
+        const response = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}`);
         if (response.ok) {
           const result = await response.json();
           // Jika ada body JSON, parsing
@@ -115,12 +107,10 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         body: JSON.stringify(data),
       };
 
-      const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
       const response = await fetch("/api/theme-editor/page", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json"
         },
         body: JSON.stringify(payload),
       });
@@ -163,7 +153,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
 
   // Cek apakah slug saat ini ada di daftar pages, jika tidak tambahkan sementara
   let displayPages = [...pages];
-  
+
   if (!displayPages.find(p => p.slug === 'home')) {
     displayPages.unshift({ id: -1, title: 'Beranda Utama', slug: 'home' });
   }
@@ -186,9 +176,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
               <a href="/admin" style={{ marginRight: 'auto', color: '#6b7280', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
                 &larr; Kembali ke Admin
               </a>
-              
+
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', marginRight: '16px' }}>
-                <select 
+                <select
                   value={slug}
                   onChange={handlePageChange}
                   style={{
@@ -207,7 +197,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                     </option>
                   ))}
                 </select>
-                <button 
+                <button
                   onClick={handleCreateNewPage}
                   style={{
                     background: '#2563eb',
@@ -223,7 +213,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                   + Baru
                 </button>
               </div>
-              
+
               {children}
             </>
           )

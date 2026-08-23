@@ -19,8 +19,8 @@ const LabMuQuran: ThemeStructure = {
         <style>${css}</style>
       </head>
       <body>
-        ${renderHeader(ctx)} 
-        
+        ${renderHeader(ctx)}
+
         <div id="qari-list" class="qari-popup" style="display:none; position:fixed; top:60px; right:20px; background:var(--bg-card); border:1px solid var(--border); border-radius:12px; z-index:9999; box-shadow:0 10px 30px rgba(0,0,0,0.3); width:250px; overflow:hidden;">
             <div style="background:var(--primary); color:#fff; padding:10px 15px; font-weight:bold; font-size:0.9rem;">Pilih Qari</div>
             <div style="max-height:300px; overflow-y:auto;">
@@ -34,7 +34,7 @@ const LabMuQuran: ThemeStructure = {
 
         <div class="quran-container">
           <div class="content-area">${content}</div>
-          ${renderFooter(ctx)} 
+          ${renderFooter(ctx)}
         </div>
         ${this._scripts()}
       </body>
@@ -49,13 +49,13 @@ const LabMuQuran: ThemeStructure = {
       <script>
         // 1. STATE & UI
         window.state = {
-            dark: localStorage.getItem('dark') === 'true',
-            latin: localStorage.getItem('show_latin') !== 'false',
-            id: localStorage.getItem('show_id') !== 'false',
-            en: localStorage.getItem('show_en') === 'true',
-            tajwid: localStorage.getItem('show_tajwid') === 'true',
-            qari: localStorage.getItem('qari') || '05',
-            qariName: localStorage.getItem('qariName') || 'Misyari Rasyid'
+            dark: null === 'true',
+            latin: null !== 'false',
+            id: null !== 'false',
+            en: null === 'true',
+            tajwid: null === 'true',
+            qari: null || '05',
+            qariName: null || 'Misyari Rasyid'
         };
 
         window.updateUI = function() {
@@ -71,12 +71,12 @@ const LabMuQuran: ThemeStructure = {
 
         // 2. TOGGLE LOGIC
         window.toggleMode = function(key) {
-            if(key === 'theme') { window.state.dark = !window.state.dark; localStorage.setItem('dark', window.state.dark); }
-            else { window.state[key] = !window.state[key]; localStorage.setItem('show_' + key, window.state[key]); }
+            if(key === 'theme') { window.state.dark = !window.state.dark; (void 0); }
+            else { window.state[key] = !window.state[key]; (void 0); }
             window.updateUI();
         };
 
-        window.toggleQariMenu = function() { 
+        window.toggleQariMenu = function() {
             var list = document.getElementById('qari-list');
             if(list) list.style.display = (list.style.display === 'block') ? 'none' : 'block';
         };
@@ -84,8 +84,8 @@ const LabMuQuran: ThemeStructure = {
         window.selectQari = function(val, name) {
             window.state.qari = val;
             window.state.qariName = name;
-            localStorage.setItem('qari', val);
-            localStorage.setItem('qariName', name);
+            (void 0);
+            (void 0);
             window.showToast('Qari diganti ke: ' + name);
             var list = document.getElementById('qari-list');
             if(list) list.style.display = 'none';
@@ -101,7 +101,7 @@ const LabMuQuran: ThemeStructure = {
         window.playAyat = function(btn, title) {
             var qariId = window.state.qari || '05';
             var audioData = {};
-            
+
             // Cek apakah data audio bentuk string JSON atau object
             try {
                 var raw = btn.getAttribute('data-audio');
@@ -120,25 +120,25 @@ const LabMuQuran: ThemeStructure = {
                 var container = document.getElementById('player-container');
                 container.style.display = 'flex';
                 document.getElementById('player-title').innerText = title + ' (' + window.state.qariName + ')';
-                
+
                 player.src = url;
                 player.play();
             } else {
                 window.showToast('Audio Qari ini belum tersedia');
             }
         };
-        
-        window.closePlayer = function() { 
+
+        window.closePlayer = function() {
             var p = document.getElementById('main-player');
-            if(p) p.pause(); 
-            document.getElementById('player-container').style.display='none'; 
+            if(p) p.pause();
+            document.getElementById('player-container').style.display='none';
         };
 
         // 4. SHARE & SEARCH
-        window.showToast = function(msg) { 
-            var x=document.getElementById("toast"); 
-            x.innerText=msg; x.style.visibility="visible"; x.style.opacity="1"; 
-            setTimeout(()=>{x.style.visibility="hidden";x.style.opacity="0";},2000); 
+        window.showToast = function(msg) {
+            var x=document.getElementById("toast");
+            x.innerText=msg; x.style.visibility="visible"; x.style.opacity="1";
+            setTimeout(()=>{x.style.visibility="hidden";x.style.opacity="0";},2000);
         };
 
         window.toggleShare = function(id) {
@@ -156,16 +156,16 @@ const LabMuQuran: ThemeStructure = {
             }
             document.querySelectorAll('.share-popover').forEach(function(p) { p.style.display = 'none'; });
         };
-        
+
         // --- SEARCH ENGINE BARU ---
         window.handleSearch = function(event) {
             var keyword = document.getElementById('searchBox').value.trim();
-            
+
             // JIKA TEKAN ENTER -> TEMATIK
             if (event && event.key === "Enter") {
                 if (keyword.length < 3) return window.showToast('Minimal 3 huruf Om');
                 var url = '/api/quran/tematik?q=' + encodeURIComponent(keyword);
-                window.location.href = url; 
+                window.location.href = url;
                 return;
             }
 
@@ -193,11 +193,11 @@ const LabMuQuran: ThemeStructure = {
             if (im == 13) im = 12;
             var id = z - Math.floor(29.5001 * im - 29);
             var iMonthNames = ["Muharram","Safar","Rabi'ul Awal","Rabi'ul Akhir","Jumadil Awal","Jumadil Akhir","Rajab","Sya'ban","Ramadhan","Syawal","Dzulkaidah","Dzulhijjah"];
-            
-            var adjustment = -1; 
+
+            var adjustment = -1;
             var finalDay = id + adjustment;
             if (finalDay <= 0) { finalDay = 30 + finalDay; im--; if(im < 1) { im = 12; iy--; } }
-            
+
             return finalDay + " " + iMonthNames[im - 1] + " " + iy;
         }
 
@@ -245,10 +245,10 @@ const LabMuQuran: ThemeStructure = {
       </div>
 
       <div style="position:relative; margin-bottom:30px; z-index:10;">
-        <input type="text" id="searchBox" 
-               placeholder="Cari surat... atau Enter untuk Cari Ayat (Tematik)" 
-               class="search-box" 
-               onkeyup="window.handleSearch(event)" 
+        <input type="text" id="searchBox"
+               placeholder="Cari surat... atau Enter untuk Cari Ayat (Tematik)"
+               class="search-box"
+               onkeyup="window.handleSearch(event)"
                autocomplete="off"
                style="width:100%; padding:15px; border-radius:12px; border:1px solid var(--border); background:var(--bg-card); color:var(--text-main);">
         <i class="fas fa-search" style="position:absolute; right:15px; top:18px; color:#ccc;"></i>
@@ -286,7 +286,7 @@ const LabMuQuran: ThemeStructure = {
                 <div style="font-weight: bold; color: var(--primary);">
                     <i class="fas fa-book-open"></i> QS. ${a.surah_id}:${a.nomor_ayat}
                 </div>
-                <a href="/api/quran/${a.surah_id}#ayat-${a.nomor_ayat}" 
+                <a href="/api/quran/${a.surah_id}#ayat-${a.nomor_ayat}"
                    style="text-decoration: none; color: var(--text-muted); font-size: 0.8rem; background: var(--border); padding: 5px 12px; border-radius: 20px;">
                    Buka Surat &rarr;
                 </a>
@@ -309,9 +309,9 @@ const LabMuQuran: ThemeStructure = {
   },
 
   renderSingle(ctx: ThemeContext) {
-    const s = ctx.data; 
+    const s = ctx.data;
     if (!s || !s.ayat) return this._layout('Not Found', 'Error', ctx);
-    
+
     // Logic Audio Full
     let fullAudioAttrs = '';
     if (s.audioFull) {
@@ -320,20 +320,20 @@ const LabMuQuran: ThemeStructure = {
         } else {
              fullAudioAttrs = ' data-audio=\'' + JSON.stringify(s.audioFull) + '\'';
         }
-    }  
+    }
 
     const ayatListHtml = s.ayat.map((a: any) => {
        const label = (s.namaLatin || s.nama_latin) + ':' + (a.nomorAyat || a.nomor_ayat);
        const cleanIndo = (a.teksIndonesia || a.teks_indonesia || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
        const cleanArab = (a.teksArab || a.teks_arab || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-       
+
        let ayatAudioAttrs = '';
        // Support Format JSON string atau Object
        if (a.audioOptions) {
            let audioObj = typeof a.audioOptions === 'string' ? JSON.parse(a.audioOptions) : a.audioOptions;
            ayatAudioAttrs = ' data-audio=\'' + JSON.stringify(audioObj) + '\'';
        }
-       
+
        return `
        <div class="ayat-item" id="ayat-${a.nomorAyat || a.nomor_ayat}">
           <div class="ayat-meta-top">
@@ -358,7 +358,7 @@ const LabMuQuran: ThemeStructure = {
 
     const safeTurun = s.tempatTurun ? ' • ' + s.tempatTurun : '';
     const safeArti = s.arti || '';
-    
+
     const headerHtml = `
       <div style="text-align:center; padding:10px 0 30px; border-bottom:1px solid var(--border); margin-bottom:25px;">
          <h1 style="font-size:3rem; color:var(--primary); margin:0; font-family:'Amiri',serif;">${s.nama}</h1>

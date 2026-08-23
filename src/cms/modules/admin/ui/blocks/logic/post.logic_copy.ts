@@ -4,7 +4,7 @@
  */
 
 export const postLogic = {
-    posts: [], 
+    posts: [],
     isLoading: false,
 
     // =========================================
@@ -28,11 +28,11 @@ export const postLogic = {
         return {
             id: (form.id && form.id !== 'null') ? form.id : undefined,
             title: form.title || 'Untitled',
-            slug: form.slug 
+            slug: form.slug
                 ? form.slug.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '')
                 : (form.title ? form.title.toString().toLowerCase().trim().replace(/\s+/g, '-').replace(/[^\w\-]+/g, '') : ''),
-            
-            body: currentContent, 
+
+            body: currentContent,
             status: finalStatus,
             category: (form.category && form.category !== 'null') ? form.category : 'Uncategorized',
             tags: (form.tags && form.tags !== 'null') ? form.tags : '',
@@ -49,13 +49,13 @@ export const postLogic = {
     async loadPosts() {
         this.isLoading = true;
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             const res = await fetch('/api/posts?t=' + Date.now(), {
                 headers: { 'Authorization': 'Bearer ' + token }
             });
 
             if (!res.ok) throw new Error('Failed');
-            
+
             const json = await res.json();
             const rawData = Array.isArray(json) ? json : (json.results || []);
 
@@ -77,7 +77,7 @@ export const postLogic = {
         const formToProcess = formInput || this.form;
         this.isLoading = true;
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             const payload = this.preparePayload(formToProcess);
             const isEdit = payload.id !== undefined;
             const url = isEdit ? `/api/posts/${payload.id}` : '/api/posts';
@@ -114,9 +114,9 @@ export const postLogic = {
     async deletePost(id: string) {
         if (!id) return;
         if (!confirm('Hapus post ini permanen?')) return;
-        
+
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             const res = await fetch(`/api/posts/${id}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': 'Bearer ' + token }
@@ -136,15 +136,15 @@ export const postLogic = {
     // =========================================
     // 3. UI HELPERS (Edit, View, Image)
     // =========================================
-    
+
     // --- FIX EDIT POST (Kalender & Editor) ---
     editPost(item: any) {
         this.view = 'add';
         this.editingId = item.id;
-        
+
         // Deep clone data item ke form global
         this.form = JSON.parse(JSON.stringify(item));
-        
+
         // FIX KALENDER: Konversi ISO (UTC) ke Local Time untuk input datetime-local
         if(this.form.created_at) {
             const date = new Date(this.form.created_at);
@@ -183,7 +183,7 @@ export const postLogic = {
 
     // --- Image & Tags ---
     openFeaturedImageSelector() {
-        this.mediaSelectorTarget = 'featured_image'; 
+        this.mediaSelectorTarget = 'featured_image';
         this.view = 'media';
         if (this.loadMedia) this.loadMedia();
     },
@@ -193,7 +193,7 @@ export const postLogic = {
         this.mediaSelectorTarget = null;
         this.view = 'add';
     },
-    
+
     removeFeaturedImage() {
         this.form.featured_image = '';
     },
@@ -223,7 +223,7 @@ if (typeof window !== 'undefined') {
         if ((window as any).cmsEditor) {
             try { (window as any).cmsEditor.destroy(); } catch (e) {}
         }
-        
+
         setTimeout(() => {
             try {
                 if ((window as any).SUNEDITOR) {
@@ -232,14 +232,14 @@ if (typeof window !== 'undefined') {
                         buttonList: [
                             ['undo', 'redo'], ['font', 'fontSize', 'formatBlock'],
                             ['bold', 'underline', 'italic', 'strike'],
-                            ['fontColor', 'hiliteColor'], ['align', 'list'], 
+                            ['fontColor', 'hiliteColor'], ['align', 'list'],
                             ['table', 'link', 'image', 'video', 'codeView']
                         ]
                     });
-                    
+
                     // Set konten awal (SANGAT PENTING UTK EDIT)
                     editor.setContents(content || '');
-                    
+
                     // Event Listener untuk update form saat ketik
                     editor.onChange = (c: string) => {
                         if(callback) callback(c);

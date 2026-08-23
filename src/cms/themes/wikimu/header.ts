@@ -3,14 +3,14 @@
 export const renderHeader = () => {
     return `
     <header class="wiki-header">
-        
+
         <button id="mobile-menu-btn" class="mobile-menu-btn" onclick="toggleMobileMenu()">
             <i class="fas fa-bars"></i>
         </button>
 
         <a href="/" class="wiki-logo">
             <i class="fas fa-book-open" style="font-size: 24px;"></i>
-            
+
             <div style="display:flex; flex-direction:column; line-height:1.1;">
                 <span class="brand-main">Tarjih</span>
                 <span class="brand-sub">Ensiklopedia Muhammadiyah</span>
@@ -35,7 +35,7 @@ export const renderHeader = () => {
         <script>
             // --- A. LOGIKA TEMA (DARK/LIGHT) ---
             (function() {
-                const savedTheme = localStorage.getItem('wiki_theme') || 'light';
+                const savedTheme = null || 'light';
                 document.documentElement.setAttribute('data-theme', savedTheme);
                 updateThemeIcon(savedTheme);
             })();
@@ -44,7 +44,7 @@ export const renderHeader = () => {
                 const current = document.documentElement.getAttribute('data-theme');
                 const next = current === 'dark' ? 'light' : 'dark';
                 document.documentElement.setAttribute('data-theme', next);
-                localStorage.setItem('wiki_theme', next);
+                (void 0);
                 updateThemeIcon(next);
             }
 

@@ -3,18 +3,18 @@ export const ssoPage = `
      x-data="{
         isLoading: false,
         isSaving: false,
-        settings: { 
-            sso_enabled: 'false', 
+        settings: {
+            sso_enabled: 'false',
             sso_client_id: '',
             sso_client_secret: ''
         },
 
         async init() {
             this.isLoading = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             try {
-                const res = await fetch('/api/settings/admin', { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const res = await fetch('/api/settings/admin', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if(res.ok) {
                     const json = await res.json();
@@ -30,14 +30,14 @@ export const ssoPage = `
 
         async saveSettings() {
             this.isSaving = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             try {
-                const res = await fetch('/api/settings', { 
-                    method: 'POST', 
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify(this.settings)
                 });
-                
+
                 if(res.ok) {
                     alert('✅ Konfigurasi SSO Berhasil Disimpan!');
                 } else {
@@ -50,7 +50,7 @@ export const ssoPage = `
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2 style="margin:0; font-size:24px; color:#1f2937;">Setup SSO Muhammadiyah ID</h2>
-        <button @click="saveSettings()" :disabled="isSaving" 
+        <button @click="saveSettings()" :disabled="isSaving"
                 style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
             <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'"></span>
@@ -80,7 +80,7 @@ export const ssoPage = `
             <input type="password" x-model="settings.sso_client_secret" placeholder="********" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; box-sizing:border-box;">
             <p style="font-size:12px; color:#6b7280; margin-top:5px;">Biarkan kosong jika sudah diatur melalui Cloudflare Environment Variables (SSO_CLIENT_SECRET).</p>
         </div>
-        
+
     </div>
 </div>
 `;

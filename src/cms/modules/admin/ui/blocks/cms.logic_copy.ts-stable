@@ -35,14 +35,14 @@ window.startSunEditor = function(id, content, onChange) {
 window.cms = function() {
     return {
         // --- 🔑 CORE AUTH & SYSTEM ---
-        token: localStorage.getItem('labmu_token') || '',
+        token: '' || '',
         userRole: 'admin',
         view: 'dash',
         sidebarOpen: true,
 
         // --- 📊 DATA BUCKETS ---
         posts: [], pages: [], mediaList: [], usersList: [], menuList: [], availableThemes: [], quranList: [],
-        activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
+        activeThemeId: null || 'default',
 
         // --- 🚩 UI FLAGS ---
         selectedItems: [], 
@@ -158,7 +158,7 @@ window.cms = function() {
         // --- 📟 OTHERS ---
         loadQuranList() { this.view='quran'; },
         formatDate(i) { return i ? new Date(i).toLocaleDateString('id-ID') : '-'; },
-        logout() { localStorage.clear(); location.reload(); },
+        logout() { (void 0); location.reload(); },
         getPageTitle() {
             const map = { dash:'Dashboard', posts:'Artikel', pages:'Halaman', quran:'Quran Pro', themes:'Tampilan', media:'Media', menus:'Menus', users:'Users', settings:'Settings' };
             return map[this.view] || 'Admin';

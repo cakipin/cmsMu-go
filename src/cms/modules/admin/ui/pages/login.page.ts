@@ -1,27 +1,27 @@
 export const loginPage = `
-<div x-show="!token" 
+<div x-show="!token"
      style="position: fixed; inset: 0; background: #f8fafc; z-index: 99999; display: grid !important; place-items: center;"
      x-data="{
         loginForm: { username: '', password: '' }, // Gunakan nama unik agar tidak bentrok dengan state global
         isLoading: false,
         errorMsg: '',
-        
+
         async submitLogin() {
             if (this.isLoading) return;
-            this.isLoading = true; 
+            this.isLoading = true;
             this.errorMsg = '';
-            
+
             try {
                 // 1. Fetch ke backend (Endpoint pastikan sesuai dengan app.ts)
-                const res = await fetch('/api/users/login', { 
-                    method: 'POST', 
+                const res = await fetch('/api/users/login', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.loginForm) 
+                    body: JSON.stringify(this.loginForm)
                 });
 
                 const text = await res.text();
                 let data;
-                
+
                 // 2. Coba parse JSON
                 try {
                     data = JSON.parse(text);
@@ -33,26 +33,20 @@ export const loginPage = `
                 if (!res.ok) {
                     throw new Error(data.error || data.message || 'Gagal masuk (Status ' + res.status + ')');
                 }
-                
+
                 // 4. Jika Sukses
-                if (data.token) {
-                    // Simpan token dengan key yang konsisten
-                    localStorage.setItem('labmu_token', data.token);
-                    
-                    // Update state lokal agar x-show langsung bereaksi sebelum reload
-                    this.token = data.token;
-                    
+                if (data.success) {
                     // Beri jeda kecil agar user melihat status sukses sebelum reload
                     setTimeout(() => {
                         window.location.href = '/admin'; // Force ke dashboard
                     }, 100);
                 } else {
-                    throw new Error('Token tidak ditemukan dalam respon server');
+                    throw new Error('Sesi tidak berhasil dibuat');
                 }
 
             } catch (e) {
                 console.error('[Login Error]:', e);
-                this.errorMsg = e.message; 
+                this.errorMsg = e.message;
             } finally {
                 this.isLoading = false;
             }
@@ -60,8 +54,8 @@ export const loginPage = `
         async loginSso() {
             this.isLoading = true;
             try {
-                let clientId = 'client_svRBFbrf9AK7GMPAAOMZrXRa'; // Default fallback
-                const res = await fetch('/api/settings');
+                let clientId = 'client_Vi7MFYiz4A85AjwwyDK81DW8'; // Default fallback lpek
+                const res = await fetch('/api/settings?t=' + Date.now());
                 if (res.ok) {
                     const json = await res.json();
                     const data = json.data || json;
@@ -89,31 +83,31 @@ export const loginPage = `
              <h2 style="color: #1e293b; margin: 0; font-size: 24px; font-weight: 800;">LabMu Login</h2>
              <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Masuk ke Dashboard Admin</p>
         </div>
-        
-        <div x-show="errorMsg" 
+
+        <div x-show="errorMsg"
              x-transition
-             style="background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; font-size:13px; border:1px solid #fca5a5; word-break: break-word;" 
+             style="background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; font-size:13px; border:1px solid #fca5a5; word-break: break-word;"
              x-text="errorMsg"></div>
 
         <form @submit.prevent="submitLogin">
             <div style="margin-bottom: 20px;">
                 <label style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Username</label>
-                <input type="text" 
-                       x-model="loginForm.username" 
-                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;" 
-                       required 
+                <input type="text"
+                       x-model="loginForm.username"
+                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;"
+                       required
                        placeholder="Masukkan username">
             </div>
             <div style="margin-bottom: 25px;">
                 <label style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Password</label>
-                <input type="password" 
-                       x-model="loginForm.password" 
-                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;" 
-                       required 
+                <input type="password"
+                       x-model="loginForm.password"
+                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;"
+                       required
                        placeholder="••••••••">
             </div>
-            <button type="submit" 
-                    style="width:100%; padding:14px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:15px; transition: all 0.2s;" 
+            <button type="submit"
+                    style="width:100%; padding:14px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:15px; transition: all 0.2s;"
                     :style="isLoading ? 'opacity: 0.7; cursor: not-allowed;' : ''"
                     :disabled="isLoading">
                 <span x-text="isLoading ? 'Memproses...' : 'Masuk'"></span>

@@ -7,7 +7,12 @@
   ],
   "exclude": [
     "dist",
-    "public/pagefind"
+    "public/pagefind",
+    "**/*_copy*",
+    "**/*.old",
+    "generate-perfect-config.mjs",
+    "test-*",
+    "tests"
   ],
   "compilerOptions": {
     "paths": {

@@ -10,19 +10,19 @@ export const mediaLogic = {
 
     async loadMedia() {
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             if (!token) return;
-            let res = await fetch('/api/media?t=' + Date.now(), { 
-                headers: { 'Authorization': 'Bearer ' + token } 
+            let res = await fetch('/api/media?t=' + Date.now(), {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             let json = await res.json();
             let rawData = Array.isArray(json) ? json : (json.data || json.results || []);
             this.mediaList = rawData.filter(m => !m.key.endsWith('/'));
             this.selectedItems = [];
             this.activeMediaItem = null;
-        } catch (e) { 
+        } catch (e) {
             console.error("Gagal load media:", e);
-            this.mediaList = []; 
+            this.mediaList = [];
         }
     },
 
@@ -33,7 +33,7 @@ export const mediaLogic = {
         } else {
             this.selectedItems.push(item);
         }
-        
+
         if (this.selectedItems.length === 1) {
             this.setActiveItem(this.selectedItems[0]);
         } else {
@@ -67,8 +67,8 @@ export const mediaLogic = {
         if (!confirm(`Yakin ingin menghapus ${this.selectedItems.length} file terpilih?`)) return;
 
         this.isDeleting = true;
-        const token = localStorage.getItem('labmu_token');
-        
+        const token = '';
+
         for (let item of this.selectedItems) {
             try {
                 await fetch('/api/media/' + item.id, {
@@ -85,24 +85,24 @@ export const mediaLogic = {
     async saveMediaMeta() {
         if(!this.activeMediaItem) return;
         this.isSavingMeta = true;
-        try { 
-            const token = localStorage.getItem('labmu_token');
+        try {
+            const token = '';
             const payload = {
                 ...this.activeMediaMeta,
                 newFilename: this.activeMediaMeta.filename
             };
 
             let res = await fetch('/api/media/' + this.activeMediaItem.id, {
-                method: 'PUT', 
+                method: 'PUT',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + token
-                }, 
+                },
                 body: JSON.stringify(payload)
             });
-            
+
             if (res.ok) {
-                alert('Tersimpan!'); 
+                alert('Tersimpan!');
                 this.activeMediaItem = null;
                 await this.loadMedia();
             } else {
@@ -111,8 +111,8 @@ export const mediaLogic = {
         } catch (e) {
             console.error("Save Error:", e);
             alert('Terjadi kesalahan saat menyimpan.');
-        } finally { 
-            this.isSavingMeta = false; 
+        } finally {
+            this.isSavingMeta = false;
         }
     },
 
@@ -144,7 +144,7 @@ export const mediaLogic = {
                     // Konversi ke Blob (JPEG) dengan kualitas tertentu
                     // Kita paksa ke image/jpeg agar kompresi maksimal, kecuali jika butuh transparansi (PNG)
                     const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-                    
+
                     canvas.toBlob((blob) => {
                         if (!blob) return reject(new Error('Kompresi gagal'));
                         // Buat file baru dari blob
@@ -163,11 +163,11 @@ export const mediaLogic = {
 
     // UPDATE PADA FUNGSI UPLOAD
     async uploadMedia(e) {
-        const files = e.target.files; 
+        const files = e.target.files;
         if(!files.length) return;
-        
-        this.isUploading = true; 
-        const token = localStorage.getItem('labmu_token');
+
+        this.isUploading = true;
+        const token = '';
 
         for(let i=0; i<files.length; i++) {
             let fileToUpload = files[i];
@@ -185,27 +185,27 @@ export const mediaLogic = {
 
             const fd = new FormData();
             fd.append('file', fileToUpload);
-            
-            try { 
+
+            try {
                 await fetch('/api/media', {
                     method: 'POST',
                     headers: { 'Authorization': 'Bearer ' + token },
                     body: fd
-                }); 
+                });
             } catch(err) { console.error('Upload fail:', err); }
         }
 
-        await this.loadMedia(); 
-        this.isUploading = false; 
-        e.target.value = ''; 
+        await this.loadMedia();
+        this.isUploading = false;
+        e.target.value = '';
     },
 
     get filteredMedia() {
-        return (this.mediaList||[]).filter(m => 
+        return (this.mediaList||[]).filter(m =>
             (m.key||'').toLowerCase().includes((this.mediaSearchQuery||'').toLowerCase())
         );
     },
-    
+
     isSelected(item) {
         return this.selectedItems.some(i => i.id === item.id);
     }

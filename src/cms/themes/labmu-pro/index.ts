@@ -14,7 +14,7 @@ const LabMuPro: ThemeStructure = {
 
   // 1. LAYOUT MASTER
   _layout(content: string, title: string, ctx: ThemeContext, layoutType: string = 'layout-right-sidebar') {
-    
+
     // LOGIC PINTAR MEMILIH DATA SIDEBAR
     let sidebarData: any[] = [];
     if (ctx.sidebarPosts && Array.isArray(ctx.sidebarPosts)) {
@@ -30,18 +30,18 @@ const LabMuPro: ThemeStructure = {
       <script>
         // DOM Ready
         document.addEventListener('DOMContentLoaded', () => {
-          
+
           // 1. Theme Toggle (Dark/Light Mode)
-          const theme = localStorage.getItem('theme') || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          const theme = null || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
           document.documentElement.setAttribute('data-theme', theme);
-          
+
           const toggles = document.querySelectorAll('.theme-toggle');
           toggles.forEach(btn => {
             btn.addEventListener('click', () => {
               const currentTheme = document.documentElement.getAttribute('data-theme');
               const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
               document.documentElement.setAttribute('data-theme', newTheme);
-              localStorage.setItem('theme', newTheme);
+              (void 0);
             });
           });
 
@@ -74,10 +74,10 @@ const LabMuPro: ThemeStructure = {
             btn.addEventListener('click', function() {
               const target = this.getAttribute('data-target');
               const tabGroup = this.closest('.tabs').parentElement;
-              
+
               tabGroup.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
               this.classList.add('active');
-              
+
               tabGroup.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
               tabGroup.querySelector(target).classList.add('active');
             });
@@ -95,34 +95,34 @@ const LabMuPro: ThemeStructure = {
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>${title} - ${ctx.site?.site_title || 'CMSMu'}</title>
         <meta name="description" content="${ctx.data?.excerpt || ctx.site?.site_desc || ''}">
-        
+
         <!-- Favicon -->
         <link rel="icon" type="image/x-icon" href="${ctx.site?.site_favicon || '/favicon.svg'}">
-        
+
         <!-- Open Graph / Social Media Meta Tags -->
         <meta property="og:title" content="${title} - ${ctx.site?.site_title || 'CMSMu'}">
         <meta property="og:description" content="${ctx.data?.excerpt || ctx.site?.site_desc || ''}">
         <meta property="og:image" content="${ctx.data?.featured_image || ctx.site?.header_logo_url || ctx.site?.site_logo || ''}">
         <meta property="og:type" content="${ctx.data?.type === 'post' ? 'article' : 'website'}">
-        
+
         <!-- Twitter Card -->
         <meta name="twitter:card" content="summary_large_image">
         <meta name="twitter:title" content="${title} - ${ctx.site?.site_title || 'CMSMu'}">
         <meta name="twitter:description" content="${ctx.data?.excerpt || ctx.site?.site_desc || ''}">
         <meta name="twitter:image" content="${ctx.data?.featured_image || ctx.site?.header_logo_url || ctx.site?.site_logo || ''}">
-        
+
         <!-- Preconnect & Fonts -->
         <link rel="preconnect" href="https://fonts.googleapis.com">
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
         ${isLandingPage ? '<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">' : ''}
         <script src="https://cdn.tailwindcss.com"></script>
-        
+
         <!-- Icons -->
         <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-        
 
-        
+
+
         <style>
           :root {
             --primary: ${ctx.site?.theme_primary || '#2563eb'};
@@ -138,7 +138,7 @@ const LabMuPro: ThemeStructure = {
       <body>
         <!-- Hook: before_header -->
         ${!isLandingPage ? renderHeader(ctx) : ''}
-        
+
         <!-- Hook: before_main_content -->
         ${layoutType === 'home' ? renderHero(ctx) : ''}
 
@@ -174,8 +174,8 @@ const LabMuPro: ThemeStructure = {
     if (ctx.pageData && ctx.pageData.body) {
       try {
         puckData = JSON.parse(ctx.pageData.body);
-        
-        // Ensure defaultProps are merged into the payload to prevent SSR crashes 
+
+        // Ensure defaultProps are merged into the payload to prevent SSR crashes
         // if the database has incomplete JSON (e.g. from manual insertions)
         if (puckData.content && Array.isArray(puckData.content)) {
           puckData.content = puckData.content.map((item: any) => {
@@ -216,7 +216,7 @@ const LabMuPro: ThemeStructure = {
       const posts = ctx.data || [];
       const recentPosts = posts.slice(0, 3);
       let dynamicPostsHtml = '';
-      
+
       if (recentPosts.length > 0) {
         dynamicPostsHtml = recentPosts.map((p: any) => `
           <div class="bg-white rounded-2xl overflow-hidden shadow-sm border border-slate-100 hover:shadow-xl hover:border-green-100 transition-all duration-300 flex flex-col group cursor-pointer" onclick="window.location.href='/${p.slug}'">
@@ -250,9 +250,9 @@ const LabMuPro: ThemeStructure = {
     const layout = ctx.pageData?.layout || 'standard';
     const isLandingPage = layout === 'landing';
     const layoutType = isLandingPage ? 'landing-page' : 'layout-fullwidth';
-    
+
     const title = ctx.pageData?.title || ctx.site?.site_title || 'Halaman';
-    
+
     // Pass everything to the master layout wrapper
     return this._layout(renderedContent, title, ctx, layoutType);
   },
@@ -261,9 +261,9 @@ const LabMuPro: ThemeStructure = {
   renderCategory(ctx: ThemeContext) {
     const posts = ctx.data || [];
     const title = ctx.categoryName || 'Kategori';
-    
+
     let html = '';
-    
+
     if (posts.length === 0) {
       html = `<div style="text-align: center; padding: 50px 20px;">
         <h2 style="font-size: var(--text-xl); color: var(--text-main);">Belum ada artikel ditemukan.</h2>
@@ -283,7 +283,7 @@ const LabMuPro: ThemeStructure = {
               <span class="badge badge-primary" style="align-self: flex-start; margin-bottom: 10px;">${p.category || p.type}</span>
               <h3 class="post-title"><a href="/${p.slug}">${p.title}</a></h3>
               <p class="post-excerpt">${(p.body || '').replace(/<[^>]*>?/gm, '').substring(0, 120)}...</p>
-              
+
               <div class="post-meta">
                 <span><i class="far fa-calendar"></i> ${new Date(p.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})}</span>
               </div>
@@ -296,13 +296,13 @@ const LabMuPro: ThemeStructure = {
       if (ctx.pagination && ctx.pagination.totalPages > 1) {
           const p = ctx.pagination;
           const baseUrl = p.baseUrl || `/search?q=${ctx.query || ''}`;
-          
+
           html += `<div style="margin-top: 40px; display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">`;
-          
+
           if (p.hasPrev) {
               html += `<a href="${baseUrl}${baseUrl.includes('?') ? '&' : '?'}page=${p.currentPage - 1}" style="padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-weight: 500; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='var(--primary)'; this.style.color='white'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-main)'; this.style.borderColor='var(--border-color)';">&laquo; Sebelumnya</a>`;
           }
-          
+
           for (let i = 1; i <= p.totalPages; i++) {
               if (i === p.currentPage) {
                   html += `<span style="padding: 8px 16px; background: var(--primary); color: white; border-radius: 8px; font-weight: bold;">${i}</span>`;
@@ -314,11 +314,11 @@ const LabMuPro: ThemeStructure = {
           if (p.hasNext) {
               html += `<a href="${baseUrl}${baseUrl.includes('?') ? '&' : '?'}page=${p.currentPage + 1}" style="padding: 8px 16px; border: 1px solid var(--border-color); border-radius: 8px; color: var(--text-main); font-weight: 500; text-decoration: none; transition: all 0.2s;" onmouseover="this.style.background='var(--primary)'; this.style.color='white'; this.style.borderColor='var(--primary)';" onmouseout="this.style.background='transparent'; this.style.color='var(--text-main)'; this.style.borderColor='var(--border-color)';">Selanjutnya &raquo;</a>`;
           }
-          
+
           html += `</div>`;
       }
     }
-    
+
     return this._layout(html, title, ctx, 'layout-right-sidebar');
   },
 
@@ -335,7 +335,7 @@ const LabMuPro: ThemeStructure = {
   renderSingle(ctx: ThemeContext) {
     const post = ctx.data;
     if (!post) return this.render404(ctx);
-    
+
     // Breadcrumbs
     const breadcrumbs = renderBreadcrumbs([
       { label: post.category || 'Blog', url: post.category ? '/' + post.category.toLowerCase().replace(/\s+/g, '-') : '/blog' },
@@ -348,7 +348,7 @@ const LabMuPro: ThemeStructure = {
     const shareButtons = renderShareButtons(fullUrl, post.title);
 
     // Render list tags HTML
-    const tagsHtml = post.tags 
+    const tagsHtml = post.tags
       ? post.tags.split(',').map((t: string) => `<a href="/search?q=${encodeURIComponent(t.trim())}" class="badge" style="margin-right:5px; text-decoration:none;">#${t.trim()}</a>`).join('')
       : '';
 
@@ -369,7 +369,7 @@ const LabMuPro: ThemeStructure = {
     const html = `
       <article>
         ${breadcrumbs}
-        
+
         <div class="entry-header">
            <h1 class="entry-title">${post.title}</h1>
            <div class="entry-meta">
@@ -394,7 +394,7 @@ const LabMuPro: ThemeStructure = {
         ` : ''}
 
         ${shareButtons}
-        
+
         <!-- Schema Markup -->
         <script type="application/ld+json">
           ${JSON.stringify(schemaOrg)}
@@ -439,7 +439,7 @@ const LabMuPro: ThemeStructure = {
     // Halaman biasanya menggunakan layout full width (tanpa sidebar)
     let html = '';
     let layoutType = 'layout-full-width';
-    
+
     if (isPuck) {
       // Jika Puck, jadikan sebagai landing page agar mendapatkan Tailwind CSS dan bebas header default
       html = contentHtml;
@@ -458,7 +458,7 @@ const LabMuPro: ThemeStructure = {
         </article>
       `;
     }
-    
+
     return this._layout(html, post.title, ctx, layoutType);
   },
 

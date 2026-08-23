@@ -21,28 +21,28 @@ const clean = (s: string) => {
 // Kita masukkan logic Posts/Pages di sini agar TIDAK MUNGKIN HILANG.
 const mainLogic = `
     // --- STATE ---
-    token: localStorage.getItem('labmu_token') || '',
+    token: '' || '',
     userRole: 'admin',
     view: 'dash',
     sidebarOpen: true,
-    activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
+    activeThemeId: null || 'default',
     logoType: 'site_logo',
     isLoggingIn: false,
 
     // --- DATA STORE ---
-    posts: [], pages: [], mediaList: [], usersList: [], 
+    posts: [], pages: [], mediaList: [], usersList: [],
     menuList: [], availableThemes: [], quranList: [],
-    
+
     // --- UI FLAGS ---
-    selectedItems: [], 
+    selectedItems: [],
     isLoadingPosts: false, isLoadingPages: false, isLoadingUsers: false, isLoadingThemes: false, loadingQuran: false,
-    isUploading: false, isUploadingFeatured: false, 
+    isUploading: false, isUploadingFeatured: false,
     isSavingMeta: false, isSavingMenu: false, isSavingSettings: false,
     showMediaSelector: false, showUserModal: false,
-    
+
     // --- HELPER VARIABLES ---
     mediaSearchQuery: '', activeSurat: null, mediaSelectorTarget: null, targetLogoField: null,
-    activeMediaItem: null, 
+    activeMediaItem: null,
     activeMediaMeta: { alt: '', title: '', description: '' },
 
     // --- FORMS ---
@@ -61,13 +61,13 @@ const mainLogic = `
             this.loadAllData();
         }
     },
-    
+
     initRouter() {
         const h = window.location.hash.replace('#', '') || 'dash';
         this.view = h;
-        window.addEventListener('hashchange', () => { 
+        window.addEventListener('hashchange', () => {
             const newView = window.location.hash.replace('#', '') || 'dash';
-            if(this.view !== newView) this.view = newView; 
+            if(this.view !== newView) this.view = newView;
         });
     },
 
@@ -78,7 +78,7 @@ const mainLogic = `
         this.loadThemes();
         this.loadSettings();
         this.loadMenus();
-        
+
         // Panggil fungsi dari modul luar jika ada (Safe Check)
         if(typeof this.loadUsers === 'function') this.loadUsers();
         if(typeof this.loadMedia === 'function') this.loadMedia();
@@ -104,7 +104,7 @@ const mainLogic = `
     },
 
     // --- EDITOR & SAVE ---
-    openEditor(type) { 
+    openEditor(type) {
         this.view='add'; this.editingId=null;
         this.form={ title:'', slug:'', body:'', type:type||'post', status:'publish', date:new Date().toISOString().slice(0,16), category:'', tags:'', featured_image:'' };
         setTimeout(() => { if(window.startSunEditor) window.startSunEditor('editor_id', '', (c) => this.form.body=c); }, 100);
@@ -114,10 +114,10 @@ const mainLogic = `
         if(window.sunEditor) this.form.body = window.sunEditor.getContents();
         if(!this.form.title) return alert('Isi Judul!');
         if(!this.form.slug) this.makeSlug();
-        
+
         const url = this.editingId ? '/api/contents/' + this.editingId : '/api/contents';
         const method = this.editingId ? 'PUT' : 'POST';
-        
+
         try {
             await fetch(url, { method, headers: {'Content-Type':'application/json','Authorization':this.token}, body:JSON.stringify(this.form) });
             alert('Sukses!');
@@ -127,7 +127,7 @@ const mainLogic = `
     },
 
     makeSlug() { if(!this.editingId && this.form.title) this.form.slug = window.slugify(this.form.title); },
-    
+
     // --- MEDIA CORE (Fallback jika media.logic hilang) ---
     openMediaSelector() { this.showMediaSelector = true; this.loadMedia ? this.loadMedia() : null; },
     openLogoSelector(type) { this.logoType = type; this.showMediaSelector = true; this.loadMedia ? this.loadMedia() : null; },
@@ -135,7 +135,7 @@ const mainLogic = `
 
     // --- BASE HELPERS ---
     formatDate(i) { return i ? new Date(i).toLocaleDateString('id-ID') : '-'; },
-    logout() { localStorage.removeItem('labmu_token'); window.location.reload(); },
+    logout() { (void 0); window.location.reload(); },
     getPageTitle() {
         const map = { dash:'Dashboard', posts:'Artikel', pages:'Halaman', quran:'Quran Pro', themes:'Tampilan', media:'Media', menus:'Menus', users:'Users', settings:'Settings', add:'Editor' };
         return map[this.view] || 'Admin';

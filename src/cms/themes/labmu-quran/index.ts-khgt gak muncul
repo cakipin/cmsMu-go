@@ -20,10 +20,10 @@ const LabMuQuran: ThemeStructure = {
         <style>${css}</style>
       </head>
       <body>
-        ${renderHeader(ctx)} 
+        ${renderHeader(ctx)}
         <div class="quran-container">
           <div class="content-area">${content}</div>
-          ${renderFooter(ctx)} 
+          ${renderFooter(ctx)}
         </div>
         ${this._scripts()}
       </body>
@@ -37,12 +37,12 @@ const LabMuQuran: ThemeStructure = {
 
       <script>
         var state = {
-            dark: localStorage.getItem('dark') === 'true',
-            latin: localStorage.getItem('show_latin') !== 'false',
-            id: localStorage.getItem('show_id') !== 'false',
-            en: localStorage.getItem('show_en') === 'true',
-            qari: localStorage.getItem('qari') || '05',
-            qariName: localStorage.getItem('qariName') || 'Misyari Rasyid'
+            dark: null === 'true',
+            latin: null !== 'false',
+            id: null !== 'false',
+            en: null === 'true',
+            qari: null || '05',
+            qariName: null || 'Misyari Rasyid'
         };
 
         // --- 5. KALENDER HIJRIAH (INSERTED HERE) ---
@@ -61,11 +61,11 @@ const LabMuQuran: ThemeStructure = {
             if (im == 13) im = 12;
             var id = z - Math.floor(29.5001 * im - 29);
             var iMonthNames = ["Muharram","Safar","Rabi'ul Awal","Rabi'ul Akhir","Jumadil Awal","Jumadil Akhir","Rajab","Sya'ban","Ramadhan","Syawal","Dzulkaidah","Dzulhijjah"];
-            
-            var adjustment = -1; 
+
+            var adjustment = -1;
             var finalDay = id + adjustment;
             if (finalDay <= 0) { finalDay = 30 + finalDay; im--; if(im < 1) { im = 12; iy--; } }
-            
+
             return finalDay + " " + iMonthNames[im - 1] + " " + iy;
         }
 
@@ -84,7 +84,7 @@ const LabMuQuran: ThemeStructure = {
             window.updateUI();
             window.updateHijriDate(); // Panggil fungsi kalender saat load
         });
-       
+
         function updateUI() {
             document.body.className = state.dark ? 'dark' : '';
             ['latin', 'id', 'en'].forEach(function(k) {
@@ -97,8 +97,8 @@ const LabMuQuran: ThemeStructure = {
         }
 
         function toggleMode(key) {
-            if(key === 'theme') { state.dark = !state.dark; localStorage.setItem('dark', state.dark); }
-            else { state[key] = !state[key]; localStorage.setItem('show_' + key, state[key]); }
+            if(key === 'theme') { state.dark = !state.dark; (void 0); }
+            else { state[key] = !state[key]; (void 0); }
             updateUI();
         }
 
@@ -109,14 +109,14 @@ const LabMuQuran: ThemeStructure = {
             if(ov) ov.classList.toggle('show');
         }
 
-        function toggleQariMenu() { 
+        function toggleQariMenu() {
             var list = document.getElementById('qari-list');
-            if(list) list.classList.toggle('show'); 
+            if(list) list.classList.toggle('show');
         }
 
         function selectQari(val, name) {
             state.qari = val; state.qariName = name;
-            localStorage.setItem('qari', val); localStorage.setItem('qariName', name);
+            (void 0); (void 0);
             updateUI(); toggleQariMenu();
         }
 
@@ -129,11 +129,11 @@ const LabMuQuran: ThemeStructure = {
                 var p = document.getElementById('main-player'); p.src = url; p.play();
             }
         }
-        
-        function closePlayer() { 
+
+        function closePlayer() {
             var p = document.getElementById('main-player');
-            if(p) p.pause(); 
-            document.getElementById('player-container').style.display='none'; 
+            if(p) p.pause();
+            document.getElementById('player-container').style.display='none';
         }
       </script>
     `;
@@ -178,7 +178,7 @@ const LabMuQuran: ThemeStructure = {
             var tBox = document.getElementById('topicResult');
             var tList = document.getElementById('topicList');
             var cards = document.querySelectorAll('.surat-card');
-            
+
             cards.forEach(function(el) {
                 var name = el.getAttribute('data-name');
                 el.style.display = (keyword === '' || name.includes(keyword)) ? 'flex' : 'none';
@@ -186,15 +186,15 @@ const LabMuQuran: ThemeStructure = {
 
             if (keyword.length > 2) {
                 var matches = allTopics.filter(function(t) {
-                    return t.title.toLowerCase().includes(keyword) || 
+                    return t.title.toLowerCase().includes(keyword) ||
                            (t.keywords && t.keywords.some(function(k) { return k.toLowerCase().includes(keyword); }));
                 });
-                
+
                 if (matches.length > 0) {
                     tBox.style.display = 'block';
                     tList.innerHTML = matches.map(function(t) {
-                        var links = t.verses.map(function(v) { 
-                            return '<a href="/' + v.s + '#ayat-' + v.a + '" class="topic-pill" style="text-decoration:none; font-size:0.8rem; padding:8px 12px; display:inline-block; margin:2px; background:var(--primary); color:#fff; border-radius:20px;">' + v.text + '</a>'; 
+                        var links = t.verses.map(function(v) {
+                            return '<a href="/' + v.s + '#ayat-' + v.a + '" class="topic-pill" style="text-decoration:none; font-size:0.8rem; padding:8px 12px; display:inline-block; margin:2px; background:var(--primary); color:#fff; border-radius:20px;">' + v.text + '</a>';
                         }).join('');
                         return '<div style="background:var(--bg-card); border:1px solid var(--primary); padding:15px; border-radius:12px;">' +
                                '<strong style="color:var(--text-main); font-size:1.1rem; display:block; margin-bottom:10px;">' + (t.icon || '📖') + ' ' + t.title + '</strong>' +
@@ -208,14 +208,14 @@ const LabMuQuran: ThemeStructure = {
   },
 
   renderSingle(ctx: ThemeContext) {
-    const s = ctx.data; 
+    const s = ctx.data;
     if (!s || !s.ayat) return this._layout('<div style="text-align:center;padding:100px;"><h1>Not Found</h1></div>', 'Error', ctx);
-    
+
     const ayatListHtml = s.ayat.map((a: any) => {
        const label = s.namaLatin + ':' + a.nomorAyat;
        let audioAttr = '';
        if(a.audioOptions) { for(const [key, url] of Object.entries(a.audioOptions)) { audioAttr += ' data-url-' + key + '="' + url + '"'; } }
-       
+
        return `
        <div class="ayat-item" id="ayat-${a.nomorAyat}">
           <div class="ayat-meta-top">

@@ -6,6 +6,8 @@ import LabmuQuran from './labmu-quran';
 import Wikimu from './wikimu';
 import Hestia from './hestia';
 import NewspaperMu from './newspaper-mu';
+import LpekTheme from './lpek';
+import SuaraAisyiyah from './suara-aisyiyah';
 
 
 // 1. Daftar Tema untuk API
@@ -52,6 +54,20 @@ export const availableThemes = [
     "version": "1.0.0",
     "author": "CmsMu",
     "description": "Clone of the Newspaper WordPress Theme."
+  },
+  {
+    "id": "lpek",
+    "name": "LPEK Theme",
+    "version": "1.0.0",
+    "author": "cmsMu Dev",
+    "description": "Tema resmi Lembaga Pariwisata dan Ekonomi Kreatif (LPEK) Muhammadiyah."
+  },
+  {
+    "id": "suara-aisyiyah",
+    "name": "Suara 'Aisyiyah Clone",
+    "version": "1.0.0",
+    "author": "CmsMu",
+    "description": "Tema portal majalah perempuan dengan hero editorial dan aksen hijau-oranye."
   }
 ];
 
@@ -65,6 +81,8 @@ export const getActiveTheme = (id: string) => {
   'wikimu': Wikimu,
   'hestia': Hestia,
   'newspaper-mu': NewspaperMu,
+  'lpek': LpekTheme,
+  'suara-aisyiyah': SuaraAisyiyah,
   };
   return themes[id] || themes['labmu-default'];
 };

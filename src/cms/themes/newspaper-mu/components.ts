@@ -1,64 +1,90 @@
 import type { ThemeContext } from '../../themes/types';
 
-// --- 1. HEADER (DENGAN BURGER MENU & DROPDOWN) ---
 export const renderHeader = (ctx: ThemeContext) => {
-  const siteTitle = ctx.site?.site_title || ctx.site?.title || 'CMSMu';
+  const siteTitle = ctx.site?.site_title || ctx.site?.title || 'NewspaperMu';
   const logoUrl = ctx.site?.header_logo_url || ctx.site?.site_logo;
-  const logoContent = logoUrl 
-    ? `<img src="${logoUrl}" alt="${siteTitle} Logo" style="max-height: 40px;">` 
-    : `<i class="fas fa-layer-group"></i> <span>${siteTitle}</span>`;
-  
-  const textStyle = `color: ${ctx.site?.header_text_color || 'var(--header-text)'} !important;`;
-  
-  let menuWrapperStyle = '';
-  if (ctx.site?.header_menu_position === 'center') {
-    menuWrapperStyle = 'margin: 0 auto;';
-  } else if (ctx.site?.header_menu_position === 'left') {
-    menuWrapperStyle = 'margin-right: auto; margin-left: 2rem;';
-  }
-
   const menus = ctx.menus || [];
-  const desktopMenuHtml = menus.length > 0 
-    ? menus.map((m: any) => `<a href="${m.url}" class="nav-link" style="${textStyle}">${m.label || m.title}</a>`).join('\n        ')
-    : `<a href="/" class="nav-link" style="${textStyle}">Home</a>`;
 
-  const mobileMenuHtml = menus.length > 0
-    ? menus.map((m: any) => `<a href="${m.url}" class="nav-link">${m.label || m.title}</a>`).join('\n    ')
-    : `<a href="/" class="nav-link">Home</a>`;
+  const headerStyle = ctx.site?.np_header_style || '1';
+  const showTopbar = ctx.site?.np_show_topbar !== 'false';
+  const showAd = ctx.site?.np_show_ad_header !== 'false';
+
+  const topBarHtml = showTopbar ? `
+      <!-- Top Bar -->
+      <div class="bg-[#222] text-slate-300 text-[11px] py-1 hidden md:block">
+        <div class="max-w-[1140px] mx-auto px-4 flex justify-between items-center">
+            <div class="flex space-x-5 uppercase tracking-widest font-semibold">
+              <span>${new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
+              <div class="flex space-x-4 border-l border-slate-600 pl-4">
+                  <a href="/about" class="hover:text-white transition-colors">About</a>
+                  <a href="/contact" class="hover:text-white transition-colors">Contact</a>
+              </div>
+            </div>
+            <div class="flex space-x-5 items-center">
+              <a href="#" class="hover:text-white"><i class="fab fa-facebook-f"></i></a>
+              <a href="#" class="hover:text-white"><i class="fab fa-twitter"></i></a>
+              <a href="#" class="hover:text-white"><i class="fab fa-youtube"></i></a>
+              <a href="/sys/login" class="hover:text-white uppercase font-bold text-white border-l border-slate-600 pl-4"><i class="fas fa-user-circle mr-1"></i> Sign In</a>
+            </div>
+        </div>
+      </div>
+  ` : '';
+
+  const adHtml = showAd ? `
+        <div class="hidden md:flex w-[728px] h-[90px] bg-slate-50 border border-slate-200 items-center justify-center text-slate-300 text-xs font-semibold uppercase tracking-widest shadow-inner relative">
+            <span class="absolute top-1 left-2 text-[9px] text-slate-300">- Advertisement -</span>
+        </div>
+  ` : '';
+
+  const logoHtml = `
+          <a href="/" class="inline-block">
+            ${logoUrl ? `<img src="${logoUrl}" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';" alt="Logo" class="h-16 object-contain" /><h1 style="display:none;" class="text-[2.75rem] font-black tracking-tighter text-slate-900 leading-none">${siteTitle.split(' ')[0] || siteTitle}<span class="text-blue-600">${siteTitle.split(' ')[1] || ''}</span></h1>` : `<h1 class="text-[2.75rem] font-black tracking-tighter text-slate-900 leading-none">${siteTitle.split(' ')[0] || siteTitle}<span class="text-blue-600">${siteTitle.split(' ')[1] || ''}</span></h1>`}
+          </a>
+  `;
+
+  const bannerRowHtml = headerStyle === '2' ? `
+      <!-- Style 2: Logo Center -->
+      <div class="max-w-[1140px] mx-auto px-4 py-8 flex flex-col items-center justify-center gap-6 text-center">
+        ${logoHtml}
+        ${adHtml}
+      </div>
+  ` : `
+      <!-- Style 1: Logo Left, Ad Right -->
+      <div class="max-w-[1140px] mx-auto px-4 py-8 flex flex-col md:flex-row justify-between items-center gap-6">
+        <div class="flex-shrink-0">${logoHtml}</div>
+        ${adHtml}
+      </div>
+  `;
 
   return `
-  <header class="pro-header">
-    <div class="container header-inner">
-      <a href="/" class="logo" style="${textStyle}">
-        ${logoContent}
-      </a>
-      
-      <!-- Desktop Menu -->
-      <nav class="nav-menu" style="${menuWrapperStyle}">
-        ${desktopMenuHtml}
-        <button class="theme-toggle" id="themeToggleBtn" aria-label="Toggle Dark Mode" style="${textStyle}; background:none; border:none; font-size:1.2rem; cursor:pointer; margin-left:1rem;">
-           <i class="fas fa-moon icon-moon"></i>
-           <i class="fas fa-sun icon-sun" style="display:none;"></i>
-        </button>
-      </nav>
+    <header class="w-full font-sans shadow-sm bg-white border-b-2 border-black">
+      ${topBarHtml}
+      ${bannerRowHtml}
 
-      <!-- Mobile Burger Button -->
-      <button class="burger-btn" id="burgerBtn" aria-label="Toggle Menu" style="${textStyle}">
-        <i class="fas fa-bars"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- Mobile Off-Canvas Menu -->
-  <div class="mobile-menu" id="mobileMenu">
-    ${mobileMenuHtml}
-    <button class="btn btn-outline theme-toggle" id="mobileThemeToggleBtn" style="justify-content:center; margin-top:1rem;">
-       <i class="fas fa-moon icon-moon"></i>
-       <i class="fas fa-sun icon-sun" style="display:none;"></i> 
-       <span style="margin-left:8px;">Toggle Theme</span>
-    </button>
-  </div>
-`;
+      <!-- Main Navigation Menu -->
+      <div class="bg-black w-full relative z-50">
+        <div class="max-w-[1140px] mx-auto px-4">
+          <nav class="flex items-center justify-between">
+              <ul class="flex flex-col md:flex-row m-0 p-0 list-none font-bold uppercase text-[13px] tracking-wider">
+                  <li class="hidden md:block">
+                      <a href="/" class="px-4 py-4 block text-white hover:text-blue-400 transition-colors border-b-2 border-transparent hover:border-blue-500"><i class="fas fa-home"></i></a>
+                  </li>
+                  ${menus.map((m: any) => `
+                    <li>
+                      <a href="${m.url}" class="px-4 py-4 block text-white hover:text-blue-400 transition-colors border-b-2 border-transparent hover:border-blue-500">
+                        ${m.label || m.title}
+                      </a>
+                    </li>
+                  `).join('')}
+              </ul>
+              <div class="flex items-center px-4 py-4 text-white hover:text-blue-400 cursor-pointer transition-colors">
+                <i class="fas fa-search"></i>
+              </div>
+          </nav>
+        </div>
+      </div>
+    </header>
+  `;
 };
 
 // --- 2. HERO SECTION ---
@@ -76,7 +102,7 @@ export const renderHero = (ctx: ThemeContext) => {
     <div class="container">
       <h1 class="landing-title">${title}</h1>
       <p class="landing-subtitle">${subtitle}</p>
-      
+
       <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap; margin-bottom: 2rem;">
          <a href="${ctaLink}" class="btn btn-primary" style="padding: 1rem 2rem; font-size: 1.1rem; border-radius: 50px;">${ctaText}</a>
       </div>
@@ -112,32 +138,31 @@ export const renderSidebar = (posts: any[], popularLimit: number = 5) => `
     </div>
     -->
 
-
-    <div class="widget">
-      <h4 class="widget-title">Terpopuler</h4>
-      <ul class="widget-list" id="sidebar-popular-posts">
-        ${posts.length > 0 ? posts.slice(0, popularLimit).map(p => `
-          <li>
-            <img src="${p.featured_image || 'https://placehold.co/150'}" class="mini-thumb" loading="lazy" alt="${p.title}">
-            <div>
-              <a href="/${p.slug}" style="font-weight:600; line-height:1.2; display:block; font-size:var(--text-sm);">${p.title}</a>
-              <small style="color:var(--text-muted);">${new Date(p.created_at).toLocaleDateString()}</small>
+    <div class="mb-10">
+      <h4 class="bg-slate-900 text-white font-bold uppercase tracking-wider px-4 py-2 text-sm m-0 inline-block mb-4">Terpopuler</h4>
+      <ul class="flex flex-col gap-4" id="sidebar-popular-posts">
+        ${posts.length > 0 ? posts.slice(0, popularLimit).map((p, i) => `
+          <li class="flex gap-4 group">
+            <span class="text-3xl font-black text-slate-200 italic group-hover:text-blue-100 transition-colors">${i + 1}</span>
+            <div class="flex flex-col justify-center">
+              <a href="/${p.slug}" class="font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">${p.title}</a>
+              <small class="text-slate-500 text-xs uppercase font-semibold mt-1 tracking-wider">${new Date(p.created_at).toLocaleDateString()}</small>
             </div>
           </li>
-        `).join('') : '<li style="text-align:center; padding:10px; font-size:12px; color:#888;">Memuat data...</li>'}
+        `).join('') : '<li class="text-center p-4 text-xs text-slate-500">Memuat data...</li>'}
       </ul>
     </div>
 
-    <div class="widget">
-      <h4 class="widget-title">Tags</h4>
-      <div style="display:flex; flex-wrap:wrap; gap:5px;" id="sidebar-tags">
+    <div class="mb-10 border border-slate-200 p-6 bg-slate-50">
+      <h4 class="font-bold uppercase tracking-wider text-sm mb-4 pb-2 border-b-2 border-slate-900 inline-block">Tags</h4>
+      <div class="flex flex-wrap gap-2" id="sidebar-tags">
         ${posts.length > 0 ? Array.from(new Set(posts.flatMap(p => p.tags ? p.tags.split(',').map((t: string) => t.trim()) : []))).slice(0, 7).map(tag => `
-          <a href="/search?q=${encodeURIComponent(String(tag))}" style="background:#f1f5f9; padding:5px 10px; border-radius:4px; font-size:12px;">${tag}</a>
-        `).join('') : '<span style="font-size:12px; color:#888;">Memuat data...</span>'}
+          <a href="/search?q=${encodeURIComponent(String(tag))}" class="bg-white border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors">${tag}</a>
+        `).join('') : '<span class="text-xs text-slate-500">Memuat data...</span>'}
       </div>
     </div>
     <!-- Hook: after_sidebar -->
-    
+
     ${posts.length === 0 ? `
     <script>
       document.addEventListener("DOMContentLoaded", function() {
@@ -147,16 +172,16 @@ export const renderSidebar = (posts: any[], popularLimit: number = 5) => `
             if(!Array.isArray(data)) return;
             // Filter hanya yg publish
             let published = data.filter(p => p.status === 'publish');
-            
+
             // Render Terpopuler
             const popularContainer = document.getElementById('sidebar-popular-posts');
             if(popularContainer && published.length > 0) {
-              popularContainer.innerHTML = published.slice(0, ${popularLimit}).map(p => \`
-                <li>
-                  <img src="\${p.featured_image || 'https://placehold.co/150'}" class="mini-thumb" loading="lazy" alt="\${p.title}">
-                  <div>
-                    <a href="/\${p.slug}" style="font-weight:600; line-height:1.2; display:block; font-size:var(--text-sm);">\${p.title}</a>
-                    <small style="color:var(--text-muted);">\${new Date(p.created_at).toLocaleDateString()}</small>
+              popularContainer.innerHTML = published.slice(0, ${popularLimit}).map((p, i) => \`
+                <li class="flex gap-4 group">
+                  <span class="text-3xl font-black text-slate-200 italic group-hover:text-blue-100 transition-colors">\${i + 1}</span>
+                  <div class="flex flex-col justify-center">
+                    <a href="/\${p.slug}" class="font-bold text-slate-900 leading-snug group-hover:text-blue-600 transition-colors">\${p.title}</a>
+                    <small class="text-slate-500 text-xs uppercase font-semibold mt-1 tracking-wider">\${new Date(p.created_at).toLocaleDateString()}</small>
                   </div>
                 </li>
               \`).join('');
@@ -177,10 +202,10 @@ export const renderSidebar = (posts: any[], popularLimit: number = 5) => `
               let sortedTags = Object.keys(tagCounts).sort((a, b) => tagCounts[b] - tagCounts[a]).slice(0, 7);
               if(sortedTags.length > 0) {
                 tagsContainer.innerHTML = sortedTags.map(tag => \`
-                  <a href="/search?q=\${encodeURIComponent(tag)}" style="background:#f1f5f9; padding:5px 10px; border-radius:4px; font-size:12px;">\${tag}</a>
+                  <a href="/search?q=\${encodeURIComponent(tag)}" class="bg-white border border-slate-200 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:bg-blue-600 hover:text-white hover:border-blue-600 transition-colors">\${tag}</a>
                 \`).join('');
               } else {
-                tagsContainer.innerHTML = '<span style="font-size:12px; color:#888;">Tidak ada tag.</span>';
+                tagsContainer.innerHTML = '<span class="text-xs text-slate-500">Tidak ada tag.</span>';
               }
             }
           })
@@ -192,60 +217,69 @@ export const renderSidebar = (posts: any[], popularLimit: number = 5) => `
 `;
 
 // --- 4. FOOTER ---
-export const renderFooter = (ctx: ThemeContext) => `
-  <footer class="pro-footer">
-    <!-- Hook: before_footer -->
-    <div class="container">
-      <div class="grid lg:grid-cols-4 md:grid-cols-2 footer-grid">
-        <div class="footer-col" style="grid-column: span 1;">
-           <a href="/" class="logo" style="color:white; margin-bottom:1rem; display:inline-flex;">
-             <i class="fas fa-layer-group"></i> LabMu Pro
-           </a>
-           <p style="opacity:0.8; font-size:var(--text-sm); margin-bottom:1rem;">${ctx.site?.site_desc || 'Website modern berbasis Cloudflare.'}</p>
-           <div class="social-share" style="border:none; padding:0; margin:0;">
-             <a href="#" class="share-btn share-fb" aria-label="Facebook"><i class="fab fa-facebook-f"></i></a>
-             <a href="#" class="share-btn share-tw" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
-             <a href="#" class="share-btn share-wa" aria-label="WhatsApp"><i class="fab fa-whatsapp"></i></a>
-           </div>
-        </div>
-        
-        <div class="footer-col">
-           <h4>Perusahaan</h4>
-           <ul class="footer-links">
-              <li><a href="#">Tentang Kami</a></li>
-              <li><a href="#">Karir</a></li>
-              <li><a href="#">Hubungi Kami</a></li>
-              <li><a href="#">Mitra</a></li>
-           </ul>
-        </div>
+export const renderFooter = (ctx: ThemeContext) => {
+  const footerStyle = ctx.site?.np_footer_style || 'dark';
+  const isLight = footerStyle === 'light';
 
-        <div class="footer-col">
-           <h4>Bantuan</h4>
-           <ul class="widget-list footer-links" style="border:none;">
-              <li><a href="/">Home</a></li>
-              <li><a href="/privacy-policy">Privacy Policy</a></li>
-              <li><a href="/terms-of-service">Terms of Service</a></li>
-              <li><a href="#">FAQ</a></li>
-           </ul>
-        </div>
-        
-        <div class="footer-col">
-           <h4>Newsletter</h4>
-           <p style="margin-bottom:15px; font-size:var(--text-sm);">Dapatkan update terbaru seputar pengembangan web.</p>
-           <form class="form-group" onsubmit="event.preventDefault(); alert('Ini adalah dummy newsletter form.');">
-              <input type="email" class="form-control" placeholder="Email Anda..." style="margin-bottom:10px;" required>
-              <button type="submit" class="btn btn-primary" style="width:100%;">Subscribe</button>
-           </form>
-        </div>
-      </div>
-      
-      <div class="footer-bottom">
-         &copy; ${new Date().getFullYear()} ${ctx.site?.site_title || 'CMSMu'}. All rights reserved. Built with LabMu CMS Framework.
+  const bgClass = isLight ? 'bg-white text-slate-800' : 'bg-[#111111] text-slate-400';
+  const titleClass = isLight ? 'text-slate-900' : 'text-white';
+  const borderClass = isLight ? 'border-[#eee]' : 'border-[#333]';
+  const boxBg = isLight ? 'bg-slate-100' : 'bg-[#222]';
+
+  return `
+  <footer class="w-full ${bgClass} font-sans border-t-[3px] border-blue-600">
+    <div class="max-w-[1140px] mx-auto px-4 py-16">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+          <div class="flex flex-col gap-6">
+            <h2 class="text-3xl font-black tracking-tighter ${titleClass} uppercase">Newspaper<span class="text-blue-600">Mu</span></h2>
+            <p class="text-sm leading-relaxed">${ctx.site?.site_desc || 'NewspaperMu is a customizable theme.'}</p>
+            <div class="flex space-x-4">
+                <a href="#" class="w-10 h-10 ${boxBg} ${isLight?'text-slate-800':'text-white'} flex items-center justify-center hover:bg-blue-600 hover:text-white transition-colors"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="w-10 h-10 ${boxBg} ${isLight?'text-slate-800':'text-white'} flex items-center justify-center hover:bg-blue-400 hover:text-white transition-colors"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="w-10 h-10 ${boxBg} ${isLight?'text-slate-800':'text-white'} flex items-center justify-center hover:bg-red-600 hover:text-white transition-colors"><i class="fab fa-youtube"></i></a>
+            </div>
+          </div>
+
+          <div>
+            <h4 class="${titleClass} font-bold uppercase tracking-wider mb-6 pb-2 border-b ${borderClass} inline-block">Popular Categories</h4>
+            <ul class="space-y-3 text-sm">
+                <li><a href="#" class="hover:text-blue-500 flex justify-between"><span>Technology</span> <span class="${boxBg} px-2 rounded-full text-xs">14</span></a></li>
+                <li><a href="#" class="hover:text-blue-500 flex justify-between"><span>Business</span> <span class="${boxBg} px-2 rounded-full text-xs">9</span></a></li>
+                <li><a href="#" class="hover:text-blue-500 flex justify-between"><span>Sports</span> <span class="${boxBg} px-2 rounded-full text-xs">25</span></a></li>
+                <li><a href="#" class="hover:text-blue-500 flex justify-between"><span>Entertainment</span> <span class="${boxBg} px-2 rounded-full text-xs">31</span></a></li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 class="${titleClass} font-bold uppercase tracking-wider mb-6 pb-2 border-b ${borderClass} inline-block">Recent Editorials</h4>
+            <ul class="space-y-4 text-sm">
+                <li class="flex gap-4 group">
+                    <div class="w-16 h-16 ${boxBg} flex-shrink-0 relative overflow-hidden">
+                      <img src="https://via.placeholder.com/150" class="w-full h-full object-cover opacity-70 group-hover:opacity-100 transition-opacity" />
+                    </div>
+                    <div class="flex flex-col justify-center">
+                      <a href="#" class="font-bold ${titleClass} hover:text-blue-500 leading-snug">The Future of AI in Publishing</a>
+                      <span class="text-xs mt-1">August 10, 2026</span>
+                    </div>
+                </li>
+            </ul>
+          </div>
       </div>
     </div>
-    <!-- Hook: after_footer -->
+
+    <div class="${isLight ? 'bg-slate-100 border-[#eee]' : 'bg-black border-[#222]'} py-6 text-xs text-center border-t">
+      <div class="max-w-[1140px] mx-auto px-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <p>&copy; ${new Date().getFullYear()} ${ctx.site?.site_title || 'CMSMu'}. All rights reserved.</p>
+          <ul class="flex space-x-6 uppercase font-semibold">
+            <li><a href="#" class="hover:text-blue-500">Disclaimer</a></li>
+            <li><a href="#" class="hover:text-blue-500">Privacy</a></li>
+            <li><a href="#" class="hover:text-blue-500">Terms</a></li>
+          </ul>
+      </div>
+    </div>
   </footer>
-`;
+  `;
+};
 
 // --- 5. BREADCRUMBS HELPER ---
 export const renderBreadcrumbs = (items: {label: string, url?: string}[]) => `

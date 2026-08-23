@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { boundedText, cleanSlug, sanitizeHtml } from '../../core/security';
 
 type Bindings = {
   DB: D1Database;
@@ -36,12 +37,12 @@ pagesRouter.post('/', async (c) => {
     const body = await c.req.json();
     // [UPDATE] Ambil featured_image dari body
     const { title, slug, body: content, excerpt, meta_title, meta_description, status, featured_image, layout } = body;
-    
+
     await c.env.DB.prepare(`
       INSERT INTO pages (title, slug, body, excerpt, meta_title, meta_description, status, featured_image, layout, created_at, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'), datetime('now'))
-    `).bind(title, slug, content, excerpt || '', meta_title || '', meta_description || '', status || 'publish', featured_image || '', layout || 'standard').run();
-    
+    `).bind(boundedText(title, 250), cleanSlug(slug || title), sanitizeHtml(content), boundedText(excerpt, 500), boundedText(meta_title, 70), boundedText(meta_description, 180), status === 'draft' ? 'draft' : 'publish', boundedText(featured_image, 2048), boundedText(layout || 'standard', 50)).run();
+
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -57,8 +58,8 @@ pagesRouter.put('/:id', async (c) => {
     await c.env.DB.prepare(`
       UPDATE pages SET title=?, slug=?, body=?, excerpt=?, meta_title=?, meta_description=?, status=?, featured_image=?, layout=?, updated_at=datetime('now')
       WHERE id=?
-    `).bind(body.title, body.slug, body.body, body.excerpt || '', body.meta_title || '', body.meta_description || '', body.status, body.featured_image || '', body.layout || 'standard', id).run();
-    
+    `).bind(boundedText(body.title, 250), cleanSlug(body.slug || body.title), sanitizeHtml(body.body), boundedText(body.excerpt, 500), boundedText(body.meta_title, 70), boundedText(body.meta_description, 180), body.status === 'draft' ? 'draft' : 'publish', boundedText(body.featured_image, 2048), boundedText(body.layout || 'standard', 50), id).run();
+
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);

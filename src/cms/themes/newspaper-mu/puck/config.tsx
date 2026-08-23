@@ -23,128 +23,74 @@ export const puckConfig: Config = {
         ]
       },
       render: ({ logoUrl, menuItems }) => (
-        <div className="td-header-wrap td-header-style-1">
-          <div className="td-header-top-menu-full td-container-wrap">
-            <div className="td-container td-header-row td-header-top-menu">
-              <div className="top-bar-style-1">
-                <div className="td-header-sp-top-menu">
-                    <ul className="top-header-menu td_ul_top_menu">
-                        <li className="menu-item"><a href="#">About</a></li>
-                        <li className="menu-item"><a href="#">Contact</a></li>
-                    </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="td-banner-wrap-full td-logo-wrap-full td-container-wrap">
-            <div className="td-container td-header-row td-header-header">
-              <div className="td-header-sp-logo">
-                <h1 className="td-logo">
-                  <a className="td-main-logo" href="/">
-                    {logoUrl ? <img className="td-retina-data" src={logoUrl} alt="Logo" style={{maxHeight:'50px'}} /> : "NewspaperMu"}
-                  </a>
-                </h1>
-              </div>
-              <div className="td-header-sp-recs">
-                  <div className="td-header-rec-wrap">
-                       {/* Ad space placeholder */}
-                  </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="td-header-menu-wrap-full td-container-wrap">
-            <div className="td-header-menu-wrap td-header-gradient">
-              <div className="td-container td-header-row td-header-main-menu">
-                <div id="td-header-menu" role="navigation">
-                    <ul className="sf-menu">
-                        {(menuItems || []).map((item: any, idx: number) => (
-                          <li key={idx} className="menu-item"><a href={item.url}>{item.label}</a></li>
-                        ))}
-                    </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <div dangerouslySetInnerHTML={{__html: `<!-- NP_HEADER_START -->`}}></div>
       )
     },
 
-    NewspaperPostGrid: {
+    NewspaperBigGrid1: {
       fields: {
         title: { type: "text" },
-        categoryId: { type: "text" }
+        categorySlug: { type: "text" }
+      },
+      defaultProps: {
+        title: "Top Stories",
+        categorySlug: ""
+      },
+      render: ({ title, categorySlug }) => (
+        <section className="w-full max-w-[1140px] mx-auto px-4 py-8 font-sans">
+            <div className="mb-6 relative border-b border-[#222]">
+                <h4 className="bg-black text-white font-bold uppercase text-xs tracking-wider px-4 py-2 m-0 inline-block relative top-[1px]">
+                    {title}
+                </h4>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- NP_BIG_GRID_1_START:${categorySlug} -->`}} />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-1 h-[450px]">
+                <div className="md:col-span-2 bg-slate-900 h-full"></div>
+                <div className="flex flex-col gap-1 h-full">
+                    <div className="bg-slate-800 h-[223px]"></div>
+                    <div className="bg-slate-800 h-[223px]"></div>
+                </div>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- NP_BIG_GRID_1_END -->`}} />
+        </section>
+      )
+    },
+
+    NewspaperFlexBlock: {
+      fields: {
+        title: { type: "text" },
+        categorySlug: { type: "text" },
+        limit: { type: "number" }
       },
       defaultProps: {
         title: "Latest Articles",
-        categoryId: ""
+        categorySlug: "",
+        limit: 4
       },
-      render: ({ title }) => (
-        <div className="td-main-content-wrap td-container-wrap">
-            <div className="td-container">
-                <div className="td-pb-row">
-                    <div className="td-pb-span12 td-main-content" role="main">
-                        <div className="td_block_wrap td_block_big_grid_1 td-grid-style-1 td-hover-1 td-big-grids">
-                            <div className="td_block_inner">
-                                <h4 className="block-title"><span>{title}</span></h4>
-                                <div id="newspaper-post-grid-placeholder">
-                                    <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_START -->`}} />
-                                    <div className="td-big-grid-wrapper">
-                                        <div className="td_module_mx5 td-animation-stack td-big-grid-post-0 td-big-grid-post">
-                                            <div className="td-module-image">
-                                                <div className="td-module-thumb"><a href="#"><img src="https://via.placeholder.com/600x400" /></a></div>
-                                                <div className="td-post-category">News</div>
-                                            </div>
-                                            <div className="td-meta-info-container">
-                                                <div className="td-meta-align">
-                                                    <h3 className="entry-title"><a href="#">Sample Big Post Title for Newspaper Theme</a></h3>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div dangerouslySetInnerHTML={{__html: `<!-- NEWSPAPER_POST_GRID_END -->`}} />
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+      render: ({ title, categorySlug, limit }) => (
+        <section className="w-full max-w-[1140px] mx-auto px-4 py-8 font-sans">
+            <div className="mb-6 relative border-b border-[#222]">
+                <h4 className="bg-blue-600 text-white font-bold uppercase text-xs tracking-wider px-4 py-2 m-0 inline-block relative top-[1px]">
+                    {title}
+                </h4>
+            </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- NP_FLEX_BLOCK_START:${categorySlug}:${limit} -->`}} />
+            <div className="flex flex-col gap-4">
+                <div className="flex gap-4 h-[120px] bg-slate-100">
+                    <div className="w-[180px] bg-slate-300"></div>
+                    <div className="flex-1 py-2"></div>
                 </div>
             </div>
-        </div>
+            <div dangerouslySetInnerHTML={{__html: `<!-- NP_FLEX_BLOCK_END -->`}} />
+        </section>
       )
     },
 
     NewspaperFooter: {
-      fields: {
-        aboutText: { type: "textarea" },
-        copyright: { type: "text" }
-      },
-      defaultProps: {
-        aboutText: "NewspaperMu is a clone of the popular Newspaper theme designed specifically for cmsMu.",
-        copyright: "© 2026 cmsMu. All rights reserved."
-      },
-      render: ({ aboutText, copyright }) => (
-        <div className="td-footer-wrapper td-container-wrap td-footer-template-1">
-           <div className="td-container">
-              <div className="td-pb-row">
-                 <div className="td-pb-span4">
-                    <aside className="footer-logo-wrap">
-                       <img src="/theme-assets/newspaper-mu/images/logo.png" alt="Logo" style={{maxHeight:'40px'}} />
-                       <div className="footer-text-wrap">{aboutText}</div>
-                    </aside>
-                 </div>
-              </div>
-           </div>
-           <div className="td-sub-footer-container td-container-wrap">
-              <div className="td-container">
-                 <div className="td-pb-row">
-                    <div className="td-pb-span td-sub-footer-copy">
-                       {copyright}
-                    </div>
-                 </div>
-              </div>
-           </div>
-        </div>
+      fields: {},
+      defaultProps: {},
+      render: () => (
+        <div dangerouslySetInnerHTML={{__html: `<!-- NP_FOOTER_START -->`}}></div>
       )
     }
   }

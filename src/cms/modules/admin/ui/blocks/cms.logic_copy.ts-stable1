@@ -57,11 +57,11 @@ window.cms = function() {
         // ============================
         // 1. BASE STATE (Standar CMS)
         // ============================
-        token: localStorage.getItem('labmu_token') || '',
+        token: '' || '',
         userRole: 'admin',
         view: 'dash',
         sidebarOpen: true,
-        activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
+        activeThemeId: null || 'default',
         logoType: 'site_logo',
         isLoggingIn: false,
         
@@ -163,7 +163,7 @@ window.cms = function() {
         // 5. GLOBAL HELPERS
         // ============================
         formatDate(i) { return i ? new Date(i).toLocaleDateString('id-ID') : '-'; },
-        logout() { localStorage.removeItem('labmu_token'); window.location.reload(); },
+        logout() { (void 0); window.location.reload(); },
         getPageTitle() {
             // Simple generic title generator
             if (!this.view) return 'Admin';

@@ -2,6 +2,8 @@ import { Hono } from 'hono';
 import { renderAdmin } from './ui/view';      // Import Dashboard dari views.ts
 import { editorPage } from './ui/blocks/editor.page';
 import { ssoCallbackPage } from './ui/pages/sso-callback.page';
+import { requireAdmin } from '../../middleware/auth';
+import type { D1Database } from '@cloudflare/workers-types';
 
 // Definisikan tipe Bindings agar TypeScript tidak error saat akses c.env.DB
 interface Bindings {
@@ -12,7 +14,7 @@ const admin = new Hono<{ Bindings: Bindings }>();
 
 // 1. DASHBOARD UTAMA
 admin.get('/', (c) => {
-  return c.html(renderAdmin());
+  return c.html(renderAdmin({ view: 'dash' }));
 });
 
 // 1b. SSO CALLBACK
@@ -39,7 +41,7 @@ admin.get('/:type/:id/edit', (c) => {
 
 // 3. API INTERNAL (Data Users)
 // Endpoint ini bisa dipanggil oleh fetch di ui/views.ts untuk loadUsers()
-admin.get('/data/users', async (c) => {
+admin.get('/data/users', requireAdmin, async (c) => {
   try {
     const users = await c.env.DB.prepare(
       "SELECT id, username, name, email, role, created_at FROM users ORDER BY id DESC"

@@ -5,7 +5,7 @@ import { pagesBlock } from './blocks/pages';
 import { menusPage } from './blocks/menus.page';
 import { globalModals } from './blocks/modals';
 import { cmsLogic } from './blocks/cms.logic';
-import { loginPage } from './pages/login.page'; 
+import { loginPage } from './pages/login.page';
 
 export function renderAdmin(data: any): string {
     const isLoginView = data.view === 'login';
@@ -26,17 +26,17 @@ export function renderAdmin(data: any): string {
             </style>
             <script src="https://cdn.jsdelivr.net/npm/suneditor@latest/dist/suneditor.min.js"></script>
             <script src="https://cdn.jsdelivr.net/npm/suneditor@latest/src/lang/en.js"></script>
-            
+
             <script>
                 (function() {
-                    const token = localStorage.getItem('labmu_token');
+                    const token = '';
                     const isLoginPage = window.location.pathname.includes('/login');
                     if (!token && !isLoginPage) {
-                        window.location.href = '/admin/login'; 
+                        window.location.href = '/admin/login';
                     }
                 })();
 
-                /** * [ADDON SYSTEM] Inisialisasi Sidebar Otomatis 
+                /** * [ADDON SYSTEM] Inisialisasi Sidebar Otomatis
                  * Kita siapkan di awal agar bisa dipush oleh plugin manapun
                 */
                 window.adminMenus = window.adminMenus || [
@@ -56,16 +56,16 @@ export function renderAdmin(data: any): string {
             <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
         </head>
         <body x-data="cms()" x-init="init()" x-cloak>
-            
+
             <template x-if="${isLoginView} || !token">
                 ${loginPage}
             </template>
 
             <template x-if="token && !${isLoginView}">
-                <div class="app-layout" 
-                     :style="sidebarOpen ? 'grid-template-columns: 240px 1fr' : 'grid-template-columns: 60px 1fr'" 
+                <div class="app-layout"
+                     :style="sidebarOpen ? 'grid-template-columns: 240px 1fr' : 'grid-template-columns: 60px 1fr'"
                      style="display:grid; height:100vh;">
-                    
+
                     ${sidebarBlock}
 
                     <div style="display:flex; flex-direction:column; overflow:hidden;">

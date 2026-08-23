@@ -10,21 +10,21 @@ export const editorPage = `
          // ===============================================
          mediaModalOpen: false,
          manageModalOpen: false,
-         manageTarget: '',      
-         
+         manageTarget: '',
+
          mediaList: [],
-         uniqueCategories: [], 
-         uniqueTags: [],        
+         uniqueCategories: [],
+         uniqueTags: [],
          managerItems: [],
-         allPosts: [],          
+         allPosts: [],
 
          // STATE MEDIA
-         mediaTab: 'library', 
+         mediaTab: 'library',
          uploadFile: null,
          uploadPreview: null,
          selectedMedia: null,
          searchQuery: '',
-         
+
          // Form Metadata
          mediaForm: { title: '', alt: '', caption: '', description: '' },
 
@@ -33,14 +33,14 @@ export const editorPage = `
          // ===============================================
          async loadGlobalData() {
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/posts?t=' + Date.now(), {
                      headers: { 'Authorization': 'Bearer ' + token }
                  });
                  if (res.ok) {
                      const json = await res.json();
                      const posts = Array.isArray(json) ? json : (json.results || []);
-                     this.allPosts = posts; 
+                     this.allPosts = posts;
 
                      const cats = posts.map(p => p.category).filter(c => c && c !== 'Uncategorized');
                      const catCounts = {};
@@ -64,17 +64,17 @@ export const editorPage = `
              this.mediaTab = 'library';
              this.selectedMedia = null;
              this.searchQuery = '';
-             this.mediaForm = { title:'', alt:'', caption:'', description:'' }; 
+             this.mediaForm = { title:'', alt:'', caption:'', description:'' };
              await this.loadMediaLibrary();
          },
 
          async loadMediaLibrary() {
              this.mediaList = [];
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  const json = await res.json();
-                 
+
                  let raw = Array.isArray(json) ? json : (json.results || []);
                  this.mediaList = raw.map(m => ({
                      ...m,
@@ -87,14 +87,14 @@ export const editorPage = `
          get filteredMediaList() {
              if(!this.searchQuery) return this.mediaList;
              const q = this.searchQuery.toLowerCase();
-             return this.mediaList.filter(m => 
-                 (m.title && m.title.toLowerCase().includes(q)) || 
+             return this.mediaList.filter(m =>
+                 (m.title && m.title.toLowerCase().includes(q)) ||
                  (m.alt && m.alt.toLowerCase().includes(q))
              );
          },
 
          selectMediaItem(img) {
-             this.selectedMedia = { ...img }; 
+             this.selectedMedia = { ...img };
              this.mediaForm = {
                  title: img.title || '',
                  alt: img.alt || '',
@@ -108,17 +108,17 @@ export const editorPage = `
                  alert('Pilih gambar dulu!');
                  return;
              }
-             
+
              if (this.mediaSelectorTarget === 'custom-editor') {
                  // Trigger event untuk insert media ke dalam editor
                  window.dispatchEvent(new CustomEvent('insert-media', { detail: { url: this.selectedMedia.url } }));
                  this.mediaSelectorTarget = null;
              } else {
                  this.form.featured_image = this.selectedMedia.url;
-                 this.form.featured_image_alt = this.mediaForm.alt; 
+                 this.form.featured_image_alt = this.mediaForm.alt;
                  this.form.featured_image_caption = this.mediaForm.caption;
              }
-             
+
              this.mediaModalOpen = false;
          },
 
@@ -130,9 +130,9 @@ export const editorPage = `
              this.selectedMedia.description = this.mediaForm.description;
 
              try {
-                 const token = localStorage.getItem('labmu_token');
-                 await fetch('/api/media/meta', { 
-                     method: 'POST', 
+                 const token = '';
+                 await fetch('/api/media/meta', {
+                     method: 'POST',
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ key: this.selectedMedia.key, ...this.mediaForm })
                  });
@@ -145,12 +145,12 @@ export const editorPage = `
              if (!file) return;
              this.uploadFile = file;
              this.uploadPreview = URL.createObjectURL(file);
-             this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' '); 
+             this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' ');
          },
 
          async uploadMediaAction() {
              if (!this.uploadFile) return alert('Pilih file dulu');
-             
+
              const fd = new FormData();
              fd.append('file', this.uploadFile);
              fd.append('title', this.mediaForm.title);
@@ -159,7 +159,7 @@ export const editorPage = `
              fd.append('description', this.mediaForm.description);
 
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/media', {
                      method: 'POST',
                      headers: { 'Authorization': 'Bearer ' + token },
@@ -219,7 +219,7 @@ export const editorPage = `
              if(this.form.date) payload.created_at = new Date(this.form.date).toISOString();
 
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const method = this.editingId ? 'PUT' : 'POST';
                  const url = this.editingId ? ('/api/posts/' + this.editingId) : '/api/posts';
                  const res = await fetch(url, {
@@ -227,7 +227,7 @@ export const editorPage = `
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify(payload)
                  });
-                 if(res.ok) { alert('Tersimpan!'); window.location.reload(); } 
+                 if(res.ok) { alert('Tersimpan!'); window.location.reload(); }
                  else { const r = await res.json(); alert('Gagal: ' + r.error); }
              } catch(err) { alert('Error koneksi.'); }
          },
@@ -251,8 +251,8 @@ export const editorPage = `
 
     <div style="display:grid; grid-template-columns: 1fr 320px; gap:25px;">
         <div style="min-width: 0;">
-            <input x-model="form.title" class="input" placeholder="Judul Tulisan..." 
-                   style="font-size: 24px; font-weight: 600; padding: 15px; margin-bottom: 20px;" 
+            <input x-model="form.title" class="input" placeholder="Judul Tulisan..."
+                   style="font-size: 24px; font-weight: 600; padding: 15px; margin-bottom: 20px;"
                    @input="makeSlug()">
             <div style="margin-bottom:20px;">
                 ${customEditorTemplate}
@@ -263,12 +263,12 @@ export const editorPage = `
                 <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #f3f4f6; padding-bottom: 10px;">
                     <i class="fas fa-search" style="color: #6b7280; margin-right: 8px;"></i> SEO & Metadata
                 </h3>
-                
+
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #4b5563; margin-bottom: 6px;">Excerpt (Ringkasan)</label>
                     <textarea x-model="form.excerpt" class="input" style="width: 100%; height: 80px; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px;" placeholder="Tulis ringkasan singkat artikel..."></textarea>
                 </div>
-                
+
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #4b5563; margin-bottom: 6px;">Meta Title</label>
                     <input x-model="form.meta_title" class="input" style="width: 100%; padding: 10px; border-radius: 6px; border: 1px solid #d1d5db; font-size: 14px;" placeholder="Maksimal 60 karakter">
@@ -281,19 +281,19 @@ export const editorPage = `
                     <div style="font-size: 11px; color: #6b7280; margin-top: 4px;">Kosongkan jika ingin menggunakan Excerpt.</div>
                 </div>
             </div>
-            
+
             <div class="card" style="padding:0; overflow:hidden; border:1px solid #e5e7eb; border-radius:8px; background:white;">
                 <div style="padding:12px 15px; border-bottom:1px solid #f3f4f6; display:flex; justify-content:space-between; align-items:center;">
                     <h3 style="margin:0; font-size:13px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">Featured Image</h3>
                     <i class="fas fa-star" style="color:#fbbf24; font-size:12px;"></i>
                 </div>
 
-                <div x-show="!form.featured_image" 
+                <div x-show="!form.featured_image"
                      @click="openMediaSelector()"
                      style="padding:40px 20px; text-align:center; cursor:pointer; background:#f9fafb; transition:all 0.2s;"
-                     onmouseover="this.style.background='#f3f4f6'" 
+                     onmouseover="this.style.background='#f3f4f6'"
                      onmouseout="this.style.background='#f9fafb'">
-                    
+
                     <div style="width:60px; height:60px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px auto;">
                         <i class="fas fa-image fa-2x" style="color:#9ca3af;"></i>
                     </div>
@@ -303,7 +303,7 @@ export const editorPage = `
 
                 <div x-show="form.featured_image" style="position:relative;">
                     <div style="width:100%; aspect-ratio:16/9; background:#eee; position:relative; overflow:hidden;">
-                        <img :src="form.featured_image" 
+                        <img :src="form.featured_image"
                              style="width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s;"
                              onmouseover="this.style.transform='scale(1.05)'"
                              onmouseout="this.style.transform='scale(1)'">
@@ -360,27 +360,43 @@ export const editorPage = `
                     </template>
                 </div>
             </div>
+
+            <!-- COMMENTS TOGGLE -->
+            <div class="card" style="padding:15px;" x-show="form.type === 'post'">
+                <h3 style="margin:0 0 10px 0; font-size:14px;">Komentar</h3>
+                <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb;">
+                    <span style="font-size:13px; color:#374151; font-weight:500;">Aktifkan Komentar</span>
+                    <label class="switch" style="position:relative; display:inline-block; width:40px; height:22px;">
+                        <input type="checkbox" x-model="form.allow_comments" :checked="form.allow_comments == 1" @change="form.allow_comments = $event.target.checked ? 1 : 0" style="opacity:0; width:0; height:0;">
+                        <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;"
+                              :style="form.allow_comments == 1 ? 'background-color:#10b981;' : ''">
+                            <span style="position:absolute; content:''; height:14px; width:14px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%;"
+                                  :style="form.allow_comments == 1 ? 'transform:translateX(18px);' : ''"></span>
+                        </span>
+                    </label>
+                </div>
+            </div>
         </div>
     </div>
 
-    <div x-show="mediaModalOpen" 
-         style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px;" 
+    <div x-show="mediaModalOpen"
+         style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px;"
          x-transition.opacity
          x-cloak>
-        
+
         <div style="background:white; width:100%; max-width:1100px; height:85vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            
+
             <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fff;">
                 <div style="display:flex; align-items:center; gap:24px;">
                     <h3 style="margin:0; font-size:18px; font-weight:700; color:#1f2937;">Media Manager</h3>
-                    
+
                     <div style="display:flex; gap: 8px; background:#f3f4f6; padding:6px; border-radius:12px; width: fit-content;">
-                        <button type="button" @click="mediaTab='library'" 
+                        <button type="button" @click="mediaTab='library'"
                                 :style="mediaTab==='library' ? 'background:white; color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,0.1);' : 'color:#6b7280; background:transparent;'"
                                 style="border:none; outline:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">
                             Library
                         </button>
-                        <button type="button" @click="mediaTab='upload'" 
+                        <button type="button" @click="mediaTab='upload'"
                                 :style="mediaTab==='upload' ? 'background:white; color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,0.1);' : 'color:#6b7280; background:transparent;'"
                                 style="border:none; outline:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">
                             Upload Baru
@@ -390,7 +406,7 @@ export const editorPage = `
 
                 <div style="display:flex; align-items:center; gap:16px;">
                     <div x-show="mediaTab === 'library'" style="position:relative;">
-                        <input x-model="searchQuery" placeholder="Cari media..." 
+                        <input x-model="searchQuery" placeholder="Cari media..."
                                style="padding:8px 12px 8px 36px; border-radius:8px; border:1px solid #e5e7eb; font-size:13px; width:240px; outline:none; transition:border 0.2s;"
                                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e5e7eb'">
                         <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:12px;"></i>
@@ -404,21 +420,21 @@ export const editorPage = `
             </div>
 
             <div style="flex:1; display:flex; overflow:hidden;">
-                
+
                 <div style="flex:1; background:#f9fafb; overflow-y:auto; padding:24px; position:relative;">
-                    
+
                     <div x-show="mediaTab === 'library'">
                         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px;">
                             <template x-for="img in filteredMediaList" :key="img.key">
-                                <div @click="selectMediaItem(img)" 
+                                <div @click="selectMediaItem(img)"
                                      style="cursor:pointer; position:relative; aspect-ratio:1; background:white; border-radius:8px; overflow:hidden; transition:all 0.2s;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'box-shadow: 0 0 0 4px rgba(37,99,235,0.3); border:2px solid #2563eb;' : 'border:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,0.05);'"
-                                     onmouseover="this.style.transform='translateY(-2px)'" 
+                                     onmouseover="this.style.transform='translateY(-2px)'"
                                      onmouseout="this.style.transform='translateY(0)'">
-                                    
+
                                     <img :src="img.url" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block; background:#f3f4f6;">
-                                    
-                                    <div x-show="selectedMedia && selectedMedia.url === img.url" 
+
+                                    <div x-show="selectedMedia && selectedMedia.url === img.url"
                                          x-transition.scale
                                          style="position:absolute; top:8px; right:8px; background:#2563eb; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
                                         <i class="fas fa-check"></i>
@@ -440,7 +456,7 @@ export const editorPage = `
                         <div style="background:white; padding:40px; border-radius:16px; border:1px solid #e5e7eb; width:100%; max-width:400px; text-align:center; box-shadow:0 10px 15px -3px rgba(0,0,0,0.05);">
                              <div x-show="!uploadPreview">
                                 <label style="display:block; padding:40px 20px; border:2px dashed #d1d5db; border-radius:12px; cursor:pointer; transition:all 0.2s; background:#f9fafb;"
-                                       onmouseover="this.style.borderColor='#2563eb'; this.style.background='#eff6ff'" 
+                                       onmouseover="this.style.borderColor='#2563eb'; this.style.background='#eff6ff'"
                                        onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'">
                                     <div style="width:60px; height:60px; background:white; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
                                         <i class="fas fa-cloud-upload-alt fa-2x" style="color:#2563eb;"></i>
@@ -460,7 +476,7 @@ export const editorPage = `
                 </div>
 
                 <div style="width:340px; background:white; border-left:1px solid #e5e7eb; display:flex; flex-direction:column; z-index:10;">
-                    
+
                     <div x-show="mediaTab === 'library' && !selectedMedia" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; color:#9ca3af;">
                         <div style="width:100px; height:100px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
                             <i class="fas fa-photo-video fa-3x" style="color:#d1d5db;"></i>
@@ -501,9 +517,9 @@ export const editorPage = `
                                 </div>
                             </div>
                             <div style="padding:16px 20px; border-top:1px solid #e5e7eb; background:white;">
-                                <button type="button" @click="confirmMediaSelection()" 
+                                <button type="button" @click="confirmMediaSelection()"
                                         style="width:100%; background:#2563eb; color:white; border:none; padding:12px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; box-shadow:0 4px 6px -1px rgba(37,99,235,0.3); display:flex; justify-content:center; align-items:center; gap:8px; transition:all 0.2s;"
-                                        onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                                        onmouseover="this.style.backgroundColor='#1d4ed8'"
                                         onmouseout="this.style.backgroundColor='#2563eb'">
                                     <span>Sisipkan Gambar</span>
                                     <i class="fas fa-arrow-right" style="font-size:12px;"></i>

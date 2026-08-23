@@ -10,19 +10,19 @@ export const mediaLogic = {
 
     async loadMedia() {
         try {
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             if (!token) return;
-            let res = await fetch('/api/media?t=' + Date.now(), { 
-                headers: { 'Authorization': 'Bearer ' + token } 
+            let res = await fetch('/api/media?t=' + Date.now(), {
+                headers: { 'Authorization': 'Bearer ' + token }
             });
             let json = await res.json();
             let rawData = Array.isArray(json) ? json : (json.data || json.results || []);
             this.mediaList = rawData.filter(m => !m.key.endsWith('/'));
             this.selectedItems = []; // Reset selection saat load
             this.activeMediaItem = null;
-        } catch (e) { 
+        } catch (e) {
             console.error("Gagal load media:", e);
-            this.mediaList = []; 
+            this.mediaList = [];
         }
     },
 
@@ -34,7 +34,7 @@ export const mediaLogic = {
         } else {
             this.selectedItems.push(item); // Tambah jika belum ada
         }
-        
+
         // Update Sidebar Logic:
         // Jika cuma 1 yg dipilih, tampilkan detailnya. Jika 0 atau >1, sembunyikan detail.
         if (this.selectedItems.length === 1) {
@@ -72,8 +72,8 @@ export const mediaLogic = {
         if (!confirm(`Yakin ingin menghapus ${this.selectedItems.length} file terpilih?`)) return;
 
         this.isDeleting = true;
-        const token = localStorage.getItem('labmu_token');
-        
+        const token = '';
+
         // Loop hapus satu per satu (karena biasanya API delete per ID)
         // Bisa dioptimalkan jika API support bulk delete
         for (let item of this.selectedItems) {
@@ -94,11 +94,11 @@ export const mediaLogic = {
     async uploadMedia(e) { /* Kode sama seperti sebelumnya */ },
 
     get filteredMedia() {
-        return (this.mediaList||[]).filter(m => 
+        return (this.mediaList||[]).filter(m =>
             (m.key||'').toLowerCase().includes((this.mediaSearchQuery||'').toLowerCase())
         );
     },
-    
+
     // Helper untuk cek apakah item terpilih
     isSelected(item) {
         return this.selectedItems.some(i => i.id === item.id);

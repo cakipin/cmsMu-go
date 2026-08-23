@@ -2,12 +2,12 @@ export const settingsLogic = `
     // ===============================================
     // 1. STATE & DATA
     // ===============================================
-    settings: { 
-        site_title: '', 
-        site_tagline: '', 
+    settings: {
+        site_title: '',
+        site_tagline: '',
         admin_email: '',
-        site_logo: '',       
-        site_favicon: ''    
+        site_logo: '',
+        site_favicon: ''
     },
     isLoading: false,
     isSaving: false,
@@ -29,11 +29,11 @@ export const settingsLogic = `
     async loadSettings() {
        this.isLoading = true;
        try {
-          const token = localStorage.getItem('labmu_token');
+          const token = '';
           let res = await fetch('/api/settings', {
               headers: { 'Authorization': 'Bearer ' + token }
           });
-          
+
           if(res.ok) {
               let json = await res.json();
               // Merge data agar tidak error jika field null
@@ -47,13 +47,13 @@ export const settingsLogic = `
     async saveSettings() {
        this.isSaving = true;
        try {
-          const token = localStorage.getItem('labmu_token');
+          const token = '';
           let res = await fetch('/api/settings', {
               method: 'POST',
               headers: { 'Content-Type':'application/json', 'Authorization': 'Bearer ' + token },
               body: JSON.stringify(this.settings)
           });
-          
+
           if(res.ok) {
               alert('✅ Pengaturan Tersimpan!');
               this.updateDom();
@@ -98,7 +98,7 @@ export const settingsLogic = `
     async loadMediaLibrary() {
          this.mediaList = [];
          try {
-             const token = localStorage.getItem('labmu_token');
+             const token = '';
              const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
              const json = await res.json();
              let raw = Array.isArray(json) ? json : (json.results || []);
@@ -117,21 +117,21 @@ export const settingsLogic = `
     },
 
     selectMediaItem(img) {
-         this.selectedMedia = { ...img }; 
+         this.selectedMedia = { ...img };
          // Optional: Isi form meta jika perlu
          this.mediaForm = { title: img.title||'', alt: img.alt||'', caption: img.caption||'', description: img.description||'' };
     },
 
     confirmMediaSelection() {
          if (!this.selectedMedia || !this.selectedMedia.url) return alert('Pilih gambar dulu!');
-         
+
          // Masukkan URL ke field yang sesuai target
          if (this.mediaTarget === 'logo') {
              this.settings.site_logo = this.selectedMedia.url;
          } else if (this.mediaTarget === 'favicon') {
              this.settings.site_favicon = this.selectedMedia.url;
          }
-         
+
          this.mediaModalOpen = false;
     },
 
@@ -141,7 +141,7 @@ export const settingsLogic = `
          if (!file) return;
          this.uploadFile = file;
          this.uploadPreview = URL.createObjectURL(file);
-         this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' '); 
+         this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' ');
     },
 
     async uploadMediaAction() {
@@ -149,38 +149,38 @@ export const settingsLogic = `
          const fd = new FormData();
          fd.append('file', this.uploadFile);
          fd.append('title', this.mediaForm.title);
-         
+
          try {
-             const token = localStorage.getItem('labmu_token');
-             const res = await fetch('/api/media', { 
-                method: 'POST', 
-                headers: { 'Authorization': 'Bearer ' + token }, 
-                body: fd 
+             const token = '';
+             const res = await fetch('/api/media', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token },
+                body: fd
              });
-             
+
              if (res.ok) {
                  const result = await res.json();
                  await this.loadMediaLibrary();
                  this.mediaTab = 'library';
-                 
+
                  // Auto select yang baru diupload
                  const newUrl = result.url || result.file_url;
                  const newImg = this.mediaList.find(m => m.url === newUrl);
                  if (newImg) this.selectMediaItem(newImg);
-                 
-                 this.uploadFile = null; 
+
+                 this.uploadFile = null;
                  this.uploadPreview = null;
              } else { alert('Gagal upload.'); }
          } catch(e) { alert('Error upload'); }
     },
-    
+
     // Update Meta (Opsional, biar sama kayak Pages)
     async updateMediaDetails() {
          if(!this.selectedMedia) return;
          try {
-             const token = localStorage.getItem('labmu_token');
-             await fetch('/api/media/meta', { 
-                 method: 'POST', 
+             const token = '';
+             await fetch('/api/media/meta', {
+                 method: 'POST',
                  headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                  body: JSON.stringify({ key: this.selectedMedia.key, ...this.mediaForm })
              });

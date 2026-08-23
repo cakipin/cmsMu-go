@@ -1,60 +1,53 @@
 export const authLogic = `
     // --- STATE AUTH ---
-    token: localStorage.getItem('labmu_token') || '',
+    token: false,
     userRole: 'editor',
+    userName: '',
+    userAvatar: '',
+    userEmail: '',
     loginForm: { username: '', password: '' },
     isLoggingIn: false,
 
     // --- SYSTEM INIT ---
-    init() { 
-        if(this.token) { 
-            this.decodeRole(); 
-            this.loadAllData(); 
-        } 
+    async init() {
+        const res = await fetch('/api/users/session');
+        if (!res.ok) { this.token = false; return; }
+        const data = await res.json();
+        this.token = true;
+        this.userRole = data.user.role;
+        this.userName = data.user.name || data.user.username || '';
+        this.userAvatar = data.user.avatar || '';
+        this.userEmail = data.user.email || '';
+        await this.loadAllData();
     },
-    
-    decodeRole() { 
-        try { 
-            if (!this.token) return; 
-            if (this.token.startsWith('labmu_v1.')) { 
-                const base64 = this.token.split('.')[1]; 
-                const json = JSON.parse(window.atob(base64)); 
-                this.userRole = json.r || 'editor'; 
-            } else { 
-                // Fallback untuk token JWT standar kalau nanti pakai
-                try { 
-                    const base64 = this.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); 
-                    this.userRole = JSON.parse(window.atob(base64)).role; 
-                } catch(e) { this.userRole = 'editor'; } 
-            } 
-        } catch (e) { this.userRole = 'editor'; } 
+
+    decodeRole() {
+        try {
+            return;
+        } catch (e) { this.userRole = 'editor'; }
     },
 
     // --- ACTIONS ---
-    async doLogin() { 
-        if(!this.loginForm.username || !this.loginForm.password) return alert('Isi data!'); 
-        this.isLoggingIn = true; 
-        try { 
-            let res = await fetch('/api/users/login', { 
-                method: 'POST', 
-                headers: {'Content-Type': 'application/json'}, 
-                body: JSON.stringify(this.loginForm) 
-            }); 
-            let json = await res.json(); 
-            if(res.ok && json.token) { 
-                this.token = json.token; 
-                localStorage.setItem('labmu_token', this.token); 
-                this.decodeRole(); 
-                this.init(); 
-                window.location.reload(); 
-            } else { 
-                alert('Gagal: ' + (json.error)); 
-            } 
-        } catch(e) { alert('Error Network'); } finally { this.isLoggingIn = false; } 
+    async doLogin() {
+        if(!this.loginForm.username || !this.loginForm.password) return alert('Isi data!');
+        this.isLoggingIn = true;
+        try {
+            let res = await fetch('/api/users/login', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(this.loginForm)
+            });
+            let json = await res.json();
+            if(res.ok && json.success) {
+                window.location.href = '/admin';
+            } else {
+                alert('Gagal: ' + (json.error));
+            }
+        } catch(e) { alert('Error Network'); } finally { this.isLoggingIn = false; }
     },
-    
-    logout(){ 
-        localStorage.removeItem('labmu_token'); 
-        window.location.reload(); 
+
+    async logout(){
+        await fetch('/api/users/logout', { method: 'POST' });
+        window.location.href = '/admin/login';
     }
 `;

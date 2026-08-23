@@ -3,12 +3,12 @@ export const settingsPage = `
      x-data="{
         isLoading: false,
         isSaving: false,
-        
+
         // --- STATE SESUAI DATABASE D1 ---
-        settings: { 
-            site_title: '', 
+        settings: {
+            site_title: '',
             site_desc: '',
-            admin_email: '', 
+            admin_email: '',
             site_logo: '',
             site_favicon: '',
             site_homepage_slug: 'home',
@@ -28,7 +28,7 @@ export const settingsPage = `
         uploadPreview: null,
         selectedMedia: null,
         mediaSearchQuery: '',
-        mediaTarget: '', 
+        mediaTarget: '',
 
         // --- INIT ---
         async init() {
@@ -39,11 +39,11 @@ export const settingsPage = `
         // --- CORE LOGIC (Diadaptasi Lokal) ---
         async loadSettings() {
             this.isLoading = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             try {
                 // Endpoint API settings
-                const res = await fetch('/api/settings', { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const res = await fetch('/api/settings', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if(res.ok) {
                     const json = await res.json();
@@ -51,10 +51,10 @@ export const settingsPage = `
                     const data = json.data || json;
                     this.settings = { ...this.settings, ...data };
                 }
-                
+
                 // Fetch pages for homepage dropdown
-                const pagesRes = await fetch('/api/pages', { 
-                    headers: { 'Authorization': 'Bearer ' + token } 
+                const pagesRes = await fetch('/api/pages', {
+                    headers: { 'Authorization': 'Bearer ' + token }
                 });
                 if (pagesRes.ok) {
                     const pagesJson = await pagesRes.json();
@@ -66,14 +66,14 @@ export const settingsPage = `
 
         async saveSettings() {
             this.isSaving = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = '';
             try {
-                const res = await fetch('/api/settings', { 
-                    method: 'POST', 
+                const res = await fetch('/api/settings', {
+                    method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                     body: JSON.stringify(this.settings)
                 });
-                
+
                 if(res.ok) {
                     alert('✅ Pengaturan Berhasil Disimpan!');
                     if(this.settings.site_title) document.title = this.settings.site_title + ' - Admin';
@@ -86,7 +86,7 @@ export const settingsPage = `
 
         // --- MEDIA ACTIONS ---
         async openMediaSelector(target) {
-            this.mediaTarget = target; 
+            this.mediaTarget = target;
             this.mediaModalOpen = true;
             this.mediaTab = 'library';
             this.selectedMedia = null;
@@ -97,7 +97,7 @@ export const settingsPage = `
         async loadMediaLibrary() {
              this.mediaList = [];
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  // Endpoint media (sesuaikan jika berbeda)
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) {
@@ -117,12 +117,12 @@ export const settingsPage = `
         },
 
         selectMediaItem(img) {
-             this.selectedMedia = img; 
+             this.selectedMedia = img;
         },
 
         confirmMediaSelection() {
              if (!this.selectedMedia || !this.selectedMedia.url) return alert('Pilih gambar dulu!');
-             
+
              if (this.mediaTarget === 'logo') {
                  this.settings.site_logo = this.selectedMedia.url;
              } else if (this.mediaTarget === 'favicon') {
@@ -142,15 +142,15 @@ export const settingsPage = `
              if (!this.uploadFile) return alert('Pilih file dulu');
              const fd = new FormData();
              fd.append('file', this.uploadFile);
-             
+
              try {
-                 const token = localStorage.getItem('labmu_token');
-                 const res = await fetch('/api/media', { 
-                    method: 'POST', 
-                    headers: { 'Authorization': 'Bearer ' + token }, 
-                    body: fd 
+                 const token = '';
+                 const res = await fetch('/api/media', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + token },
+                    body: fd
                  });
-                 
+
                  if (res.ok) {
                      const result = await res.json();
                      await this.loadMediaLibrary();
@@ -158,10 +158,10 @@ export const settingsPage = `
                      const newUrl = result.url || result.file_url;
                      const newImg = this.mediaList.find(m => m.url === newUrl);
                      if (newImg) this.selectedMedia = newImg;
-                     this.uploadFile = null; 
+                     this.uploadFile = null;
                      this.uploadPreview = null;
-                 } else { 
-                    alert('Gagal upload.'); 
+                 } else {
+                    alert('Gagal upload.');
                  }
              } catch(e) { alert('Error upload: ' + e.message); }
         }
@@ -169,7 +169,7 @@ export const settingsPage = `
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2 style="margin:0; font-size:24px; color:#1f2937;">General Settings</h2>
-        <button @click="saveSettings()" :disabled="isSaving" 
+        <button @click="saveSettings()" :disabled="isSaving"
                 style="background:#2563eb; color:white; border:none; padding:10px 20px; border-radius:6px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;">
             <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
             <span x-text="isSaving ? 'Saving...' : 'Save Changes'"></span>
@@ -177,10 +177,10 @@ export const settingsPage = `
     </div>
 
     <div style="display:grid; grid-template-columns: 2fr 1fr; gap:25px;">
-        
+
         <div style="background:white; padding:25px; border:1px solid #e5e7eb; border-radius:8px;">
             <h4 style="margin-top:0; margin-bottom:20px; font-size:16px; color:#374151;">Site Identity</h4>
-            
+
             <div style="margin-bottom:15px;">
                 <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Site Title</label>
                 <input type="text" x-model="settings.site_title" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:6px; box-sizing:border-box;">
@@ -209,7 +209,7 @@ export const settingsPage = `
         </div>
 
         <div style="display:flex; flex-direction:column; gap:20px;">
-            
+
             <div style="background:white; padding:20px; border:1px solid #e5e7eb; border-radius:8px;">
                 <h4 style="margin-top:0; font-size:14px; color:#374151;">Site Logo</h4>
                 <div style="background:#f9fafb; padding:15px; text-align:center; margin:10px 0; border:1px dashed #d1d5db; border-radius:6px; min-height:80px; display:flex; align-items:center; justify-content:center;">
@@ -242,7 +242,7 @@ export const settingsPage = `
 
     <div x-show="mediaModalOpen" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); z-index:99999; display:flex; justify-content:center; align-items:center; padding:20px;" x-cloak>
         <div style="background:white; width:100%; max-width:900px; height:80vh; border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25);">
-            
+
             <div style="padding:15px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
                 <h3 style="margin:0; font-size:16px;">Media Manager</h3>
                 <div style="display:flex; gap: 5px; background: #f3f4f6; padding: 3px; border-radius: 6px;">
@@ -256,8 +256,8 @@ export const settingsPage = `
                 <div style="flex:1; overflow-y:auto; padding:20px; background:#f9fafb;">
                     <div x-show="mediaTab === 'library'" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap:10px;">
                         <template x-for="img in filteredMediaList" :key="img.url">
-                            <div @click="selectMediaItem(img)" 
-                                 style="cursor:pointer; aspect-ratio:1; background:white; border-radius:6px; overflow:hidden; border:2px solid transparent; position:relative;" 
+                            <div @click="selectMediaItem(img)"
+                                 style="cursor:pointer; aspect-ratio:1; background:white; border-radius:6px; overflow:hidden; border:2px solid transparent; position:relative;"
                                  :style="selectedMedia?.url === img.url ? 'border-color:#2563eb; ring:2px;' : 'border-color:#e5e7eb'">
                                 <img :src="img.url" style="width:100%; height:100%; object-fit:cover;">
                                 <div x-show="selectedMedia?.url === img.url" style="position:absolute; top:5px; right:5px; background:#2563eb; color:white; border-radius:50%; width:20px; height:20px; display:flex; align-items:center; justify-content:center; font-size:10px;"><i class="fas fa-check"></i></div>
@@ -274,7 +274,7 @@ export const settingsPage = `
                         </div>
                     </div>
                 </div>
-                
+
                 <div style="width:280px; background:white; border-left:1px solid #e5e7eb; padding:20px; display:flex; flex-direction:column;" x-show="mediaTab === 'library' && selectedMedia">
                     <h4 style="margin-top:0; font-size:14px; color:#374151;">Detail</h4>
                     <img :src="selectedMedia?.url" style="max-width:100%; max-height:150px; object-fit:contain; background:#f9fafb; margin-bottom:15px; border:1px solid #eee;">

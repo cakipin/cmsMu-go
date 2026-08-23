@@ -1,5 +1,4 @@
 ---
-import { Font } from "astro:assets";
 import { ClientRouter } from "astro:transitions";
 import { getRelativeLocaleUrl } from "astro:i18n";
 import { resolveDefaultOgImagePath } from "@/utils/resolveDefaultOgImagePath";
@@ -23,14 +22,12 @@ const {
   canonicalURL = new URL(Astro.url.pathname, Astro.site).href,
 } = Astro.props;
 
-import { env } from "cloudflare:workers";
-
 let cmsThemeBg = "";
 let cmsThemeText = "";
 let cmsThemePrimary = "";
 
 try {
-  const db = env?.DB;
+  const db = (Astro.locals as any)?.runtime?.env?.DB;
   if (db) {
     const { results } = await db.prepare("SELECT key, value FROM settings WHERE key LIKE 'theme_%'").all();
     if (results) {
@@ -65,12 +62,6 @@ const rssHref = getRelativeLocaleUrl(
     <link rel="icon" href={getAssetPath("favicon.ico")} />
     <link rel="canonical" href={canonicalURL} />
     <meta name="generator" content={Astro.generator} />
-
-    <!-- Font -->
-    <Font
-      cssVariable="--font-google-sans-code"
-      preload={[{ subset: "latin", weight: 400, style: "normal" }]}
-    />
 
     <!-- Primary meta -->
     <title>{title}</title>
@@ -133,7 +124,7 @@ const rssHref = getRelativeLocaleUrl(
     -->
     <script is:inline>
       (function () {
-        const stored = localStorage.getItem("theme");
+        const stored = null;
         const prefersDark = window.matchMedia(
           "(prefers-color-scheme: dark)"
         ).matches;

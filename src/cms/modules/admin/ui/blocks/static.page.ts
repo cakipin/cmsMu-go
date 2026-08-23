@@ -1,7 +1,7 @@
 import { customEditorTemplate } from './custom-editor.ts';
 
 export const staticPage = `
-<div x-show="view === 'pages' || view === 'add-page'" class="animate-fade" 
+<div x-show="view === 'pages' || view === 'add-page'" class="animate-fade"
      @open-editor-media.window="openMediaForEditor()"
      style="height: calc(100vh - 100px); background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden; display: flex; flex-direction:column;"
      x-data="{
@@ -10,7 +10,7 @@ export const staticPage = `
          pagesList: [],
          selectedItems: [],
          isLoading: false,
-         
+
          // --- EDITOR STATE ---
          form: { title: '', slug: '', body: '', status: 'publish', featured_image: '', layout: 'standard' },
          isSaving: false,
@@ -31,7 +31,7 @@ export const staticPage = `
          // ============================================================
          async loadPages() {
              this.isLoading = true;
-             const token = localStorage.getItem('labmu_token');
+             const token = '';
              try {
                  const res = await fetch('/api/pages', { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) {
@@ -46,7 +46,7 @@ export const staticPage = `
             if (!val) return '-';
             if (!isNaN(val) && !isNaN(parseFloat(val))) {
                  const num = Number(val);
-                 const dateObj = new Date(num < 10000000000 ? num * 1000 : num); 
+                 const dateObj = new Date(num < 10000000000 ? num * 1000 : num);
                  return dateObj.toLocaleDateString('id-ID');
             }
             return new Date(val).toLocaleDateString('id-ID');
@@ -58,7 +58,7 @@ export const staticPage = `
          },
 
          editPage(p) {
-             window.editingPageId = p.id; 
+             window.editingPageId = p.id;
              this.view = 'add-page';
          },
 
@@ -70,10 +70,10 @@ export const staticPage = `
          async deletePages() {
              if (this.selectedItems.length === 0) return;
              if (!confirm('Hapus ' + this.selectedItems.length + ' item terpilih?')) return;
-             const token = localStorage.getItem('labmu_token');
+             const token = '';
              for (const id of this.selectedItems) {
-                 await fetch('/api/pages', { 
-                     method: 'DELETE', 
+                 await fetch('/api/pages', {
+                     method: 'DELETE',
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ id: id })
                  });
@@ -84,10 +84,10 @@ export const staticPage = `
 
          async deleteSinglePage(p) {
              if (!confirm('Hapus halaman ' + p.title + '?')) return;
-             const token = localStorage.getItem('labmu_token');
+             const token = '';
              try {
-                 const res = await fetch('/api/pages', { 
-                     method: 'DELETE', 
+                 const res = await fetch('/api/pages', {
+                     method: 'DELETE',
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ id: p.id })
                  });
@@ -113,7 +113,7 @@ export const staticPage = `
 
          async initPageEditor() {
              this.form = { title: '', slug: '', body: '', status: 'publish', featured_image: '', layout: 'standard' };
-             
+
              if(window.editingPageId) {
                  await this.loadSinglePage(window.editingPageId);
              }
@@ -122,7 +122,7 @@ export const staticPage = `
 
          async loadSinglePage(id) {
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/pages/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) this.form = await res.json();
              } catch(e) { alert('Gagal load data'); }
@@ -133,7 +133,7 @@ export const staticPage = `
              // form.body is automatically updated by the custom editor
              if(!this.form.slug) this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-             const token = localStorage.getItem('labmu_token');
+             const token = '';
              const isEdit = !!window.editingPageId;
              const url = isEdit ? '/api/pages/' + window.editingPageId : '/api/pages';
              const method = isEdit ? 'PUT' : 'POST';
@@ -144,10 +144,10 @@ export const staticPage = `
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify(this.form)
                  });
-                 
+
                  if(res.ok) {
                      alert('Halaman berhasil disimpan!');
-                     this.view = 'pages'; 
+                     this.view = 'pages';
                  } else {
                      alert('Gagal simpan.');
                  }
@@ -163,14 +163,14 @@ export const staticPage = `
              this.mediaTab = 'library';
              this.selectedMedia = null;
              this.mediaSearchQuery = '';
-             this.mediaForm = { title:'', alt:'', caption:'', description:'' }; 
+             this.mediaForm = { title:'', alt:'', caption:'', description:'' };
              await this.loadMediaLibrary();
          },
 
          async loadMediaLibrary() {
              this.mediaList = [];
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  const json = await res.json();
                  let raw = Array.isArray(json) ? json : (json.results || []);
@@ -189,13 +189,13 @@ export const staticPage = `
          },
 
          selectMediaItem(img) {
-             this.selectedMedia = { ...img }; 
+             this.selectedMedia = { ...img };
              this.mediaForm = { title: img.title||'', alt: img.alt||'', caption: img.caption||'', description: img.description||'' };
          },
 
          confirmMediaSelection() {
              if (!this.selectedMedia || !this.selectedMedia.url) return alert('Pilih gambar dulu!');
-             
+
              if (this.mediaSelectorTarget === 'custom-editor') {
                  // Trigger event untuk insert media ke dalam editor
                  window.dispatchEvent(new CustomEvent('insert-media', { detail: { url: this.selectedMedia.url } }));
@@ -211,7 +211,7 @@ export const staticPage = `
              if (!file) return;
              this.uploadFile = file;
              this.uploadPreview = URL.createObjectURL(file);
-             this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' '); 
+             this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' ');
          },
 
          async uploadMediaAction() {
@@ -222,9 +222,9 @@ export const staticPage = `
              fd.append('alt', this.mediaForm.alt);
              fd.append('caption', this.mediaForm.caption);
              fd.append('description', this.mediaForm.description);
-             
+
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = '';
                  const res = await fetch('/api/media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
                  if (res.ok) {
                      const result = await res.json();
@@ -241,9 +241,9 @@ export const staticPage = `
          async updateMediaDetails() {
              if(!this.selectedMedia) return;
              try {
-                 const token = localStorage.getItem('labmu_token');
-                 await fetch('/api/media/meta', { 
-                     method: 'POST', 
+                 const token = '';
+                 await fetch('/api/media/meta', {
+                     method: 'POST',
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ key: this.selectedMedia.key, ...this.mediaForm })
                  });
@@ -278,6 +278,7 @@ export const staticPage = `
                         </th>
                         <th style="padding:12px 20px; text-align:left; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:1px solid #e5e7eb;">Judul</th>
                         <th style="padding:12px 20px; text-align:left; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:1px solid #e5e7eb;">Slug</th>
+                        <th style="padding:12px 20px; text-align:center; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:1px solid #e5e7eb;">Views</th>
                         <th style="padding:12px 20px; text-align:center; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:1px solid #e5e7eb;">Tanggal</th>
                         <th style="padding:12px 20px; text-align:right; font-size:11px; font-weight:700; color:#6b7280; text-transform:uppercase; border-bottom:1px solid #e5e7eb;">Aksi</th>
                     </tr>
@@ -290,6 +291,7 @@ export const staticPage = `
                             </td>
                             <td style="padding:15px 20px; font-weight:600;" x-text="p.title"></td>
                             <td style="padding:15px 20px;"><span style="background:#f3f4f6; padding:4px 8px; border-radius:4px; font-family:monospace;" x-text="'/'+p.slug"></span></td>
+                            <td style="padding:15px 20px; text-align:center; font-weight:bold; color:#64748b;" x-text="p.views || 0"></td>
                             <td style="padding:15px 20px; text-align:center;" x-text="formatDate(p.created_at)"></td>
                             <td style="padding:15px 20px; text-align:right;">
                                 <div style="display:flex; justify-content:flex-end; gap:8px;">
@@ -315,10 +317,10 @@ export const staticPage = `
 
         <div style="display:grid; grid-template-columns: 1fr 300px; gap:25px;">
             <div style="min-width:0;">
-                <input x-model="form.title" placeholder="Judul Halaman..." 
-                       style="width:100%; font-size: 24px; font-weight: 600; padding: 15px; margin-bottom: 20px; border:1px solid #ddd; border-radius:4px; box-sizing:border-box;" 
+                <input x-model="form.title" placeholder="Judul Halaman..."
+                       style="width:100%; font-size: 24px; font-weight: 600; padding: 15px; margin-bottom: 20px; border:1px solid #ddd; border-radius:4px; box-sizing:border-box;"
                        @input="if(!window.editingPageId) form.slug = form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-');">
-                
+
                 <div style="margin-bottom:20px;">
                     ${customEditorTemplate}
                 </div>
@@ -345,11 +347,11 @@ export const staticPage = `
                             <option value="landing">Landing Page (Penuh / Builder Custom)</option>
                         </select>
                     </div>
-                    <button @click="savePage()" :disabled="isSaving" 
+                    <button @click="savePage()" :disabled="isSaving"
                             style="width:100%; padding:10px; background:#2563eb; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer;"
                             x-text="isSaving ? 'Menyimpan...' : 'Simpan Halaman'">
                     </button>
-                    <button @click="if(window.editingPageId) { window.open('/theme-editor?slug=' + form.slug, '_blank'); } else { alert('Silakan Simpan Halaman terlebih dahulu sebelum membuka Visual Editor.'); }" 
+                    <button @click="window.location.href = '/theme-editor?slug=' + form.slug"
                             style="width:100%; margin-top:10px; padding:10px; background:#10b981; color:white; border:none; border-radius:6px; font-weight:600; cursor:pointer; display:flex; justify-content:center; align-items:center; gap:8px;">
                         <i class="fas fa-magic"></i> Visual Editor Halaman
                     </button>
@@ -361,12 +363,12 @@ export const staticPage = `
                         <i class="fas fa-star" style="color:#fbbf24; font-size:12px;"></i>
                     </div>
 
-                    <div x-show="!form.featured_image" 
+                    <div x-show="!form.featured_image"
                          @click="openMediaSelector()"
                          style="padding:40px 20px; text-align:center; cursor:pointer; background:#f9fafb; transition:all 0.2s;"
-                         onmouseover="this.style.background='#f3f4f6'" 
+                         onmouseover="this.style.background='#f3f4f6'"
                          onmouseout="this.style.background='#f9fafb'">
-                        
+
                         <div style="width:60px; height:60px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin:0 auto 15px auto;">
                             <i class="fas fa-image fa-2x" style="color:#9ca3af;"></i>
                         </div>
@@ -376,7 +378,7 @@ export const staticPage = `
 
                     <div x-show="form.featured_image" style="position:relative;">
                         <div style="width:100%; aspect-ratio:16/9; background:#eee; position:relative; overflow:hidden;">
-                            <img :src="form.featured_image" 
+                            <img :src="form.featured_image"
                                  style="width:100%; height:100%; object-fit:cover; display:block; transition:transform 0.5s;"
                                  onmouseover="this.style.transform='scale(1.05)'"
                                  onmouseout="this.style.transform='scale(1)'">
@@ -402,24 +404,24 @@ export const staticPage = `
         </div>
     </div>
 
-    <div x-show="mediaModalOpen" 
-         style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px;" 
+    <div x-show="mediaModalOpen"
+         style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px;"
          x-transition.opacity
          x-cloak>
-        
+
         <div style="background:white; width:100%; max-width:1100px; height:85vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-            
+
             <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fff;">
                 <div style="display:flex; align-items:center; gap:24px;">
                     <h3 style="margin:0; font-size:18px; font-weight:700; color:#1f2937;">Media Manager</h3>
-                    
+
                     <div style="display:flex; gap: 8px; background:#f3f4f6; padding:6px; border-radius:12px; width: fit-content;">
-                        <button type="button" @click="mediaTab='library'" 
+                        <button type="button" @click="mediaTab='library'"
                                 :style="mediaTab==='library' ? 'background:white; color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,0.1);' : 'color:#6b7280; background:transparent;'"
                                 style="border:none; outline:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">
                             Library
                         </button>
-                        <button type="button" @click="mediaTab='upload'" 
+                        <button type="button" @click="mediaTab='upload'"
                                 :style="mediaTab==='upload' ? 'background:white; color:#2563eb; box-shadow:0 1px 2px rgba(0,0,0,0.1);' : 'color:#6b7280; background:transparent;'"
                                 style="border:none; outline:none; padding:8px 20px; border-radius:8px; cursor:pointer; font-size:14px; font-weight:600; transition:all 0.2s;">
                             Upload Baru
@@ -429,7 +431,7 @@ export const staticPage = `
 
                 <div style="display:flex; align-items:center; gap:16px;">
                     <div x-show="mediaTab === 'library'" style="position:relative;">
-                        <input x-model="mediaSearchQuery" placeholder="Cari media..." 
+                        <input x-model="mediaSearchQuery" placeholder="Cari media..."
                                style="padding:8px 12px 8px 36px; border-radius:8px; border:1px solid #e5e7eb; font-size:13px; width:240px; outline:none; transition:border 0.2s;"
                                onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e5e7eb'">
                         <i class="fas fa-search" style="position:absolute; left:12px; top:50%; transform:translateY(-50%); color:#9ca3af; font-size:12px;"></i>
@@ -443,21 +445,21 @@ export const staticPage = `
             </div>
 
             <div style="flex:1; display:flex; overflow:hidden;">
-                
+
                 <div style="flex:1; background:#f9fafb; overflow-y:auto; padding:24px; position:relative;">
-                    
+
                     <div x-show="mediaTab === 'library'">
                         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px;">
                             <template x-for="img in filteredMediaList" :key="img.key">
-                                <div @click="selectMediaItem(img)" 
+                                <div @click="selectMediaItem(img)"
                                      style="cursor:pointer; position:relative; aspect-ratio:1; background:white; border-radius:8px; overflow:hidden; transition:all 0.2s;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'box-shadow: 0 0 0 4px rgba(37,99,235,0.3); border:2px solid #2563eb;' : 'border:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,0.05);'"
-                                     onmouseover="this.style.transform='translateY(-2px)'" 
+                                     onmouseover="this.style.transform='translateY(-2px)'"
                                      onmouseout="this.style.transform='translateY(0)'">
-                                    
+
                                     <img :src="img.url" loading="lazy" style="width:100%; height:100%; object-fit:cover; display:block; background:#f3f4f6;">
-                                    
-                                    <div x-show="selectedMedia && selectedMedia.url === img.url" 
+
+                                    <div x-show="selectedMedia && selectedMedia.url === img.url"
                                          x-transition.scale
                                          style="position:absolute; top:8px; right:8px; background:#2563eb; color:white; width:24px; height:24px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:12px; border:2px solid white; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
                                         <i class="fas fa-check"></i>
@@ -479,7 +481,7 @@ export const staticPage = `
                         <div style="background:white; padding:40px; border-radius:16px; border:1px solid #e5e7eb; width:100%; max-width:400px; text-align:center; box-shadow:0 10px 15px -3px rgba(0,0,0,0.05);">
                              <div x-show="!uploadPreview">
                                 <label style="display:block; padding:40px 20px; border:2px dashed #d1d5db; border-radius:12px; cursor:pointer; transition:all 0.2s; background:#f9fafb;"
-                                       onmouseover="this.style.borderColor='#2563eb'; this.style.background='#eff6ff'" 
+                                       onmouseover="this.style.borderColor='#2563eb'; this.style.background='#eff6ff'"
                                        onmouseout="this.style.borderColor='#d1d5db'; this.style.background='#f9fafb'">
                                     <div style="width:60px; height:60px; background:white; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; margin-bottom:15px; box-shadow:0 2px 5px rgba(0,0,0,0.05);">
                                         <i class="fas fa-cloud-upload-alt fa-2x" style="color:#2563eb;"></i>
@@ -499,7 +501,7 @@ export const staticPage = `
                 </div>
 
                 <div style="width:340px; background:white; border-left:1px solid #e5e7eb; display:flex; flex-direction:column; z-index:10;">
-                    
+
                     <div x-show="mediaTab === 'library' && !selectedMedia" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; color:#9ca3af;">
                         <div style="width:100px; height:100px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
                             <i class="fas fa-photo-video fa-3x" style="color:#d1d5db;"></i>
@@ -540,9 +542,9 @@ export const staticPage = `
                                 </div>
                             </div>
                             <div style="padding:16px 20px; border-top:1px solid #e5e7eb; background:white;">
-                                <button type="button" @click="confirmMediaSelection()" 
+                                <button type="button" @click="confirmMediaSelection()"
                                         style="width:100%; background:#2563eb; color:white; border:none; padding:12px; border-radius:8px; font-weight:600; font-size:14px; cursor:pointer; box-shadow:0 4px 6px -1px rgba(37,99,235,0.3); display:flex; justify-content:center; align-items:center; gap:8px; transition:all 0.2s;"
-                                        onmouseover="this.style.backgroundColor='#1d4ed8'" 
+                                        onmouseover="this.style.backgroundColor='#1d4ed8'"
                                         onmouseout="this.style.backgroundColor='#2563eb'">
                                     <span>Sisipkan Gambar</span>
                                     <i class="fas fa-arrow-right" style="font-size:12px;"></i>

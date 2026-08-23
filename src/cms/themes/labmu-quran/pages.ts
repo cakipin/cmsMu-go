@@ -251,7 +251,6 @@ export const renderSingle = (ctx: ThemeContext, _layout: any) => {
 
     <script>
     // DEFINE STATE
-    window.tafsirCache = {}; 
     window.currentTafsirState = { surah: 0, ayat: 0 };
 
     // --- 1. TAFSIR (Unique Name) ---
@@ -270,16 +269,12 @@ export const renderSingle = (ctx: ThemeContext, _layout: any) => {
     window.labmu_fetchTafsirData = function() {
         var source = document.getElementById('select-tafsir-source').value;
         var state = window.currentTafsirState;
-        var cacheKey = source + '_' + state.surah;
-        if (window.tafsirCache[cacheKey]) { window.labmu_renderTafsir(window.tafsirCache[cacheKey]); return; }
-
         document.getElementById('tafsir-text').style.display = 'none';
         document.getElementById('tafsir-loading').style.display = 'block';
 
         fetch('/api/quran/data-tafsir/' + state.surah + '?source=' + source)
             .then(r => r.json())
             .then(data => {
-                window.tafsirCache[cacheKey] = data;
                 window.labmu_renderTafsir(data);
             })
             .catch(err => {

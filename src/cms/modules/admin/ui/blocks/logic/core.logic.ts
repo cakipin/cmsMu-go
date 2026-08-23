@@ -6,13 +6,11 @@
 export const coreLogic = {
     // Helper Internal: Wrapper Fetch yang Aman
     async _fetch(url: string, options: any = {}) {
-        const token = localStorage.getItem('labmu_token');
         const headers = {
-            'Authorization': 'Bearer ' + token,
             'Content-Type': 'application/json',
             ...(options.headers || {})
         };
-        
+
         // Cek jika ada fungsi apiFetch global dari CMS wrapper
         // @ts-ignore
         if (typeof this.apiFetch === 'function') {
@@ -21,9 +19,8 @@ export const coreLogic = {
         }
 
         // Fallback fetch manual
-        const res = await fetch(url, { ...options, headers });
+        const res = await fetch(url, { ...options, headers, credentials: 'same-origin' });
         if (res.status === 401) {
-            localStorage.removeItem('labmu_token');
             window.location.href = '/admin/login';
             throw new Error('Unauthorized');
         }
@@ -33,14 +30,14 @@ export const coreLogic = {
     // =========================================
     // 1. SETTINGS & THEMES
     // =========================================
-    
+
     async loadSettings() {
         try {
             const res = await this._fetch("/api/settings");
             const json = await res.json();
             // Merge agar tidak menimpa state lokal jika API partial
             this.settings = { ...this.settings, ...(json.data || json || {}) };
-        } catch(e) { 
+        } catch(e) {
             console.error("Gagal load settings", e);
         }
     },
@@ -62,8 +59,8 @@ export const coreLogic = {
 
     // --- Media Selector Logic (Tetap Stable) ---
     openLogoSelector(targetField: any) {
-        this.mediaSelectorTarget = targetField; 
-        this.view = 'media'; 
+        this.mediaSelectorTarget = targetField;
+        this.view = 'media';
     },
 
     selectSettingImage(url: string) {
@@ -106,7 +103,20 @@ export const coreLogic = {
     },
 
     // =========================================
-    // 2. USER MANAGEMENT
+    // 2. PAGES MANAGEMENT (For Dashboard Stats)
+    // =========================================
+    async loadPages() {
+        try {
+            const res = await this._fetch("/api/pages");
+            const json = await res.json();
+            this.pages = Array.isArray(json) ? json : (json.results || []);
+        } catch(e) {
+            this.pages = [];
+        }
+    },
+
+    // =========================================
+    // 3. USER MANAGEMENT
     // =========================================
     async loadUsers() {
         this.isLoadingUsers = true;
@@ -114,13 +124,13 @@ export const coreLogic = {
             const res = await this._fetch("/api/users");
             const json = await res.json();
             this.usersList = json.data || json || [];
-        } catch(e) { 
-            this.usersList = []; 
-        } finally { 
-            this.isLoadingUsers = false; 
+        } catch(e) {
+            this.usersList = [];
+        } finally {
+            this.isLoadingUsers = false;
         }
     },
-    
+
     openAddUser() {
         this.editingUserId = null;
         this.userForm = { username: "", email: "", role: "editor", password: "", name: "" };
@@ -137,19 +147,19 @@ export const coreLogic = {
     async saveUser() {
         const endpoint = this.editingUserId ? "/api/users/" + this.editingUserId : "/api/users";
         const method = this.editingUserId ? "PUT" : "POST";
-        
+
         try {
             const res = await this._fetch(endpoint, {
                 method,
                 body: JSON.stringify(this.userForm),
             });
-            
+
             if (res.ok) {
                 this.showUserModal = false;
                 this.loadUsers();
-            } else { 
+            } else {
                 const err = await res.json();
-                alert("Gagal simpan user: " + (err.error || "Unknown Error")); 
+                alert("Gagal simpan user: " + (err.error || "Unknown Error"));
             }
         } catch(e) { console.error(e); }
     },
@@ -167,10 +177,10 @@ export const coreLogic = {
     // =========================================
     // 3. MENU MANAGEMENT & PLUGINS
     // =========================================
-    
+
     // --- Plugins ---
     availablePlugins: [],
-    
+
     async loadPlugins() {
         try {
             const res = await this._fetch("/api/plugins");
@@ -178,10 +188,10 @@ export const coreLogic = {
             this.availablePlugins = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
         } catch(e) { this.availablePlugins = []; }
     },
-    
+
     async togglePlugin(id: string, activate: boolean) {
         try {
-            await this._fetch(`/api/plugins/toggle/${id}`, { 
+            await this._fetch(`/api/plugins/toggle/${id}`, {
                 method: "POST",
                 body: JSON.stringify({ active: activate })
             });
@@ -210,7 +220,7 @@ export const coreLogic = {
         this.isSavingMenu = true;
         const endpoint = this.menuForm.id ? "/api/menus/" + this.menuForm.id : "/api/menus";
         const method = this.menuForm.id ? "PUT" : "POST";
-        
+
         try {
             const res = await this._fetch(endpoint, {
                 method,
@@ -222,9 +232,13 @@ export const coreLogic = {
             }
         } catch(e) {
             console.error(e);
-        } finally { 
-            this.isSavingMenu = false; 
+        } finally {
+            this.isSavingMenu = false;
         }
+    },
+
+    editMenu(m: any) {
+        this.menuForm = { ...m };
     },
 
     async deleteMenu(id: string) {
@@ -248,11 +262,13 @@ export const coreLogic = {
             // @ts-ignore
             this.loadPlugins ? this.loadPlugins() : Promise.resolve()
         ]);
-        
-        // Load Media & Posts jika modulnya tersedia (Safe check dari modul lain)
+
+        // Load Media, Posts & Pages jika modulnya tersedia (Safe check dari modul lain)
         // @ts-ignore
         if(this.loadMedia) await this.loadMedia();
         // @ts-ignore
         if(this.loadPosts) await this.loadPosts();
+        // @ts-ignore
+        if(this.loadPages) await this.loadPages();
     }
 };

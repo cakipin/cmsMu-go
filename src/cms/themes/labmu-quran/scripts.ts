@@ -4,12 +4,12 @@ export const clientScripts = `
 <style>
     /* UTILS UI */
     .trans-latin, .trans-id, .trans-en { display: none; }
-    
+
     /* Control Display via Body Class */
     body.show-latin .trans-latin { display: block; }
     body.show-id .trans-id { display: block; }
     body.show-en .trans-en { display: block; }
-    
+
     /* Tombol Aktif */
     .btn-icon-head.active { background: var(--primary); color: #fff; border-color: var(--primary); }
     /* Sidebar Toggle Aktif */
@@ -19,13 +19,13 @@ export const clientScripts = `
 <script>
 // --- 1. STATE MANAGEMENT ---
 window.state = {
-    dark: localStorage.getItem('dark') === 'true',
-    latin: localStorage.getItem('show_latin') !== 'false',
-    id: localStorage.getItem('show_id') !== 'false',
-    en: localStorage.getItem('show_en') === 'true',
-    tajwid: localStorage.getItem('show_tajwid') === 'true', // [BARU] State Tajwid
-    qari: localStorage.getItem('qari') || '05',
-    qariName: localStorage.getItem('qariName') || 'Misyari Rasyid'
+    dark: null === 'true',
+    latin: null !== 'false',
+    id: null !== 'false',
+    en: null === 'true',
+    tajwid: null === 'true', // [BARU] State Tajwid
+    qari: null || '05',
+    qariName: null || 'Misyari Rasyid'
 };
 
 // --- 2. UPDATE UI (CORE LOGIC) ---
@@ -33,19 +33,19 @@ window.updateUI = function() {
     // A. Mode Gelap
     document.body.classList.toggle('dark', window.state.dark);
     var btnTheme = document.getElementById('btn-theme');
-    if(btnTheme) { 
-        btnTheme.innerHTML = window.state.dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>'; 
-        btnTheme.classList.toggle('active', window.state.dark); 
+    if(btnTheme) {
+        btnTheme.innerHTML = window.state.dark ? '<i class="fas fa-sun"></i>' : '<i class="fas fa-moon"></i>';
+        btnTheme.classList.toggle('active', window.state.dark);
     }
 
     // B. Toggle Bahasa (Latin, Indo, Inggris)
     ['latin', 'id', 'en'].forEach(function(k) {
         document.body.classList.toggle('show-' + k, window.state[k]);
-        
+
         // Update Tombol Header
-        var btn = document.getElementById('btn-' + k); 
+        var btn = document.getElementById('btn-' + k);
         if(btn) btn.classList.toggle('active', window.state[k]);
-        
+
         // Update Tombol Sidebar (Mobile)
         var btnMob = document.getElementById('btn-' + k + '-m');
         if(btnMob) btnMob.classList.toggle('active', window.state[k]);
@@ -53,16 +53,16 @@ window.updateUI = function() {
 
     // C. [BARU] Logika Toggle Tajwid
     var isTajwid = window.state.tajwid;
-    
+
     // Update Tombol Tajwid (Header & Mobile)
     var btnTajwid = document.getElementById('btn-tajwid');
     if(btnTajwid) btnTajwid.classList.toggle('active', isTajwid);
-    
+
     // Switch Tampilan Arab
     document.querySelectorAll('.ayat-item').forEach(function(el) {
         var plain = el.querySelector('.arab-plain');
         var colored = el.querySelector('.arab-colored');
-        
+
         if(plain && colored) {
             if(isTajwid) {
                 plain.style.display = 'none';
@@ -81,13 +81,13 @@ window.updateUI = function() {
 
 // --- 3. EVENT HANDLERS ---
 window.toggleMode = function(key) {
-    if(key === 'theme') { 
-        window.state.dark = !window.state.dark; 
-        localStorage.setItem('dark', window.state.dark); 
+    if(key === 'theme') {
+        window.state.dark = !window.state.dark;
+        (void 0);
     }
-    else { 
-        window.state[key] = !window.state[key]; 
-        localStorage.setItem('show_' + key, window.state[key]); 
+    else {
+        window.state[key] = !window.state[key];
+        (void 0);
     }
     window.updateUI();
 };
@@ -106,7 +106,7 @@ function getHijriString() {
     var year = cc - 4716; var iy = 30 * Math.floor((jd - 1948084) / 10631.0) + Math.floor(((jd - 1948084) % 10631.0 - 8.01/60.0) / (10631.0/30.0));
     var im = Math.floor((((jd - 1948084) % 10631.0) - Math.floor(Math.floor(((jd - 1948084) % 10631.0 - 8.01/60.0) / (10631.0/30.0)) * (10631.0/30.0)) + 28.5001) / 29.5);
     if (im == 13) im = 12; var id = ((jd - 1948084) % 10631.0) - Math.floor(Math.floor(((jd - 1948084) % 10631.0 - 8.01/60.0) / (10631.0/30.0)) * (10631.0/30.0)) - Math.floor(29.5001 * im - 29);
-    var adjustment = -1; 
+    var adjustment = -1;
     var finalDay = id + adjustment;
     var monthNames = ["Muharram","Safar","Rabi'ul Awal","Rabi'ul Akhir","Jumadil Awal","Jumadil Akhir","Rajab","Syakban","Ramadhan","Syawal","Dzulkaidah","Dzulhijjah"];
     return finalDay + " " + monthNames[im - 1] + " " + iy;
@@ -125,15 +125,15 @@ window.updateHijriDate = function() {
     } catch(e) {}
 };
 
-window.showToast = function(msg) { 
-    var x = document.getElementById("toast"); 
+window.showToast = function(msg) {
+    var x = document.getElementById("toast");
     if (!x) {
         x = document.createElement("div"); x.id = "toast";
         x.style.cssText = "visibility:hidden; min-width:200px; background:#333; color:#fff; text-align:center; border-radius:8px; padding:10px; position:fixed; z-index:9999; left:50%; bottom:90px; transform:translateX(-50%); opacity:0; transition:0.3s;";
         document.body.appendChild(x);
     }
-    x.innerText = msg; x.style.visibility = "visible"; x.style.opacity = "1"; 
-    setTimeout(() => { x.style.visibility = "hidden"; x.style.opacity = "0"; }, 2000); 
+    x.innerText = msg; x.style.visibility = "visible"; x.style.opacity = "1";
+    setTimeout(() => { x.style.visibility = "hidden"; x.style.opacity = "0"; }, 2000);
 };
 
 window.toggleQariMenu = function() {
@@ -143,7 +143,7 @@ window.toggleQariMenu = function() {
 
 window.selectQari = function(val, name) {
     window.state.qari = val; window.state.qariName = name;
-    localStorage.setItem('qari', val); localStorage.setItem('qariName', name);
+    (void 0); (void 0);
     window.updateUI();
     var list = document.getElementById('qari-list'); if(list) list.style.display = 'none';
     window.showToast('Qari diganti: ' + name);
@@ -166,13 +166,13 @@ window.playAyat = function(btn) {
     var player = document.getElementById('main-player');
     var container = document.getElementById('player-container');
 
-    player.pause(); player.currentTime = 0; player.src = ""; 
+    player.pause(); player.currentTime = 0; player.src = "";
 
-    if (url && url.length > 10) { 
+    if (url && url.length > 10) {
         container.style.display = 'flex';
         document.getElementById('player-title').innerText = title + ' (' + window.state.qariName + ')';
         player.src = url;
-        player.load(); 
+        player.load();
         var playPromise = player.play();
         if (playPromise !== undefined) {
             playPromise.catch(function(error) { window.showToast("Gagal memuat audio"); });
@@ -183,9 +183,9 @@ window.playAyat = function(btn) {
     }
 };
 
-window.closePlayer = function() { 
-    var p = document.getElementById('main-player'); if(p) p.pause(); 
-    document.getElementById('player-container').style.display='none'; 
+window.closePlayer = function() {
+    var p = document.getElementById('main-player'); if(p) p.pause();
+    document.getElementById('player-container').style.display='none';
 };
 
 // --- SHARE ---
@@ -199,7 +199,7 @@ window.shareAyat = function(platform, ayatNum) {
     var indo = container.querySelector('.trans-id').innerText;
     var url = window.location.href.split('#')[0] + '#ayat-' + ayatNum;
     var text = "QS. " + surahName + " [" + ayatNum + "]\\n\\n" + arab + "\\n\\n" + indo + "\\n\\nLink: " + url;
-    
+
     if (platform === 'wa') window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(text), '_blank');
     else if (platform === 'fb') window.open('https://www.facebook.com/sharer/sharer.php?u=' + encodeURIComponent(url), '_blank');
     else if (platform === 'x') window.open('https://twitter.com/intent/tweet?text=' + encodeURIComponent(text), '_blank');

@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 // Pastikan path imports ini sesuai dengan struktur folder Anda
-import type { Bindings } from '../../types'; 
-import { authMiddleware } from '../../middleware/auth';
+import type { Bindings } from '../../types';
+import { requireAdmin } from '../../middleware/auth';
 
 const settings = new Hono<{ Bindings: Bindings }>();
 
@@ -10,7 +10,7 @@ const settings = new Hono<{ Bindings: Bindings }>();
 settings.get('/', async (c) => {
   try {
     const { results } = await c.env.DB.prepare("SELECT key, value FROM settings").all();
-    
+
     // Convert Array [{key:'a', value:'1'}] -> Object {a: '1'}
     const data: any = {};
     if(results){
@@ -29,14 +29,14 @@ settings.get('/', async (c) => {
 });
 
 // GET ALL SETTINGS (Admin Only: Mengembalikan semua termasuk secret)
-settings.get('/admin', authMiddleware, async (c) => {
+settings.get('/admin', requireAdmin, async (c) => {
   try {
     const { results } = await c.env.DB.prepare("SELECT key, value FROM settings").all();
-    
+
     const data: any = {};
     if(results){
         results.forEach((row: any) => {
-            data[row.key] = row.value;
+            data[row.key] = row.key.includes('secret') ? '' : row.value;
         });
     }
     return c.json({ success: true, data });
@@ -47,16 +47,18 @@ settings.get('/admin', authMiddleware, async (c) => {
 });
 
 // SAVE SETTINGS (Terima Object, Simpan Loop)
-settings.post('/', authMiddleware, async (c) => {
+settings.post('/', requireAdmin, async (c) => {
   try {
     const body = await c.req.json();
-    
+    const forbidden = Object.keys(body).filter(key => key.toLowerCase().includes('secret'));
+    if (forbidden.length) return c.json({ error: 'Secret harus dikonfigurasi melalui Cloudflare Secrets' }, 400);
+
     // [PERBAIKAN] Gunakan INSERT OR REPLACE (Lebih aman untuk SQLite/D1)
     // Ini otomatis Update jika key ada, atau Insert jika belum ada.
     const stmt = c.env.DB.prepare(`
       INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
     `);
-    
+
     const batch = [];
     for (const key in body) {
         // [PERBAIKAN] Pastikan value selalu String agar tidak error di DB
@@ -64,15 +66,15 @@ settings.post('/', authMiddleware, async (c) => {
         if (typeof val !== 'string') {
             val = JSON.stringify(val);
         }
-        
+
         batch.push(stmt.bind(key, val));
     }
-    
+
     // [PERBAIKAN] Hanya eksekusi jika ada data
     if (batch.length > 0) {
         await c.env.DB.batch(batch);
     }
-    
+
     return c.json({ success: true, message: 'Settings saved' });
   } catch (e: any) {
     console.error("SAVE Settings Error:", e);

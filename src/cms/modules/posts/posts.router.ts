@@ -1,5 +1,6 @@
 // src/modules/posts/posts.router.ts
 import { Hono } from 'hono';
+import { boundedText, cleanSlug, sanitizeHtml } from '../../core/security';
 
 const postsRouter = new Hono<{ Bindings: any }>();
 
@@ -40,20 +41,21 @@ postsRouter.post('/', async (c) => {
 
         // PENTING: Pastikan kolom category dan tags ada di bind parameters
         const { success } = await c.env.DB.prepare(`
-            INSERT INTO posts (title, slug, body, excerpt, meta_title, meta_description, status, category, tags, featured_image, author, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            INSERT INTO posts (title, slug, body, excerpt, meta_title, meta_description, status, category, tags, featured_image, author, allow_comments, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
-            body.title || 'Untitled',
-            body.slug,
-            body.body || '',
-            body.excerpt || '',
-            body.meta_title || '',
-            body.meta_description || '',
+            boundedText(body.title || 'Untitled', 250),
+            cleanSlug(body.slug || body.title),
+            sanitizeHtml(body.body || ''),
+            boundedText(body.excerpt, 500),
+            boundedText(body.meta_title, 70),
+            boundedText(body.meta_description, 180),
             status,
-            body.category || 'Uncategorized',
-            body.tags || '',
-            body.featured_image || '',
-            body.author || 'Admin',
+            boundedText(body.category || 'Uncategorized', 100),
+            boundedText(body.tags, 500),
+            boundedText(body.featured_image, 2048),
+            boundedText(body.author || 'Admin', 120),
+            body.allow_comments !== undefined ? (body.allow_comments ? 1 : 0) : 1,
             body.created_at || now
         ).run();
 
@@ -75,36 +77,38 @@ postsRouter.put('/:id', async (c) => {
     const id = c.req.param('id');
     try {
         const body = await c.req.json();
-        
+
         let status = (body.status || 'draft').toLowerCase();
         if(status.includes('pub')) status = 'publish';
 
         // FIX: Menyertakan category dan tags dalam query UPDATE agar list post terupdate
         const { success } = await c.env.DB.prepare(`
-            UPDATE posts SET 
-                title = ?, 
-                slug = ?, 
-                body = ?, 
+            UPDATE posts SET
+                title = ?,
+                slug = ?,
+                body = ?,
                 excerpt = ?,
                 meta_title = ?,
                 meta_description = ?,
-                status = ?, 
-                category = ?, 
-                tags = ?, 
+                status = ?,
+                category = ?,
+                tags = ?,
                 featured_image = ?,
+                allow_comments = ?,
                 created_at = ?
             WHERE id = ?
         `).bind(
-            body.title,
-            body.slug,
-            body.body,
-            body.excerpt || '',
-            body.meta_title || '',
-            body.meta_description || '',
+            boundedText(body.title, 250),
+            cleanSlug(body.slug || body.title),
+            sanitizeHtml(body.body),
+            boundedText(body.excerpt, 500),
+            boundedText(body.meta_title, 70),
+            boundedText(body.meta_description, 180),
             status,
-            body.category || 'Uncategorized',
-            body.tags || '',
-            body.featured_image,
+            boundedText(body.category || 'Uncategorized', 100),
+            boundedText(body.tags, 500),
+            boundedText(body.featured_image, 2048),
+            body.allow_comments !== undefined ? (body.allow_comments ? 1 : 0) : 1,
             body.created_at, // Nilai tanggal dari UI
             id
         ).run();
@@ -122,7 +126,7 @@ postsRouter.put('/:id', async (c) => {
 // 5. DELETE POST
 postsRouter.delete('/:id', async (c) => {
     const id = c.req.param('id');
-    
+
     // SUPPORT BULK DELETE (Dipisahkan koma)
     if (id.includes(',')) {
         const ids = id.split(',');
@@ -133,7 +137,7 @@ postsRouter.delete('/:id', async (c) => {
 
     try {
         const { success } = await c.env.DB.prepare("DELETE FROM posts WHERE id = ?").bind(id).run();
-        
+
         if (success) {
             return c.json({ success: true, message: 'Deleted' });
         } else {

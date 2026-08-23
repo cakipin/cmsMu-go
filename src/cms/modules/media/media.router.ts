@@ -17,74 +17,9 @@ const getBucket = (c: any) => {
     return c.env.MY_BUCKET || c.env.MEDIA_BUCKET || c.env.BUCKET || c.env.R2;
 };
 
-// 1. ENDPOINT SETUP (RESET & SYNC)
+// Setup destructive dinonaktifkan di runtime production.
 mediaRouter.get('/setup', async (c) => {
-    try {
-        // Cek DB
-        if (!c.env.DB) {
-             const keys = Object.keys(c.env).join(', ');
-             throw new Error(`DB Error! Binding 'DB' hilang. Yang ada: [${keys}]`);
-        }
-
-        // Cek R2
-        const r2 = getBucket(c);
-        if (!r2) {
-             const keys = Object.keys(c.env).join(', ');
-             throw new Error(`R2 Error! Binding 'MY_BUCKET' tidak ditemukan. Yang ada: [${keys}]`);
-        }
-
-        // --- MULAI RESET ---
-        await c.env.DB.prepare('DROP TABLE IF EXISTS media_meta').run();
-
-        // Buat Tabel dengan kolom lengkap
-        await c.env.DB.prepare(`
-            CREATE TABLE media_meta (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                key TEXT NOT NULL,
-                url TEXT NOT NULL,
-                type TEXT,
-                size INTEGER,
-                alt TEXT,
-                title TEXT,
-                description TEXT,
-                caption TEXT,
-                created_at TEXT DEFAULT CURRENT_TIMESTAMP
-            )
-        `).run();
-
-        // Sync Data
-        const listed = await r2.list();
-        let count = 0;
-        let skipped = 0;
-        
-        for (const obj of listed.objects) {
-            // [FIX PENTING] Lewati folder (yang berakhiran /) agar tidak jadi gambar hitam
-            if (obj.key.endsWith('/')) {
-                skipped++;
-                continue;
-            }
-
-            const url = `/api/media/file/${obj.key}`;
-            
-            // Tebak Tipe File
-            let type = 'application/octet-stream';
-            if (obj.key.match(/\.(jpg|jpeg)$/i)) type = 'image/jpeg';
-            else if (obj.key.match(/\.png$/i)) type = 'image/png';
-            else if (obj.key.match(/\.webp$/i)) type = 'image/webp';
-            else if (obj.key.match(/\.svg$/i)) type = 'image/svg+xml';
-
-            await c.env.DB.prepare(`
-                INSERT INTO media_meta (key, url, type, size, created_at) 
-                VALUES (?, ?, ?, ?, datetime('now'))
-            `).bind(obj.key, url, type, obj.size).run();
-            count++;
-        }
-
-        return c.json({ success: true, message: `BERHASIL! ${count} file dipulihkan. (${skipped} folder dibuang)` });
-
-    } catch (e: any) {
-        return c.json({ error: e.message }, 500);
-    }
+    return c.json({ error: 'Endpoint setup media dinonaktifkan' }, 404);
 });
 
 // 2. GET LIST
@@ -102,7 +37,16 @@ mediaRouter.post('/', async (c) => {
     try {
         const body = await c.req.parseBody();
         const file = body['file'];
-        if (!file || !(file instanceof File)) return c.json({ error: 'File wajib ada' }, 400);
+        if (!file || typeof file === 'string') return c.json({ error: 'File wajib ada' }, 400);
+        if (file.size > 10 * 1024 * 1024) return c.json({ error: 'Ukuran file maksimal 10 MB' }, 413);
+        const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
+        if (!allowed.has(file.type)) return c.json({ error: 'Format file tidak diizinkan' }, 415);
+        const bytes = new Uint8Array(await file.arrayBuffer());
+        const valid = file.type === 'image/jpeg' ? bytes[0] === 0xff && bytes[1] === 0xd8
+          : file.type === 'image/png' ? bytes.slice(0, 8).every((b, i) => b === [137,80,78,71,13,10,26,10][i])
+          : file.type === 'image/webp' ? new TextDecoder().decode(bytes.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(bytes.slice(8, 12)) === 'WEBP'
+          : new TextDecoder().decode(bytes.slice(4, 12)).includes('ftypavif');
+        if (!valid) return c.json({ error: 'Isi file tidak cocok dengan formatnya' }, 415);
 
         const r2 = getBucket(c);
         if (!r2) return c.json({ error: 'R2 Putus (Cek MY_BUCKET)' }, 500);
@@ -113,12 +57,32 @@ mediaRouter.post('/', async (c) => {
         const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
         const key = `${folder}/${Date.now()}-${cleanName}`;
 
-        await r2.put(key, await file.arrayBuffer(), { httpMetadata: { contentType: file.type } });
+        await r2.put(key, bytes, { httpMetadata: { contentType: file.type } });
 
         const url = `/api/media/file/${key}`;
+
+        // Pastikan tabel ada sebelum insert
+        await c.env.DB.prepare(`
+            CREATE TABLE IF NOT EXISTS media_meta (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                key TEXT NOT NULL,
+                url TEXT NOT NULL,
+                type TEXT,
+                size INTEGER,
+                alt TEXT,
+                title TEXT,
+                description TEXT,
+                caption TEXT,
+                created_at TEXT DEFAULT CURRENT_TIMESTAMP
+            )
+        `).run();
+
         await c.env.DB.prepare(
-            'INSERT INTO media_meta (key, url, type, size, created_at) VALUES (?, ?, ?, ?, datetime("now"))'
-        ).bind(key, url, file.type, file.size).run();
+            'INSERT INTO media_meta (key, url, type, size, title, alt, caption, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))'
+        ).bind(
+            key, url, file.type, file.size,
+            body['title'] || '', body['alt'] || '', body['caption'] || '', body['description'] || ''
+        ).run();
 
         return c.json({ success: true, url });
     } catch (e: any) {
@@ -131,16 +95,16 @@ mediaRouter.put('/:id', async (c) => {
     try {
         const id = c.req.param('id');
         const body = await c.req.json();
-        
+
         await c.env.DB.prepare(`
-            UPDATE media_meta 
+            UPDATE media_meta
             SET alt = ?, title = ?, description = ?, caption = ?
             WHERE id = ?
         `).bind(
-            body.alt || '', 
-            body.title || '', 
-            body.description || '', 
-            body.caption || '', 
+            body.alt || '',
+            body.title || '',
+            body.description || '',
+            body.caption || '',
             id
         ).run();
 
@@ -162,8 +126,9 @@ mediaRouter.get('/file/*', async (c) => {
     const headers = new Headers();
     obj.writeHttpMetadata(headers);
     headers.set('etag', obj.httpEtag);
-    headers.set('Cache-Control', 'public, max-age=31536000');
-    
+    headers.set('Cache-Control', 'no-store, max-age=0');
+    headers.set('Content-Security-Policy', "default-src 'none'; sandbox");
+
     // [FIX] Paksa Header Gambar jika R2 memberikannya kosong
     const currentType = headers.get('Content-Type');
     if (!currentType || currentType === 'application/octet-stream') {
@@ -179,10 +144,10 @@ mediaRouter.get('/file/*', async (c) => {
 mediaRouter.delete('/:id', async (c) => {
     const id = c.req.param('id');
     const r2 = getBucket(c);
-    
+
     // Ambil Key dari DB berdasarkan ID
     const file: any = await c.env.DB.prepare('SELECT key FROM media_meta WHERE id=?').bind(id).first();
-    
+
     if(file && r2) {
         await r2.delete(file.key);
         await c.env.DB.prepare('DELETE FROM media_meta WHERE id=?').bind(id).run();

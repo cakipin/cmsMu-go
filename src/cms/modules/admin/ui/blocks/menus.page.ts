@@ -7,15 +7,15 @@ export const menusPage = `
     </div>
 
     <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
-        
+
         <div class="card">
             <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Add / Edit Menu</h3>
-            
+
             <div style="margin-bottom:10px;">
                 <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">Label (Nama Menu)</label>
                 <input type="text" x-model="menuForm.label" class="input" placeholder="Contoh: Tentang Kami">
             </div>
-            
+
             <div style="margin-bottom:10px;">
                 <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">URL / Link</label>
                 <input type="text" x-model="menuForm.url" class="input" placeholder="Contoh: /tentang-kami">
@@ -54,7 +54,11 @@ export const menusPage = `
                             <td style="padding:10px; font-weight:bold;" x-text="m.label"></td>
                             <td style="padding:10px; color:#2271b1;" x-text="m.url"></td>
                             <td style="padding:10px; text-align:right;">
-                                <button @click="deleteMenu(m.id)" style="color:red; background:none; border:none; cursor:pointer;">Delete</button>
+                                <div style="display: flex; justify-content: flex-end; gap: 12px;">
+                                    <a :href="m.url" target="_blank" style="color:#008A20; background:none; border:none; cursor:pointer; text-decoration:none;" title="Preview"><i class="fas fa-external-link-alt"></i></a>
+                                    <button @click="editMenu(m)" style="color:#2271b1; background:none; border:none; cursor:pointer;" title="Edit"><i class="fas fa-edit"></i></button>
+                                    <button @click="deleteMenu(m.id)" style="color:red; background:none; border:none; cursor:pointer;" title="Delete"><i class="fas fa-trash"></i></button>
+                                </div>
                             </td>
                         </tr>
                     </template>
