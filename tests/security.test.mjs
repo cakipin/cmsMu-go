@@ -30,6 +30,8 @@ test('active authentication has no known default secret or base64 identity token
   assert.doesNotMatch(auth + users, /labmu_rahasia|btoa\(JSON\.stringify/);
   assert.match(auth, /httpOnly:\s*true/);
   assert.match(auth, /sameSite:\s*'Strict'/);
+  assert.match(users, /const ITERATIONS = 100_000/);
+  assert.doesNotMatch(users, /Gagal Login:\s*['"]?\s*\+\s*e\.message/);
 });
 
 test('runtime core has no destructive schema endpoint', async () => {

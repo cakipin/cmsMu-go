@@ -11,7 +11,8 @@ type Bindings = {
 const usersRouter = new Hono<{ Bindings: Bindings }>();
 const allowedRoles = new Set(['administrator', 'editor', 'author', 'subscriber']);
 
-const ITERATIONS = 210_000;
+// Cloudflare Workers Web Crypto currently accepts at most 100,000 PBKDF2 iterations.
+const ITERATIONS = 100_000;
 const encode = (bytes: Uint8Array) => btoa(String.fromCharCode(...bytes));
 const decode = (value: string) => Uint8Array.from(atob(value), c => c.charCodeAt(0));
 
@@ -222,8 +223,9 @@ usersRouter.post('/login', async (c) => {
         await createSession(c, sessionUser);
         return c.json({ success: true, user: sessionUser });
 
-    } catch (e: any) {
-        return c.json({ error: 'Gagal Login: ' + e.message }, 500);
+    } catch (error) {
+        console.error('Login failed', error);
+        return c.json({ error: 'Login tidak dapat diproses. Silakan coba lagi.' }, 500);
     }
 });
 
