@@ -63,7 +63,7 @@ export function renderAdmin(data: any): string {
             </style>
 
             <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
-            <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+            <script src="https://cdn.jsdelivr.net/npm/@alpinejs/csp@3.14.8/dist/cdn.min.js" defer></script>
             <script>
                 window.adminMenus = [
                     { group: 'Content', title: 'All Posts', view: 'posts', icon: 'fas fa-thumbtack', action: () => typeof loadPosts === 'function' && loadPosts() },
