@@ -367,14 +367,15 @@ export const editorPage = `
                 <h3 style="margin:0 0 10px 0; font-size:14px;">Komentar</h3>
                 <div style="display:flex; align-items:center; justify-content:space-between; padding:10px; border:1px solid #e5e7eb; border-radius:6px; background:#f9fafb;">
                     <span style="font-size:13px; color:#374151; font-weight:500;">Aktifkan Komentar</span>
-                    <label class="switch" style="position:relative; display:inline-block; width:40px; height:22px;">
-                        <input type="checkbox" :checked="Number(form.allow_comments) === 1" @change="form.allow_comments = $event.target.checked ? 1 : 0" style="opacity:0; width:0; height:0;">
-                        <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;"
-                              :style="form.allow_comments == 1 ? 'background-color:#10b981;' : ''">
-                            <span style="position:absolute; content:''; height:14px; width:14px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%;"
-                                  :style="form.allow_comments == 1 ? 'transform:translateX(18px);' : ''"></span>
-                        </span>
-                    </label>
+                    <button type="button" role="switch"
+                            :aria-checked="form.allow_comments == 1 ? 'true' : 'false'"
+                            :aria-label="form.allow_comments == 1 ? 'Nonaktifkan komentar' : 'Aktifkan komentar'"
+                            @click="form.allow_comments = form.allow_comments == 1 ? 0 : 1"
+                            style="position:relative; flex:0 0 52px; width:52px; height:28px; padding:0; border:0; border-radius:999px; background:#cbd5e1; cursor:pointer; transition:background .2s; box-shadow:inset 0 0 0 1px rgba(15,23,42,.08);"
+                            :style="form.allow_comments == 1 ? 'background:#10b981;' : 'background:#cbd5e1;'">
+                        <span style="position:absolute; top:4px; left:4px; width:20px; height:20px; border-radius:50%; background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.25); transition:transform .2s;"
+                              :style="form.allow_comments == 1 ? 'transform:translateX(24px);' : 'transform:translateX(0);'"></span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -551,10 +552,10 @@ export const editorPage = `
         </div>
     </div>
 
-    <div x-show="manageModalOpen" style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.5); z-index:99999; display:flex; justify-content:center; align-items:center;" x-cloak>
-        <div style="background:white; width:400px; max-height:80vh; border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 25px rgba(0,0,0,0.1);">
+    <div x-show="manageModalOpen" @click.self="manageModalOpen=false" style="position:fixed; inset:0; padding:20px; background:rgba(0,0,0,0.5); z-index:99999; display:flex !important; justify-content:center; align-items:center;" x-cloak>
+        <div role="dialog" aria-modal="true" aria-labelledby="manage-dialog-title" style="box-sizing:border-box; background:white; width:calc(100% - 32px); max-width:520px; max-height:calc(100dvh - 40px); border-radius:12px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 20px 50px rgba(0,0,0,0.25);">
             <div style="padding:15px 20px; border-bottom:1px solid #eee; display:flex; justify-content:space-between; background:#f9fafb;">
-                <h3 style="margin:0; font-size:16px; font-weight:600;">Kelola <span x-text="manageTarget"></span></h3>
+                <h3 id="manage-dialog-title" style="margin:0; font-size:16px; font-weight:600;">Kelola <span x-text="manageTarget === 'category' ? 'kategori' : 'tag'"></span></h3>
                 <button type="button" @click="manageModalOpen=false" style="border:none; background:none; font-size:20px; cursor:pointer;">&times;</button>
             </div>
             <div style="flex:1; overflow-y:auto; padding:0;">
