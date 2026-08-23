@@ -1,7 +1,6 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../../types';
 import { getActiveTheme } from '../../themes/registry';
-import { readSession } from '../../middleware/auth';
 
 // Import Helper SEO
 // (SEO Plugin Removed)
@@ -12,19 +11,19 @@ const escapeComment = (value: unknown) => String(value ?? '')
   .replaceAll('&', '&amp;').replaceAll('<', '&lt;').replaceAll('>', '&gt;')
   .replaceAll('"', '&quot;').replaceAll("'", '&#039;');
 
-function injectComments(page: string, post: any, comments: any[], user: any) {
+function injectComments(page: string, post: any, comments: any[]) {
   const items = comments.length ? comments.map(comment => `
     <article class="cmsmu-comment">
       <div class="cmsmu-comment-avatar">${escapeComment((comment.user_name || comment.username || 'P').slice(0, 1).toUpperCase())}</div>
       <div><div class="cmsmu-comment-meta"><strong>${escapeComment(comment.user_name || comment.username || 'Pengguna')}</strong><time>${escapeComment(new Date(comment.created_at).toLocaleDateString('id-ID', { dateStyle: 'medium' }))}</time></div><p>${escapeComment(comment.content)}</p></div>
     </article>`).join('') : '<p class="cmsmu-comment-empty">Belum ada komentar. Jadilah yang pertama berkomentar.</p>';
-  const form = user ? `
-    <form id="cmsmu-comment-form" class="cmsmu-comment-form">
-      <label for="cmsmu-comment-content">Tulis komentar sebagai <strong>${escapeComment(user.name || user.username)}</strong></label>
+  const form = `
+    <form id="cmsmu-comment-form" class="cmsmu-comment-form" hidden>
+      <label for="cmsmu-comment-content">Tulis komentar sebagai <strong id="cmsmu-comment-user"></strong></label>
       <textarea id="cmsmu-comment-content" maxlength="2000" required placeholder="Tulis komentar yang relevan dan santun..."></textarea>
       <div><small>Komentar akan tampil setelah disetujui editor.</small><button type="submit">Kirim komentar</button></div>
       <p id="cmsmu-comment-status" role="status" aria-live="polite"></p>
-    </form>` : '<p class="cmsmu-comment-login"><a href="/admin/login">Masuk</a> untuk menulis komentar.</p>';
+    </form><p id="cmsmu-comment-login" class="cmsmu-comment-login" hidden><a href="/admin/login">Masuk</a> untuk menulis komentar.</p>`;
   const widget = `
   <section id="cmsmu-comments" class="cmsmu-comments" aria-labelledby="cmsmu-comments-title">
     <style>
@@ -32,8 +31,9 @@ function injectComments(page: string, post: any, comments: any[], user: any) {
     </style>
     <h2 id="cmsmu-comments-title">Komentar (${comments.length})</h2>${items}${form}
   </section>
-  ${user ? `<script>(()=>{const form=document.getElementById('cmsmu-comment-form');if(!form)return;form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');const status=document.getElementById('cmsmu-comment-status');const content=document.getElementById('cmsmu-comment-content').value.trim();if(!content)return;button.disabled=true;status.textContent='Mengirim...';try{const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:${Number(post.id)},content})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Komentar gagal dikirim');status.textContent=result.message;form.reset()}catch(error){status.textContent=error.message}finally{button.disabled=false}})})();</script>` : ''}`;
-  return page.includes('</body>') ? page.replace('</body>', `${widget}</body>`) : page + widget;
+  <script>(()=>{const form=document.getElementById('cmsmu-comment-form');const login=document.getElementById('cmsmu-comment-login');const user=document.getElementById('cmsmu-comment-user');fetch('/api/users/session').then(response=>response.json()).then(session=>{if(session.authenticated&&session.user){user.textContent=session.user.name||session.user.username;form.hidden=false}else{login.hidden=false}}).catch(()=>{login.hidden=false});form.addEventListener('submit',async event=>{event.preventDefault();const button=form.querySelector('button');const status=document.getElementById('cmsmu-comment-status');const content=document.getElementById('cmsmu-comment-content').value.trim();if(!content)return;button.disabled=true;status.textContent='Mengirim...';try{const response=await fetch('/api/comments',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({post_id:${Number(post.id)},content})});const result=await response.json();if(!response.ok)throw new Error(result.error||'Komentar gagal dikirim');status.textContent=result.message;form.reset()}catch(error){status.textContent=error.message}finally{button.disabled=false}})})();</script>`;
+  const mainEnd = page.lastIndexOf('</main>');
+  return mainEnd >= 0 ? page.slice(0, mainEnd) + widget + page.slice(mainEnd) : page.replace('</body>', `${widget}</body>`);
 }
 
 // --- HELPER DATABASE ---
@@ -487,7 +487,7 @@ publicRouter.get('/:slug', async (c) => {
           WHERE c.post_id = ? AND c.status = 'approved'
           ORDER BY c.created_at DESC
         `).bind(content.id).all();
-        return c.html(injectComments(rendered, content, comments || [], await readSession(c)));
+        return c.html(injectComments(rendered, content, comments || []));
     }
 
     return c.html(Renderer.render404({ site: settings, menus, data: null }), 404);
