@@ -72,8 +72,11 @@ test('theme editor follows the active theme and isolates homepage data', async (
   assert.match(publicRouter, /renderUniversalHome/);
   assert.match(publicRouter, /__theme_home_/);
   const universal = await readFile(new URL('../src/cms/themes/editor/universal-config.tsx', import.meta.url), 'utf8');
-  for (const widget of ['NewsBreakingBar', 'NewsFeatured', 'NewsGrid', 'NewsList', 'NewsPopular', 'NewsNewsletter', 'LandingLogoCloud', 'LandingFeatures', 'LandingStats', 'LandingTestimonials', 'LandingPricing', 'LandingFaq', 'LandingContact']) {
+  for (const widget of ['NewsBreakingBar', 'NewsFeatured', 'NewsGrid', 'NewsList', 'NewsPopular', 'NewsNewsletter', 'LandingLogoCloud', 'LandingFeatures', 'LandingStats', 'LandingTestimonials', 'LandingPricing', 'LandingFaq', 'LandingContact', 'PrayerScheduleKHGT']) {
     assert.match(universal, new RegExp(widget));
     assert.match(publicRouter, new RegExp(widget));
   }
+  assert.match(publicRouter, /api-khgt\.muhammadiyah\.or\.id\/api\/schedules/);
+  assert.match(publicRouter, /start_date/);
+  assert.match(publicRouter, /end_date/);
 });

@@ -99,6 +99,19 @@ export const universalHomeConfig: Config = {
       defaultProps: { title: 'Hubungi Kami', description: 'Kami siap membantu kebutuhan Anda.', email: 'halo@contoh.id', phone: '+62 812 3456 7890', address: 'Indonesia' },
       render: ({ title, description, email, phone, address }: any) => <section style={{ maxWidth: 900, margin: '0 auto', padding: '64px 24px', textAlign: 'center' }}><h2>{title}</h2><p>{description}</p><p><a href={`mailto:${email}`}>{email}</a> · <a href={`tel:${phone}`}>{phone}</a></p><p>{address}</p></section>
     },
+    PrayerScheduleKHGT: {
+      fields: {
+        title: { type: 'text' }, location: { type: 'text' }, latitude: { type: 'text' }, longitude: { type: 'text' },
+        timezone: { type: 'select', options: [{ label: 'WIB', value: 'Asia/Jakarta' }, { label: 'WITA', value: 'Asia/Makassar' }, { label: 'WIT', value: 'Asia/Jayapura' }] },
+        accent: { type: 'text' }, showImsak: { type: 'radio', options: [{ label: 'Ya', value: 'yes' }, { label: 'Tidak', value: 'no' }] },
+        showDhuha: { type: 'radio', options: [{ label: 'Ya', value: 'yes' }, { label: 'Tidak', value: 'no' }] }
+      },
+      defaultProps: { title: 'Jadwal Salat Hari Ini', location: 'Yogyakarta', latitude: '-7.7956', longitude: '110.3695', timezone: 'Asia/Jakarta', accent: '#0f766e', showImsak: 'yes', showDhuha: 'yes' },
+      render: ({ title, location, accent, showImsak, showDhuha }: any) => {
+        const times = [...(showImsak === 'yes' ? [['Imsak', '04:25']] : []), ['Subuh', '04:35'], ...(showDhuha === 'yes' ? [['Dhuha', '06:10']] : []), ['Zuhur', '11:43'], ['Asar', '15:03'], ['Magrib', '17:41'], ['Isya', '18:50']];
+        return <section style={{ maxWidth: 1100, margin: '32px auto', padding: 28, border: '1px solid #e2e8f0', borderRadius: 16, background: '#fff' }}><div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap', marginBottom: 20 }}><div><h2 style={{ margin: 0 }}>{title}</h2><p style={{ margin: '6px 0', color: '#64748b' }}>{location} · Data KHGT Muhammadiyah</p></div><span style={{ color: accent, fontWeight: 700 }}>Preview jadwal</span></div><div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(100px,1fr))', gap: 10 }}>{times.map(([name, time]) => <div key={name} style={{ padding: 14, borderRadius: 10, background: '#f8fafc', textAlign: 'center' }}><small>{name}</small><strong style={{ display: 'block', marginTop: 5, fontSize: 20, color: accent }}>{time}</strong></div>)}</div></section>;
+      }
+    },
     LayoutSpacer: {
       fields: { height: { type: 'number' }, background: { type: 'text' } }, defaultProps: { height: 40, background: 'transparent' },
       render: ({ height, background }: any) => <div aria-hidden="true" style={{ height, background }} />
