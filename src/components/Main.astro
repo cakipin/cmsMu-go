@@ -32,7 +32,7 @@ const backUrl = config.features.showBackButton
       document.querySelector("#main-content");
     const backUrl = mainContent?.dataset?.backurl;
     if (backUrl) {
-      (void 0);
+      sessionStorage.setItem("backUrl", backUrl);
     }
   });
 </script>

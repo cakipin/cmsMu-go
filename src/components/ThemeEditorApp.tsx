@@ -1,9 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/dist/index.css";
-import { puckConfig as labmuProConfig } from "../cms/themes/labmu-pro/puck/config";
-import { puckConfig as newspaperConfig } from "../cms/themes/newspaper-mu/puck/config";
-import { universalHomeConfig, universalHomeDefault } from "../cms/themes/editor/universal-config";
+import { puckConfig } from "../cms/themes/newsroom/puck/config";
 
 const defaultHomePuck = {
   content: [
@@ -20,21 +18,6 @@ const defaultHomePuck = {
   zones: {}
 };
 
-const newspaperHomePuck = {
-  content: [
-    { type: 'NewspaperHeader', props: { id: 'NewspaperHeader-1' } },
-    { type: 'NewspaperBigGrid1', props: { id: 'NewspaperBigGrid1-1' } },
-    { type: 'NewspaperFlexBlock', props: { id: 'NewspaperFlexBlock-1' } },
-    { type: 'NewspaperFooter', props: { id: 'NewspaperFooter-1' } }
-  ], root: { props: { editorTheme: 'newspaper-mu' } }, zones: {}
-};
-
-const editorForTheme = (themeId: string) => themeId === 'labmu-pro'
-  ? { config: labmuProConfig, data: defaultHomePuck }
-  : themeId === 'newspaper-mu'
-    ? { config: newspaperConfig, data: newspaperHomePuck }
-    : { config: universalHomeConfig, data: universalHomeDefault(themeId) };
-
 interface ThemeEditorAppProps {
   slug: string;
 }
@@ -44,22 +27,16 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   const [currentData, setCurrentData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [pages, setPages] = useState<{id: number, title: string, slug: string}[]>([]);
-  const [themeId, setThemeId] = useState('labmu-default');
 
   useEffect(() => {
-    let activeThemeId = 'labmu-default';
-    const fetchContext = async () => {
-      const res = await fetch('/api/theme-editor/context');
-      if (res.ok) {
-        const result = await res.json();
-        activeThemeId = result.themeId || activeThemeId;
-        setThemeId(activeThemeId);
-      }
-    };
+    const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
+    
     // Fetch page list
     const fetchPages = async () => {
       try {
-        const res = await fetch('/api/theme-editor/pages');
+        const res = await fetch('/api/theme-editor/pages', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
         if (res.ok) {
           const result = await res.json();
           if (result.data) setPages(result.data);
@@ -72,7 +49,11 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
     // Fetch data from database
     const fetchData = async () => {
       try {
-        const response = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}`);
+        const response = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        });
         if (response.ok) {
           const result = await response.json();
           // Jika ada body JSON, parsing
@@ -84,9 +65,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
             } catch (e) {
               console.error("Gagal parse body JSON", e);
               if (slug === 'home') {
-                 const fallback = editorForTheme(activeThemeId).data;
-                 setInitialData(fallback);
-                 setCurrentData(fallback);
+                 setInitialData(defaultHomePuck);
+                 setCurrentData(defaultHomePuck);
               } else {
                  setInitialData({ content: [], root: {}, zones: {} });
                  setCurrentData({ content: [], root: {}, zones: {} });
@@ -94,9 +74,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
             }
           } else {
              if (slug === 'home') {
-                 const fallback = editorForTheme(activeThemeId).data;
-                 setInitialData(fallback);
-                 setCurrentData(fallback);
+                 setInitialData(defaultHomePuck);
+                 setCurrentData(defaultHomePuck);
               } else {
                  setInitialData({ content: [], root: {}, zones: {} });
                  setCurrentData({ content: [], root: {}, zones: {} });
@@ -104,9 +83,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
           }
         } else {
            if (slug === 'home') {
-               const fallback = editorForTheme(activeThemeId).data;
-               setInitialData(fallback);
-               setCurrentData(fallback);
+               setInitialData(defaultHomePuck);
+               setCurrentData(defaultHomePuck);
             } else {
                setInitialData({ content: [], root: {}, zones: {} });
                setCurrentData({ content: [], root: {}, zones: {} });
@@ -115,9 +93,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       } catch (error) {
         console.error("Error fetching data:", error);
         if (slug === 'home') {
-           const fallback = editorForTheme(activeThemeId).data;
-           setInitialData(fallback);
-           setCurrentData(fallback);
+           setInitialData(defaultHomePuck);
+           setCurrentData(defaultHomePuck);
         } else {
            setInitialData({ content: [], root: {}, zones: {} });
            setCurrentData({ content: [], root: {}, zones: {} });
@@ -127,7 +104,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       }
     };
 
-    (async () => { await fetchContext(); await Promise.all([fetchPages(), fetchData()]); })();
+    fetchPages();
+    fetchData();
   }, [slug]);
 
   const handlePublish = async (data: any) => {
@@ -135,13 +113,14 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       const payload = {
         slug: slug,
         body: JSON.stringify(data),
-        theme_id: themeId,
       };
 
+      const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
       const response = await fetch("/api/theme-editor/page", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify(payload),
       });
@@ -184,7 +163,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
 
   // Cek apakah slug saat ini ada di daftar pages, jika tidak tambahkan sementara
   let displayPages = [...pages];
-
+  
   if (!displayPages.find(p => p.slug === 'home')) {
     displayPages.unshift({ id: -1, title: 'Beranda Utama', slug: 'home' });
   }
@@ -196,7 +175,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   return (
     <div style={{ height: '100vh', width: '100vw' }}>
       <Puck
-        config={editorForTheme(themeId).config}
+        config={puckConfig}
         data={initialData}
         onChange={(data) => setCurrentData(data)}
         onPublish={handlePublish}
@@ -207,10 +186,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
               <a href="/admin" style={{ marginRight: 'auto', color: '#6b7280', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
                 &larr; Kembali ke Admin
               </a>
-              <span style={{ fontSize: 12, color: '#64748b', marginLeft: 12 }}>Theme aktif: <strong>{themeId}</strong></span>
-
+              
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', marginRight: '16px' }}>
-                <select
+                <select 
                   value={slug}
                   onChange={handlePageChange}
                   style={{
@@ -229,7 +207,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                     </option>
                   ))}
                 </select>
-                <button
+                <button 
                   onClick={handleCreateNewPage}
                   style={{
                     background: '#2563eb',
@@ -245,7 +223,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                   + Baru
                 </button>
               </div>
-
+              
               {children}
             </>
           )

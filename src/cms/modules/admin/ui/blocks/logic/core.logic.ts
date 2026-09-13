@@ -6,11 +6,13 @@
 export const coreLogic = {
     // Helper Internal: Wrapper Fetch yang Aman
     async _fetch(url: string, options: any = {}) {
+        const token = (typeof window !== 'undefined' && (window as any).getCmsToken ? (window as any).getCmsToken() : '') || (typeof localStorage !== 'undefined' ? localStorage.getItem('labmu_token') : '');
         const headers = {
+            'Authorization': 'Bearer ' + token,
             'Content-Type': 'application/json',
             ...(options.headers || {})
         };
-
+        
         // Cek jika ada fungsi apiFetch global dari CMS wrapper
         // @ts-ignore
         if (typeof this.apiFetch === 'function') {
@@ -19,8 +21,9 @@ export const coreLogic = {
         }
 
         // Fallback fetch manual
-        const res = await fetch(url, { ...options, headers, credentials: 'same-origin' });
+        const res = await fetch(url, { ...options, headers });
         if (res.status === 401) {
+            localStorage.removeItem('labmu_token');
             window.location.href = '/admin/login';
             throw new Error('Unauthorized');
         }
@@ -30,14 +33,14 @@ export const coreLogic = {
     // =========================================
     // 1. SETTINGS & THEMES
     // =========================================
-
+    
     async loadSettings() {
         try {
             const res = await this._fetch("/api/settings");
             const json = await res.json();
             // Merge agar tidak menimpa state lokal jika API partial
             this.settings = { ...this.settings, ...(json.data || json || {}) };
-        } catch(e) {
+        } catch(e) { 
             console.error("Gagal load settings", e);
         }
     },
@@ -59,8 +62,8 @@ export const coreLogic = {
 
     // --- Media Selector Logic (Tetap Stable) ---
     openLogoSelector(targetField: any) {
-        this.mediaSelectorTarget = targetField;
-        this.view = 'media';
+        this.mediaSelectorTarget = targetField; 
+        this.view = 'media'; 
     },
 
     selectSettingImage(url: string) {
@@ -110,8 +113,8 @@ export const coreLogic = {
             const res = await this._fetch("/api/pages");
             const json = await res.json();
             this.pages = Array.isArray(json) ? json : (json.results || []);
-        } catch(e) {
-            this.pages = [];
+        } catch(e) { 
+            this.pages = []; 
         }
     },
 
@@ -124,13 +127,13 @@ export const coreLogic = {
             const res = await this._fetch("/api/users");
             const json = await res.json();
             this.usersList = json.data || json || [];
-        } catch(e) {
-            this.usersList = [];
-        } finally {
-            this.isLoadingUsers = false;
+        } catch(e) { 
+            this.usersList = []; 
+        } finally { 
+            this.isLoadingUsers = false; 
         }
     },
-
+    
     openAddUser() {
         this.editingUserId = null;
         this.userForm = { username: "", email: "", role: "editor", password: "", name: "" };
@@ -147,19 +150,19 @@ export const coreLogic = {
     async saveUser() {
         const endpoint = this.editingUserId ? "/api/users/" + this.editingUserId : "/api/users";
         const method = this.editingUserId ? "PUT" : "POST";
-
+        
         try {
             const res = await this._fetch(endpoint, {
                 method,
                 body: JSON.stringify(this.userForm),
             });
-
+            
             if (res.ok) {
                 this.showUserModal = false;
                 this.loadUsers();
-            } else {
+            } else { 
                 const err = await res.json();
-                alert("Gagal simpan user: " + (err.error || "Unknown Error"));
+                alert("Gagal simpan user: " + (err.error || "Unknown Error")); 
             }
         } catch(e) { console.error(e); }
     },
@@ -177,10 +180,10 @@ export const coreLogic = {
     // =========================================
     // 3. MENU MANAGEMENT & PLUGINS
     // =========================================
-
+    
     // --- Plugins ---
     availablePlugins: [],
-
+    
     async loadPlugins() {
         try {
             const res = await this._fetch("/api/plugins");
@@ -188,10 +191,10 @@ export const coreLogic = {
             this.availablePlugins = Array.isArray(json?.data) ? json.data : (Array.isArray(json) ? json : []);
         } catch(e) { this.availablePlugins = []; }
     },
-
+    
     async togglePlugin(id: string, activate: boolean) {
         try {
-            await this._fetch(`/api/plugins/toggle/${id}`, {
+            await this._fetch(`/api/plugins/toggle/${id}`, { 
                 method: "POST",
                 body: JSON.stringify({ active: activate })
             });
@@ -208,11 +211,20 @@ export const coreLogic = {
     },
 
     // --- Menus ---
-    async loadMenus() {
+        async loadMenus() {
         try {
             const res = await this._fetch("/api/menus");
             const json = await res.json();
-            this.menuList = json.data || json || [];
+            let rawList = json.data || json || [];
+            
+            let organized = [];
+            let roots = rawList.filter(m => !m.parent_id).sort((a,b) => (a.order_num||0) - (b.order_num||0));
+            roots.forEach(r => {
+                organized.push(r);
+                let children = rawList.filter(m => m.parent_id === r.id).sort((a,b) => (a.order_num||0) - (b.order_num||0));
+                organized.push(...children);
+            });
+            this.menuList = organized;
         } catch(e) { this.menuList = []; }
     },
 
@@ -220,20 +232,20 @@ export const coreLogic = {
         this.isSavingMenu = true;
         const endpoint = this.menuForm.id ? "/api/menus/" + this.menuForm.id : "/api/menus";
         const method = this.menuForm.id ? "PUT" : "POST";
-
+        
         try {
             const res = await this._fetch(endpoint, {
                 method,
                 body: JSON.stringify(this.menuForm),
             });
             if (res.ok) {
-                this.menuForm = { id: null, label: "", url: "", order_num: 0 };
+                this.menuForm = { id: null, label: "", url: "", order_num: 0, parent_id: null };
                 this.loadMenus();
             }
         } catch(e) {
             console.error(e);
-        } finally {
-            this.isSavingMenu = false;
+        } finally { 
+            this.isSavingMenu = false; 
         }
     },
 
@@ -260,9 +272,27 @@ export const coreLogic = {
             this.loadSettings ? this.loadSettings() : Promise.resolve(),
             this.loadThemes ? this.loadThemes() : Promise.resolve(),
             // @ts-ignore
-            this.loadPlugins ? this.loadPlugins() : Promise.resolve()
+            this.loadPlugins ? this.loadPlugins() : Promise.resolve(),
+            this.loadAgens ? this.loadAgens() : Promise.resolve(),
+            this.loadSubscribers ? this.loadSubscribers() : Promise.resolve(),
+            (async () => {
+                try {
+                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token');
+                    if (token) {
+                        const res = await fetch('/api/stats/dashboard', { headers: { 'Authorization': 'Bearer ' + token } });
+                        if (res.ok) {
+                            const statsAgg = await res.json();
+                            // @ts-ignore
+                            this.dashboardStats = statsAgg;
+                            // @ts-ignore
+                            window.__CMS_DASHBOARD_STATS = statsAgg;
+                            document.dispatchEvent(new CustomEvent('stats-updated', { detail: statsAgg }));
+                        }
+                    }
+                } catch(e) {}
+            })()
         ]);
-
+        
         // Load Media, Posts & Pages jika modulnya tersedia (Safe check dari modul lain)
         // @ts-ignore
         if(this.loadMedia) await this.loadMedia();

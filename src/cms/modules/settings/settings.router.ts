@@ -1,7 +1,10 @@
 import { Hono } from 'hono';
 // Pastikan path imports ini sesuai dengan struktur folder Anda
-import type { Bindings } from '../../types';
-import { requireAdmin } from '../../middleware/auth';
+import type { Bindings } from '../../types'; 
+import { authMiddleware } from '../../middleware/auth';
+import { getDb } from '../../db';
+import { settings as settingsTable } from '../../db/schema';
+import { sql } from 'drizzle-orm';
 
 const settings = new Hono<{ Bindings: Bindings }>();
 
@@ -9,8 +12,9 @@ const settings = new Hono<{ Bindings: Bindings }>();
 // Endpoint Publik: Tidak mengembalikan data rahasia
 settings.get('/', async (c) => {
   try {
-    const { results } = await c.env.DB.prepare("SELECT key, value FROM settings").all();
-
+    const db = getDb(c.env.DB);
+    const results = await db.select().from(settingsTable);
+    
     // Convert Array [{key:'a', value:'1'}] -> Object {a: '1'}
     const data: any = {};
     if(results){
@@ -29,14 +33,15 @@ settings.get('/', async (c) => {
 });
 
 // GET ALL SETTINGS (Admin Only: Mengembalikan semua termasuk secret)
-settings.get('/admin', requireAdmin, async (c) => {
+settings.get('/admin', authMiddleware, async (c) => {
   try {
-    const { results } = await c.env.DB.prepare("SELECT key, value FROM settings").all();
-
+    const db = getDb(c.env.DB);
+    const results = await db.select().from(settingsTable);
+    
     const data: any = {};
     if(results){
         results.forEach((row: any) => {
-            data[row.key] = row.key.includes('secret') ? '' : row.value;
+            data[row.key] = row.value;
         });
     }
     return c.json({ success: true, data });
@@ -47,34 +52,31 @@ settings.get('/admin', requireAdmin, async (c) => {
 });
 
 // SAVE SETTINGS (Terima Object, Simpan Loop)
-settings.post('/', requireAdmin, async (c) => {
+settings.post('/', authMiddleware, async (c) => {
   try {
     const body = await c.req.json();
-    const forbidden = Object.keys(body).filter(key => key.toLowerCase().includes('secret'));
-    if (forbidden.length) return c.json({ error: 'Secret harus dikonfigurasi melalui Cloudflare Secrets' }, 400);
-
-    // [PERBAIKAN] Gunakan INSERT OR REPLACE (Lebih aman untuk SQLite/D1)
-    // Ini otomatis Update jika key ada, atau Insert jika belum ada.
-    const stmt = c.env.DB.prepare(`
-      INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)
-    `);
-
-    const batch = [];
+    
+    const db = getDb(c.env.DB);
+    const batchData = [];
+    
     for (const key in body) {
-        // [PERBAIKAN] Pastikan value selalu String agar tidak error di DB
         let val = body[key];
         if (typeof val !== 'string') {
             val = JSON.stringify(val);
         }
-
-        batch.push(stmt.bind(key, val));
+        batchData.push({ key, value: val });
     }
-
-    // [PERBAIKAN] Hanya eksekusi jika ada data
-    if (batch.length > 0) {
-        await c.env.DB.batch(batch);
+    
+    if (batchData.length > 0) {
+        const statements = batchData.map(item => 
+          db.insert(settingsTable).values(item).onConflictDoUpdate({
+            target: settingsTable.key,
+            set: { value: item.value }
+          })
+        );
+        await db.batch(statements as any);
     }
-
+    
     return c.json({ success: true, message: 'Settings saved' });
   } catch (e: any) {
     console.error("SAVE Settings Error:", e);

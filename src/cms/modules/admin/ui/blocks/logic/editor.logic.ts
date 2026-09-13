@@ -9,7 +9,7 @@ window.cleanData = function(form, editorContent) {
         id: (form.id && form.id !== 'null') ? form.id : undefined,
         title: form.title || '',
         slug: form.slug || (form.title ? form.title.toString().toLowerCase().trim().replace(/\\s+/g, '-').replace(/[^\\w\\-]+/g, '') : ''),
-        content: editorContent || '',
+        content: editorContent || '', 
         status: form.status || 'draft',
         category: form.category || 'Uncategorized',
         tags: form.tags || '',
@@ -24,20 +24,20 @@ window.cmsApi = {
     load: async function(type) {
         try {
             const res = await fetch('/api/contents?type=' + type, {
-                headers: { 'Authorization': 'Bearer ' + '' }
+                headers: { 'Authorization': 'Bearer ' + localStorage.getItem('labmu_token') }
             });
             const json = await res.json();
             return Array.isArray(json) ? json : (json.data || []);
         } catch (e) { return []; }
     },
-
+    
     save: async function(payload) {
         try {
             const res = await fetch('/api/contents', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + ''
+                headers: { 
+                    'Content-Type': 'application/json', 
+                    'Authorization': 'Bearer ' + localStorage.getItem('labmu_token')
                 },
                 body: JSON.stringify(payload)
             });

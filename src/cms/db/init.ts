@@ -25,9 +25,14 @@ export const updateSchema = async (db: D1Database) => {
         email TEXT,
         name TEXT,
         role TEXT DEFAULT 'author',
+        subscription_plan TEXT,
+        subscription_expires_at TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `).run();
+    try { await db.prepare("ALTER TABLE users ADD COLUMN subscription_plan TEXT;").run(); } catch(e) {}
+    try { await db.prepare("ALTER TABLE users ADD COLUMN subscription_expires_at TEXT;").run(); } catch(e) {}
+    try { await db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT;").run(); } catch(e) {}
     logs.push("✅ Table 'users' checked (Safe).");
 
     // 3. TABEL CONTENTS (Legacy/Alternative)
@@ -125,10 +130,11 @@ export const updateSchema = async (db: D1Database) => {
         id TEXT PRIMARY KEY, 
         label TEXT,
         url TEXT,
-        order_num INTEGER DEFAULT 0
+        order_num INTEGER DEFAULT 0,
+        parent_id TEXT DEFAULT NULL
       );
     `).run();
-    logs.push("✅ Table 'menus' checked (Safe - ID TEXT).");
+    logs.push("✅ Table 'menus' checked (Safe - ID TEXT with parent_id).");
 
     // 6. TABEL THEMES
     // Menyimpan daftar tema dan status aktif
@@ -158,11 +164,65 @@ export const updateSchema = async (db: D1Database) => {
     `).run();
     logs.push("✅ Table 'plugins' checked (Safe).");
 
-    // Optional: Auto-insert default theme jika tabel baru dibuat
+    // 8. TABEL NOTIFICATIONS
     await db.prepare(`
-      INSERT OR IGNORE INTO themes (id, name, description, active) 
-      VALUES ('labmu-default', 'LabMu Default', 'Standard LabMu Theme', 1);
+      CREATE TABLE IF NOT EXISTS notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        title TEXT,
+        message TEXT,
+        type TEXT DEFAULT 'warning',
+        link TEXT,
+        read INTEGER DEFAULT 0,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
     `).run();
+    logs.push("✅ Table 'notifications' checked (Safe).");
+
+    // 9. TABEL MEDIA_SOURCES & CURATION_QUEUE
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS media_sources (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        slug TEXT NOT NULL UNIQUE,
+        base_url TEXT NOT NULL,
+        feed_url TEXT,
+        feed_type TEXT DEFAULT 'wp_api',
+        region_code TEXT,
+        website_category TEXT DEFAULT 'Berita',
+        default_category TEXT DEFAULT 'Berita Daerah',
+        trust_score INTEGER DEFAULT 100,
+        is_active INTEGER DEFAULT 1,
+        auto_sync INTEGER DEFAULT 1,
+        sync_interval INTEGER DEFAULT 15,
+        auto_publish INTEGER DEFAULT 0,
+        description TEXT,
+        last_fetched_at DATETIME,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `).run();
+    try { await db.prepare("ALTER TABLE media_sources ADD COLUMN website_category TEXT DEFAULT 'Berita';").run(); } catch(e) {}
+    try { await db.prepare("ALTER TABLE media_sources ADD COLUMN default_category TEXT DEFAULT 'Berita Daerah';").run(); } catch(e) {}
+    try { await db.prepare("ALTER TABLE media_sources ADD COLUMN auto_publish INTEGER DEFAULT 0;").run(); } catch(e) {}
+    logs.push("✅ Table 'media_sources' checked (Safe).");
+
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS curation_queue (
+        id TEXT PRIMARY KEY,
+        source_id TEXT NOT NULL,
+        raw_title TEXT NOT NULL,
+        raw_content_html TEXT NOT NULL,
+        raw_url TEXT NOT NULL UNIQUE,
+        raw_published_at DATETIME,
+        raw_image TEXT,
+        raw_description TEXT,
+        default_category TEXT DEFAULT 'Berita Daerah',
+        status TEXT DEFAULT 'pending',
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `).run();
+    try { await db.prepare("ALTER TABLE curation_queue ADD COLUMN default_category TEXT DEFAULT 'Berita Daerah';").run(); } catch(e) {}
+    logs.push("✅ Table 'curation_queue' checked (Safe).");
 
     return logs;
 

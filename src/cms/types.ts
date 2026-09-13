@@ -6,14 +6,18 @@ export interface Bindings {
   MY_BUCKET?: R2Bucket;
   MEDIA_BUCKET?: R2Bucket;
   BUCKET?: R2Bucket;
+  R2?: R2Bucket;
   QURAN_CACHE?: KVNamespace;
-  SESSION_SECRET: string;
-  JWT_SECRET?: string;
-  SSO_CLIENT_ID?: string;
-  SSO_CLIENT_SECRET?: string;
+
+  // Cross-Account Cloudflare R2 (S3 API)
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_BUCKET_NAME?: string;
 
   // AI & Vector Search
-  AI?: any;
+  AI: any;
+  sa_cache?: KVNamespace;
   VECTORIZE_INDEX?: VectorizeIndex; // Untuk Tarjih CMS
   VECTOR_INDEX?: VectorizeIndex;   // Untuk Quran (Opsional)
 }

@@ -1,9 +1,11 @@
 import type { Context } from 'hono';
 import type { Bindings } from '../utils';
+import { getDb } from '../db';
+import { posts } from '../db/schema';
+import { eq } from 'drizzle-orm';
 
-// Konfigurasi
-const WP_API_URL = "https://fatwatarjih.or.id/wp-json/wp/v2/posts?_embed&per_page=5"; // Ambil 5 terbaru dulu biar worker gak timeout
-const R2_PUBLIC_DOMAIN = "https://pub-xxxxxxxx.r2.dev"; // GANTI DENGAN DOMAIN R2 OM (Cek di Dashboard R2)
+const WP_API_URL = "https://fatwatarjih.or.id/wp-json/wp/v2/posts?_embed&per_page=5";
+const R2_PUBLIC_DOMAIN = "https://pub-xxxxxxxx.r2.dev";
 
 export const syncLatest = async (c: Context<{ Bindings: Bindings }>) => {
     const logs: string[] = [];
@@ -12,50 +14,44 @@ export const syncLatest = async (c: Context<{ Bindings: Bindings }>) => {
     try {
         logs.push("🚀 Memulai sinkronisasi dengan FatwaTarjih.or.id...");
 
-        // 1. Ambil Data dari WordPress API
         const response = await fetch(WP_API_URL);
         if (!response.ok) throw new Error("Gagal koneksi ke server Fatwa Tarjih");
         
-        const posts: any[] = await response.json();
-        logs.push(`📦 Berhasil mengambil ${posts.length} data mentah.`);
+        const fetchedPosts: any[] = await response.json();
+        logs.push(`📦 Berhasil mengambil ${fetchedPosts.length} data mentah.`);
 
-        // 2. Loop setiap postingan
-        for (const p of posts) {
+        const db = getDb(c.env.DB);
+
+        for (const p of fetchedPosts) {
             const originalId = p.id;
             const title = p.title.rendered;
-            const slug = p.slug; // Kita pakai slug asli mereka
-            const content = p.content.rendered; // KONTEN LENGKAP (HTML)
+            const slug = p.slug;
+            const content = p.content.rendered;
             const date = new Date(p.date).toISOString();
 
-            // Cek apakah artikel sudah ada di D1 (Biar gak duplikat)
-            const existing = await c.env.DB.prepare("SELECT id FROM posts WHERE slug = ?").bind(slug).first();
+            const existing = await db.select({ id: posts.id }).from(posts).where(eq(posts.slug, slug)).get();
             
             if (existing) {
                 logs.push(`⏩ Skip: "${title}" (Sudah ada)`);
                 continue;
             }
 
-            // 3. PROSES GAMBAR (Upload ke R2)
             let localImageUrl = '';
             
-            // Cek apakah ada Featured Image
             if (p._embedded && p._embedded['wp:featuredmedia'] && p._embedded['wp:featuredmedia'][0]) {
                 const sourceUrl = p._embedded['wp:featuredmedia'][0].source_url;
                 
                 try {
-                    // Download Gambar dari Server Asli
                     const imgRes = await fetch(sourceUrl);
                     if (imgRes.ok) {
                         const imgBlob = await imgRes.arrayBuffer();
                         const fileExt = sourceUrl.split('.').pop() || 'jpg';
-                        const r2FileName = `tarjih/img-${originalId}.${fileExt}`; // Nama file di R2
+                        const r2FileName = `tarjih/img-${originalId}.${fileExt}`;
 
-                        // Upload ke R2 Bucket
                         await c.env.MY_BUCKET.put(r2FileName, imgBlob, {
                             httpMetadata: { contentType: imgRes.headers.get('content-type') || 'image/jpeg' }
                         });
 
-                        // Set URL Publik R2
                         localImageUrl = `${R2_PUBLIC_DOMAIN}/${r2FileName}`;
                         logs.push(`   📸 Gambar terupload ke R2: ${r2FileName}`);
                     }
@@ -64,11 +60,14 @@ export const syncLatest = async (c: Context<{ Bindings: Bindings }>) => {
                 }
             }
 
-            // 4. SIMPAN KE D1 DATABASE
-            // Pastikan tabel 'posts' punya kolom yang sesuai. Sesuaikan query ini.
-            await c.env.DB.prepare(
-                "INSERT INTO posts (title, slug, content, image, created_at, status) VALUES (?, ?, ?, ?, ?, 'published')"
-            ).bind(title, slug, content, localImageUrl, date).run();
+            await db.insert(posts).values({
+                title,
+                slug,
+                body: content,
+                featuredImage: localImageUrl,
+                createdAt: date,
+                status: 'publish'
+            }).run();
 
             savedCount++;
             logs.push(`✅ Disimpan: "${title}"`);

@@ -1,4 +1,7 @@
 import type { D1Database } from '@cloudflare/workers-types'
+import { getDb } from '../../db';
+import { options } from '../../db/schema';
+import { sql } from 'drizzle-orm';
 
 export class SettingsService {
   constructor(private db: D1Database) {}
@@ -6,12 +9,13 @@ export class SettingsService {
   // Ambil semua settingan
   async getAll() {
     try {
-      const result = await this.db.prepare("SELECT * FROM options").all();
+      const dbInstance = getDb(this.db);
+      const result = await dbInstance.select().from(options);
       const settings: any = {};
       
       // Ubah dari array baris DB jadi object { key: value }
-      if (result.results) {
-        result.results.forEach((row: any) => {
+      if (result) {
+        result.forEach((row: any) => {
           settings[row.key] = row.value;
         });
       }
@@ -29,14 +33,18 @@ export class SettingsService {
 
   // Simpan settingan (Upsert: Update kalau ada, Insert kalau belum)
   async updateMany(data: Record<string, string>) {
-    const stmt = this.db.prepare("INSERT INTO options (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value");
+    const dbInstance = getDb(this.db);
+    const batchData = Object.entries(data).map(([key, value]) => ({ 
+      key, 
+      value: String(value) 
+    }));
     
-    const batch = [];
-    for (const [key, value] of Object.entries(data)) {
-      // Pastikan value string biar aman
-      batch.push(stmt.bind(key, String(value)));
+    if (batchData.length > 0) {
+      return await dbInstance.insert(options).values(batchData).onConflictDoUpdate({
+        target: options.key,
+        set: { value: sql`excluded.value` }
+      }).run();
     }
-    
-    return await this.db.batch(batch);
+    return { success: true };
   }
 }

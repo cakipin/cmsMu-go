@@ -7,15 +7,15 @@ export const menusPage = `
     </div>
 
     <div style="display:grid; grid-template-columns: 1fr 2fr; gap:20px;">
-
+        
         <div class="card">
             <h3 style="margin-top:0; border-bottom:1px solid #eee; padding-bottom:10px;">Add / Edit Menu</h3>
-
+            
             <div style="margin-bottom:10px;">
                 <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">Label (Nama Menu)</label>
                 <input type="text" x-model="menuForm.label" class="input" placeholder="Contoh: Tentang Kami">
             </div>
-
+            
             <div style="margin-bottom:10px;">
                 <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">URL / Link</label>
                 <input type="text" x-model="menuForm.url" class="input" placeholder="Contoh: /tentang-kami">
@@ -27,11 +27,22 @@ export const menusPage = `
                 <input type="number" x-model="menuForm.order_num" class="input" placeholder="0">
             </div>
 
+            
+            <div style="margin-bottom:15px;">
+                <label style="display:block; font-size:12px; font-weight:bold; margin-bottom:5px;">Induk Menu (Parent)</label>
+                <select x-model="menuForm.parent_id" class="input" style="width:100%;">
+                    <option value="">-- Tidak Ada (Menu Utama) --</option>
+                    <template x-for="pm in menuList.filter(m => !m.parent_id && m.id !== menuForm.id)" :key="pm.id">
+                        <option :value="pm.id" x-text="pm.label"></option>
+                    </template>
+                </select>
+            </div>
+
             <div style="display:flex; gap:10px;">
                 <button @click="saveMenu()" class="btn btn-primary" style="flex:1;">
                     <span x-text="isSavingMenu ? 'Saving...' : 'Save Menu'"></span>
                 </button>
-                <button @click="menuForm = {id:null, label:'', url:'', order_num:0}" class="btn" style="border:1px solid #ccc;">
+                <button @click="menuForm = {id:null, label:'', url:'', order_num:0, parent_id:null}" class="btn" style="border:1px solid #ccc;">
                     Reset
                 </button>
             </div>
@@ -51,7 +62,7 @@ export const menusPage = `
                     <template x-for="m in menuList" :key="m.id">
                         <tr style="border-bottom:1px solid #eee;">
                             <td style="padding:10px;" x-text="m.order_num"></td>
-                            <td style="padding:10px; font-weight:bold;" x-text="m.label"></td>
+                            <td style="padding:10px; font-weight:bold;"><span x-show="m.parent_id" style="color:#999; margin-right:5px;">&#8627;</span><span x-text="m.label"></span></td>
                             <td style="padding:10px; color:#2271b1;" x-text="m.url"></td>
                             <td style="padding:10px; text-align:right;">
                                 <div style="display: flex; justify-content: flex-end; gap: 12px;">

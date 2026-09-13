@@ -25,7 +25,7 @@ export const themesPage = `
         async openThemeEditor() {
             // Muat warna tersimpan dari API settings
             try {
-                const token = '';
+                const token = localStorage.getItem('labmu_token');
                 const res = await fetch('/api/settings', { headers: { 'Authorization': 'Bearer ' + token } });
                 if (res.ok) {
                     const json = await res.json();
@@ -39,7 +39,7 @@ export const themesPage = `
                     if (d.header_menu_position) this.themeColors.header_menu_position = d.header_menu_position;
                     if (d.header_text_color)  this.themeColors.header_text_color  = d.header_text_color;
                     if (d.sidebar_popular_limit) this.themeColors.sidebar_popular_limit = parseInt(d.sidebar_popular_limit) || 5;
-
+                    
                     if (d.landing_title) this.themeColors.landing_title = d.landing_title;
                     if (d.landing_subtitle) this.themeColors.landing_subtitle = d.landing_subtitle;
                     if (d.landing_cta_text) this.themeColors.landing_cta_text = d.landing_cta_text;
@@ -55,7 +55,7 @@ export const themesPage = `
         async saveThemeColors() {
             this.isSavingTheme = true;
             try {
-                const token = '';
+                const token = localStorage.getItem('labmu_token');
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -103,10 +103,10 @@ export const themesPage = `
   <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:25px;">
      <template x-for="t in availableThemes">
         <div class="card" style="padding:0; overflow:hidden; border:1px solid #dcdcde; box-shadow:0 1px 2px rgba(0,0,0,0.05); position:relative;">
-
+           
            <div style="aspect-ratio: 4/3; background:#eee; position:relative; border-bottom:1px solid #eee;">
                <img :src="t.thumbnail || 'https://placehold.co/600x400/eee/ccc?text=No+Preview'" style="width:100%; height:100%; object-fit:cover;">
-
+               
                <div x-show="t.active" style="position:absolute; top:10px; right:10px; background:#2271b1; color:#fff; padding:4px 10px; font-size:12px; font-weight:bold; border-radius:3px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
                   Active
                </div>
@@ -118,7 +118,7 @@ export const themesPage = `
                    By <span x-text="t.author"></span> &bull; v<span x-text="t.version"></span>
                </div>
                <p x-text="t.description" style="font-size:13px; color:#555; margin-bottom:15px; line-height:1.4; height:36px; overflow:hidden;"></p>
-
+               
                <div style="display:flex; gap:10px;">
                    <button x-show="!t.active" @click="activateTheme(t.id)" class="btn" style="flex:1;">Activate</button>
                    <button x-show="!t.active" @click="deleteTheme(t.id)" class="btn" style="flex:1; background:#f6f7f7; color:#d63638; border:1px solid #dcdcde;">Delete</button>
@@ -136,23 +136,23 @@ export const themesPage = `
   <div x-show="themeEditorOpen" x-cloak style="position:fixed; top:0; left:0; right:0; bottom:0; z-index:9999;">
     <div style="width:100%; height:100%; background:rgba(0,0,0,0.5);" @click.self="themeEditorOpen=false">
       <div style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); background:#fff; width:90%; max-width:820px; max-height:90vh; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; box-shadow:0 20px 50px rgba(0,0,0,0.3);">
-
+        
         <!-- Modal Header -->
         <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f9fafb;">
             <div>
                 <h3 style="margin:0; font-size:17px; color:#1f2937;">🎨 Customize Theme</h3>
-                <p style="margin:2px 0 0; font-size:12px; color:#6b7280;">Ubah tampilan tema aktif (labmu-default)</p>
+                <p style="margin:2px 0 0; font-size:12px; color:#6b7280;">Ubah tampilan tema aktif (Newsroom)</p>
             </div>
             <button @click="themeEditorOpen=false" style="background:none; border:none; font-size:22px; cursor:pointer; color:#9ca3af; line-height:1;">&times;</button>
         </div>
-
+        
         <!-- Modal Body -->
         <div style="flex:1; overflow-y:auto; padding:20px; display:grid; grid-template-columns:1fr 1fr; gap:20px;">
-
+          
           <!-- Left: Config Fields -->
           <div style="display:grid; gap:14px; align-content:start; max-height: 60vh; overflow-y: auto; padding-right: 10px;">
             <h4 style="margin:0 0 4px; font-size:14px; color:#374151; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">Header & Navigasi</h4>
-
+            
             <div>
               <label style="display:block; font-size:12px; font-weight:600; color:#4b5563; margin-bottom:6px;">URL Logo Header (Opsional)</label>
               <div style="display:flex; gap:8px; align-items:center;">
@@ -236,12 +236,12 @@ export const themesPage = `
                 ↺ Reset ke Setelan Awal
             </button>
           </div>
-
+          
           <!-- Right: Live Preview -->
           <div>
             <h4 style="margin:0 0 10px; font-size:14px; color:#374151; border-bottom:1px solid #e5e7eb; padding-bottom:8px;">Preview Langsung</h4>
             <div :style="'border:1px solid #e5e7eb; border-radius:8px; overflow:hidden; box-shadow:0 2px 8px rgba(0,0,0,0.06); background:'+themeColors.theme_bg">
-
+              
               <!-- Mini Header -->
               <div :style="'background:'+themeColors.theme_bg+'; border-bottom:1px solid #e5e7eb; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;'">
                 <template x-if="themeColors.header_logo_url">
@@ -255,13 +255,13 @@ export const themesPage = `
                   <span :style="'font-size:11px; padding:3px 8px; border-radius:4px; color:'+themeColors.theme_primary+'; background:'+themeColors.theme_accent">Menu 2</span>
                 </div>
               </div>
-
+              
               <!-- Mini Hero -->
               <div :style="'background:linear-gradient(135deg,'+themeColors.theme_primary+','+themeColors.theme_primary_dark+'); padding:16px; color:#fff;'">
                 <div style="font-weight:700; font-size:14px; margin-bottom:3px;">Selamat Datang!</div>
                 <div style="font-size:12px; opacity:0.85;">Tagline website Anda di sini</div>
               </div>
-
+              
               <!-- Mini Post Cards -->
               <div :style="'padding:14px; display:grid; grid-template-columns:1fr 1fr; gap:10px; background:'+themeColors.theme_bg">
                 <div :style="'background:'+themeColors.theme_bg+'; border:1px solid #e5e7eb; border-radius:6px; padding:10px;'">
@@ -286,7 +286,7 @@ export const themesPage = `
             <p style="font-size:11px; color:#9ca3af; margin-top:8px; text-align:center;">Preview berubah saat warna diubah</p>
           </div>
         </div>
-
+        
         <!-- Modal Footer -->
         <div style="padding:14px 20px; border-top:1px solid #e5e7eb; display:flex; justify-content:flex-end; gap:10px; background:#f9fafb;">
             <button @click="themeEditorOpen=false" style="padding:9px 18px; background:#f3f4f6; border:1px solid #d1d5db; border-radius:6px; cursor:pointer; font-size:14px;">Batal</button>
@@ -296,7 +296,7 @@ export const themesPage = `
                 <span x-text="isSavingTheme ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
             </button>
         </div>
-
+        
       </div>
     </div>
   </div>

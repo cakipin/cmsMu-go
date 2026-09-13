@@ -1,16 +1,20 @@
 import type { CollectionEntry } from "astro:content";
 import config from "@/config";
 import { env } from "cloudflare:workers";
+import { getDb } from "@/cms/db";
+import { posts } from "@/cms/db/schema";
+import { eq, desc } from "drizzle-orm";
 
 export async function getD1Posts(Astro: any): Promise<CollectionEntry<"posts">[]> {
-  const db = env?.DB;
-  if (!db) {
+  const d1 = env?.DB;
+  if (!d1) {
     console.warn("D1 Database not found in env.DB");
     return [];
   }
 
   try {
-    const { results } = await db.prepare("SELECT * FROM posts WHERE status = 'publish' ORDER BY created_at DESC").all();
+    const db = getDb(d1);
+    const results = await db.select().from(posts).where(eq(posts.status, 'publish')).orderBy(desc(posts.createdAt));
     if (!results) return [];
 
     return results.map((row: any) => {
@@ -19,14 +23,14 @@ export async function getD1Posts(Astro: any): Promise<CollectionEntry<"posts">[]
         slug: row.slug,
         body: row.body || "",
         collection: "posts",
-        filePath: undefined, // Dynamic posts don't have file paths
+        filePath: undefined,
         data: {
           title: row.title || "Untitled",
           description: (row.body || "").replace(/<[^>]*>?/gm, '').substring(0, 150) + "...",
-          pubDatetime: new Date(row.created_at),
+          pubDatetime: new Date(row.createdAt || row.created_at),
           modDatetime: null,
           tags: row.tags ? row.tags.split(",").map((t: string) => t.trim()) : ["others"],
-          ogImage: row.featured_image || undefined,
+          ogImage: row.featuredImage || row.featured_image || undefined,
           canonicalURL: undefined,
           hideEditPost: true,
           author: row.author || config.site.author,

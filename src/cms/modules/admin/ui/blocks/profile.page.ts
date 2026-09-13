@@ -14,20 +14,20 @@ export const profilePage = `
                 <template x-if="!userAvatar">
                     <i class="fas fa-user-astronaut text-4xl"></i>
                 </template>
-
+                
                 <!-- Overlay (Visual Feedback, tidak bisa diganti di sini jika SSO) -->
                 <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
                     <i class="fas fa-camera text-white text-xl"></i>
                 </div>
             </div>
-
-            <h3 class="text-xl font-bold text-slate-800" x-text="userName || (userRole === 'administrator' ? 'Administrator' : 'Pengelola')"></h3>
+            
+            <h3 class="text-xl font-bold text-slate-800" x-text="userName || (userRole === 'admin' ? 'Administrator' : 'Pengelola')"></h3>
             <p class="text-sm font-medium text-slate-500 mb-4" x-text="userEmail || 'Tidak ada email'"></p>
-
+            
             <span class="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold capitalize" x-text="userRole"></span>
         </div>
     </div>
-
+    
     <!-- Detail (Kanan) -->
     <div class="md:col-span-2">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -48,9 +48,9 @@ export const profilePage = `
                     <label class="block text-sm font-medium text-slate-700 mb-1">Peran (Role)</label>
                     <input type="text" readonly :value="userRole" class="w-full rounded-lg border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-700 focus:outline-none cursor-not-allowed capitalize">
                 </div>
-
-                <div class="pt-4 border-t border-slate-100 mt-6" x-data="{
-                    pwdForm: { currentPassword: '', newPassword: '' },
+                
+                <div class="pt-4 border-t border-slate-100 mt-6" x-data="{ 
+                    pwdForm: { currentPassword: '', newPassword: '' }, 
                     isSavingPwd: false,
                     async changePassword() {
                         if (!this.pwdForm.currentPassword || !this.pwdForm.newPassword) {
@@ -61,9 +61,9 @@ export const profilePage = `
                         try {
                             const res = await fetch('/api/users/profile-password', {
                                 method: 'PUT',
-                                headers: {
+                                headers: { 
                                     'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer ' + ''
+                                    'Authorization': 'Bearer ' + localStorage.getItem('labmu_token')
                                 },
                                 body: JSON.stringify(this.pwdForm)
                             });
@@ -84,7 +84,7 @@ export const profilePage = `
                 }">
                     <h4 class="text-md font-semibold text-slate-800 mb-3"><i class="fas fa-lock mr-2 text-slate-400"></i>Ganti Password</h4>
                     <p class="text-xs text-slate-500 mb-4">Ubah password Anda untuk login manual. (Catatan: Jika Anda menggunakan SSO Muhammadiyah ID, login tetap menggunakan password SSO Anda).</p>
-
+                    
                     <div class="space-y-3">
                         <div>
                             <label class="block text-sm font-medium text-slate-700 mb-1">Password Saat Ini</label>

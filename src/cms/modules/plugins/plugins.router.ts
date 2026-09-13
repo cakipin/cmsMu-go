@@ -1,11 +1,15 @@
 import { Hono } from 'hono';
+import { getDb } from '../../db';
+import { plugins as pluginsTable } from '../../db/schema';
+import { eq } from 'drizzle-orm';
 
 const plugins = new Hono<{ Bindings: any }>();
 
 // GET: List Plugins
 plugins.get('/', async (c) => {
   try {
-    const { results } = await c.env.DB.prepare("SELECT * FROM plugins").all();
+    const db = getDb(c.env.DB);
+    const results = await db.select().from(pluginsTable);
     return c.json({ success: true, data: results || [] });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500);
@@ -21,9 +25,11 @@ plugins.post('/toggle', async (c) => {
 
     if (!targetId) return c.json({ success: false, message: 'ID Plugin kosong' }, 400);
 
+    const db = getDb(c.env.DB);
     // Update the plugin's active status
-    const result = await c.env.DB.prepare("UPDATE plugins SET active = ? WHERE id = ?")
-      .bind(active, targetId)
+    const result = await db.update(pluginsTable)
+      .set({ active })
+      .where(eq(pluginsTable.id, targetId))
       .run();
 
     if (result.success) {
@@ -41,10 +47,16 @@ plugins.post('/toggle', async (c) => {
 plugins.post('/', async (c) => {
   try {
     const body = await c.req.json();
-    await c.env.DB.prepare(`
-      INSERT INTO plugins (id, name, description, author, version, active) 
-      VALUES (?, ?, ?, ?, ?, 0)
-    `).bind(body.id, body.name, body.description, body.author, body.version).run();
+    const db = getDb(c.env.DB);
+    await db.insert(pluginsTable)
+      .values({
+        id: body.id,
+        name: body.name,
+        description: body.description,
+        author: body.author,
+        version: body.version,
+        active: 0
+      }).run();
     return c.json({ success: true, message: 'Plugin ditambahkan' });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500);
@@ -55,7 +67,8 @@ plugins.post('/', async (c) => {
 plugins.delete('/:id', async (c) => {
   try {
     const id = c.req.param('id');
-    await c.env.DB.prepare("DELETE FROM plugins WHERE id = ?").bind(id).run();
+    const db = getDb(c.env.DB);
+    await db.delete(pluginsTable).where(eq(pluginsTable.id, id)).run();
     return c.json({ success: true, message: 'Plugin berhasil dihapus' });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500);

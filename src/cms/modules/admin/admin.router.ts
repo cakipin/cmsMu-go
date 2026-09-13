@@ -2,8 +2,9 @@ import { Hono } from 'hono';
 import { renderAdmin } from './ui/view';      // Import Dashboard dari views.ts
 import { editorPage } from './ui/blocks/editor.page';
 import { ssoCallbackPage } from './ui/pages/sso-callback.page';
-import { requireAdmin } from '../../middleware/auth';
-import type { D1Database } from '@cloudflare/workers-types';
+import { getDb } from '../../db';
+import { users } from '../../db/schema';
+import { desc } from 'drizzle-orm';
 
 // Definisikan tipe Bindings agar TypeScript tidak error saat akses c.env.DB
 interface Bindings {
@@ -14,7 +15,7 @@ const admin = new Hono<{ Bindings: Bindings }>();
 
 // 1. DASHBOARD UTAMA
 admin.get('/', (c) => {
-  return c.html(renderAdmin({ view: 'dash' }));
+  return c.html(renderAdmin());
 });
 
 // 1b. SSO CALLBACK
@@ -41,12 +42,22 @@ admin.get('/:type/:id/edit', (c) => {
 
 // 3. API INTERNAL (Data Users)
 // Endpoint ini bisa dipanggil oleh fetch di ui/views.ts untuk loadUsers()
-admin.get('/data/users', requireAdmin, async (c) => {
+admin.get('/data/users', async (c) => {
   try {
-    const users = await c.env.DB.prepare(
-      "SELECT id, username, name, email, role, created_at FROM users ORDER BY id DESC"
-    ).all();
-    return c.json({ success: true, data: users.results });
+    const db = getDb(c.env.DB);
+    const results = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      created_at: users.createdAt
+    })
+    .from(users)
+    .orderBy(desc(users.id))
+    .all();
+    
+    return c.json({ success: true, data: results });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500);
   }

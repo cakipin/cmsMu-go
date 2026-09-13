@@ -6,7 +6,7 @@ export const commentsPage = `
     filterStatus: 'all',
     editingComment: null,
     editContent: '',
-
+    
     async init() {
         await this.loadComments();
     },
@@ -14,7 +14,7 @@ export const commentsPage = `
     async loadComments() {
         this.isLoading = true;
         try {
-            const headers = { Authorization: 'Bearer ' + ('' || '') };
+            const headers = { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token') || '') };
             const [r1, r2] = await Promise.all([
                 fetch('/api/comments/all', { headers }),
                 fetch('/api/comments/pending', { headers })
@@ -36,18 +36,18 @@ export const commentsPage = `
     countByStatus(s) { return this.allComments.filter(c => c.status === s).length; },
 
     async approve(id) {
-        const res = await fetch('/api/comments/' + id + '/approve', { method: 'PUT', headers: { Authorization: 'Bearer ' + (''||'') } });
+        const res = await fetch('/api/comments/' + id + '/approve', { method: 'PUT', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
         if (res.ok) await this.loadComments();
     },
 
     async disable(id) {
-        const res = await fetch('/api/comments/' + id + '/disable', { method: 'PUT', headers: { Authorization: 'Bearer ' + (''||'') } });
+        const res = await fetch('/api/comments/' + id + '/disable', { method: 'PUT', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
         if (res.ok) await this.loadComments();
     },
 
     async deleteComment(id) {
         if (!confirm('Yakin ingin menghapus komentar ini?')) return;
-        const res = await fetch('/api/comments/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + (''||'') } });
+        const res = await fetch('/api/comments/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
         if (res.ok) this.allComments = this.allComments.filter(c => c.id !== id);
     },
 
@@ -57,7 +57,7 @@ export const commentsPage = `
         if (!this.editingComment) return;
         const res = await fetch('/api/comments/' + this.editingComment.id, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (''||'') },
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') },
             body: JSON.stringify({ content: this.editContent })
         });
         if (res.ok) {
@@ -134,7 +134,7 @@ export const commentsPage = `
                             <!-- Author -->
                             <td style="padding:14px 16px;white-space:nowrap;">
                                 <div style="display:flex;align-items:center;gap:10px;">
-                                    <img :src="c.user_avatar || ('https://ui-avatars.com/api/?name='+encodeURIComponent(c.user_name||'U')+'&background=random&size=40')"
+                                    <img :src="c.user_avatar || ('https://ui-avatars.com/api/?name='+encodeURIComponent(c.user_name||'U')+'&background=random&size=40')" 
                                          style="width:36px;height:36px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;flex-shrink:0;">
                                     <div>
                                         <div style="font-weight:600;font-size:13px;color:#1e293b;" x-text="c.user_name || 'Anonim'"></div>
@@ -163,7 +163,7 @@ export const commentsPage = `
                                 <div style="display:flex;gap:6px;justify-content:center;align-items:center;">
                                     <!-- Edit -->
                                     <button @click="openEdit(c)" title="Edit"
-                                        style="background:#f1f5f9;color:#475569;border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;"
+                                        style="background:#f1f5f9;color:#475569;border:none;border-radius:6px;width:32px;height:32px;cursor:pointer;display:flex;align-items:center;justify-content:center;" 
                                         onmouseover="this.style.background='#e2e8f0'" onmouseout="this.style.background='#f1f5f9'">
                                         <i class="fas fa-edit" style="font-size:11px;"></i>
                                     </button>
@@ -206,7 +206,7 @@ export const commentsPage = `
                     <div style="margin-bottom:12px;padding:10px 12px;background:#f8fafc;border-radius:8px;font-size:13px;color:#475569;">
                         <b x-text="editingComment.user_name"></b> &bull; <span x-text="fmt(editingComment.created_at)"></span>
                     </div>
-                    <textarea x-model="editContent"
+                    <textarea x-model="editContent" 
                         style="width:100%;min-height:120px;padding:12px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:14px;resize:vertical;font-family:inherit;margin-bottom:16px;box-sizing:border-box;outline:none;"
                         onfocus="this.style.borderColor='#1e56b0'" onblur="this.style.borderColor='#e2e8f0'"
                         placeholder="Isi komentar..."></textarea>

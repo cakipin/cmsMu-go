@@ -12,9 +12,16 @@ import { globalModals } from './blocks/modals';
 import { cmsLogic } from './blocks/cms.logic';
 import { ssoPage } from './blocks/sso.page';
 import { loginPage } from './pages/login.page';
-import { labmuProSettingsPage } from './blocks/labmu-pro-settings.page'
 import { commentsPage } from './blocks/comments.page';
 import { profilePage } from './blocks/profile.page';
+
+import { subscribersPage } from './blocks/subscribers.page';
+import { subscribersLogic } from './blocks/subscribers.logic';
+import { emagazinePage } from './blocks/emagazine.page';
+import { seoPage } from './blocks/seo.page';
+import { aggregatorView } from '../../../addons/aggregator/view';
+import { newsroomView } from '../../../addons/newsroom/view';
+
 
 export function renderAdmin(data: any): string {
     const isLoginView = data.view === 'login';
@@ -38,7 +45,8 @@ export function renderAdmin(data: any): string {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Admin LabMu</title>
+            <title>CMSMu Redaksi Dashboard</title>
+            <link rel="icon" href="/favicon.svg" type="image/svg+xml">
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <script src="https://cdn.tailwindcss.com"></script>
             <script>
@@ -61,9 +69,159 @@ export function renderAdmin(data: any): string {
                 .no-scrollbar::-webkit-scrollbar { display: none; }
                 .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
             </style>
-
+            
             <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+            <script>
+                if (window.pdfjsLib) {
+                    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                }
+
+                // Global Cookie Session & Anti-LocalStorage Helper (CMS Mu)
+                (function() {
+                    try {
+                        var origGet = Storage.prototype.getItem;
+                        var origSet = Storage.prototype.setItem;
+                        var origRemove = Storage.prototype.removeItem;
+                        window.__origLsRemove = origRemove;
+
+                        function getCookieVal(name) {
+                            var parts = (document.cookie || '').split(';');
+                            for (var i = 0; i < parts.length; i++) {
+                                var p = parts[i].trim();
+                                if (p.indexOf(name + '=') === 0) {
+                                    return decodeURIComponent(p.substring(name.length + 1));
+                                }
+                            }
+                            return '';
+                        }
+
+                        Storage.prototype.getItem = function(k) {
+                            if (k === 'labmu_token' || k === 'admin_token') {
+                                return getCookieVal('labmu_token');
+                            }
+                            return origGet.apply(this, arguments);
+                        };
+
+                        Storage.prototype.setItem = function(k, v) {
+                            if (k === 'labmu_token' || k === 'admin_token') {
+                                document.cookie = 'labmu_token=' + encodeURIComponent(v) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                                origRemove.call(this, 'labmu_token');
+                                origRemove.call(this, 'admin_token');
+                                return;
+                            }
+                            return origSet.apply(this, arguments);
+                        };
+
+                        Storage.prototype.removeItem = function(k) {
+                            if (k === 'labmu_token' || k === 'admin_token' || k === 'labmu_user') {
+                                origRemove.call(this, k);
+                                return;
+                            }
+                            return origRemove.apply(this, arguments);
+                        };
+                    } catch(e) {}
+                })();
+
+                window.getCmsToken = function() {
+                    var parts = (document.cookie || '').split(';');
+                    for (var i = 0; i < parts.length; i++) {
+                        var p = parts[i].trim();
+                        if (p.indexOf('labmu_token=') === 0) {
+                            return decodeURIComponent(p.substring(12));
+                        }
+                    }
+                    return '';
+                };
+
+                window.setCmsToken = function(token) {
+                    if (!token) {
+                        document.cookie = 'labmu_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
+                    } else {
+                        document.cookie = 'labmu_token=' + encodeURIComponent(token) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                    }
+                    try {
+                        if (window.__origLsRemove) {
+                            window.__origLsRemove.call(window.localStorage, 'labmu_token');
+                            window.__origLsRemove.call(window.localStorage, 'admin_token');
+                            window.__origLsRemove.call(window.localStorage, 'labmu_user');
+                        }
+                    } catch(e) {}
+                };
+
+                // Helper sanitasi konten berita dari link dan iklan (menggunakan DOM browser langsung)
+                window.cleanNewsroomContent = function(html) {
+                    if (!html) return '';
+                    try {
+                        var doc = new DOMParser().parseFromString(html, 'text/html');
+                        // Hapus elemen berbahaya dan iklan
+                        var toRemove = doc.querySelectorAll('script, style, iframe, ins, noscript, .ads, .ad-banner, .advertisement, .wp-block-embed, .sharedaddy, .jp-relatedposts');
+                        toRemove.forEach(function(el) { el.remove(); });
+                        // Unwrap seluruh hyperlink <a>teks</a> menjadi teks biasa
+                        var links = doc.querySelectorAll('a');
+                        links.forEach(function(a) {
+                            var span = doc.createTextNode(a.textContent || '');
+                            a.parentNode && a.parentNode.replaceChild(span, a);
+                        });
+                        var out = doc.body.innerHTML.trim();
+                        // Bersihkan atribut dir dan caption kosong via DOM
+                        var wpCaptions = doc.querySelectorAll('.wp-caption, div[class*="wp-caption"]');
+                        wpCaptions.forEach(function(cap) {
+                            if (!cap.textContent.trim() && !cap.querySelector('img')) cap.remove();
+                        });
+                        var allElements = doc.body.querySelectorAll('*');
+                        allElements.forEach(function(el) {
+                            if (el.hasAttribute('dir')) el.removeAttribute('dir');
+                        });
+                        // Hapus paragraf kosong
+                        var allP = doc.body.querySelectorAll('p');
+                        allP.forEach(function(p) {
+                            if (!p.textContent.trim() && !p.querySelector('img, iframe, video')) {
+                                p.remove();
+                            }
+                        });
+                        return doc.body.innerHTML.trim();
+                    } catch(e) {
+                        return html;
+                    }
+                };
+
+                // Migrasi sisa localStorage ke Cookie lalu musnahkan penyimpanan fisik lokal
+                (function() {
+                    try {
+                        if (window.__origLsRemove) {
+                            window.__origLsRemove.call(window.localStorage, 'labmu_token');
+                            window.__origLsRemove.call(window.localStorage, 'admin_token');
+                            window.__origLsRemove.call(window.localStorage, 'labmu_user');
+                        }
+                    } catch(e) {}
+
+                    const token = window.getCmsToken();
+                    const isLoginPage = window.location.pathname.includes('/login');
+                    if (!token && !isLoginPage) {
+                        window.location.href = '/admin/login'; 
+                        return;
+                    }
+                    if (token) {
+                        try {
+                            let base64 = token;
+                            if (token.includes('.')) {
+                                base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+                            }
+                            const payload = JSON.parse(atob(base64));
+                            const role = String(payload.role || '').toLowerCase();
+                            // Mutlak: Hanya superadmin dan admin yang boleh mengakses dasbor /admin
+                            if (role !== 'superadmin' && role !== 'admin') {
+                                const u = payload.username || 'me';
+                                window.location.replace('/@' + encodeURIComponent(u));
+                                return;
+                            }
+                        } catch(e){}
+                    }
+                })();
+            </script>
             <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+
             <script>
                 window.adminMenus = [
                     { group: 'Content', title: 'All Posts', view: 'posts', icon: 'fas fa-thumbtack', action: () => typeof loadPosts === 'function' && loadPosts() },
@@ -71,24 +229,25 @@ export function renderAdmin(data: any): string {
                     { group: 'Content', title: 'Pages', view: 'pages', icon: 'fas fa-copy', action: () => typeof loadPages === 'function' && loadPages() },
                     { group: 'Content', title: 'Add Page', view: 'add-page', icon: 'fas fa-plus-square', action: () => { window.editingPageId = null; } },
                     { group: 'Content', title: 'Media', view: 'media', icon: 'fas fa-photo-video', action: () => typeof loadMedia === 'function' && loadMedia() },
-                    { group: 'Content', title: 'Komentar', view: 'comments', icon: 'fas fa-comments', role: ['administrator', 'editor'] },
-                    { group: 'Appearance', title: 'Themes', view: 'themes', icon: 'fas fa-paint-brush', role: ['administrator', 'editor'] },
-                    { group: 'Appearance', title: 'Theme Editor', action: () => window.location.href = '/theme-editor?slug=home', icon: 'fas fa-laptop-code', role: ['administrator'] },
-                    { group: 'Appearance', title: 'LabMu Pro Settings', view: 'labmu-pro-settings', icon: 'fas fa-crown', role: ['administrator'] },
-                    { group: 'Appearance', title: 'Menus', view: 'menus', icon: 'fas fa-bars', role: ['administrator', 'editor'] },
-                    { group: 'System', title: 'Users', view: 'users', icon: 'fas fa-users', role: ['administrator'], action: () => typeof loadUsers === 'function' && loadUsers() },
-                    { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['administrator'] },
-                    { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['administrator'] }
+                    { group: 'Content', title: 'Komentar', view: 'comments', icon: 'fas fa-comments', role: ['admin', 'editor'] },
+                    { group: 'Appearance', title: 'Themes', view: 'themes', icon: 'fas fa-paint-brush', role: ['admin', 'editor'] },
+                    { group: 'Appearance', title: 'Theme Editor', action: () => window.location.href = '/theme-editor?slug=home', icon: 'fas fa-laptop-code', role: ['admin'] },
+                    { group: 'Appearance', title: 'Menus', view: 'menus', icon: 'fas fa-bars', role: ['admin', 'editor'] },
+                    
+                    { group: 'System', title: 'Users', view: 'users', icon: 'fas fa-users', role: ['admin'], action: () => typeof loadUsers === 'function' && loadUsers() },
+                    { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] },
+                    { group: 'System', title: 'SEO & Analytics', view: 'seo', icon: 'fas fa-chart-pie', role: ['admin'] },
+                    { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['admin'] }
                 ];
 
-                const plugins = [${injectedPlugins}];
+                const plugins = [${injectedPlugins}]; 
                 window.adminMenus = window.adminMenus.concat(plugins);
             </script>
 
             <script>${cmsLogic}</script>
         </head>
         <body x-data="cms()" x-init="init()" x-cloak class="bg-slate-50 text-slate-800 font-sans">
-
+            
             <template x-if="${isLoginView} || !token">
                 ${loginPage}
             </template>
@@ -96,23 +255,26 @@ export function renderAdmin(data: any): string {
             <template x-if="token && !${isLoginView}">
                 <!-- ===== Page Wrapper Start ===== -->
                 <div class="flex h-screen overflow-hidden">
-
+                    
                     <!-- ===== Sidebar Start ===== -->
                     ${sidebarBlock}
                     <!-- ===== Sidebar End ===== -->
 
                     <!-- ===== Content Area Start ===== -->
                     <div class="relative flex flex-col flex-1 overflow-x-hidden overflow-y-auto bg-slate-50">
-
+                        
                         <!-- ===== Header / Topbar Start ===== -->
                         <header class="sticky top-0 z-40 flex w-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] border-b border-slate-100">
                             <div class="flex flex-grow items-center justify-between px-4 py-2 md:px-6 2xl:px-8">
                                 <div class="flex items-center gap-3">
-                                    <!-- Hamburger Toggle BTN -->
-                                    <button @click.stop="sidebarOpen = !sidebarOpen" class="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary">
-                                        <i class="fas fa-bars text-base"></i>
+                                    <!-- Sidebar Window Show/Hide Toggle BTN -->
+                                    <button @click.stop="sidebarOpen = !sidebarOpen" class="rounded-lg p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500/20" title="Buka / Tutup Sidebar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="sidebarOpen ? 'text-teal-600' : 'text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                            <rect width="18" height="18" x="3" y="3" rx="2.5" />
+                                            <path d="M9 3v18" />
+                                        </svg>
                                     </button>
-
+                                    
                                     <h3 x-text="getPageTitle()" class="text-lg font-bold text-slate-800 hidden sm:block tracking-tight"></h3>
                                 </div>
 
@@ -126,7 +288,7 @@ export function renderAdmin(data: any): string {
                                     async fetchNotifications() {
                                         try {
                                             const res = await fetch('/api/notifications', {
-                                                headers: { 'Authorization': 'Bearer ' + '' }
+                                                headers: { 'Authorization': 'Bearer ' + (window.getCmsToken ? window.getCmsToken() : '') }
                                             });
                                             if (res.ok) {
                                                 const data = await res.json();
@@ -142,7 +304,7 @@ export function renderAdmin(data: any): string {
                                             const res = await fetch('/api/notifications/read', {
                                                 method: 'POST',
                                                 headers: {
-                                                    'Authorization': 'Bearer ' + '',
+                                                    'Authorization': 'Bearer ' + (window.getCmsToken ? window.getCmsToken() : ''),
                                                     'Content-Type': 'application/json'
                                                 },
                                                 body: JSON.stringify({ id })
@@ -177,7 +339,7 @@ export function renderAdmin(data: any): string {
                                         this.currentTime = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
                                     }
                                 }" x-init="updateTime(); setInterval(() => updateTime(), 1000); fetchHijri(); fetchNotifications(); setInterval(() => fetchNotifications(), 15000);" class="flex items-center gap-3 sm:gap-4">
-
+                                    
                                     <!-- Waktu dan Kalender -->
                                     <div class="hidden md:flex flex-col items-end text-right">
                                         <span class="text-xs font-semibold text-slate-800" x-text="currentTime + ' WIB'"></span>
@@ -187,13 +349,13 @@ export function renderAdmin(data: any): string {
                                     <!-- Bell Icon -->
                                     <div class="relative">
                                         <button @click="notifOpen = !notifOpen" @click.outside="notifOpen = false" class="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
-                                            <span x-show="unreadCount > 0" class="absolute -top-0.5 -right-0.5 z-10 h-2.5 w-2.5 rounded-full bg-rose-500 flex items-center justify-center text-[8px] text-white font-bold" x-text="unreadCount">
+                                            <span x-show="unreadCount > 0" class="absolute -top-1 -right-1 z-10 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 flex items-center justify-center text-[10px] text-white font-black shadow-sm" x-text="unreadCount">
                                             </span>
                                             <i class="far fa-bell text-sm"></i>
                                         </button>
-
+                                        
                                         <!-- Notif Dropdown -->
-                                        <div x-show="notifOpen" x-transition.opacity.duration.200ms class="absolute -right-2 mt-2.5 flex max-h-90 w-72 flex-col rounded-xl border border-slate-200 bg-white shadow-xl sm:right-0 sm:w-80" style="display: none;">
+                                        <div x-show="notifOpen" x-transition.opacity.duration.200ms class="absolute -right-2 mt-2.5 flex max-h-90 w-72 flex-col rounded-xl border border-slate-200 bg-white shadow-xl sm:right-0 sm:w-80 z-50" style="display: none;">
                                             <div class="px-4 py-3 border-b border-slate-100 flex justify-between items-center">
                                                 <h5 class="text-sm font-semibold text-slate-800">Notifikasi</h5>
                                                 <button x-show="unreadCount > 0" @click="markAsRead()" class="text-xs text-primary hover:underline focus:outline-none">Tandai semua dibaca</button>
@@ -203,9 +365,9 @@ export function renderAdmin(data: any): string {
                                                     <p class="text-xs text-slate-500 text-center py-4">Tidak ada notifikasi baru.</p>
                                                 </template>
                                                 <template x-for="n in notifications">
-                                                    <div class="flex items-start gap-3 p-2 hover:bg-slate-50 rounded-lg transition-colors border-b border-slate-50 last:border-0 relative group">
-                                                        <div class="h-8 w-8 rounded-full flex items-center justify-center shrink-0" :class="n.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600'">
-                                                            <i class="fas text-xs" :class="n.type === 'success' ? 'fa-user-plus' : 'fa-sign-in-alt'"></i>
+                                                    <div @click="if(n.link) { window.location.href = '/admin/' + n.link; markAsRead(n.id); notifOpen = false; }" class="flex items-start gap-3 p-2.5 hover:bg-slate-50 rounded-xl transition-colors border-b border-slate-50 last:border-0 relative group cursor-pointer">
+                                                        <div class="h-8 w-8 rounded-full flex items-center justify-center shrink-0" :class="n.type === 'warning' ? 'bg-amber-100 text-amber-600' : (n.type === 'success' ? 'bg-emerald-100 text-emerald-600' : 'bg-blue-100 text-blue-600')">
+                                                            <i class="fas text-xs" :class="n.type === 'warning' ? 'fa-gem' : (n.type === 'success' ? 'fa-user-plus' : 'fa-bell')"></i>
                                                         </div>
                                                         <div class="flex-1 min-w-0 pr-6">
                                                             <p class="text-xs font-semibold text-slate-800 truncate" x-text="n.title"></p>
@@ -225,7 +387,7 @@ export function renderAdmin(data: any): string {
                                     <div class="relative">
                                         <button @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false" class="flex items-center gap-2 focus:outline-none">
                                             <span class="hidden text-right lg:block">
-                                                <span class="block text-sm font-semibold text-slate-800" x-text="userName ? userName : (userRole === 'administrator' ? 'Administrator' : (userRole || 'Admin'))"></span>
+                                                <span class="block text-sm font-semibold text-slate-800" x-text="userName ? userName : (userRole === 'admin' ? 'Administrator' : (userRole || 'Admin'))"></span>
                                             </span>
                                             <div class="h-9 w-9 rounded-full bg-primary text-white flex items-center justify-center font-bold shadow-sm ring-2 ring-white border border-primary/20 overflow-hidden">
                                                 <template x-if="userAvatar">
@@ -268,12 +430,16 @@ export function renderAdmin(data: any): string {
                         <main class="flex-grow pb-10">
                             <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-8">
                                 ${dashboardPage}
+                                <template x-if="view === 'subscribers'"><div class="exclusive-wrapper">${subscribersPage}</div></template>
+                                <template x-if="view === 'emagazine'"><div class="exclusive-wrapper">${emagazinePage}</div></template>
                                 ${pagesBlock}
                                 <template x-if="view === 'menus'"><div class="exclusive-wrapper">${menusPage}</div></template>
-                                ${labmuProSettingsPage}
                                 <template x-if="view === 'profile'"><div class="exclusive-wrapper">${profilePage}</div></template>
                                 ${ssoPage}
                                 ${commentsPage}
+                                ${seoPage}
+                                <template x-if="view === 'newsroom'">${newsroomView}</template>
+                                <template x-if="view === 'aggregator'">${aggregatorView}</template>
                                 ${globalModals}
                             </div>
                         </main>
@@ -283,11 +449,11 @@ export function renderAdmin(data: any): string {
                         <footer class="sticky bottom-0 z-40 w-full py-4 px-4 md:px-6 2xl:px-8 border-t border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                                 <p class="text-xs font-medium text-slate-500 text-center sm:text-left">
-                                    &copy; <span x-text="new Date().getFullYear()"></span> CMSMu. All rights reserved.
+                                    &copy; <span x-text="new Date().getFullYear()"></span> CMSMu Cloud Native. All rights reserved.
                                 </p>
                                 <p class="text-xs font-medium text-slate-500 flex items-center gap-1">
-                                    Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> by Cak Iphin LabMu
-                                    <span class="mx-1 opacity-50">|</span>
+                                    Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> by CmsMu
+                                    <span class="mx-1 opacity-50">|</span> 
                                     <span class="font-bold">v.0.1</span>
                                 </p>
                             </div>

@@ -1,69 +1,38 @@
 import { Hono } from 'hono';
+import { getDb } from '../../db';
+import { mediaMeta } from '../../db/schema';
+import { eq, desc } from 'drizzle-orm';
+import { getStorageBucket } from '../../storage/r2-adapter';
 
-// [PERBAIKAN] Sesuaikan tipe ini dengan Log Wrangler Anda (MY_BUCKET)
 type Bindings = {
   DB: D1Database;
-  MY_BUCKET: R2Bucket; // <--- Ubah jadi Wajib sesuai log
-  // Fallback types (Opsional)
+  MY_BUCKET?: R2Bucket;
   MEDIA_BUCKET?: R2Bucket;
   BUCKET?: R2Bucket;
   R2?: R2Bucket;
+  R2_ACCOUNT_ID?: string;
+  R2_ACCESS_KEY_ID?: string;
+  R2_SECRET_ACCESS_KEY?: string;
+  R2_BUCKET_NAME?: string;
 };
 
 const mediaRouter = new Hono<{ Bindings: Bindings }>();
 
-// Helper untuk mencari Binding R2 yang aktif (Prioritas ke MY_BUCKET)
 const getBucket = (c: any) => {
-    return c.env.MY_BUCKET || c.env.MEDIA_BUCKET || c.env.BUCKET || c.env.R2;
+    return getStorageBucket(c);
 };
 
-// Setup destructive dinonaktifkan di runtime production.
+// 1. ENDPOINT SETUP (RESET & SYNC)
 mediaRouter.get('/setup', async (c) => {
-    return c.json({ error: 'Endpoint setup media dinonaktifkan' }, 404);
-});
-
-// 2. GET LIST
-mediaRouter.get('/', async (c) => {
     try {
-        const { results } = await c.env.DB.prepare('SELECT * FROM media_meta ORDER BY created_at DESC').all();
-        return c.json(results || []);
-    } catch (e: any) {
-        return c.json({ error: e.message }, 500);
-    }
-});
-
-// 3. UPLOAD
-mediaRouter.post('/', async (c) => {
-    try {
-        const body = await c.req.parseBody();
-        const file = body['file'];
-        if (!file || typeof file === 'string') return c.json({ error: 'File wajib ada' }, 400);
-        if (file.size > 10 * 1024 * 1024) return c.json({ error: 'Ukuran file maksimal 10 MB' }, 413);
-        const allowed = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/avif']);
-        if (!allowed.has(file.type)) return c.json({ error: 'Format file tidak diizinkan' }, 415);
-        const bytes = new Uint8Array(await file.arrayBuffer());
-        const valid = file.type === 'image/jpeg' ? bytes[0] === 0xff && bytes[1] === 0xd8
-          : file.type === 'image/png' ? bytes.slice(0, 8).every((b, i) => b === [137,80,78,71,13,10,26,10][i])
-          : file.type === 'image/webp' ? new TextDecoder().decode(bytes.slice(0, 4)) === 'RIFF' && new TextDecoder().decode(bytes.slice(8, 12)) === 'WEBP'
-          : new TextDecoder().decode(bytes.slice(4, 12)).includes('ftypavif');
-        if (!valid) return c.json({ error: 'Isi file tidak cocok dengan formatnya' }, 415);
-
+        if (!c.env.DB) throw new Error(`DB Error! Binding 'DB' hilang.`);
         const r2 = getBucket(c);
-        if (!r2) return c.json({ error: 'R2 Putus (Cek MY_BUCKET)' }, 500);
+        if (!r2) throw new Error(`R2 Error! Binding 'MY_BUCKET' tidak ditemukan.`);
 
-        const date = new Date();
-        const folder = `${date.getFullYear()}/${String(date.getMonth() + 1).padStart(2, '0')}`;
-        // Bersihkan nama file
-        const cleanName = file.name.replace(/[^a-zA-Z0-9._-]/g, '');
-        const key = `${folder}/${Date.now()}-${cleanName}`;
+        await c.env.DB.prepare('DROP TABLE IF EXISTS media_meta').run();
 
-        await r2.put(key, bytes, { httpMetadata: { contentType: file.type } });
-
-        const url = `/api/media/file/${key}`;
-
-        // Pastikan tabel ada sebelum insert
         await c.env.DB.prepare(`
-            CREATE TABLE IF NOT EXISTS media_meta (
+            CREATE TABLE media_meta (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 key TEXT NOT NULL,
                 url TEXT NOT NULL,
@@ -77,14 +46,107 @@ mediaRouter.post('/', async (c) => {
             )
         `).run();
 
-        await c.env.DB.prepare(
-            'INSERT INTO media_meta (key, url, type, size, title, alt, caption, description, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime("now"))'
-        ).bind(
-            key, url, file.type, file.size,
-            body['title'] || '', body['alt'] || '', body['caption'] || '', body['description'] || ''
-        ).run();
+        const listed = await r2.list();
+        let count = 0;
+        let skipped = 0;
+        const db = getDb(c.env.DB);
 
-        return c.json({ success: true, url });
+        for (const obj of listed.objects) {
+            if (obj.key.endsWith('/')) {
+                skipped++;
+                continue;
+            }
+
+            const url = `/api/media/file/${obj.key}`;
+            let type = 'application/octet-stream';
+            if (obj.key.match(/\.(jpg|jpeg)$/i)) type = 'image/jpeg';
+            else if (obj.key.match(/\.png$/i)) type = 'image/png';
+            else if (obj.key.match(/\.webp$/i)) type = 'image/webp';
+            else if (obj.key.match(/\.svg$/i)) type = 'image/svg+xml';
+
+            await db.insert(mediaMeta).values({
+                key: obj.key,
+                url: url,
+                type: type,
+                size: obj.size,
+                createdAt: new Date().toISOString()
+            }).run();
+            count++;
+        }
+
+        return c.json({ success: true, message: `BERHASIL! ${count} file dipulihkan. (${skipped} folder dibuang)` });
+
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+// 2. GET LIST
+mediaRouter.get('/', async (c) => {
+    try {
+        const db = getDb(c.env.DB);
+        const results = await db.select().from(mediaMeta).orderBy(desc(mediaMeta.createdAt));
+        return c.json(results || []);
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+// 3. UPLOAD
+mediaRouter.post('/', async (c) => {
+    try {
+        const body = await c.req.parseBody();
+        const file = body['file'];
+        if (!file || typeof file === 'string') return c.json({ error: 'File wajib ada' }, 400);
+
+        const r2 = getBucket(c);
+        if (!r2) return c.json({ error: 'R2 Putus (Cek MY_BUCKET)' }, 500);
+
+        const sourceFolder = (body['source'] ? String(body['source']).toLowerCase().replace(/[^a-z0-9_-]/g, '') : 'newsroom') || 'newsroom';
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const folder = `${sourceFolder}/${year}/${month}`;
+
+        let fileBuffer = Buffer.from(await file.arrayBuffer());
+        let mimeType = file.type;
+        let baseName = file.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40) || 'image';
+        let key = `${folder}/${Date.now()}-${baseName}`;
+
+        if (file.type.startsWith('image/') && !file.type.includes('svg')) {
+            try {
+                const sharpModule = await (new Function('return import("sharp")')());
+                const sharpFn = sharpModule.default || sharpModule;
+                fileBuffer = await sharpFn(fileBuffer).webp({ quality: 82 }).toBuffer();
+                mimeType = 'image/webp';
+                key = `${key}.webp`;
+            } catch (sharpErr) {
+                const ext = file.name.split('.').pop() || 'jpg';
+                key = `${key}.${ext}`;
+            }
+        } else {
+            const ext = file.name.split('.').pop() || 'bin';
+            key = `${key}.${ext}`;
+        }
+
+        await r2.put(key, fileBuffer, { httpMetadata: { contentType: mimeType } });
+
+        const url = `/api/media/file/${key}`;
+        const db = getDb(c.env.DB);
+
+        await db.insert(mediaMeta).values({
+            key,
+            url,
+            type: mimeType,
+            size: fileBuffer.length,
+            title: (body['title'] as string) || baseName,
+            alt: (body['alt'] as string) || baseName,
+            caption: (body['caption'] as string) || '',
+            description: (body['description'] as string) || '',
+            createdAt: new Date().toISOString()
+        }).run();
+
+        return c.json({ success: true, url, key });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
     }
@@ -93,20 +155,18 @@ mediaRouter.post('/', async (c) => {
 // 4. UPDATE / EDIT METADATA
 mediaRouter.put('/:id', async (c) => {
     try {
-        const id = c.req.param('id');
+        const id = Number(c.req.param('id'));
         const body = await c.req.json();
+        const db = getDb(c.env.DB);
 
-        await c.env.DB.prepare(`
-            UPDATE media_meta
-            SET alt = ?, title = ?, description = ?, caption = ?
-            WHERE id = ?
-        `).bind(
-            body.alt || '',
-            body.title || '',
-            body.description || '',
-            body.caption || '',
-            id
-        ).run();
+        await db.update(mediaMeta).set({
+            alt: body.alt || '',
+            title: body.title || '',
+            description: body.description || '',
+            caption: body.caption || ''
+        })
+        .where(eq(mediaMeta.id, id))
+        .run();
 
         return c.json({ success: true });
     } catch (e: any) {
@@ -126,10 +186,8 @@ mediaRouter.get('/file/*', async (c) => {
     const headers = new Headers();
     obj.writeHttpMetadata(headers);
     headers.set('etag', obj.httpEtag);
-    headers.set('Cache-Control', 'no-store, max-age=0');
-    headers.set('Content-Security-Policy', "default-src 'none'; sandbox");
+    headers.set('Cache-Control', 'public, max-age=31536000');
 
-    // [FIX] Paksa Header Gambar jika R2 memberikannya kosong
     const currentType = headers.get('Content-Type');
     if (!currentType || currentType === 'application/octet-stream') {
         if (key.match(/\.(jpg|jpeg)$/i)) headers.set('Content-Type', 'image/jpeg');
@@ -142,15 +200,15 @@ mediaRouter.get('/file/*', async (c) => {
 
 // 6. DELETE
 mediaRouter.delete('/:id', async (c) => {
-    const id = c.req.param('id');
+    const id = Number(c.req.param('id'));
     const r2 = getBucket(c);
+    const db = getDb(c.env.DB);
 
-    // Ambil Key dari DB berdasarkan ID
-    const file: any = await c.env.DB.prepare('SELECT key FROM media_meta WHERE id=?').bind(id).first();
+    const file = await db.select({ key: mediaMeta.key }).from(mediaMeta).where(eq(mediaMeta.id, id)).get();
 
-    if(file && r2) {
+    if (file && r2) {
         await r2.delete(file.key);
-        await c.env.DB.prepare('DELETE FROM media_meta WHERE id=?').bind(id).run();
+        await db.delete(mediaMeta).where(eq(mediaMeta.id, id)).run();
     }
     return c.json({ success: true });
 });

@@ -1,4 +1,7 @@
 import { Hono } from 'hono';
+import { getDb } from '../../db';
+import { pages, settings } from '../../db/schema';
+import { eq, asc } from 'drizzle-orm';
 
 type Bindings = {
   DB: D1Database;
@@ -6,35 +9,34 @@ type Bindings = {
 
 const themeEditorRouter = new Hono<{ Bindings: Bindings }>();
 
-async function activeTheme(db: D1Database) {
-  const row: any = await db.prepare('SELECT id FROM themes WHERE active = 1 LIMIT 1').first();
-  return String(row?.id || 'labmu-default');
-}
-
-const homeStorageSlug = (themeId: string) => `__theme_home_${themeId}`;
-
-themeEditorRouter.get('/context', async (c) => {
-  const themeId = await activeTheme(c.env.DB);
-  const setting: any = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'site_homepage_slug'").first();
-  return c.json({ success: true, themeId, homeSlug: setting?.value || 'home', editor: ['labmu-pro', 'newspaper-mu'].includes(themeId) ? themeId : 'universal' });
-});
-
 // GET /api/theme-editor/page?slug=about
 themeEditorRouter.get('/page', async (c) => {
   const slug = c.req.query('slug');
   if (!slug) return c.json({ error: 'Slug required' }, 400);
 
   try {
-    const themeId = await activeTheme(c.env.DB);
-    const storageSlug = slug === 'home' ? homeStorageSlug(themeId) : slug;
-    const page: any = await c.env.DB.prepare('SELECT body FROM pages WHERE slug = ?').bind(storageSlug).first();
+    const db = getDb(c.env.DB);
+    const page = await db.select({ body: pages.body }).from(pages).where(eq(pages.slug, slug)).get();
     if (page) {
-      return c.json({ success: true, data: page, themeId });
+      return c.json({ success: true, data: page });
     } else {
       if (slug === 'home') {
-        return c.json({ success: true, data: null, themeId });
+        const defaultHomePuck = {
+          content: [
+            { type: "SiteHeader", props: { id: "SiteHeader-1" } },
+            { type: "Hero", props: { id: "Hero-1" } },
+            { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
+            { type: "Testimonial", props: { id: "Testimonial-1" } },
+            { type: "RecentPosts", props: { id: "RecentPosts-1" } },
+            { type: "CallToAction", props: { id: "CallToAction-1" } },
+            { type: "SiteFooter", props: { id: "SiteFooter-1" } }
+          ],
+          root: { props: { title: "Beranda Utama" } },
+          zones: {}
+        };
+        return c.json({ success: true, data: { body: JSON.stringify(defaultHomePuck) } });
       }
-      return c.json({ success: true, data: null, themeId }); // Data belum ada
+      return c.json({ success: true, data: null });
     }
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -44,10 +46,10 @@ themeEditorRouter.get('/page', async (c) => {
 // GET /api/theme-editor/pages
 themeEditorRouter.get('/pages', async (c) => {
   try {
-    const { results } = await c.env.DB.prepare("SELECT id, title, slug FROM pages WHERE slug NOT LIKE '__theme_home_%' ORDER BY title ASC").all();
+    const db = getDb(c.env.DB);
+    const results = await db.select({ id: pages.id, title: pages.title, slug: pages.slug }).from(pages).orderBy(asc(pages.title));
     
-    // Get homepage slug from settings
-    const settingRow = await c.env.DB.prepare("SELECT value FROM settings WHERE key = 'site_homepage_slug'").first();
+    const settingRow = await db.select({ value: settings.value }).from(settings).where(eq(settings.key, 'site_homepage_slug')).get();
     const homeSlug = settingRow ? settingRow.value : 'home';
     
     return c.json({ success: true, data: results || [], homeSlug: homeSlug });
@@ -60,29 +62,29 @@ themeEditorRouter.get('/pages', async (c) => {
 themeEditorRouter.post('/page', async (c) => {
   try {
     const body = await c.req.json();
-    const { slug, body: content, theme_id: requestedTheme } = body;
+    const { slug, body: content } = body;
     if (!slug) return c.json({ error: 'Slug required' }, 400);
-    const themeId = await activeTheme(c.env.DB);
-    if (requestedTheme && requestedTheme !== themeId) return c.json({ error: 'Theme aktif telah berubah. Muat ulang editor.' }, 409);
-    const storageSlug = slug === 'home' ? homeStorageSlug(themeId) : slug;
 
-    // Cek apakah halaman sudah ada
-    const exists = await c.env.DB.prepare('SELECT id FROM pages WHERE slug = ?').bind(storageSlug).first();
+    const db = getDb(c.env.DB);
+    const exists = await db.select({ id: pages.id }).from(pages).where(eq(pages.slug, slug)).get();
     
-    // Judul otomatis (Capitalize slug)
     const title = slug.replace(/-/g, ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+    const now = new Date().toISOString();
 
     if (exists) {
-      // Update
-      await c.env.DB.prepare(`
-        UPDATE pages SET body=?, updated_at=datetime('now') WHERE slug=?
-      `).bind(content, storageSlug).run();
+      await db.update(pages).set({
+        body: content,
+        updatedAt: now
+      }).where(eq(pages.slug, slug)).run();
     } else {
-      // Insert baru
-      await c.env.DB.prepare(`
-        INSERT INTO pages (title, slug, body, status, created_at, updated_at)
-        VALUES (?, ?, ?, 'publish', datetime('now'), datetime('now'))
-      `).bind(slug === 'home' ? `Beranda (${themeId})` : title, storageSlug, content).run();
+      await db.insert(pages).values({
+        title,
+        slug,
+        body: content,
+        status: 'publish',
+        createdAt: now,
+        updatedAt: now
+      }).run();
     }
     
     return c.json({ success: true });

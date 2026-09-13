@@ -28,10 +28,11 @@ migration.get('/', async (c) => {
 
       // 4. TABEL BARU: MENUS (Navigasi)
       `CREATE TABLE IF NOT EXISTS menus (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          id TEXT PRIMARY KEY,
           label TEXT,
           url TEXT,
-          order_num INTEGER DEFAULT 0
+          order_num INTEGER DEFAULT 0,
+          parent_id TEXT DEFAULT NULL
       )`
     ];
 

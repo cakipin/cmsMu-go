@@ -1,22 +1,28 @@
 import { Hono } from 'hono';
+import { eq, asc } from 'drizzle-orm';
+import { getDb } from '../../db';
+import { menus } from '../../db/schema';
 
-const menusRouter = new Hono();
-const safeUrl = (value: unknown) => {
-    const url = String(value || '').trim();
-    return /^(?:\/|https:\/\/)/.test(url) && !/^\/\//.test(url) ? url.slice(0, 2048) : '/';
-};
+const menusRouter = new Hono<{ Bindings: any }>();
 
 // 1. GET ALL MENUS
 menusRouter.get('/', async (c) => {
     try {
-        // Ambil data menu urut berdasarkan order_num
-        const { results } = await c.env.DB.prepare(
-            "SELECT * FROM menus ORDER BY order_num ASC"
-        ).all();
+        const db = getDb(c.env.DB);
+        const results = await db.select().from(menus).orderBy(asc(menus.orderNum));
+        
+        const mapped = (results || []).map((m: any) => ({
+            id: m.id,
+            label: m.label,
+            url: m.url,
+            order_num: m.orderNum,
+            parent_id: m.parentId,
+            orderNum: m.orderNum,
+            parentId: m.parentId
+        }));
 
-        return c.json({ success: true, data: results || [] });
+        return c.json({ success: true, data: mapped });
     } catch (e: any) {
-        // Jika tabel belum ada, return kosong (jangan error 500)
         return c.json({ success: true, data: [] });
     }
 });
@@ -25,10 +31,18 @@ menusRouter.get('/', async (c) => {
 menusRouter.post('/', async (c) => {
     try {
         const body = await c.req.json();
+        const db = getDb(c.env.DB);
+        
+        const parentId = body.parent_id || body.parentId || null;
+        const orderNum = Number(body.order_num !== undefined ? body.order_num : (body.orderNum || 0));
 
-        await c.env.DB.prepare(
-            "INSERT INTO menus (label, url, order_num) VALUES (?, ?, ?)"
-        ).bind(String(body.label || '').trim().slice(0, 100), safeUrl(body.url), Number(body.order_num) || 0).run();
+        await db.insert(menus).values({
+            id: crypto.randomUUID(),
+            label: body.label,
+            url: body.url,
+            orderNum: isNaN(orderNum) ? 0 : orderNum,
+            parentId: parentId ? String(parentId) : null
+        }).run();
 
         return c.json({ success: true, message: 'Menu saved' });
     } catch (e: any) {
@@ -41,10 +55,18 @@ menusRouter.put('/:id', async (c) => {
     try {
         const id = c.req.param('id');
         const body = await c.req.json();
+        const db = getDb(c.env.DB);
+        
+        const parentId = body.parent_id || body.parentId || null;
+        const orderNum = Number(body.order_num !== undefined ? body.order_num : (body.orderNum || 0));
+        const targetId = id || body.id;
 
-        await c.env.DB.prepare(
-            "UPDATE menus SET label = ?, url = ?, order_num = ? WHERE id = ?"
-        ).bind(String(body.label || '').trim().slice(0, 100), safeUrl(body.url), Number(body.order_num) || 0, id).run();
+        await db.update(menus).set({
+            label: body.label,
+            url: body.url,
+            orderNum: isNaN(orderNum) ? 0 : orderNum,
+            parentId: parentId ? String(parentId) : null
+        }).where(eq(menus.id, targetId)).run();
 
         return c.json({ success: true, message: 'Menu updated' });
     } catch (e: any) {
@@ -56,7 +78,8 @@ menusRouter.put('/:id', async (c) => {
 menusRouter.delete('/:id', async (c) => {
     const id = c.req.param('id');
     try {
-        await c.env.DB.prepare("DELETE FROM menus WHERE id = ?").bind(id).run();
+        const db = getDb(c.env.DB);
+        await db.delete(menus).where(eq(menus.id, id)).run();
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ success: false, error: e.message }, 500);

@@ -1,6 +1,7 @@
 import {
   defineConfig,
   envField,
+  fontProviders,
   svgoOptimizer,
 } from "astro/config";
 import tailwindcss from "@tailwindcss/vite";
@@ -30,8 +31,8 @@ export default defineConfig({
   }), react()],
 
   i18n: {
-    locales: ["id"],
-    defaultLocale: "id",
+    locales: ["en"],
+    defaultLocale: "en",
     routing: {
       prefixDefaultLocale: false,
     },
@@ -60,9 +61,22 @@ export default defineConfig({
 
   vite: {
     plugins: [tailwindcss()],
+    optimizeDeps: {
+      include: ["@puckeditor/core", "react", "react-dom", "react-dom/client"],
+    },
   },
 
-  fonts: [],
+  fonts: [
+    {
+      name: "Google Sans Code",
+      cssVariable: "--font-google-sans-code",
+      provider: fontProviders.google(),
+      fallbacks: ["monospace"],
+      weights: [300, 400, 500, 600, 700],
+      styles: ["normal", "italic"],
+      formats: ["woff", "ttf"],
+    },
+  ],
 
   env: {
     schema: {

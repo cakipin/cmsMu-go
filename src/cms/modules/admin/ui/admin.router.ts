@@ -2,6 +2,9 @@ import { Hono } from 'hono';
 // PERBAIKAN 1: Sesuaikan nama file view (singular: view.ts)
 import { renderAdmin } from './ui/view';       
 import { renderEditor } from './ui/editor.view'; 
+import { getDb } from '../../../db';
+import { users } from '../../../db/schema';
+import { desc } from 'drizzle-orm';
 
 // Definisikan tipe Bindings agar TypeScript tidak error saat akses c.env.DB
 interface Bindings {
@@ -43,11 +46,19 @@ admin.get('/data/users', async (c) => {
     }
 
     // Gunakan query yang aman
-    const users = await c.env.DB.prepare(
-      "SELECT id, username, name, role, created_at FROM users ORDER BY id DESC"
-    ).all();
+    const db = getDb(c.env.DB);
+    const results = await db.select({
+      id: users.id,
+      username: users.username,
+      name: users.name,
+      role: users.role,
+      created_at: users.createdAt
+    })
+    .from(users)
+    .orderBy(desc(users.id))
+    .all();
     
-    return c.json({ success: true, data: users.results || [] });
+    return c.json({ success: true, data: results || [] });
   } catch (e: any) {
     return c.json({ success: false, error: e.message }, 500);
   }

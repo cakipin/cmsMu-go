@@ -1,2 +1,0 @@
-INSERT INTO pages (title, slug, body, status, created_at, layout)
-VALUES ('Beranda Utama', 'home', '{"content":[{"type":"Hero","props":{"id":"Hero-1"}},{"type":"FeatureGrid","props":{"id":"FeatureGrid-1"}},{"type":"Testimonial","props":{"id":"Testimonial-1"}},{"type":"RecentPosts","props":{"id":"RecentPosts-1"}},{"type":"CallToAction","props":{"id":"CallToAction-1"}}],"root":{"props":{"title":"Beranda Utama"}},"zones":{}}', 'published', CURRENT_TIMESTAMP, 'landing');

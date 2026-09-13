@@ -1,0 +1,22 @@
+{
+  "name": "@cmsmu/cms-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "dependencies": {
+    "@cmsmu/core": "workspace:*",
+    "@cmsmu/db": "workspace:*",
+    "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.33"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260801.1",
+    "typescript": "^6.0.3",
+    "wrangler": "^4.118.0"
+  }
+}

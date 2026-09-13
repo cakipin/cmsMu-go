@@ -1,46 +1,48 @@
 import type { D1Database } from "@cloudflare/workers-types";
+import { getDb } from "../../db";
+import { contents } from "../../db/schema";
+import { eq, desc } from "drizzle-orm";
 
 export class ContentService {
-  constructor(private db: D1Database) {}
+  private orm;
 
-  private getSafeTime(dateInput: any): number {
-    const now = Math.floor(Date.now() / 1000);
+  constructor(private db: D1Database) {
+    this.orm = getDb(db);
+  }
+
+  private getSafeTime(dateInput: any): string {
+    const now = new Date().toISOString();
     if (!dateInput) return now;
     try {
         const d = new Date(dateInput);
         if (isNaN(d.getTime())) return now;
-        return Math.floor(d.getTime() / 1000);
+        return d.toISOString();
     } catch { return now; }
   }
 
-  // Fungsi vital untuk mencegah D1_TYPE_ERROR (Undefined)
   private clean(val: any, fallback: any = "") {
     return (val === undefined || val === null) ? fallback : val;
   }
 
   async getAll(type?: string) {
-    let query = "SELECT * FROM contents";
-    const params: any[] = [];
+    let query = this.orm.select().from(contents);
     if (type) {
-        query += " WHERE type = ?";
-        params.push(type);
+        return await query.where(eq(contents.type, type)).orderBy(desc(contents.createdAt));
     }
-    query += " ORDER BY created_at DESC";
-    const { results } = await this.db.prepare(query).bind(...params).all();
-    return results;
+    return await query.orderBy(desc(contents.createdAt));
   }
 
   async getById(id: string) {
-    const result: any = await this.db.prepare("SELECT * FROM contents WHERE id = ?").bind(id).first();
+    const result: any = await this.orm.select().from(contents).where(eq(contents.id, Number(id))).get();
     if (!result) return null;
     if (!result.attributes) result.attributes = "{}";
     return result;
   }
 
   async create(data: any) {
-    const now = Math.floor(Date.now() / 1000);
+    const now = new Date().toISOString();
     const createdAt = this.getSafeTime(data.date);
-    const safeSlug = this.clean(data.slug, `post-${now}`);
+    const safeSlug = this.clean(data.slug, `post-${Date.now()}`);
     
     const attributes = JSON.stringify({
         featured_image: this.clean(data.featured_image),
@@ -48,31 +50,24 @@ export class ContentService {
         tags: this.clean(data.tags)
     });
 
-    try {
-      return await this.db.prepare(`
-        INSERT INTO contents (title, slug, body, type, status, category, tags, attributes, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        RETURNING id
-      `).bind(
-        this.clean(data.title, "(No Title)"), safeSlug, this.clean(data.body), 
-        this.clean(data.type, "post"), this.clean(data.status, "draft"),
-        this.clean(data.category), this.clean(data.tags), attributes, createdAt, now
-      ).first();
-    } catch (e: any) {
-      return await this.db.prepare(`
-        INSERT INTO contents (title, slug, body, type, status, attributes, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        RETURNING id
-      `).bind(
-        this.clean(data.title, "(No Title)"), safeSlug, this.clean(data.body), 
-        this.clean(data.type, "post"), this.clean(data.status, "draft"),
-        attributes, createdAt, now
-      ).first();
-    }
+    const inserted = await this.orm.insert(contents).values({
+      title: this.clean(data.title, "(No Title)"),
+      slug: safeSlug,
+      body: this.clean(data.body),
+      type: this.clean(data.type, "post"),
+      status: this.clean(data.status, "draft"),
+      category: this.clean(data.category),
+      tags: this.clean(data.tags),
+      attributes: attributes,
+      createdAt: createdAt,
+      updatedAt: now
+    }).returning({ id: contents.id });
+
+    return inserted[0];
   }
 
   async update(id: string, data: any) {
-    const now = Math.floor(Date.now() / 1000);
+    const now = new Date().toISOString();
     const createdAt = data.date ? this.getSafeTime(data.date) : now;
 
     const attributes = JSON.stringify({
@@ -81,33 +76,23 @@ export class ContentService {
         tags: this.clean(data.tags)
     });
 
-    try {
-      // Percobaan 1: Update Full (Tanpa Backslash yang bikin error)
-      return await this.db.prepare(`
-        UPDATE contents SET title=?, slug=?, body=?, type=?, status=?, category=?, tags=?, attributes=?, created_at=?, updated_at=?
-        WHERE id=?
-      `).bind(
-        this.clean(data.title), this.clean(data.slug), this.clean(data.body), 
-        this.clean(data.type), this.clean(data.status), this.clean(data.category),
-        this.clean(data.tags), attributes, createdAt, now, id
-      ).run();
-    } catch (e: any) {
-       // Percobaan 2: Fallback (Tanpa Backslash)
-       try {
-          return await this.db.prepare(`
-            UPDATE contents SET title=?, slug=?, body=?, type=?, status=?, attributes=?, updated_at=?
-            WHERE id=?
-          `).bind(
-            this.clean(data.title), this.clean(data.slug), this.clean(data.body), 
-            this.clean(data.type), this.clean(data.status), attributes, now, id
-          ).run();
-       } catch(e2: any) {
-           throw new Error("DB Update Fatal: " + e2.message);
-       }
-    }
+    return await this.orm.update(contents).set({
+      title: this.clean(data.title),
+      slug: this.clean(data.slug),
+      body: this.clean(data.body),
+      type: this.clean(data.type),
+      status: this.clean(data.status),
+      category: this.clean(data.category),
+      tags: this.clean(data.tags),
+      attributes: attributes,
+      createdAt: createdAt,
+      updatedAt: now
+    })
+    .where(eq(contents.id, Number(id)))
+    .run();
   }
 
   async delete(id: string) {
-    return await this.db.prepare("DELETE FROM contents WHERE id = ?").bind(id).run();
+    return await this.orm.delete(contents).where(eq(contents.id, Number(id))).run();
   }
 }

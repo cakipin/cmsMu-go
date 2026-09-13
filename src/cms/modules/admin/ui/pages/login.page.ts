@@ -1,27 +1,28 @@
 export const loginPage = `
-<div x-show="!token"
-     style="position: fixed; inset: 0; background: #f8fafc; z-index: 99999; display: grid !important; place-items: center;"
+<div style="position: fixed; inset: 0; background: linear-gradient(135deg, #327f2b, #d86c35); z-index: 99999; overflow-y: auto; display:flex; align-items:center; justify-content:center;"
      x-data="{
         loginForm: { username: '', password: '' }, // Gunakan nama unik agar tidak bentrok dengan state global
+        showPassword: false,
         isLoading: false,
         errorMsg: '',
-
+        hasExistingSession: !!(window.getCmsToken ? window.getCmsToken() : ''),
+        
         async submitLogin() {
             if (this.isLoading) return;
-            this.isLoading = true;
+            this.isLoading = true; 
             this.errorMsg = '';
-
+            
             try {
                 // 1. Fetch ke backend (Endpoint pastikan sesuai dengan app.ts)
-                const res = await fetch('/api/users/login', {
-                    method: 'POST',
+                const res = await fetch('/api/users/login', { 
+                    method: 'POST', 
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(this.loginForm)
+                    body: JSON.stringify(this.loginForm) 
                 });
 
                 const text = await res.text();
                 let data;
-
+                
                 // 2. Coba parse JSON
                 try {
                     data = JSON.parse(text);
@@ -33,83 +34,139 @@ export const loginPage = `
                 if (!res.ok) {
                     throw new Error(data.error || data.message || 'Gagal masuk (Status ' + res.status + ')');
                 }
-
+                
                 // 4. Jika Sukses
-                if (data.success) {
-                    // Beri jeda kecil agar user melihat status sukses sebelum reload
+                if (data.token) {
+                    // Simpan token ke Cookie dan bersihkan localStorage
+                    if (window.setCmsToken) {
+                        window.setCmsToken(data.token);
+                    } else {
+                        document.cookie = 'labmu_token=' + encodeURIComponent(data.token) + '; Path=/; Max-Age=2592000; SameSite=Lax';
+                        try { if (window.__origLsRemove) window.__origLsRemove.call(window.localStorage, 'labmu_token'); } catch(e) {}
+                    }
+                    this.token = data.token;
+                    
+                    // Force redirect ke dashboard atau profil publik sesuai role
                     setTimeout(() => {
-                        window.location.href = '/admin'; // Force ke dashboard
-                    }, 100);
+                        const r = String(data.user?.role || '').toLowerCase();
+                        if (r === 'superadmin' || r === 'admin') {
+                            window.location.replace('/admin');
+                        } else {
+                            window.location.replace('/@' + encodeURIComponent(data.user?.username || 'me'));
+                        }
+                    }, 50);
                 } else {
-                    throw new Error('Sesi tidak berhasil dibuat');
+                    throw new Error('Token tidak ditemukan dalam respon server');
                 }
 
             } catch (e) {
                 console.error('[Login Error]:', e);
-                this.errorMsg = e.message;
+                this.errorMsg = e.message; 
             } finally {
                 this.isLoading = false;
             }
         },
         async loginSso() {
+            if (this.isLoading) return;
             this.isLoading = true;
+            this.errorMsg = '';
+
             try {
-                let clientId = 'client_Vi7MFYiz4A85AjwwyDK81DW8'; // Default fallback lpek
+                // Ambil Client ID dari pengaturan sistem
                 const res = await fetch('/api/settings?t=' + Date.now());
-                if (res.ok) {
-                    const json = await res.json();
-                    const data = json.data || json;
-                    if (data.sso_enabled === 'false') {
-                        alert('SSO sedang dinonaktifkan.');
-                        this.isLoading = false;
-                        return;
-                    }
-                    if (data.sso_client_id) {
-                        clientId = data.sso_client_id;
-                    }
+                if (!res.ok) {
+                    throw new Error('Gagal memuat pengaturan SSO (Status ' + res.status + ')');
                 }
+                const json = await res.json();
+                const config = json.data || json;
+
+                if (config.sso_enabled === 'false') {
+                    alert('SSO Muhammadiyah ID sedang dinonaktifkan oleh Administrator.');
+                    this.isLoading = false;
+                    return;
+                }
+
+                const clientId = config.sso_client_id ? config.sso_client_id.trim() : '';
+
+                if (!clientId) {
+                    alert('SSO Muhammadiyah ID belum dikonfigurasi oleh Admin (Client ID kosong).');
+                    this.isLoading = false;
+                    return;
+                }
+
                 const redirectUri = \`\${window.location.origin}/admin/sso/callback\`;
-                const authorizeUrl = \`https://dias.muhammadiyah.or.id/oauth/authorize?client_id=\${clientId}&redirect_uri=\${encodeURIComponent(redirectUri)}&response_type=code\`;
+                
+                // Auto-Switch Endpoint Authorize berdasarkan format Client ID
+                let authBase = 'https://sso.muhammadiyah.id/oauth/authorize';
+                let providerHint = 'sso_pusat';
+
+                if (clientId.startsWith('client_') || clientId.toLowerCase().includes('dias')) {
+                    authBase = 'https://dias.muhammadiyah.or.id/oauth/authorize';
+                    providerHint = 'diasmu';
+                }
+
+                try {
+                    sessionStorage.setItem('sso_provider_hint', providerHint);
+                } catch(e) {}
+
+                const authorizeUrl = \`\${authBase}?client_id=\${encodeURIComponent(clientId)}&redirect_uri=\${encodeURIComponent(redirectUri)}&response_type=code\`;
                 window.location.href = authorizeUrl;
             } catch(e) {
-                alert('Gagal inisialisasi SSO');
+                alert('Gagal inisialisasi SSO: ' + e.message);
                 this.isLoading = false;
             }
         }
      }">
 
-    <div data-login-card style="box-sizing:border-box; position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:calc(100% - 32px); max-width:400px; max-height:calc(100dvh - 32px); overflow-y:auto; background:white; padding:40px; border-radius:12px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.1); border:1px solid #e2e8f0;">
-        <div style="text-align:center; margin-bottom:30px;">
-             <h2 style="color: #1e293b; margin: 0; font-size: 24px; font-weight: 800;">LabMu Login</h2>
-             <p style="color: #64748b; margin-top: 5px; font-size: 14px;">Masuk ke Dashboard Admin</p>
+    <div style="position: relative; width: 100%; max-width: 420px; background: white; padding: 36px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: none; margin: 20px;">
+        <div style="text-align:center; margin-bottom:24px;">
+             <a href="/" style="text-decoration:none;">
+                 <h2 style="color: #0284c7; margin: 0 0 6px 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">NewsRoom</h2>
+             </a>
+             <p style="color: #64748b; margin-top: 5px; font-size: 14px; font-weight: 500;">Masuk ke Dashboard Pengelola</p>
         </div>
 
-        <div x-show="errorMsg"
+        <template x-if="hasExistingSession">
+            <div style="margin-bottom: 18px; padding: 10px 12px; background: #fef3c7; border: 1px solid #fde68a; border-radius: 8px; font-size: 12px; color: #92400e; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                <span><i class="fas fa-info-circle"></i> Sesi sebelumnya aktif. Masuk di bawah untuk mengganti akun.</span>
+                <button type="button" @click="if (window.setCmsToken) window.setCmsToken(''); else document.cookie = 'labmu_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax'; try { localStorage.removeItem('labmu_token'); localStorage.removeItem('admin_token'); } catch(e){} hasExistingSession = false;" style="background: #b45309; color: #fff; border: none; border-radius: 4px; padding: 3px 8px; font-size: 11px; cursor: pointer; font-weight: 600; white-space: nowrap;">Reset</button>
+            </div>
+        </template>
+        
+        <div x-show="errorMsg" 
              x-transition
-             style="background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; font-size:13px; border:1px solid #fca5a5; word-break: break-word;"
+             style="background:#fee2e2; color:#991b1b; padding:12px; margin-bottom:20px; border-radius:6px; font-size:13px; border:1px solid #fca5a5; word-break: break-word;" 
              x-text="errorMsg"></div>
 
         <form @submit.prevent="submitLogin">
-            <div style="margin-bottom: 20px;">
-                <label style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Username</label>
-                <input type="text"
-                       x-model="loginForm.username"
-                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;"
-                       required
-                       placeholder="Masukkan username">
+            <div style="margin-bottom: 18px;">
+                <label style="display:block; font-weight:600; margin-bottom:6px; font-size:13px; color:#334155;">Username / Email</label>
+                <input type="text" 
+                       x-model="loginForm.username" 
+                       style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:14px;" 
+                       required 
+                       placeholder="Username, email, atau nama...">
             </div>
             <div style="margin-bottom: 25px;">
                 <label style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Password</label>
-                <input type="password"
-                       x-model="loginForm.password"
-                       style="width:100%; padding:12px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;"
-                       required
-                       placeholder="••••••••">
+                <div style="position: relative;">
+                    <input :type="showPassword ? 'text' : 'password'" 
+                           x-model="loginForm.password" 
+                           style="width:100%; padding:12px 42px 12px 14px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;" 
+                           required 
+                           placeholder="••••••••">
+                    <button type="button" 
+                            @click="showPassword = !showPassword"
+                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 15px;"
+                            :title="showPassword ? 'Sembunyikan password' : 'Lihat password'">
+                        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                    </button>
+                </div>
             </div>
-            <button type="submit"
-                    style="width:100%; padding:14px; background:#0f172a; color:white; border:none; border-radius:8px; font-weight:700; cursor:pointer; font-size:15px; transition: all 0.2s;"
-                    :style="isLoading ? 'opacity: 0.7; cursor: not-allowed;' : ''"
-                    :disabled="isLoading">
+            <button type="submit" 
+                    :disabled="isLoading"
+                    class="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-md shadow-primary/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer border-0 flex items-center justify-center gap-2 text-sm">
+                <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
                 <span x-text="isLoading ? 'Memproses...' : 'Masuk'"></span>
             </button>
         </form>
@@ -121,9 +178,10 @@ export const loginPage = `
 
         <button type="button"
                 @click="loginSso()"
-                style="width:100%; padding:14px; background:#f8fafc; color:#0f172a; border:1px solid #cbd5e1; border-radius:8px; font-weight:600; cursor:pointer; font-size:15px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; gap: 10px;">
-            <img src="https://dias.muhammadiyah.or.id/logo.png" alt="Muhammadiyah ID" style="height: 20px;" onerror="this.style.display='none'">
-            Masuk dengan Muhammadiyah ID
+                :disabled="isLoading"
+                class="w-full py-3 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-2.5 text-sm shadow-sm">
+            <img src="https://dias.muhammadiyah.or.id/logo.png" alt="Muhammadiyah ID" class="h-5 w-auto" onerror="this.style.display='none'">
+            <span>Masuk dengan Muhammadiyah ID</span>
         </button>
     </div>
 </div>

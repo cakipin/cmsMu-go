@@ -21,15 +21,15 @@ export const usersPage = `
       <tbody>
         <template x-for="u in usersList">
           <tr style="border-bottom:1px solid #eee;">
-
+            
             <td style="padding:12px;">
                 <div style="display:flex; align-items:center; gap:10px;">
                     <div style="width:32px; height:32px; background:#2271b1; color:#fff; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold; font-size:14px;">
-                        <span x-text="u.username.charAt(0).toUpperCase()"></span>
+                        <span x-text="(u.username || 'U').charAt(0).toUpperCase()"></span>
                     </div>
                     <div>
-                        <div style="font-weight:bold; color:#2271b1;" x-text="u.username"></div>
-                        <div style="font-size:11px; color:#666;" x-text="u.name"></div>
+                        <div style="font-weight:bold; color:#2271b1;" x-text="u.username || 'Unspecified'"></div>
+                        <div style="font-size:11px; color:#666;" x-text="u.name || ''"></div>
                     </div>
                 </div>
             </td>
@@ -39,15 +39,23 @@ export const usersPage = `
             </td>
 
             <td>
-                <span class="badge"
-                      :style="u.role=='administrator' ? 'background:#2271b1; color:#fff' : (u.role=='editor' ? 'background:#d1e7dd; color:#0f5132' : (u.role=='subscriber' ? 'background:#e2e8f0; color:#475569' : 'background:#fff3cd; color:#664d03'))"
-                      style="padding:4px 8px; border-radius:4px; font-size:11px; text-transform:capitalize;"
-                      x-text="u.role">
-                </span>
+                <div>
+                    <span class="badge" 
+                          :style="u.role=='admin' ? 'background:#2271b1; color:#fff;' : (u.role=='editor' ? 'background:#d1e7dd; color:#0f5132;' : (['subscriber_pro', 'pro'].includes(u.role) ? 'background:#fef3c7; color:#92400e; border:1px solid #f59e0b; font-weight:700;' : (['subscriber', 'subscribe'].includes(u.role) ? 'background:#e2e8f0; color:#475569;' : 'background:#fff3cd; color:#664d03;')))"
+                          style="padding:4px 8px; border-radius:4px; font-size:11px; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
+                        <span x-show="['subscriber_pro', 'pro'].includes(u.role)">⭐</span>
+                        <span x-text="['subscriber_pro', 'pro'].includes(u.role) ? 'SUBSCRIBER PRO' : u.role"></span>
+                    </span>
+                    <template x-if="['subscriber_pro', 'pro'].includes(u.role) && u.subscription_expires_at">
+                        <div style="font-size:10px; font-weight:600; margin-top:3px;"
+                             :style="new Date(u.subscription_expires_at) < new Date() ? 'color:#dc2626;' : 'color:#059669;'"
+                             x-text="new Date(u.subscription_expires_at) < new Date() ? 'Kedaluwarsa' : ('s.d. ' + new Date(u.subscription_expires_at).toLocaleDateString('id-ID'))"></div>
+                    </template>
+                </div>
             </td>
 
             <td style="font-size:12px; color:#888;">
-                <span x-text="u.created_at ? new Date(u.created_at).toLocaleDateString() : '-'"></span>
+                <span x-text="u.created_at ? new Date(u.created_at).toLocaleDateString('id-ID') : '-'"></span>
             </td>
 
             <td style="text-align:center;">
@@ -72,7 +80,7 @@ export const usersPage = `
             <button @click="showUserModal=false" style="background:none; border:none; font-size:24px; cursor:pointer;">&times;</button>
         </div>
         <div style="padding:25px;">
-
+            
             <div style="display:grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
                 <div>
                     <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Username</label>
@@ -84,8 +92,32 @@ export const usersPage = `
                         <option value="admin">Administrator</option>
                         <option value="editor">Editor</option>
                         <option value="penulis">Penulis</option>
-                        <option value="subscriber">Subscriber</option>
+                        <option value="subscriber">Subscriber (Biasa)</option>
+                        <option value="subscriber_pro">⭐ Subscriber Pro (Berbayar)</option>
                     </select>
+                </div>
+            </div>
+
+            <!-- Bagian Kuota Berlangganan jika Subscriber Pro -->
+            <div x-show="userForm.role === 'subscriber_pro'" style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 14px; border-radius:8px; margin-bottom:15px;" x-transition>
+                <label style="font-weight:bold; font-size:12px; color:#0f172a; display:block; margin-bottom:6px;">
+                    <i class="fas fa-crown" style="color:#f59e0b;"></i> Kuota Berlangganan (Subscriber Pro)
+                </label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
+                    <div>
+                        <label style="font-size:11px; color:#64748b; display:block; margin-bottom:4px;">Paket Kuota:</label>
+                        <select x-model="userForm.subscription_plan" @change="applyPlanDuration()" class="input" style="height:36px; font-size:12px;">
+                            <option value="1_bulan">1 Bulan (30 Hari)</option>
+                            <option value="3_bulan">3 Bulan (90 Hari)</option>
+                            <option value="6_bulan">6 Bulan (180 Hari)</option>
+                            <option value="1_tahun">1 Tahun (365 Hari)</option>
+                            <option value="custom">Kustom Tanggal Manual</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#64748b; display:block; margin-bottom:4px;">Berlaku Sampai (Tanggal):</label>
+                        <input type="date" x-model="userForm.subscription_expires_date" class="input" style="height:36px; font-size:12px;">
+                    </div>
                 </div>
             </div>
 

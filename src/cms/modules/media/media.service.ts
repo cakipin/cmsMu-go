@@ -1,17 +1,23 @@
 import type { D1Database, R2Bucket } from '@cloudflare/workers-types';
+import { getDb } from '../../db';
+import { mediaMeta } from '../../db/schema';
+import { eq, sql } from 'drizzle-orm';
 
 export class MediaService {
-  constructor(private bucket: R2Bucket, private db: D1Database) {}
+  private orm;
+
+  constructor(private bucket: R2Bucket, private db: D1Database) {
+    this.orm = getDb(db);
+  }
 
   async upload(key: string, file: File | Blob) {
     await this.bucket.put(key, file, { httpMetadata: { contentType: file.type } });
     return { key };
   }
 
-  // UPDATE LIST: Ambil field caption
   async list() {
     const list = await this.bucket.list({ limit: 500 });
-    const { results } = await this.db.prepare("SELECT * FROM media_meta").all();
+    const results = await this.orm.select().from(mediaMeta);
     
     return list.objects.map(obj => {
       const meta: any = results.find((m: any) => m.key === obj.key) || {};
@@ -22,7 +28,7 @@ export class MediaService {
         alt: meta.alt || '',
         title: meta.title || '',
         description: meta.description || '',
-        caption: meta.caption || '' // <--- BARU
+        caption: meta.caption || ''
       };
     });
   }
@@ -31,25 +37,26 @@ export class MediaService {
 
   async delete(key: string) {
     await this.bucket.delete(key);
-    await this.db.prepare("DELETE FROM media_meta WHERE key = ?").bind(key).run();
+    await this.orm.delete(mediaMeta).where(eq(mediaMeta.key, key)).run();
   }
 
-  // UPDATE SAVE: Simpan caption
   async saveMeta(key: string, data: { alt?: string, description?: string, title?: string, caption?: string }) {
-    return await this.db.prepare(`
-      INSERT INTO media_meta (key, alt, description, title, caption) VALUES (?, ?, ?, ?, ?)
-      ON CONFLICT(key) DO UPDATE SET 
-        alt=excluded.alt, 
-        description=excluded.description, 
-        title=excluded.title,
-        caption=excluded.caption
-    `).bind(
-        key, 
-        data.alt || '', 
-        data.description || '', 
-        data.title || '', 
-        data.caption || '' // <--- BARU
-    ).run();
+    return await this.orm.insert(mediaMeta).values({
+      key,
+      url: key, // fallback url
+      alt: data.alt || '',
+      description: data.description || '',
+      title: data.title || '',
+      caption: data.caption || ''
+    }).onConflictDoUpdate({
+      target: mediaMeta.key,
+      set: {
+        alt: sql`excluded.alt`,
+        description: sql`excluded.description`,
+        title: sql`excluded.title`,
+        caption: sql`excluded.caption`
+      }
+    }).run();
   }
 
   async rename(oldKey: string, newName: string) {
@@ -65,7 +72,7 @@ export class MediaService {
         customMetadata: oldObject.customMetadata
     });
     await this.bucket.delete(oldKey);
-    await this.db.prepare("UPDATE media_meta SET key = ? WHERE key = ?").bind(newKey, oldKey).run();
+    await this.orm.update(mediaMeta).set({ key: newKey }).where(eq(mediaMeta.key, oldKey)).run();
 
     return { oldKey, newKey };
   }
