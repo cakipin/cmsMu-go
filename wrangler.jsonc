@@ -25,6 +25,10 @@
 		{
 			"binding": "WIKIMU_CACHE",
 			"id": "888371371c0c41c88d3d474fed476f70"
+		},
+		{
+			"binding": "SESSION",
+			"id": "72fcc89c00b0401283439ff7f50f912e"
 		}
 	],
 	"observability": {

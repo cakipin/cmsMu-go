@@ -1,15 +1,9 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "api-staging-newsroom",
+  "name": "cmsmu-api",
   "main": "src/index.ts",
   "compatibility_date": "2026-02-01",
   "compatibility_flags": ["nodejs_compat"],
-  "routes": [
-    {
-      "pattern": "api-staging-newsroom.labmu.dev",
-      "custom_domain": true
-    }
-  ],
   "d1_databases": [
     {
       "binding": "DB",
