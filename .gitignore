@@ -36,4 +36,5 @@ compose.override.yaml
 .turbo/
 **/.turbo/
 .env*
+!.env.example
 

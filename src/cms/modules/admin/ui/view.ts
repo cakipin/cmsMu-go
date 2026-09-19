@@ -186,6 +186,105 @@ export function renderAdmin(data: any): string {
                     }
                 };
 
+                // In-System Toast System (SOP 16)
+                window.showToast = function(message, type, duration) {
+                    type = type || 'info';
+                    duration = duration || 3500;
+                    var container = document.getElementById('cms-toast-container');
+                    if (!container) return;
+                    var toast = document.createElement('div');
+                    toast.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all transform translate-y-2 opacity-0 duration-200 max-w-md';
+                    
+                    var icon = 'fa-info-circle text-blue-500';
+                    var bg = 'bg-white border-slate-200 text-slate-800 shadow-slate-200/50';
+                    if (type === 'success') {
+                        icon = 'fa-check-circle text-emerald-500';
+                        bg = 'bg-white border-emerald-200 text-slate-800 shadow-emerald-500/10';
+                    } else if (type === 'error' || type === 'danger') {
+                        icon = 'fa-exclamation-circle text-rose-500';
+                        bg = 'bg-white border-rose-200 text-slate-800 shadow-rose-500/10';
+                    } else if (type === 'warning') {
+                        icon = 'fa-exclamation-triangle text-amber-500';
+                        bg = 'bg-white border-amber-200 text-slate-800 shadow-amber-500/10';
+                    }
+                    
+                    toast.className += ' ' + bg;
+                    toast.innerHTML = '<i class="fas ' + icon + ' text-base shrink-0"></i><span class="flex-1">' + message + '</span>';
+                    container.appendChild(toast);
+                    
+                    requestAnimationFrame(function() {
+                        toast.classList.remove('translate-y-2', 'opacity-0');
+                    });
+                    
+                    setTimeout(function() {
+                        toast.classList.add('opacity-0', 'translate-y-2');
+                        setTimeout(function() { toast.remove(); }, 200);
+                    }, duration);
+                };
+
+                // In-System Confirmation Modal (SOP 16)
+                window.showConfirmDialog = function(options) {
+                    return new Promise(function(resolve) {
+                        options = options || {};
+                        var modal = document.getElementById('cms-confirm-modal');
+                        var card = document.getElementById('cms-confirm-card');
+                        var titleEl = document.getElementById('cms-confirm-title');
+                        var msgEl = document.getElementById('cms-confirm-message');
+                        var okBtn = document.getElementById('cms-confirm-ok-btn');
+                        var cancelBtn = document.getElementById('cms-confirm-cancel-btn');
+                        var okText = document.getElementById('cms-confirm-ok-text');
+                        var iconWrap = document.getElementById('cms-confirm-icon-wrap');
+                        var iconEl = document.getElementById('cms-confirm-icon');
+                        
+                        if (!modal) {
+                            resolve(confirm(options.message || 'Apakah Anda yakin?'));
+                            return;
+                        }
+                        
+                        titleEl.textContent = options.title || 'Konfirmasi Tindakan';
+                        msgEl.textContent = options.message || 'Apakah Anda yakin ingin melanjutkan?';
+                        okText.textContent = options.confirmText || 'Ya, Lanjutkan';
+                        
+                        if (options.type === 'danger' || options.isDestructive) {
+                            okBtn.className = 'px-5 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-colors flex items-center gap-2';
+                            iconWrap.className = 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600';
+                            iconEl.className = 'fas fa-trash-alt text-xl';
+                        } else {
+                            okBtn.className = 'px-5 py-2 rounded-xl text-sm font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors flex items-center gap-2';
+                            iconWrap.className = 'w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-teal-50 text-teal-600';
+                            iconEl.className = 'fas fa-question-circle text-xl';
+                        }
+                        
+                        modal.classList.remove('hidden');
+                        requestAnimationFrame(function() {
+                            card.classList.remove('scale-95', 'opacity-0');
+                        });
+                        
+                        function cleanup() {
+                            card.classList.add('scale-95', 'opacity-0');
+                            setTimeout(function() { modal.classList.add('hidden'); }, 150);
+                            okBtn.onclick = null;
+                            cancelBtn.onclick = null;
+                        }
+                        
+                        okBtn.onclick = function() {
+                            cleanup();
+                            resolve(true);
+                        };
+                        cancelBtn.onclick = function() {
+                            cleanup();
+                            resolve(false);
+                        };
+                    });
+                };
+
+                // Global Safety Net (SOP 16): Native Alert & Confirm Override
+                window.alert = function(msg) {
+                    if (window.showToast) {
+                        window.showToast(String(msg), 'info');
+                    }
+                };
+
                 // Migrasi sisa localStorage ke Cookie lalu musnahkan penyimpanan fisik lokal
                 (function() {
                     try {
@@ -464,6 +563,29 @@ export function renderAdmin(data: any): string {
                     <!-- ===== Content Area End ===== -->
                 </div>
                 <!-- ===== Page Wrapper End ===== -->
+                <!-- In-System Toast Notification Container (SOP 16) -->
+                <div id="cms-toast-container" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
+
+                <!-- In-System Confirmation Modal (SOP 16) -->
+                <div id="cms-confirm-modal" class="fixed inset-0 z-[99998] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all">
+                    <div id="cms-confirm-card" class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 transform transition-all scale-95 opacity-0 duration-200">
+                        <div class="flex items-start gap-4">
+                            <div id="cms-confirm-icon-wrap" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600">
+                                <i id="cms-confirm-icon" class="fas fa-trash-alt text-xl"></i>
+                            </div>
+                            <div class="flex-1">
+                                <h4 id="cms-confirm-title" class="text-base font-bold text-slate-800">Konfirmasi Tindakan</h4>
+                                <p id="cms-confirm-message" class="text-sm text-slate-600 mt-1 whitespace-pre-line"></p>
+                            </div>
+                        </div>
+                        <div class="flex justify-end gap-3 mt-6">
+                            <button id="cms-confirm-cancel-btn" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
+                            <button id="cms-confirm-ok-btn" class="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-colors flex items-center gap-2">
+                                <span id="cms-confirm-ok-text">Ya, Lanjutkan</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
             </template>
         </body>
         </html>`;
