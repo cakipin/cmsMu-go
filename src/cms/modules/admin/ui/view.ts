@@ -336,6 +336,7 @@ export function renderAdmin(data: any): string {
                     { group: 'System', title: 'Users', view: 'users', icon: 'fas fa-users', role: ['admin'], action: () => typeof loadUsers === 'function' && loadUsers() },
                     { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] },
                     { group: 'System', title: 'SEO & Analytics', view: 'seo', icon: 'fas fa-chart-pie', role: ['admin'] },
+                    { group: 'Plugins', title: 'Kelola Plugins', view: 'plugins', icon: 'fas fa-puzzle-piece', role: ['admin'], action: () => typeof loadPlugins === 'function' && loadPlugins() },
                     { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['admin'] }
                 ];
 

@@ -183,6 +183,8 @@ export const coreLogic = {
     
     // --- Plugins ---
     availablePlugins: [],
+    showAddPluginModal: false,
+    newPluginForm: { id: '', name: '', description: '', author: '', version: '1.0.0' },
     
     async loadPlugins() {
         try {
@@ -194,20 +196,69 @@ export const coreLogic = {
     
     async togglePlugin(id: string, activate: boolean) {
         try {
-            await this._fetch(`/api/plugins/toggle/${id}`, { 
+            const res = await this._fetch(`/api/plugins/toggle`, { 
                 method: "POST",
-                body: JSON.stringify({ active: activate })
+                body: JSON.stringify({ plugin_id: id, active: activate })
             });
-            this.loadPlugins();
-        } catch(e) { alert("Failed to toggle plugin"); }
+            const json = await res.json();
+            if (json.success) {
+                if (window.showToast) window.showToast(json.message || `Plugin ${activate ? 'diaktifkan' : 'dinonaktifkan'}!`, 'success');
+            } else {
+                if (window.showToast) window.showToast(json.message || 'Gagal mengubah status plugin', 'error');
+            }
+            await this.loadPlugins();
+        } catch(e: any) { 
+            if (window.showToast) window.showToast('Gagal mengubah status plugin: ' + e.message, 'error'); 
+        }
     },
 
-    async deletePlugin(id: string) {
-        if (!confirm("Are you sure you want to delete this plugin?")) return;
+    async deletePlugin(id: string, name?: string) {
+        const confirmed = window.showConfirmDialog 
+            ? await window.showConfirmDialog({
+                title: 'Hapus Plugin',
+                message: `Apakah Anda yakin ingin menghapus plugin "${name || id}" dari sistem?`,
+                type: 'danger',
+                confirmText: 'Ya, Hapus Plugin'
+            })
+            : confirm(`Hapus plugin ${name || id}?`);
+        if (!confirmed) return;
+
         try {
-            await this._fetch(`/api/plugins/${id}`, { method: "DELETE" });
-            this.loadPlugins();
-        } catch(e) { alert("Failed to delete plugin"); }
+            const res = await this._fetch(`/api/plugins/${id}`, { method: "DELETE" });
+            const json = await res.json();
+            if (json.success) {
+                if (window.showToast) window.showToast(json.message || 'Plugin berhasil dihapus!', 'success');
+            } else {
+                if (window.showToast) window.showToast(json.error || 'Gagal menghapus plugin', 'error');
+            }
+            await this.loadPlugins();
+        } catch(e: any) { 
+            if (window.showToast) window.showToast('Gagal menghapus plugin: ' + e.message, 'error'); 
+        }
+    },
+
+    async saveNewPlugin() {
+        if (!this.newPluginForm.id || !this.newPluginForm.name) {
+            if (window.showToast) window.showToast('ID dan Nama Plugin wajib diisi!', 'warning');
+            return;
+        }
+        try {
+            const res = await this._fetch('/api/plugins', {
+                method: 'POST',
+                body: JSON.stringify(this.newPluginForm)
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (window.showToast) window.showToast('Plugin berhasil didaftarkan!', 'success');
+                this.showAddPluginModal = false;
+                this.newPluginForm = { id: '', name: '', description: '', author: '', version: '1.0.0' };
+                await this.loadPlugins();
+            } else {
+                if (window.showToast) window.showToast(json.error || 'Gagal menambahkan plugin', 'error');
+            }
+        } catch(e: any) {
+            if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+        }
     },
 
     // --- Menus ---
