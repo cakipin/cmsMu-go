@@ -123,10 +123,21 @@ export const settingsPage = `
                  if(res.ok) {
                      const json = await res.json();
                      const raw = Array.isArray(json) ? json : (json.data || json.results || []);
-                     this.mediaList = raw.filter(m => m.url && !m.url.endsWith('/')).map(m => ({
-                         url: m.url || m.file_url || '',
-                         title: m.title || (m.key ? m.key.split('/').pop() : 'Gambar Media')
-                     }));
+                     const seen = new Set();
+                     const list = [];
+                     for (let i = 0; i < raw.length; i++) {
+                         const m = raw[i];
+                         const rawUrl = m.url || (m.key ? '/api/media/file/' + m.key : (m.file_url || ''));
+                         if (!rawUrl || rawUrl.endsWith('/') || seen.has(rawUrl)) continue;
+                         seen.add(rawUrl);
+                         list.push({
+                             id: m.id || ('media_' + (i + 1)),
+                             url: rawUrl,
+                             title: m.title || (m.key ? m.key.split('/').pop() : ('Gambar ' + (i + 1))),
+                             key: m.key || ''
+                         });
+                     }
+                     this.mediaList = list;
                  }
              } catch(e) { console.error('Gagal load media:', e); }
              finally { this.isLoadingMedia = false; }
@@ -294,28 +305,28 @@ export const settingsPage = `
     </div>
 
     <!-- POPUP MEDIA MANAGER STANDAR CMSMU -->
-    <div x-show="mediaModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex justify-center items-center p-4 sm:p-6" x-cloak>
-        <div class="bg-white w-full max-w-4xl h-[82vh] min-h-[500px] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200/80">
+    <div x-show="mediaModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex justify-center items-center p-3 sm:p-6" x-cloak>
+        <div class="bg-white w-full max-w-4xl h-[85vh] min-h-[480px] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200/80">
             
             <!-- MODAL HEADER -->
-            <div class="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
+            <div class="px-4 py-3 border-b border-slate-100 flex flex-wrap sm:flex-nowrap justify-between items-center bg-slate-50/50 gap-2 shrink-0">
+                <div class="flex items-center gap-2.5 min-w-0">
+                    <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold shrink-0">
                         <i class="fas fa-photo-video text-sm"></i>
                     </div>
-                    <div>
-                        <h3 class="m-0 text-sm font-bold text-slate-800 leading-tight">Media Manager</h3>
-                        <p class="m-0 text-[11px] text-slate-400" x-text="mediaTarget === 'logo' ? 'Pilih atau unggah Logo Situs' : 'Pilih atau unggah Favicon Situs'"></p>
+                    <div class="min-w-0">
+                        <h3 class="m-0 text-sm font-bold text-slate-800 leading-tight truncate">Media Manager</h3>
+                        <p class="m-0 text-[11px] text-slate-400 truncate" x-text="mediaTarget === 'logo' ? 'Pilih atau unggah Logo Situs' : 'Pilih atau unggah Favicon Situs'"></p>
                     </div>
                 </div>
 
-                <!-- TABS & SEARCH -->
-                <div class="flex items-center gap-3">
+                <!-- TABS & SEARCH & CLOSE -->
+                <div class="flex items-center gap-2 ml-auto">
                     <!-- Search Bar (Aktif di Library) -->
-                    <div x-show="mediaTab === 'library'" class="relative">
+                    <div x-show="mediaTab === 'library'" class="relative hidden sm:block">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                        <input type="text" x-model="mediaSearchQuery" placeholder="Cari nama media..." 
-                               class="pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-40 sm:w-52 transition-all text-slate-700">
+                        <input type="text" x-model="mediaSearchQuery" placeholder="Cari media..." 
+                               class="pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-32 sm:w-44 transition-all text-slate-700">
                         <button type="button" x-show="mediaSearchQuery" @click="mediaSearchQuery=''" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs border-0 bg-transparent cursor-pointer">&times;</button>
                     </div>
 
@@ -323,18 +334,18 @@ export const settingsPage = `
                     <div class="flex gap-1 bg-slate-200/70 p-1 rounded-lg">
                         <button @click="mediaTab='library'" 
                                 :class="mediaTab==='library' ? 'bg-white text-teal-700 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900 font-normal'" 
-                                class="border-0 py-1 px-3 rounded-md text-xs cursor-pointer transition-all">
-                            <i class="fas fa-th-large mr-1 text-[11px]"></i> Galeri
+                                class="border-0 py-1 px-2.5 rounded-md text-xs cursor-pointer transition-all flex items-center gap-1">
+                            <i class="fas fa-th-large text-[11px]"></i> <span>Galeri</span>
                         </button>
                         <button @click="mediaTab='upload'" 
                                 :class="mediaTab==='upload' ? 'bg-white text-teal-700 shadow-sm font-semibold' : 'text-slate-600 hover:text-slate-900 font-normal'" 
-                                class="border-0 py-1 px-3 rounded-md text-xs cursor-pointer transition-all">
-                            <i class="fas fa-cloud-upload-alt mr-1 text-[11px]"></i> Unggah
+                                class="border-0 py-1 px-2.5 rounded-md text-xs cursor-pointer transition-all flex items-center gap-1">
+                            <i class="fas fa-cloud-upload-alt text-[11px]"></i> <span>Unggah</span>
                         </button>
                     </div>
 
                     <!-- Close Button -->
-                    <button @click="mediaModalOpen=false" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center border-0 cursor-pointer transition-colors text-sm" title="Tutup">
+                    <button @click="mediaModalOpen=false" class="w-7 h-7 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-400 hover:text-slate-700 flex items-center justify-center border-0 cursor-pointer transition-colors text-sm shrink-0" title="Tutup">
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
@@ -344,25 +355,32 @@ export const settingsPage = `
             <div class="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
                 
                 <!-- AREA GALERI & UPLOAD -->
-                <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 bg-slate-50/70">
+                <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-50/70">
                     
                     <!-- TAB 1: GALERI LIBRARY -->
                     <div x-show="mediaTab === 'library'">
+                        <!-- Mobile Search Bar -->
+                        <div class="block sm:hidden mb-3 relative">
+                            <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
+                            <input type="text" x-model="mediaSearchQuery" placeholder="Cari media..." 
+                                   class="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-slate-700 box-border">
+                        </div>
+
                         <!-- Loading Spinner -->
                         <div x-show="isLoadingMedia" class="flex flex-col items-center justify-center py-20 text-slate-400">
                             <i class="fas fa-circle-notch fa-spin text-2xl text-teal-600 mb-2"></i>
                             <span class="text-xs font-medium">Memuat pustaka media...</span>
                         </div>
 
-                        <!-- Grid Thumbnails Kompak ~85px -->
-                        <div x-show="!isLoadingMedia && filteredMediaList.length > 0" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
-                            <template x-for="img in filteredMediaList" :key="img.url">
+                        <!-- Grid Thumbnails Kompak -->
+                        <div x-show="!isLoadingMedia && filteredMediaList.length > 0" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5">
+                            <template x-for="(img, idx) in filteredMediaList" :key="img.id || (img.url + '_' + idx)">
                                 <div @click="selectMediaItem(img)" 
                                      class="group relative aspect-square bg-white rounded-lg overflow-hidden border cursor-pointer transition-all duration-150 shadow-xs" 
                                      :class="selectedMedia?.url === img.url ? 'border-teal-500 ring-2 ring-teal-500/30 shadow-md' : 'border-slate-200 hover:border-teal-400 hover:shadow-sm hover:scale-[1.02]'"
                                      :title="img.title || 'Gambar Media'">
                                     
-                                    <img :src="img.url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 bg-slate-100">
+                                    <img :src="img.url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 bg-slate-100" loading="lazy">
                                     
                                     <!-- Checkmark Badge -->
                                     <div x-show="selectedMedia?.url === img.url" 
