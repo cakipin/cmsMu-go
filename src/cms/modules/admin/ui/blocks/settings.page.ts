@@ -75,12 +75,28 @@ export const settingsPage = `
                 });
                 
                 if(res.ok) {
-                    alert('✅ Pengaturan Berhasil Disimpan!');
+                    if (window.showToast) {
+                        window.showToast('Pengaturan berhasil disimpan!', 'success');
+                    } else {
+                        alert('✅ Pengaturan Berhasil Disimpan!');
+                    }
                     if(this.settings.site_title) document.title = this.settings.site_title + ' - Admin';
+                    // Sinkronisasi real-time ke root store dan sidebar
+                    window.dispatchEvent(new CustomEvent('settings-updated', { detail: { ...this.settings } }));
                 } else {
-                    alert('❌ Gagal menyimpan.');
+                    if (window.showToast) {
+                        window.showToast('Gagal menyimpan pengaturan', 'error');
+                    } else {
+                        alert('❌ Gagal menyimpan.');
+                    }
                 }
-            } catch(e) { alert('Error: ' + e.message); }
+            } catch(e: any) { 
+                if (window.showToast) {
+                    window.showToast('Error: ' + e.message, 'error');
+                } else {
+                    alert('Error: ' + e.message); 
+                }
+            }
             finally { this.isSaving = false; }
         },
 

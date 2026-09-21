@@ -34,7 +34,20 @@ export const coreLogic = {
     // 1. SETTINGS & THEMES
     // =========================================
     
+    initSettingsListener() {
+        if (typeof window !== 'undefined' && !(window as any).__SETTINGS_LISTENER_BOUND) {
+            (window as any).__SETTINGS_LISTENER_BOUND = true;
+            window.addEventListener('settings-updated', (e: any) => {
+                if (e.detail) {
+                    // @ts-ignore
+                    this.settings = { ...(this.settings || {}), ...e.detail };
+                }
+            });
+        }
+    },
+
     async loadSettings() {
+        this.initSettingsListener();
         try {
             const res = await this._fetch("/api/settings");
             const json = await res.json();

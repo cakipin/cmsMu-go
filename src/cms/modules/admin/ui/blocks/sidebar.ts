@@ -6,18 +6,26 @@ export const sidebarBlock = `
   :class="sidebarOpen ? 'translate-x-0 w-60' : '-translate-x-full w-60 lg:w-[72px] lg:translate-x-0'"
   class="fixed left-0 top-0 z-50 flex h-screen flex-col overflow-y-hidden overflow-x-hidden bg-gradient-to-b from-[#2b323c] via-[#222730] to-[#1a1e24] border-r border-slate-700/60 duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] lg:static shrink-0 shadow-2xl transition-[width,transform]"
 >
-  <!-- SIDEBAR HEADER (Newsroom Brand) -->
+  <!-- SIDEBAR HEADER (Dynamic Brand synced with Settings) -->
   <div class="flex items-center px-3.5 py-3.5 border-b border-slate-700/40" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
-    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" title="Dashboard Meja Redaksi">
-      <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200">
-        <i class="fas fa-newspaper text-sm"></i>
-      </div>
-      <div x-show="sidebarOpen" class="flex flex-col text-left leading-none transition-opacity duration-200">
-        <span class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5">
-          NewsRoom
-          <span class="text-[9px] font-medium px-1 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded leading-none">CMS</span>
+    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'CMSMu Dashboard'">
+      <!-- Logo Container -->
+      <template x-if="settings && (settings.site_logo || settings.logo)">
+        <img :src="settings.site_logo || settings.logo" class="w-8 h-8 object-contain rounded-lg shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200" :alt="settings.site_title || 'CMSMu'">
+      </template>
+      <template x-if="!settings || (!settings.site_logo && !settings.logo)">
+        <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200">
+          <i class="fas fa-layer-group text-sm"></i>
+        </div>
+      </template>
+
+      <!-- Brand Text -->
+      <div x-show="sidebarOpen" class="flex flex-col text-left leading-none transition-opacity duration-200 overflow-hidden">
+        <span class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
+          <span x-text="(settings && settings.site_title) ? settings.site_title : 'CMSMu'" class="truncate"></span>
+          <span class="text-[9px] font-medium px-1 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded leading-none shrink-0">CMS</span>
         </span>
-        <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1">Meja Redaksi</span>
+        <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1 truncate max-w-[140px]" x-text="(settings && settings.site_desc) ? settings.site_desc : 'Redaksi Dashboard'"></span>
       </div>
     </a>
     <button class="block lg:hidden text-slate-400 hover:text-white p-1 ml-1 rounded transition-colors" @click.stop="sidebarOpen = false" x-show="sidebarOpen">
