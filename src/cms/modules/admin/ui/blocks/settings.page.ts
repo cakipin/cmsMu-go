@@ -90,7 +90,7 @@ export const settingsPage = `
                         alert('❌ Gagal menyimpan.');
                     }
                 }
-            } catch(e: any) { 
+            } catch(e) { 
                 if (window.showToast) {
                     window.showToast('Error: ' + e.message, 'error');
                 } else {
@@ -186,9 +186,9 @@ export const settingsPage = `
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2 style="margin:0; font-size:22px; font-weight:700; color:#1f2937;">Pengaturan Umum</h2>
         <button @click="saveSettings()" :disabled="isSaving" 
-                class="bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white px-4 py-2 rounded-lg text-xs font-medium shadow-sm transition-all flex items-center gap-2 cursor-pointer border-0">
+                class="bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-2 cursor-pointer border-0 shrink-0">
             <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-            <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Perubahan'"></span>
+            <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Perubahan'">Simpan Perubahan</span>
         </button>
     </div>
 
