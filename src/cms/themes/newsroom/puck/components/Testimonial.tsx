@@ -18,29 +18,29 @@ export const Testimonial: ComponentConfig<Props["Testimonial"]> = {
     }
   },
   defaultProps: {
-    title: "Mereka yang Tumbuh Bersama Kami",
-    subtitle: "Bukti nyata dari pelaku ekonomi kreatif dan UMKM yang telah merasakan manfaat dari program inkubasi dan jaringan EkrafMu.",
+    title: "Dipercaya Pengelola Website Persyarikatan",
+    subtitle: "Pengalaman para administrator, redaktur, dan pengelola media dalam menggunakan CMSMu untuk portal resmi mereka.",
     testimonials: [
       {
-        quote: "Sejak bergabung dengan EkrafMu, omset bisnis pakaian muslim kami meningkat 300%. Pendampingan digitalisasinya sangat aplikatif.",
-        author: "Hafiz Ahmad",
-        role: "Founder, HijrahWear",
-        initials: "HA",
-        bgColor: "bg-green-600"
+        quote: "Pengelolaan artikel dan halaman profil ranting kami jadi sangat mudah dan terstruktur sejak beralih ke CMSMu.",
+        author: "H. Ahmad Fauzi",
+        role: "Admin Pimpinan Cabang Muhammadiyah",
+        initials: "AF",
+        bgColor: "bg-emerald-600"
       },
       {
-        quote: "Jaringan saudagar Muhammadiyah benar-benar membuka pintu. Kami mendapat pemasok bahan baku yang amanah dan kompetitif.",
-        author: "Siti Aminah",
-        role: "CEO, Kuliner Berkah",
-        initials: "SA",
-        bgColor: "bg-green-500"
+        quote: "Visual page editornya sangat intuitif. Kami bisa mendesain halaman profil sekolah dan informasi kegiatan dalam hitungan menit.",
+        author: "Siti Rahmawati, S.Pd.",
+        role: "Humas Perguruan Muhammadiyah",
+        initials: "SR",
+        bgColor: "bg-emerald-500"
       },
       {
-        quote: "Sistem kasir awan yang dikembangkan bersama tim IT EkrafMu menyelesaikan masalah pencatatan keuangan kami yang berantakan.",
-        author: "Budi Santoso",
-        role: "Owner, Kopi Nusantara",
-        initials: "BS",
-        bgColor: "bg-green-700"
+        quote: "Performa website sangat ringan dan cepat, memudahkan tim redaktur menerbitkan agenda dakwah dan kabar persyarikatan setiap hari.",
+        author: "Bambang Irawan",
+        role: "Pengelola Portal Majelis",
+        initials: "BI",
+        bgColor: "bg-emerald-700"
       }
     ]
   },

@@ -15,12 +15,12 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
     }
   },
   defaultProps: {
-    title: "Dipercaya & Berkolaborasi Dengan",
+    title: "Mendukung Ekosistem Persyarikatan & Amal Usaha Muhammadiyah",
     partners: [
-      { name: "SatuMu", logoUrl: "" },
-      { name: "Suara Muhammadiyah", logoUrl: "" },
-      { name: "BTM", logoUrl: "" },
-      { name: "Lazismu", logoUrl: "" }
+      { name: "Pimpinan Wilayah & Daerah", logoUrl: "" },
+      { name: "Majelis & Lembaga", logoUrl: "" },
+      { name: "Perguruan Tinggi & Sekolah", logoUrl: "" },
+      { name: "Rumah Sakit & Lembaga Layanan", logoUrl: "" }
     ]
   },
   render: ({ title, partners }) => (

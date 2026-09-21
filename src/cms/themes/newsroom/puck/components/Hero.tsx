@@ -19,15 +19,15 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
     backgroundColor: { type: "text" }
   },
   defaultProps: {
-    badgeText: "🚀 Platform Portal Digital Terpadu Muhammadiyah",
-    title: "Satu Platform Ekosistem Media & Informasi Berkemajuan",
-    titleHighlight: "Berkemajuan",
+    badgeText: "🚀 Platform Content Management System Muhammadiyah",
+    title: "Satu Fondasi CMS Terpadu untuk Website & Media Muhammadiyah",
+    titleHighlight: "Muhammadiyah",
     titleColor: "text-slate-900",
-    description: "CMSMu hadir sebagai Content Management System modern dan tangguh yang didesain khusus untuk mengelola portal berita, website persyarikatan, majalah digital, dan agregasi media dakwah Muhammadiyah.",
+    description: "CMSMu hadir sebagai Content Management System modern, tangguh, dan fleksibel untuk membangun website resmi pimpinan persyarikatan, majelis, lembaga, dan amal usaha Muhammadiyah secara mudah dan terstruktur.",
     descriptionColor: "text-slate-600",
     primaryButtonText: "Jelajahi Fitur",
     primaryButtonLink: "#fitur",
-    secondaryButtonText: "Masuk Redaksi",
+    secondaryButtonText: "Masuk Dashboard",
     secondaryButtonLink: "/admin",
     backgroundImage: "",
     backgroundColor: "bg-slate-50"

@@ -25,6 +25,7 @@ themeEditorRouter.get('/page', async (c) => {
           content: [
             { type: "SiteHeader", props: { id: "SiteHeader-1" } },
             { type: "Hero", props: { id: "Hero-1" } },
+            { type: "Partners", props: { id: "Partners-1" } },
             { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
             { type: "Testimonial", props: { id: "Testimonial-1" } },
             { type: "RecentPosts", props: { id: "RecentPosts-1" } },

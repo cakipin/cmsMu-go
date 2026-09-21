@@ -16,23 +16,23 @@ export const FeatureGrid: ComponentConfig<Props["FeatureGrid"]> = {
     }
   },
   defaultProps: {
-    title: "Fitur & Keunggulan Platform CMSMu",
-    description: "Fondasi teknologi portal publikasi modern dengan arsitektur headless, visual page editor, dan integrasi ekosistem digital Muhammadiyah.",
+    title: "Fitur & Keunggulan Pondasi CMSMu",
+    description: "Fondasi teknologi portal publikasi modern dengan arsitektur headless, visual page editor, dan manajemen konten terpadu untuk kebutuhan persyarikatan.",
     features: [
       {
-        title: "Sindikasi Media Otomatis",
-        description: "Tarik dan himpun ribuan artikel berita dari portal wilayah, daerah, dan majelis Muhammadiyah melalui WP REST API & RSS Feed otomatis.",
-        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>'
+        title: "Visual Page Builder (Drag & Drop)",
+        description: "Mendesain halaman visual, landing page, dan profil lembaga dengan blok komponen interaktif secara instan tanpa perlu menulis kode.",
+        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>'
       },
       {
-        title: "Meja Kurasi Redaksi",
-        description: "Antrean terpadu untuk tim redaksi menyeleksi, menyunting, dan menerbitkan berita sindikasi dengan scoring kepercayaan dan filter wilayah.",
+        title: "Manajemen Berita & Artikel",
+        description: "Meja kerja penulisan naskah yang rapi dengan editor kaya fitur, kategorisasi terstruktur, tagar, dan optimasi SEO otomatis.",
         svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>'
       },
       {
-        title: "SSO Muhammadiyah ID",
-        description: "Integrasi identitas digital terpadu berbasis OAuth 2.0 untuk akses aman bagi warga persyarikatan, kontributor, dan redaktur.",
-        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>'
+        title: "Pustaka Media Terpusat",
+        description: "Pengelolaan berkas foto, dokumen, dan logo secara terpusat berbasis cloud storage dengan pengunggahan cepat dan responsif.",
+        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>'
       }
     ]
   },

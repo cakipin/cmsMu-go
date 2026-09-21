@@ -11,45 +11,27 @@ export const CallToAction: ComponentConfig<Props["CallToAction"]> = {
     footerText: { type: "text" }
   },
   defaultProps: {
-    title: "Siap Mengembangkan Portal Dakwah & Berita Persyarikatan?",
-    description: "Mulai kelola konten, sindikasi media daerah, dan publikasi digital dengan infrastruktur modern CMSMu.",
-    buttonText: "Kirim Formulir Pendaftaran",
-    buttonLink: "#",
-    footerText: "Data portal Anda aman dan terkelola secara terpadu dalam jaringan persyarikatan."
+    title: "Mulai Bangun & Kelola Website Persyarikatan Anda",
+    description: "Gunakan fondasi CMSMu untuk mengelola portal resmi pimpinan, majelis, lembaga, dan amal usaha Muhammadiyah dengan aman, cepat, dan terstruktur.",
+    buttonText: "Masuk Dashboard Admin",
+    buttonLink: "/admin",
+    footerText: "Tersedia untuk seluruh tingkatan pimpinan dan amal usaha Muhammadiyah."
   },
   render: ({ title, description, buttonText, buttonLink, footerText }) => (
     <section id="gabung" className="py-20 bg-slate-900 text-center relative overflow-hidden">
       <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{title}</h2>
-        <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
+        <p className="text-lg md:text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
           {description}
         </p>
-        <div className="bg-white p-8 rounded-2xl max-w-2xl mx-auto shadow-2xl text-left">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Nama Lengkap</label>
-              <input type="text" className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Cth: Ahmad Dahlan" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-slate-700 mb-2">Nomor WhatsApp</label>
-              <input type="text" className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="0812-xxxx-xxxx" />
-            </div>
-          </div>
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-slate-700 mb-2">Sektor Usaha Kreatif</label>
-            <select className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
-              <option>Pengembangan Perangkat Lunak & IT</option>
-              <option>Kuliner & FnB</option>
-              <option>Fashion & Kriya</option>
-              <option>Media & Desain</option>
-            </select>
-          </div>
-          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-green-600/30 text-lg">
-            {buttonText}
-          </button>
-          <p className="text-center text-sm text-slate-500 mt-4">{footerText}</p>
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+          <a href={buttonLink || '/admin'} className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-4 px-8 rounded-full transition shadow-xl shadow-emerald-600/30 text-lg inline-flex items-center gap-2">
+            <span>{buttonText || 'Masuk Dashboard Admin'}</span>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+          </a>
         </div>
+        <p className="text-center text-sm text-slate-400 mt-6">{footerText}</p>
       </div>
     </section>
   )
