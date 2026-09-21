@@ -343,7 +343,7 @@ export function renderAdmin(data: any): string {
 
                 const plugins = [${injectedPlugins}]; 
                 window.adminMenus = window.adminMenus.concat(plugins);
-                window.__CMS_CORE_VERSION = '6.2.0';
+                window.__CMS_CORE_VERSION = '0.1.0';
                 window.__CMS_OTA_ENDPOINT = '/api/ota';
             </script>
 

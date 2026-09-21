@@ -13,7 +13,7 @@ export interface MigrationStep {
 export const MIGRATIONS: MigrationStep[] = [
     {
         id: '2026_01_01_001_core_tables',
-        version: '6.0.0',
+        version: '0.1.0',
         name: 'Core Baseline Tables (options, users, posts, categories, tags, media, settings)',
         up: async (db: any) => {
             // Options & Users
@@ -31,7 +31,7 @@ export const MIGRATIONS: MigrationStep[] = [
     },
     {
         id: '2026_02_15_002_plugins_and_addons',
-        version: '6.1.0',
+        version: '0.1.0',
         name: 'Addons & Plugins System (plugins, media_sources, curation_queue)',
         up: async (db: any) => {
             // Plugins Table
@@ -58,7 +58,7 @@ export const MIGRATIONS: MigrationStep[] = [
     },
     {
         id: '2026_09_21_003_ota_and_subscribers',
-        version: '6.2.0',
+        version: '0.1.0',
         name: 'OTA Update Tracking & System Subscriptions',
         up: async (db: any) => {
             // Subscribers & Newsletter
@@ -118,7 +118,7 @@ export async function runAutoMigration(db: any): Promise<{ applied: string[]; to
     return {
         applied,
         total: MIGRATIONS.length,
-        latestVersion: latest ? latest.version : '6.2.0'
+        latestVersion: latest ? latest.version : '0.1.0'
     };
 }
 
@@ -131,7 +131,7 @@ export async function getMigrationStatus(db: any) {
     const latest = MIGRATIONS[MIGRATIONS.length - 1];
 
     return {
-        currentSchemaVersion: applied.length > 0 ? (applied[0] as any).version : '6.0.0',
+        currentSchemaVersion: applied.length > 0 ? (applied[0] as any).version : '0.1.0',
         targetSchemaVersion: latest.version,
         appliedCount: applied.length,
         totalMigrations: MIGRATIONS.length,

@@ -5,9 +5,9 @@
 
 import { cmsLogic } from '../admin/ui/blocks/cms.logic';
 
-export const CORE_VERSION = '6.2.0';
+export const CORE_VERSION = '0.1.0';
 export const CORE_BUILD_DATE = '2026-09-21';
-export const MIN_COMPATIBLE_SCHEMA_VERSION = '6.0.0';
+export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
 export interface OtaManifest {
     name: string;
