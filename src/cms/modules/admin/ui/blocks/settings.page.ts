@@ -134,7 +134,7 @@ export const settingsPage = `
             <div class="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
                 
                 <!-- AREA GALERI & UPLOAD -->
-                <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-50/70" @scroll.passive="handleMediaScroll($event)">
+                <div id="media-scroll-container" class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-50/70" @scroll.passive="handleMediaScroll($event)">
                     
                     <!-- TAB 1: GALERI LIBRARY -->
                     <div x-show="mediaTab === 'library'">
@@ -151,7 +151,7 @@ export const settingsPage = `
                             <span class="text-xs font-medium">Memuat pustaka media...</span>
                         </div>
 
-                        <!-- Grid Thumbnails Kompak (10 Berkas per batch + auto-load on scroll) -->
+                        <!-- Grid Thumbnails Kompak (12 Berkas per batch + auto-load on scroll) -->
                         <div x-show="!isLoadingMedia && filteredMediaList.length > 0">
                             <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5">
                                 <template x-for="(img, idx) in displayedMediaList" :key="img.id || (img.url + '_' + idx)">
@@ -174,10 +174,18 @@ export const settingsPage = `
                                 </template>
                             </div>
 
-                            <!-- Infinite scroll indicator -->
-                            <div x-show="hasMoreMedia" class="py-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
-                                <i class="fas fa-circle-notch fa-spin text-teal-600"></i>
-                                <span class="font-medium text-slate-500">Gulir ke bawah untuk memuat gambar lainnya...</span>
+                            <!-- Infinite scroll indicator & Manual fallback -->
+                            <div id="media-sentinel" class="py-5 text-center" x-show="hasMoreMedia">
+                                <div class="flex flex-col sm:flex-row items-center justify-center gap-3">
+                                    <div class="text-xs text-slate-500 flex items-center gap-2">
+                                        <i class="fas fa-circle-notch fa-spin text-teal-600 text-sm"></i>
+                                        <span class="font-medium">Memuat gambar (<span x-text="displayedMediaList.length"></span> dari <span x-text="filteredMediaList.length"></span>)...</span>
+                                    </div>
+                                    <button type="button" @click="loadMoreMedia()" class="px-3.5 py-1.5 bg-teal-50 hover:bg-teal-100 text-teal-700 text-xs font-semibold rounded-lg border border-teal-200 shadow-xs transition-colors cursor-pointer flex items-center gap-1.5">
+                                        <i class="fas fa-plus text-[10px]"></i>
+                                        <span>Muat 12 Gambar Lagi</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
 

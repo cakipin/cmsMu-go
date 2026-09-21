@@ -111,8 +111,28 @@ export function renderAdmin(data: any): string {
                         mediaTarget: '', 
                         isLoadingMedia: false,
                         isUploading: false,
-                        mediaDisplayLimit: 10,
-                        mediaPageSize: 10,
+                        mediaDisplayLimit: 12,
+                        mediaPageSize: 12,
+                        _mediaObserver: null,
+
+                        setupMediaObserver() {
+                            setTimeout(() => {
+                                if (this._mediaObserver) {
+                                    this._mediaObserver.disconnect();
+                                    this._mediaObserver = null;
+                                }
+                                var sentinel = document.getElementById('media-sentinel');
+                                var container = document.getElementById('media-scroll-container');
+                                if (sentinel && container && window.IntersectionObserver) {
+                                    this._mediaObserver = new IntersectionObserver((entries) => {
+                                        if (entries[0] && entries[0].isIntersecting && this.hasMoreMedia) {
+                                            this.loadMoreMedia();
+                                        }
+                                    }, { root: container, rootMargin: '120px', threshold: 0.01 });
+                                    this._mediaObserver.observe(sentinel);
+                                }
+                            }, 100);
+                        },
 
                         async init() {
                             await this.loadSettings();
@@ -189,6 +209,7 @@ export function renderAdmin(data: any): string {
                             this.mediaSearchQuery = '';
                             this.mediaDisplayLimit = this.mediaPageSize;
                             await this.loadMediaLibrary();
+                            this.setupMediaObserver();
                         },
 
                         async loadMediaLibrary() {
@@ -218,6 +239,7 @@ export function renderAdmin(data: any): string {
                                         });
                                     }
                                     this.mediaList = list;
+                                    this.setupMediaObserver();
                                 }
                             } catch(e) { console.error('Gagal load media:', e); }
                             finally { this.isLoadingMedia = false; }
@@ -239,12 +261,13 @@ export function renderAdmin(data: any): string {
                         loadMoreMedia() {
                             if (this.hasMoreMedia) {
                                 this.mediaDisplayLimit += this.mediaPageSize;
+                                this.setupMediaObserver();
                             }
                         },
 
                         handleMediaScroll(e) {
                             var el = e.target;
-                            if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                            if (el.scrollHeight - el.scrollTop - el.clientHeight < 120) {
                                 this.loadMoreMedia();
                             }
                         },
