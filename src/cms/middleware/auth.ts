@@ -24,8 +24,15 @@ export const authMiddleware = async (c: Context, next: Next) => {
   }
 
   try {
-    // 1. Decode Base64
-    const decodedString = atob(token);
+    // 1. Decode Base64 (Mendukung Base64 JSON mentah dan format JWT modern)
+    let base64 = token;
+    if (token.includes('.')) {
+      base64 = token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+      while (base64.length % 4 !== 0) {
+        base64 += '=';
+      }
+    }
+    const decodedString = atob(base64);
     
     // 2. Parse JSON
     const userData = JSON.parse(decodedString);
