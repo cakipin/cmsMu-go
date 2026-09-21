@@ -29,6 +29,8 @@ export const settingsPage = `
         selectedMedia: null,
         mediaSearchQuery: '',
         mediaTarget: '', 
+        isLoadingMedia: false,
+        isUploading: false,
 
         // --- INIT ---
         async init() {
@@ -39,7 +41,7 @@ export const settingsPage = `
         // --- CORE LOGIC (Diadaptasi Lokal) ---
         async loadSettings() {
             this.isLoading = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
             try {
                 // Endpoint API settings
                 const res = await fetch('/api/settings', { 
@@ -66,7 +68,7 @@ export const settingsPage = `
 
         async saveSettings() {
             this.isSaving = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
             try {
                 const res = await fetch('/api/settings', { 
                     method: 'POST', 
@@ -112,19 +114,22 @@ export const settingsPage = `
 
         async loadMediaLibrary() {
              this.mediaList = [];
+             this.isLoadingMedia = true;
              try {
-                 const token = localStorage.getItem('labmu_token');
-                 // Endpoint media (sesuaikan jika berbeda)
-                 const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
+                 const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                 const res = await fetch('/api/media?t=' + Date.now(), { 
+                     headers: { 'Authorization': 'Bearer ' + token } 
+                 });
                  if(res.ok) {
                      const json = await res.json();
-                     const raw = Array.isArray(json) ? json : (json.results || []);
-                     this.mediaList = raw.map(m => ({
+                     const raw = Array.isArray(json) ? json : (json.data || json.results || []);
+                     this.mediaList = raw.filter(m => m.url && !m.url.endsWith('/')).map(m => ({
                          url: m.url || m.file_url || '',
-                         title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
+                         title: m.title || (m.key ? m.key.split('/').pop() : 'Gambar Media')
                      }));
                  }
-             } catch(e) { console.error(e); }
+             } catch(e) { console.error('Gagal load media:', e); }
+             finally { this.isLoadingMedia = false; }
         },
 
         get filteredMediaList() {
@@ -137,7 +142,11 @@ export const settingsPage = `
         },
 
         confirmMediaSelection() {
-             if (!this.selectedMedia || !this.selectedMedia.url) return alert('Pilih gambar dulu!');
+             if (!this.selectedMedia || !this.selectedMedia.url) {
+                 if (window.showToast) window.showToast('Pilih salah satu gambar terlebih dahulu!', 'warning');
+                 else alert('Pilih gambar dulu!');
+                 return;
+             }
              
              if (this.mediaTarget === 'logo') {
                  this.settings.site_logo = this.selectedMedia.url;
@@ -145,6 +154,7 @@ export const settingsPage = `
                  this.settings.site_favicon = this.selectedMedia.url;
              }
              this.mediaModalOpen = false;
+             if (window.showToast) window.showToast('Gambar berhasil dipilih!', 'success');
         },
 
         onFileSelect(e) {
@@ -155,12 +165,18 @@ export const settingsPage = `
         },
 
         async uploadMediaAction() {
-             if (!this.uploadFile) return alert('Pilih file dulu');
+             if (!this.uploadFile) {
+                 if (window.showToast) window.showToast('Pilih file dari komputer terlebih dahulu!', 'warning');
+                 else alert('Pilih file dulu');
+                 return;
+             }
+             this.isUploading = true;
              const fd = new FormData();
              fd.append('file', this.uploadFile);
+             fd.append('source', 'settings');
              
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
                  const res = await fetch('/api/media', { 
                     method: 'POST', 
                     headers: { 'Authorization': 'Bearer ' + token }, 
@@ -169,17 +185,29 @@ export const settingsPage = `
                  
                  if (res.ok) {
                      const result = await res.json();
-                     await this.loadMediaLibrary();
-                     this.mediaTab = 'library';
                      const newUrl = result.url || result.file_url;
-                     const newImg = this.mediaList.find(m => m.url === newUrl);
-                     if (newImg) this.selectedMedia = newImg;
+                     
+                     if (this.mediaTarget === 'logo') {
+                         this.settings.site_logo = newUrl;
+                     } else if (this.mediaTarget === 'favicon') {
+                         this.settings.site_favicon = newUrl;
+                     }
+                     
                      this.uploadFile = null; 
                      this.uploadPreview = null;
+                     this.mediaModalOpen = false;
+                     if (window.showToast) window.showToast('Gambar berhasil diunggah & diterapkan!', 'success');
+                     await this.loadMediaLibrary();
                  } else { 
-                    alert('Gagal upload.'); 
+                     const err = await res.json().catch(() => ({}));
+                     if (window.showToast) window.showToast(err.error || 'Gagal mengunggah media.', 'error');
+                     else alert('Gagal upload: ' + (err.error || ''));
                  }
-             } catch(e) { alert('Error upload: ' + e.message); }
+             } catch(e) { 
+                 if (window.showToast) window.showToast('Error upload: ' + e.message, 'error');
+                 else alert('Error upload: ' + e.message); 
+             }
+             finally { this.isUploading = false; }
         }
      }">
 
@@ -267,17 +295,17 @@ export const settingsPage = `
 
     <!-- POPUP MEDIA MANAGER STANDAR CMSMU -->
     <div x-show="mediaModalOpen" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[99999] flex justify-center items-center p-4 sm:p-6" x-cloak>
-        <div class="bg-white w-full max-w-4xl h-[82vh] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200/80">
+        <div class="bg-white w-full max-w-4xl h-[82vh] min-h-[500px] rounded-2xl flex flex-col overflow-hidden shadow-2xl border border-slate-200/80">
             
             <!-- MODAL HEADER -->
-            <div class="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <div class="px-5 py-3.5 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 shrink-0">
                 <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-600 flex items-center justify-center font-bold">
                         <i class="fas fa-photo-video text-sm"></i>
                     </div>
                     <div>
                         <h3 class="m-0 text-sm font-bold text-slate-800 leading-tight">Media Manager</h3>
-                        <p class="m-0 text-[11px] text-slate-400">Pilih atau unggah media cmsMu</p>
+                        <p class="m-0 text-[11px] text-slate-400" x-text="mediaTarget === 'logo' ? 'Pilih atau unggah Logo Situs' : 'Pilih atau unggah Favicon Situs'"></p>
                     </div>
                 </div>
 
@@ -287,7 +315,7 @@ export const settingsPage = `
                     <div x-show="mediaTab === 'library'" class="relative">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
                         <input type="text" x-model="mediaSearchQuery" placeholder="Cari nama media..." 
-                               class="pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-40 sm:w-56 transition-all text-slate-700">
+                               class="pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-40 sm:w-52 transition-all text-slate-700">
                         <button type="button" x-show="mediaSearchQuery" @click="mediaSearchQuery=''" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs border-0 bg-transparent cursor-pointer">&times;</button>
                     </div>
 
@@ -313,15 +341,21 @@ export const settingsPage = `
             </div>
 
             <!-- MODAL BODY -->
-            <div class="flex-1 overflow-hidden flex">
+            <div class="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
                 
                 <!-- AREA GALERI & UPLOAD -->
-                <div class="flex-1 overflow-y-auto p-4 sm:p-5 bg-slate-50/70">
+                <div class="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 bg-slate-50/70">
                     
-                    <!-- TAB 1: GALERI LIBRARY DENGAN THUMBNAIL KECIL-KECIL -->
+                    <!-- TAB 1: GALERI LIBRARY -->
                     <div x-show="mediaTab === 'library'">
+                        <!-- Loading Spinner -->
+                        <div x-show="isLoadingMedia" class="flex flex-col items-center justify-center py-20 text-slate-400">
+                            <i class="fas fa-circle-notch fa-spin text-2xl text-teal-600 mb-2"></i>
+                            <span class="text-xs font-medium">Memuat pustaka media...</span>
+                        </div>
+
                         <!-- Grid Thumbnails Kompak ~85px -->
-                        <div class="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-7 lg:grid-cols-8 gap-2.5">
+                        <div x-show="!isLoadingMedia && filteredMediaList.length > 0" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 gap-3">
                             <template x-for="img in filteredMediaList" :key="img.url">
                                 <div @click="selectMediaItem(img)" 
                                      class="group relative aspect-square bg-white rounded-lg overflow-hidden border cursor-pointer transition-all duration-150 shadow-xs" 
@@ -343,38 +377,44 @@ export const settingsPage = `
                         </div>
 
                         <!-- Empty State -->
-                        <div x-show="filteredMediaList.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400">
-                            <div class="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-lg mb-2">
+                        <div x-show="!isLoadingMedia && filteredMediaList.length === 0" class="flex flex-col items-center justify-center py-16 text-slate-400">
+                            <div class="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center text-slate-300 text-2xl mb-3">
                                 <i class="fas fa-images"></i>
                             </div>
-                            <p class="text-xs font-medium text-slate-500 m-0">Tidak ada media ditemukan</p>
-                            <p class="text-[11px] text-slate-400 m-0 mt-1" x-text="mediaSearchQuery ? 'Coba gunakan kata kunci pencarian lain.' : 'Belum ada gambar yang diunggah.'"></p>
+                            <p class="text-xs font-semibold text-slate-600 m-0">Belum ada media di pustaka</p>
+                            <p class="text-[11px] text-slate-400 m-0 mt-1" x-text="mediaSearchQuery ? 'Tidak ada hasil untuk pencarian tersebut.' : 'Unggah gambar baru untuk logo atau favicon Anda.'"></p>
+                            <button x-show="!mediaSearchQuery" @click="mediaTab = 'upload'" class="mt-4 inline-flex items-center gap-1.5 bg-teal-600 hover:bg-teal-700 text-white text-xs font-medium py-1.5 px-3.5 rounded-lg border-0 cursor-pointer shadow-xs transition-colors">
+                                <i class="fas fa-cloud-upload-alt text-xs"></i>
+                                <span>Unggah Sekarang</span>
+                            </button>
                         </div>
                     </div>
 
                     <!-- TAB 2: UPLOAD DROPZONE -->
                     <div x-show="mediaTab === 'upload'" class="h-full flex items-center justify-center p-4">
-                        <div class="bg-white p-8 rounded-2xl border-2 border-dashed border-teal-200 hover:border-teal-400 transition-colors w-full max-w-md text-center shadow-xs">
+                        <div class="bg-white p-6 sm:p-8 rounded-2xl border-2 border-dashed border-teal-200 hover:border-teal-400 transition-colors w-full max-w-md text-center shadow-xs">
                             <div class="w-14 h-14 rounded-full bg-teal-50 text-teal-600 flex items-center justify-center mx-auto mb-3 text-2xl">
                                 <i class="fas fa-cloud-upload-alt"></i>
                             </div>
-                            <h4 class="text-sm font-bold text-slate-800 mb-1">Unggah Media Baru</h4>
-                            <p class="text-[11px] text-slate-400 mb-4">Mendukung file JPG, PNG, WEBP, atau SVG</p>
+                            <h4 class="text-sm font-bold text-slate-800 mb-1" x-text="mediaTarget === 'logo' ? 'Unggah Logo Baru' : 'Unggah Favicon Baru'">Unggah Media Baru</h4>
+                            <p class="text-[11px] text-slate-400 mb-4">Mendukung format PNG, JPG, WEBP, SVG, atau ICO</p>
 
                             <label class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-lg text-xs font-medium cursor-pointer transition-colors mb-3">
                                 <i class="fas fa-folder-open text-xs"></i>
-                                <span>Pilih File dari Komputer</span>
-                                <input type="file" @change="onFileSelect" class="hidden" accept="image/*">
+                                <span>Pilih Berkas dari Komputer</span>
+                                <input type="file" @change="onFileSelect" class="hidden" accept="image/*,.ico">
                             </label>
 
                             <div x-show="uploadPreview" class="mt-3 p-2 bg-slate-50 rounded-xl border border-slate-100 inline-block">
-                                <img :src="uploadPreview" class="max-h-36 rounded-lg object-contain mx-auto">
+                                <img :src="uploadPreview" class="max-h-36 max-w-full rounded-lg object-contain mx-auto">
+                                <p class="text-[11px] text-slate-500 mt-1 truncate max-w-[200px]" x-text="uploadFile?.name"></p>
                             </div>
 
                             <div class="mt-4">
-                                <button @click="uploadMediaAction()" :disabled="!uploadFile" 
-                                        class="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-2 px-5 rounded-lg shadow-sm transition-all border-0 cursor-pointer">
-                                    <i class="fas fa-upload mr-1.5"></i> Unggah & Gunakan
+                                <button @click="uploadMediaAction()" :disabled="!uploadFile || isUploading" 
+                                        class="bg-teal-600 hover:bg-teal-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-medium py-2 px-5 rounded-lg shadow-sm transition-all border-0 cursor-pointer inline-flex items-center gap-1.5">
+                                    <i class="fas" :class="isUploading ? 'fa-circle-notch fa-spin' : 'fa-upload'"></i>
+                                    <span x-text="isUploading ? 'Mengunggah...' : 'Unggah & Terapkan'"></span>
                                 </button>
                             </div>
                         </div>
@@ -382,7 +422,7 @@ export const settingsPage = `
                 </div>
                 
                 <!-- DETAIL SIDEBAR (PANEL KANAN) -->
-                <div class="w-64 bg-white border-l border-slate-100 p-4 flex flex-col shrink-0" x-show="mediaTab === 'library' && selectedMedia">
+                <div class="w-full md:w-64 bg-white border-t md:border-t-0 md:border-l border-slate-100 p-4 flex flex-col shrink-0" x-show="mediaTab === 'library' && selectedMedia">
                     <h4 class="text-xs font-bold text-slate-700 uppercase tracking-wider mb-3">Informasi Berkas</h4>
                     
                     <div class="w-full aspect-video rounded-lg overflow-hidden bg-slate-50 border border-slate-100 p-2 flex items-center justify-center mb-3">
@@ -403,7 +443,7 @@ export const settingsPage = `
                     <button @click="confirmMediaSelection()" 
                             class="w-full bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white border-0 py-2.5 px-4 rounded-lg text-xs font-medium shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5 mt-4">
                         <i class="fas fa-check text-xs"></i>
-                        <span>Pilih Gambar Ini</span>
+                        <span>Pilih & Gunakan</span>
                     </button>
                 </div>
             </div>
