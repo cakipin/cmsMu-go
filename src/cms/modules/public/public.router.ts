@@ -5,6 +5,7 @@ import { posts as postsTable, pages as pagesTable } from '../../db/schema';
 import { eq, desc, asc, and, or, like, sql } from 'drizzle-orm';
 import { translateTextWithAI } from '../../services/ai-translate';
 import { getGlobalData, getRenderer, formatPostForFrontend } from './helpers';
+import { isPuckJson, renderPuckHtml } from '../../themes/newsroom/puck/render';
 
 // Import Modular Sub-Routers
 import seoRouter from './routes/seo.router';
@@ -81,13 +82,23 @@ async function renderHomePage(c: any, lang?: 'en' | 'ar') {
     const homeSlug = settings.site_homepage_slug || 'home';
     const customHome: any = await db.select().from(pagesTable).where(eq(pagesTable.slug, homeSlug)).get();
 
-    if (customHome) {
+    if (customHome && customHome.body) {
       try {
         await db.update(pagesTable).set({ views: sql`${pagesTable.views} + 1` }).where(eq(pagesTable.id, customHome.id));
       } catch (err) {}
 
-      // Jika administrator memilih halaman statis khusus selain default 'home'
-      if (homeSlug !== 'home') {
+      // Jika halaman berformat visual Puck
+      if (isPuckJson(customHome.body)) {
+        return c.html(renderPuckHtml({
+          site: settings,
+          menus,
+          page: customHome,
+          canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : '/')
+        }));
+      }
+
+      // Jika administrator memilih halaman statis khusus non-Puck selain '__default__'
+      if (homeSlug !== '__default__') {
         const pageContext = {
           site: settings,
           menus: menus,
@@ -491,6 +502,9 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: 'en' | 'ar') {
     let type = 'post';
     if (!content) {
       content = await orm.select().from(pagesTable).where(and(eq(pagesTable.slug, slug), eq(pagesTable.status, 'publish'))).get();
+      if (!content && slug === 'home') {
+        content = await orm.select().from(pagesTable).where(eq(pagesTable.slug, 'home')).get();
+      }
       if (content) content = formatPostForFrontend(content);
       type = 'page';
     }
@@ -550,7 +564,17 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: 'en' | 'ar') {
         user: null
       };
 
-      if (type === 'page' && Renderer.renderPage) return c.html(Renderer.renderPage(context));
+      if (type === 'page') {
+        if (isPuckJson(content.body)) {
+          return c.html(renderPuckHtml({
+            site: settings,
+            menus,
+            page: content,
+            canonical: canonicalUrl
+          }));
+        }
+        if (Renderer.renderPage) return c.html(Renderer.renderPage(context));
+      }
       if ((contentType === 'video' || (content.video_url && content.video_url.trim() !== '')) && Renderer.renderSingleVideo) {
         return c.html(Renderer.renderSingleVideo(context));
       }

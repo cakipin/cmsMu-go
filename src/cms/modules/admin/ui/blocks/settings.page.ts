@@ -42,8 +42,9 @@ export const settingsPage = `
                 <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Halaman Utama (Homepage)</label>
                 <p style="font-size:12px; color:#6b7280; margin-bottom:10px;">Pilih halaman yang akan ditampilkan sebagai Beranda situs Anda.</p>
                 <select x-model="settings.site_homepage_slug" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; background:white;">
-                    <option value="home">Default (Sistem / home)</option>
-                    <template x-for="p in pagesList" :key="p.id">
+                    <option value="home">Beranda Utama Visual (/home)</option>
+                    <option value="__default__">Default Portal Berita (Editorial News Grid)</option>
+                    <template x-for="p in (pagesList || []).filter(function(p){ return p.slug !== 'home'; })" :key="p.id">
                         <option :value="p.slug" x-text="p.title + ' (/' + p.slug + ')'"></option>
                     </template>
                 </select>

@@ -74,11 +74,12 @@ themeEditorRouter.post('/page', async (c) => {
     if (exists) {
       await db.update(pages).set({
         body: content,
+        status: 'publish',
         updatedAt: now
       }).where(eq(pages.slug, slug)).run();
     } else {
       await db.insert(pages).values({
-        title,
+        title: slug === 'home' ? 'Beranda Utama' : title,
         slug,
         body: content,
         status: 'publish',
