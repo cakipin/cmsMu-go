@@ -85,6 +85,23 @@ async function renderHomePage(c: any, lang?: 'en' | 'ar') {
       try {
         await db.update(pagesTable).set({ views: sql`${pagesTable.views} + 1` }).where(eq(pagesTable.id, customHome.id));
       } catch (err) {}
+
+      // Jika administrator memilih halaman statis khusus selain default 'home'
+      if (homeSlug !== 'home') {
+        const pageContext = {
+          site: settings,
+          menus: menus,
+          categories: categories,
+          topics: topics,
+          sources: sources,
+          data: formatPostForFrontend(customHome),
+          canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : '/'),
+          ogImage: customHome.featured_image || new URL(c.req.url).origin + '/default-og.jpg',
+        };
+        if (Renderer && typeof Renderer.renderPage === 'function') {
+          return c.html(Renderer.renderPage(pageContext));
+        }
+      }
     }
 
     const pagination = {
