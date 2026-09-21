@@ -376,6 +376,33 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                 >
                   + Baru
                 </button>
+
+                <a
+                  href={slug === 'home' ? '/' : `/${slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '5px',
+                    padding: '4px 12px',
+                    borderRadius: '4px',
+                    background: '#f1f5f9',
+                    color: '#334155',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    textDecoration: 'none',
+                    fontWeight: '500',
+                    cursor: 'pointer'
+                  }}
+                  title="Lihat Pratinjau Halaman Langsung (Tab Baru)"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                    <circle cx="12" cy="12" r="3" />
+                  </svg>
+                  <span>Preview</span>
+                </a>
               </div>
               
               {children}

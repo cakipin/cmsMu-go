@@ -26,18 +26,18 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     headerPadding: { type: "select", options: [{label: "Normal", value: "h-20"}, {label: "Kecil", value: "h-16"}, {label: "Besar", value: "h-24"}] }
   },
   defaultProps: {
-    siteTitle: "Ekraf",
+    siteTitle: "CMS",
     siteTitleHighlight: "Mu",
     logoLetter: "M",
     logoImage: "",
     menuItems: [
-      { label: "Keunggulan", url: "#manfaat" },
-      { label: "Kisah Sukses", url: "#testimoni" },
-      { label: "Berita & Artikel", url: "#berita" },
-      { label: "Daftar Inkubasi", url: "#gabung" }
+      { label: "Fitur Unggulan", url: "#fitur" },
+      { label: "Ekosistem", url: "#ekosistem" },
+      { label: "Berita & Opini", url: "#berita" },
+      { label: "Hubungi Kami", url: "#kontak" }
     ],
-    ctaText: "Mulai Bergabung",
-    ctaUrl: "#gabung",
+    ctaText: "Masuk Dashboard",
+    ctaUrl: "/admin",
     headerBgColor1: "#ffffff",
     headerBgColor2: "#ffffff",
     textColor: "#1e293b",

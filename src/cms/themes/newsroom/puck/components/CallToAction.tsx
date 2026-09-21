@@ -11,11 +11,11 @@ export const CallToAction: ComponentConfig<Props["CallToAction"]> = {
     footerText: { type: "text" }
   },
   defaultProps: {
-    title: "Siap Mengelevasi Skala Bisnis Anda?",
-    description: "Bergabunglah dengan ratusan inovator lainnya. Pendaftaran batch inkubasi bulan ini segera ditutup.",
-    buttonText: "Kirim Profil Usaha",
+    title: "Siap Mengembangkan Portal Dakwah & Berita Persyarikatan?",
+    description: "Mulai kelola konten, sindikasi media daerah, dan publikasi digital dengan infrastruktur modern CMSMu.",
+    buttonText: "Kirim Formulir Pendaftaran",
     buttonLink: "#",
-    footerText: "Data Anda aman dan dikelola secara rahasia."
+    footerText: "Data portal Anda aman dan terkelola secara terpadu dalam jaringan persyarikatan."
   },
   render: ({ title, description, buttonText, buttonLink, footerText }) => (
     <section id="gabung" className="py-20 bg-slate-900 text-center relative overflow-hidden">

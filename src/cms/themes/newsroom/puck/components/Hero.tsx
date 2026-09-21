@@ -19,16 +19,16 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
     backgroundColor: { type: "text" }
   },
   defaultProps: {
-    badgeText: "🚀 Mendorong Kemandirian Umat",
-    title: "Bangun Bisnis Kreatif Anda Menuju Ekosistem",
+    badgeText: "🚀 Platform Portal Digital Terpadu Muhammadiyah",
+    title: "Satu Platform Ekosistem Media & Informasi Berkemajuan",
     titleHighlight: "Berkemajuan",
     titleColor: "text-slate-900",
-    description: "Lembaga Ekonomi Kreatif Muhammadiyah hadir untuk mendampingi pelaku UMKM, kreator, dan inovator digital dengan pendekatan syariah, teknologi modern, dan jaringan global.",
+    description: "CMSMu hadir sebagai Content Management System modern dan tangguh yang didesain khusus untuk mengelola portal berita, website persyarikatan, majalah digital, dan agregasi media dakwah Muhammadiyah.",
     descriptionColor: "text-slate-600",
-    primaryButtonText: "Daftar Inkubasi Sekarang",
-    primaryButtonLink: "#gabung",
-    secondaryButtonText: "Baca Berita Terbaru",
-    secondaryButtonLink: "#berita",
+    primaryButtonText: "Jelajahi Fitur",
+    primaryButtonLink: "#fitur",
+    secondaryButtonText: "Masuk Redaksi",
+    secondaryButtonLink: "/admin",
     backgroundImage: "",
     backgroundColor: "bg-slate-50"
   },
@@ -41,18 +41,17 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
     }}>
       {backgroundImage && <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-0"></div>}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-        <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-green-100 text-green-700 font-semibold text-sm border border-green-200">
+        <div className="inline-block mb-4 px-4 py-1.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold text-sm border border-emerald-200">
           {badgeText}
         </div>
         <h1 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight mb-6 leading-tight ${titleColor || 'text-slate-900'}`}>
-          {title.split(' Menuju Ekosistem')[0]} <br className="hidden md:block" />
-          Menuju Ekosistem <span className="text-green-600">{titleHighlight}</span>
+          {title}
         </h1>
         <p className={`mt-4 text-lg md:text-xl max-w-3xl mx-auto mb-10 ${descriptionColor || 'text-slate-600'}`}>
           {description}
         </p>
         <div className="flex flex-col sm:flex-row justify-center gap-4">
-          <a href={primaryButtonLink} className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-bold text-lg transition shadow-xl shadow-green-600/30 flex items-center justify-center gap-2">
+          <a href={primaryButtonLink} className="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-4 rounded-full font-bold text-lg transition shadow-xl shadow-emerald-600/30 flex items-center justify-center gap-2">
             {primaryButtonText}
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </a>
