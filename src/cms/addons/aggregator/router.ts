@@ -4,6 +4,28 @@ import { ensureSourceTable, ingestFromSource } from './services/sync-engine';
 
 export const aggregatorRouter = new Hono<{ Bindings: any }>();
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return true; // Default aktif jika belum terdaftar
+    return Number(row.active) === 1;
+  } catch (e) {
+    return true;
+  }
+}
+
+// Middleware: Blokir seluruh operasi aggregator jika plugin dinonaktifkan
+aggregatorRouter.use('*', async (c, next) => {
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'aggregator');
+    if (!active) {
+      return c.json({ success: false, error: 'Plugin Aggregator dinonaktifkan oleh administrator.' }, 403);
+    }
+  }
+  await next();
+});
+
 // 1. GET /api/addons/aggregator/sources
 aggregatorRouter.get('/sources', async (c) => {
   try {

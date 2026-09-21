@@ -9,13 +9,14 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
   app.route('/api/addons/aggregator', aggregatorRouter);
   app.route('/api/addons/newsroom', newsroomRouter);
 
-  // 2. Register Admin Menus (Grup Plugins)
+  // 2. Register Admin Menus (Grup Plugins) dengan pluginId
   registerPluginMenu({
     group: 'Plugins',
     title: 'Meja Kurasi',
     view: 'newsroom',
     icon: 'fas fa-newspaper',
     role: ['admin', 'editor'],
+    pluginId: 'newsroom'
   });
 
   registerPluginMenu({
@@ -24,6 +25,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     view: 'aggregator',
     icon: 'fas fa-satellite-dish',
     role: ['admin'],
+    pluginId: 'aggregator'
   });
 
   console.log('🔌 Addons Agregator & Newsroom registered successfully');

@@ -2,6 +2,28 @@ import { Hono } from 'hono';
 
 export const newsroomRouter = new Hono<{ Bindings: any }>();
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return true; // Default aktif jika belum terdaftar
+    return Number(row.active) === 1;
+  } catch (e) {
+    return true;
+  }
+}
+
+// Middleware: Blokir seluruh operasi newsroom/kurasi jika plugin dinonaktifkan
+newsroomRouter.use('*', async (c, next) => {
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'newsroom');
+    if (!active) {
+      return c.json({ success: false, error: 'Plugin Meja Kurasi Newsroom dinonaktifkan oleh administrator.' }, 403);
+    }
+  }
+  await next();
+});
+
 // 1. GET /api/addons/newsroom/queue - Antrean kurasi berita dengan filter lengkap
 newsroomRouter.get('/queue', async (c) => {
   try {

@@ -186,6 +186,14 @@ export const coreLogic = {
     showAddPluginModal: false,
     newPluginForm: { id: '', name: '', description: '', author: '', version: '1.0.0' },
     
+    isPluginActive(id: string) {
+        if (!id) return true;
+        if (!this.availablePlugins || !Array.isArray(this.availablePlugins) || this.availablePlugins.length === 0) return true;
+        const p = this.availablePlugins.find((x: any) => x.id === id);
+        if (!p) return true;
+        return Number(p.active) === 1;
+    },
+
     async loadPlugins() {
         try {
             const res = await this._fetch("/api/plugins");

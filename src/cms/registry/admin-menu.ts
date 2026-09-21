@@ -3,10 +3,11 @@
 export interface AdminMenuItem {
   group: string;
   title: string;
-  view?: string;      // Untuk menu internal (SPA)
-  href?: string;      // Untuk menu eksternal/link
+  view?: string;       // Untuk menu internal (SPA)
+  href?: string;       // Untuk menu eksternal/link
   icon: string;
   role?: string[];
+  pluginId?: string;   // ID plugin untuk mengontrol visibilitas dinamis (On/Off)
   actionCode?: string; // String function body untuk dijalankan di client
 }
 

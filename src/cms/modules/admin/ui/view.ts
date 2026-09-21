@@ -31,6 +31,7 @@ export function renderAdmin(data: any): string {
             group: "${p.group}",
             title: "${p.title}",
             icon: "${p.icon}",
+            ${p.pluginId ? `pluginId: "${p.pluginId}",` : ''}
             ${p.view ? `view: "${p.view}",` : ''}
             ${p.href ? `href: "${p.href}",` : ''}
             ${p.role ? `role: ${JSON.stringify(p.role)},` : ''}
@@ -337,7 +338,7 @@ export function renderAdmin(data: any): string {
                     { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] },
                     { group: 'System', title: 'SEO & Analytics', view: 'seo', icon: 'fas fa-chart-pie', role: ['admin'] },
                     { group: 'Plugins', title: 'Kelola Plugins', view: 'plugins', icon: 'fas fa-puzzle-piece', role: ['admin'], action: () => typeof loadPlugins === 'function' && loadPlugins() },
-                    { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['admin'] }
+                    { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['admin'], pluginId: 'sso-muhammadiyah' }
                 ];
 
                 const plugins = [${injectedPlugins}]; 

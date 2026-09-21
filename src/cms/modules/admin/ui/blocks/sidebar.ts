@@ -52,7 +52,7 @@ export const sidebarBlock = `
 
       <!-- LOOP MENU GRUP -->
       <template x-for="groupName in ['Content', 'Appearance', 'System', 'Plugins']">
-        <div x-show="(window.adminMenus || []).some(m => m.group === groupName)">
+        <div x-show="(window.adminMenus || []).some(m => m.group === groupName && (!m.role || m.role.includes(userRole)) && (!m.pluginId || isPluginActive(m.pluginId)))">
           <!-- Label Grup Saat Expanded -->
           <h3 class="mb-1.5 ml-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-text="groupName" x-show="sidebarOpen"></h3>
           <!-- Garis Pemisah Halus Saat Rail Collapsed -->
@@ -60,7 +60,7 @@ export const sidebarBlock = `
           
           <ul class="mb-2 flex flex-col gap-0.5">
             <template x-for="menu in (window.adminMenus || []).filter(m => m.group === groupName)">
-              <template x-if="!menu.role || menu.role.includes(userRole)">
+              <template x-if="(!menu.role || menu.role.includes(userRole)) && (!menu.pluginId || isPluginActive(menu.pluginId))">
                 <li class="relative group">
                   <template x-if="!menu.href">
                     <a class="relative flex items-center rounded-lg py-2 text-[13px] font-normal text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
