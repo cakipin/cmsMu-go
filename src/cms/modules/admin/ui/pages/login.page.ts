@@ -6,21 +6,6 @@ export const loginPage = `
         isLoading: false,
         errorMsg: '',
         hasExistingSession: !!(window.getCmsToken ? window.getCmsToken() : ''),
-        ssoPluginActive: true,
-        
-        async init() {
-            try {
-                const pRes = await fetch('/api/plugins');
-                if (pRes.ok) {
-                    const pJson = await pRes.json();
-                    const list = pJson.data || pJson || [];
-                    const ssoPlugin = list.find((p: any) => p.id === 'sso-muhammadiyah');
-                    if (ssoPlugin && Number(ssoPlugin.active) === 0) {
-                        this.ssoPluginActive = false;
-                    }
-                }
-            } catch(e) {}
-        },
         
         async submitLogin() {
             if (this.isLoading) return;
@@ -83,10 +68,6 @@ export const loginPage = `
         },
         async loginSso() {
             if (this.isLoading) return;
-            if (!this.ssoPluginActive) {
-                alert('Plugin SSO Muhammadiyah ID sedang dinonaktifkan oleh Administrator.');
-                return;
-            }
             this.isLoading = true;
             this.errorMsg = '';
 
@@ -190,22 +171,18 @@ export const loginPage = `
             </button>
         </form>
 
-        <template x-if="ssoPluginActive">
-            <div>
-                <div style="margin: 20px 0; text-align: center; position: relative;">
-                    <hr style="border: 0; border-top: 1px solid #e2e8f0;">
-                    <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; color: #64748b; font-size: 13px;">atau</span>
-                </div>
+        <div style="margin: 20px 0; text-align: center; position: relative;">
+            <hr style="border: 0; border-top: 1px solid #e2e8f0;">
+            <span style="position: absolute; top: -10px; left: 50%; transform: translateX(-50%); background: white; padding: 0 10px; color: #64748b; font-size: 13px;">atau</span>
+        </div>
 
-                <button type="button"
-                        @click="loginSso()"
-                        :disabled="isLoading"
-                        class="w-full py-3 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-2.5 text-sm shadow-sm">
-                    <img src="https://dias.muhammadiyah.or.id/logo.png" alt="Muhammadiyah ID" class="h-5 w-auto" onerror="this.style.display='none'">
-                    <span>Masuk dengan Muhammadiyah ID</span>
-                </button>
-            </div>
-        </template>
+        <button type="button"
+                @click="loginSso()"
+                :disabled="isLoading"
+                class="w-full py-3 px-4 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-700 font-semibold border border-slate-200 transition-all cursor-pointer flex items-center justify-center gap-2.5 text-sm shadow-sm">
+            <img src="https://dias.muhammadiyah.or.id/logo.png" alt="Muhammadiyah ID" class="h-5 w-auto" onerror="this.style.display='none'">
+            <span>Masuk dengan Muhammadiyah ID</span>
+        </button>
     </div>
 </div>
 `;
