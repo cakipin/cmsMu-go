@@ -90,6 +90,7 @@ export function renderAdmin(data: any): string {
                         settings: { 
                             site_title: '', 
                             site_desc: '',
+                            site_meta_desc: '',
                             admin_email: '', 
                             site_logo: '',
                             site_favicon: '',

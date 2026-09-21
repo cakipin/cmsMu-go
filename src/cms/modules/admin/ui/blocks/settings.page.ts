@@ -26,6 +26,14 @@ export const settingsPage = `
             </div>
 
             <div style="margin-bottom:15px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+                    <label style="font-size:13px; font-weight:600; color:#4b5563;">Meta Deskripsi (Deskripsi Singkat SEO)</label>
+                    <span style="font-size:11px; color:#9ca3af;" x-text="(settings.site_meta_desc ? settings.site_meta_desc.length : 0) + ' / 160 karakter'"></span>
+                </div>
+                <textarea x-model="settings.site_meta_desc" rows="3" placeholder="Tuliskan deskripsi ringkas situs untuk mesin pencari Google & cuplikan sosial media (120-160 karakter)..." class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; font-size:13px; resize:vertical;"></textarea>
+            </div>
+
+            <div style="margin-bottom:15px;">
                 <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Email Administrator</label>
                 <input type="email" x-model="settings.admin_email" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
             </div>

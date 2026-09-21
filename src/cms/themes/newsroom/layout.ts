@@ -3,9 +3,13 @@ import { newsroomCss } from './style';
 import { escapeHtml, formatDateIndo } from './utils';
 
 export function _layout(this: any, content: string, title: string, ctx: ThemeContext, pageType: string = '') {
-  const siteTitle = escapeHtml(ctx.site?.site_title || ctx.site?.title || "Newsroom Editorial");
-  const siteDesc = escapeHtml(ctx.site?.site_tagline || ctx.site?.description || "Portal Berita & Jurnalisme Berkemajuan");
-  const pageTitle = `${escapeHtml(title)} — ${siteTitle}`;
+  const siteTitle = escapeHtml(ctx.site?.site_title || ctx.site?.title || "CMSMu");
+  const siteSlogan = escapeHtml(ctx.site?.site_desc || ctx.site?.site_tagline || "");
+  const siteDesc = escapeHtml(ctx.site?.site_meta_desc || ctx.site?.site_desc || ctx.site?.site_tagline || ctx.site?.description || "CMSMu 1 Platform Untuk Keberkahan Bersama");
+  const isHomePage = pageType === 'home' || !title || title === 'Beranda';
+  const pageTitle = isHomePage
+    ? (siteSlogan ? `${siteTitle} | ${siteSlogan}` : siteTitle)
+    : `${escapeHtml(title)} — ${siteTitle}`;
   const todayIndo = formatDateIndo(new Date());
 
   // Menu dinamis (Zero Hardcode Policy: dari tabel menus atau digenerate otomatis dari distinct categories real DB)
@@ -50,6 +54,15 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <title>${pageTitle}</title>
   <meta name="description" content="${siteDesc}">
   <link rel="icon" href="${faviconUrl}">
+  <link rel="canonical" href="${ctx.canonical || '/'}">
+  <meta property="og:title" content="${pageTitle}">
+  <meta property="og:description" content="${siteDesc}">
+  <meta property="og:url" content="${ctx.canonical || '/'}">
+  <meta property="og:site_name" content="${siteTitle}">
+  <meta property="og:type" content="${pageType === 'post' || pageType === 'single' ? 'article' : 'website'}">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="${pageTitle}">
+  <meta name="twitter:description" content="${siteDesc}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
