@@ -61,14 +61,18 @@ export const MIGRATIONS: MigrationStep[] = [
         version: '0.1.0',
         name: 'OTA Update Tracking & System Subscriptions',
         up: async (db: any) => {
-            // Subscribers & Newsletter
+            // Subscribers, Subscriptions & Agens
             await db.prepare(`CREATE TABLE IF NOT EXISTS subscribers (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT, is_active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
+            await db.prepare(`CREATE TABLE IF NOT EXISTS subscriptions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, email TEXT, plan TEXT, duration_months INTEGER DEFAULT 1, amount INTEGER, payment_proof TEXT, notes TEXT, status TEXT DEFAULT 'active', expires_at TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME);`).run();
+            await db.prepare(`CREATE TABLE IF NOT EXISTS agens (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT, whatsapp TEXT, address TEXT, area TEXT, map_link TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
             
             // Comments & Notifications
             await db.prepare(`CREATE TABLE IF NOT EXISTS comments (id INTEGER PRIMARY KEY AUTOINCREMENT, post_id INTEGER NOT NULL, author_name TEXT NOT NULL, author_email TEXT, content TEXT NOT NULL, status TEXT DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
-            await db.prepare(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL, message TEXT, type TEXT DEFAULT 'info', is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
+            await db.prepare(`CREATE TABLE IF NOT EXISTS notifications (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, title TEXT, message TEXT, type TEXT DEFAULT 'info', link TEXT, read INTEGER DEFAULT 0, is_read INTEGER DEFAULT 0, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`).run();
             
             // Column safety additions
+            try { await db.prepare("ALTER TABLE notifications ADD COLUMN read INTEGER DEFAULT 0;").run(); } catch(e) {}
+            try { await db.prepare("ALTER TABLE notifications ADD COLUMN is_read INTEGER DEFAULT 0;").run(); } catch(e) {}
             try { await db.prepare("ALTER TABLE users ADD COLUMN subscription_plan TEXT;").run(); } catch(e) {}
             try { await db.prepare("ALTER TABLE users ADD COLUMN subscription_expires_at TEXT;").run(); } catch(e) {}
             try { await db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT;").run(); } catch(e) {}

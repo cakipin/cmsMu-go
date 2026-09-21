@@ -175,10 +175,48 @@ export const updateSchema = async (db: D1Database) => {
         type TEXT DEFAULT 'warning',
         link TEXT,
         read INTEGER DEFAULT 0,
+        is_read INTEGER DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `).run();
+    try { await db.prepare("ALTER TABLE notifications ADD COLUMN read INTEGER DEFAULT 0;").run(); } catch(e) {}
+    try { await db.prepare("ALTER TABLE notifications ADD COLUMN is_read INTEGER DEFAULT 0;").run(); } catch(e) {}
     logs.push("✅ Table 'notifications' checked (Safe).");
+
+    // 8B. TABEL AGENS
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS agens (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        phone TEXT,
+        whatsapp TEXT,
+        address TEXT,
+        area TEXT,
+        map_link TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `).run();
+    logs.push("✅ Table 'agens' checked (Safe).");
+
+    // 8C. TABEL SUBSCRIPTIONS
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS subscriptions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER,
+        email TEXT,
+        plan TEXT,
+        duration_months INTEGER DEFAULT 1,
+        amount INTEGER,
+        payment_proof TEXT,
+        notes TEXT,
+        status TEXT DEFAULT 'active',
+        expires_at TEXT,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME
+      );
+    `).run();
+    logs.push("✅ Table 'subscriptions' checked (Safe).");
 
     // 9. TABEL MEDIA_SOURCES & CURATION_QUEUE
     await db.prepare(`
