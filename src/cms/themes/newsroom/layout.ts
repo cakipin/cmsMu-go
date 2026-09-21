@@ -40,6 +40,8 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       }))
     : menuItems.filter(m => m.url !== '/');
 
+  const faviconUrl = escapeHtml(ctx.site?.site_favicon || ctx.site?.favicon || "/favicon.svg");
+
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -47,7 +49,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>${pageTitle}</title>
   <meta name="description" content="${siteDesc}">
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="${faviconUrl}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">

@@ -31,6 +31,8 @@ export const settingsPage = `
         mediaTarget: '', 
         isLoadingMedia: false,
         isUploading: false,
+        mediaDisplayLimit: 10,
+        mediaPageSize: 10,
 
         // --- INIT ---
         async init() {
@@ -52,6 +54,11 @@ export const settingsPage = `
                     // Handle format { data: {...} } atau langsung {...}
                     const data = json.data || json;
                     this.settings = { ...this.settings, ...data };
+                    
+                    if (this.settings.site_favicon) {
+                        const fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
+                        if (fav) fav.href = this.settings.site_favicon;
+                    }
                 }
                 
                 // Fetch pages for homepage dropdown
@@ -83,6 +90,10 @@ export const settingsPage = `
                         alert('✅ Pengaturan Berhasil Disimpan!');
                     }
                     if(this.settings.site_title) document.title = this.settings.site_title + ' - Admin';
+                    if (this.settings.site_favicon) {
+                        const fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
+                        if (fav) fav.href = this.settings.site_favicon;
+                    }
                     // Sinkronisasi real-time ke root store dan sidebar
                     window.dispatchEvent(new CustomEvent('settings-updated', { detail: { ...this.settings } }));
                 } else {
@@ -109,12 +120,14 @@ export const settingsPage = `
             this.mediaTab = 'library';
             this.selectedMedia = null;
             this.mediaSearchQuery = '';
+            this.mediaDisplayLimit = this.mediaPageSize;
             await this.loadMediaLibrary();
         },
 
         async loadMediaLibrary() {
              this.mediaList = [];
              this.isLoadingMedia = true;
+             this.mediaDisplayLimit = this.mediaPageSize;
              try {
                  const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
                  const res = await fetch('/api/media?t=' + Date.now(), { 
@@ -146,6 +159,27 @@ export const settingsPage = `
         get filteredMediaList() {
              const q = (this.mediaSearchQuery || '').toLowerCase();
              return this.mediaList.filter(m => (m.title || '').toLowerCase().includes(q));
+        },
+
+        get displayedMediaList() {
+             return this.filteredMediaList.slice(0, this.mediaDisplayLimit);
+        },
+
+        get hasMoreMedia() {
+             return this.mediaDisplayLimit < this.filteredMediaList.length;
+        },
+
+        loadMoreMedia() {
+             if (this.hasMoreMedia) {
+                 this.mediaDisplayLimit += this.mediaPageSize;
+             }
+        },
+
+        handleMediaScroll(e) {
+             const el = e.target;
+             if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                 this.loadMoreMedia();
+             }
         },
 
         selectMediaItem(img) {
@@ -325,9 +359,9 @@ export const settingsPage = `
                     <!-- Search Bar (Aktif di Library) -->
                     <div x-show="mediaTab === 'library'" class="relative hidden sm:block">
                         <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                        <input type="text" x-model="mediaSearchQuery" placeholder="Cari media..." 
+                        <input type="text" x-model="mediaSearchQuery" @input="mediaDisplayLimit = mediaPageSize" placeholder="Cari media..." 
                                class="pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 w-32 sm:w-44 transition-all text-slate-700">
-                        <button type="button" x-show="mediaSearchQuery" @click="mediaSearchQuery=''" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs border-0 bg-transparent cursor-pointer">&times;</button>
+                        <button type="button" x-show="mediaSearchQuery" @click="mediaSearchQuery=''; mediaDisplayLimit = mediaPageSize;" class="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs border-0 bg-transparent cursor-pointer">&times;</button>
                     </div>
 
                     <!-- Segmented Tabs Standar cmsMu -->
@@ -355,14 +389,14 @@ export const settingsPage = `
             <div class="flex-1 min-h-0 overflow-hidden flex flex-col md:flex-row">
                 
                 <!-- AREA GALERI & UPLOAD -->
-                <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-50/70">
+                <div class="flex-1 min-h-0 overflow-y-auto p-3 sm:p-5 bg-slate-50/70" @scroll.passive="handleMediaScroll($event)">
                     
                     <!-- TAB 1: GALERI LIBRARY -->
                     <div x-show="mediaTab === 'library'">
                         <!-- Mobile Search Bar -->
                         <div class="block sm:hidden mb-3 relative">
                             <i class="fas fa-search absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-xs pointer-events-none"></i>
-                            <input type="text" x-model="mediaSearchQuery" placeholder="Cari media..." 
+                            <input type="text" x-model="mediaSearchQuery" @input="mediaDisplayLimit = mediaPageSize" placeholder="Cari media..." 
                                    class="w-full pl-7 pr-7 py-1.5 text-xs rounded-lg border border-slate-200 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all text-slate-700 box-border">
                         </div>
 
@@ -372,26 +406,34 @@ export const settingsPage = `
                             <span class="text-xs font-medium">Memuat pustaka media...</span>
                         </div>
 
-                        <!-- Grid Thumbnails Kompak -->
-                        <div x-show="!isLoadingMedia && filteredMediaList.length > 0" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5">
-                            <template x-for="(img, idx) in filteredMediaList" :key="img.id || (img.url + '_' + idx)">
-                                <div @click="selectMediaItem(img)" 
-                                     class="group relative aspect-square bg-white rounded-lg overflow-hidden border cursor-pointer transition-all duration-150 shadow-xs" 
-                                     :class="selectedMedia?.url === img.url ? 'border-teal-500 ring-2 ring-teal-500/30 shadow-md' : 'border-slate-200 hover:border-teal-400 hover:shadow-sm hover:scale-[1.02]'"
-                                     :title="img.title || 'Gambar Media'">
-                                    
-                                    <img :src="img.url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 bg-slate-100" loading="lazy">
-                                    
-                                    <!-- Checkmark Badge -->
-                                    <div x-show="selectedMedia?.url === img.url" 
-                                         class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-600 text-white flex items-center justify-center text-[9px] shadow-sm ring-1 ring-white">
-                                        <i class="fas fa-check"></i>
-                                    </div>
+                        <!-- Grid Thumbnails Kompak (10 Berkas per batch + auto-load on scroll) -->
+                        <div x-show="!isLoadingMedia && filteredMediaList.length > 0">
+                            <div class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-2.5">
+                                <template x-for="(img, idx) in displayedMediaList" :key="img.id || (img.url + '_' + idx)">
+                                    <div @click="selectMediaItem(img)" 
+                                         class="group relative aspect-square bg-white rounded-lg overflow-hidden border cursor-pointer transition-all duration-150 shadow-xs" 
+                                         :class="selectedMedia?.url === img.url ? 'border-teal-500 ring-2 ring-teal-500/30 shadow-md' : 'border-slate-200 hover:border-teal-400 hover:shadow-sm hover:scale-[1.02]'"
+                                         :title="img.title || 'Gambar Media'">
+                                        
+                                        <img :src="img.url" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-200 bg-slate-100" loading="lazy">
+                                        
+                                        <!-- Checkmark Badge -->
+                                        <div x-show="selectedMedia?.url === img.url" 
+                                             class="absolute top-1.5 right-1.5 w-4 h-4 rounded-full bg-teal-600 text-white flex items-center justify-center text-[9px] shadow-sm ring-1 ring-white">
+                                            <i class="fas fa-check"></i>
+                                        </div>
 
-                                    <!-- Name overlay on hover -->
-                                    <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/80 to-transparent p-1 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition-opacity" x-text="img.title"></div>
-                                </div>
-                            </template>
+                                        <!-- Name overlay on hover -->
+                                        <div class="absolute inset-x-0 bottom-0 bg-gradient-to-t from-slate-900/80 to-transparent p-1 text-[9px] text-white truncate opacity-0 group-hover:opacity-100 transition-opacity" x-text="img.title"></div>
+                                    </div>
+                                </template>
+                            </div>
+
+                            <!-- Infinite scroll indicator -->
+                            <div x-show="hasMoreMedia" class="py-4 text-center text-slate-400 text-xs flex items-center justify-center gap-2">
+                                <i class="fas fa-circle-notch fa-spin text-teal-600"></i>
+                                <span class="font-medium text-slate-500">Gulir ke bawah untuk memuat gambar lainnya...</span>
+                            </div>
                         </div>
 
                         <!-- Empty State -->
