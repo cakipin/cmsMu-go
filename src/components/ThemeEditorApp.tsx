@@ -337,8 +337,26 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         overrides={{
           headerActions: ({ children }) => (
             <>
-              <a href="/admin" style={{ marginRight: 'auto', color: '#6b7280', textDecoration: 'none', fontSize: '14px', display: 'flex', alignItems: 'center' }}>
-                &larr; Kembali ke Admin
+              <a 
+                href="/admin" 
+                style={{ 
+                  marginRight: 'auto', 
+                  color: '#475569', 
+                  background: '#f1f5f9',
+                  border: '1px solid #cbd5e1',
+                  borderRadius: '6px',
+                  width: '32px',
+                  height: '32px',
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  textDecoration: 'none'
+                }}
+                title="Kembali ke Dashboard Admin"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5M12 19l-7-7 7-7"/>
+                </svg>
               </a>
               
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginLeft: 'auto', marginRight: '16px' }}>
