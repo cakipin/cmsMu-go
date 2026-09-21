@@ -343,8 +343,11 @@ export function renderAdmin(data: any): string {
 
                 const plugins = [${injectedPlugins}]; 
                 window.adminMenus = window.adminMenus.concat(plugins);
+                window.__CMS_CORE_VERSION = '6.2.0';
+                window.__CMS_OTA_ENDPOINT = '/api/ota';
             </script>
 
+            <!-- CMSMu Core Logic with OTA Fallback Safety -->
             <script>${cmsLogic}</script>
         </head>
         <body x-data="cms()" x-init="init()" x-cloak class="bg-slate-50 text-slate-800 font-sans">

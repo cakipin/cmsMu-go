@@ -1,4 +1,5 @@
 import type { D1Database } from '@cloudflare/workers-types';
+import { runAutoMigration } from './migration-runner';
 
 export const updateSchema = async (db: D1Database) => {
   const logs = [];
@@ -223,6 +224,18 @@ export const updateSchema = async (db: D1Database) => {
     `).run();
     try { await db.prepare("ALTER TABLE curation_queue ADD COLUMN default_category TEXT DEFAULT 'Berita Daerah';").run(); } catch(e) {}
     logs.push("✅ Table 'curation_queue' checked (Safe).");
+
+    // 10. AUTO MIGRATIONS RUNNER (Incremental Version Tracking)
+    try {
+      const migResult = await runAutoMigration(db);
+      if (migResult.applied.length > 0) {
+        logs.push(`✅ Auto-applied ${migResult.applied.length} new migrations: ${migResult.applied.join(', ')}`);
+      } else {
+        logs.push(`✅ System migrations up-to-date (Version: ${migResult.latestVersion}).`);
+      }
+    } catch(migErr: any) {
+      logs.push(`⚠️ Migration runner note: ${migErr.message}`);
+    }
 
     return logs;
 

@@ -27,6 +27,7 @@ import { commentsRouter } from './modules/comments/comments.router';
 
 import { subscribersRouter, publicSubscribersRouter } from './modules/subscribers/subscribers.router';
 import { emagazineRouter, publicEmagazineRouter } from './modules/emagazine/emagazine.router';
+import { otaRouter } from './modules/ota/ota.router';
 
 // ADDONS
 // (All addons have been removed)
@@ -70,7 +71,7 @@ app.onError((err, c) => {
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
   const method = c.req.method;
-  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') ||
+  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') ||
     ((method === 'GET' || method === 'HEAD') && (path.startsWith('/api/media') || path.startsWith('/api/posts') || path.startsWith('/api/pages') || path.startsWith('/api/contents') || path.startsWith('/api/comments') || path === '/api/settings'));
 
   if (isWhitelisted) return await next();
@@ -93,6 +94,7 @@ app.get('/sys/install', async (c) => {
 app.route('/sys/migration', migrationRouter);
 
 // API
+app.route('/api/ota', otaRouter);
 app.route('/api/contents', contentRouter);
 app.route('/api/settings', settingsRouter);
 app.route('/api/media', mediaRouter); 
