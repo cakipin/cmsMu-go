@@ -28,7 +28,7 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <p className="text-sm text-slate-500 font-medium mb-8 uppercase tracking-wider">{title}</p>
         <div className="flex justify-center flex-wrap gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition duration-300">
-          {partners.map((partner, i) => (
+          {(partners || []).map((partner, i) => (
             <div key={i} className="flex items-center justify-center">
               {partner.logoUrl ? (
                 <img src={partner.logoUrl} alt={partner.name} className="h-10 object-contain" />

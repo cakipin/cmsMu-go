@@ -53,8 +53,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
             <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xl">{logoLetter}</div>
             <span className="font-bold text-xl" style={{ color: textColor }}>{siteTitle}<span className="text-green-600 ml-1">{siteTitleHighlight}</span></span>
           </div>
-          <div className={`hidden md:flex space-x-6 lg:space-x-8 flex-1 mx-8 justify-${menuPosition}`}>
-            {menuItems.map((item, i) => (
+          <div className={`hidden md:flex space-x-6 lg:space-x-8 flex-1 mx-8 justify-${menuPosition || 'center'}`}>
+            {(menuItems || []).map((item, i) => (
               <a key={i} href={item.url} className="hover:text-green-600 font-medium transition" style={{ color: textColor }}>
                 {item.label}
               </a>

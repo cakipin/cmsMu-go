@@ -63,7 +63,7 @@ export const Testimonial: ComponentConfig<Props["Testimonial"]> = {
         </div>
         
         <div className="grid md:grid-cols-3 gap-8">
-          {testimonials.map((testi, i) => (
+          {(testimonials || []).map((testi, i) => (
             <div key={i} className="bg-white p-8 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg transition duration-300 relative">
               <div className="absolute top-8 right-8 text-slate-200">
                 <svg className="w-10 h-10" fill="currentColor" viewBox="0 0 32 32" aria-hidden="true">

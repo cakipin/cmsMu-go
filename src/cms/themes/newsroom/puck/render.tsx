@@ -37,11 +37,36 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   const faviconUrl = escapeHtml(site?.site_favicon || site?.favicon || '/favicon.svg');
   const canonicalUrl = canonical || '/';
 
-  let puckData = { content: [], root: {}, zones: {} };
+  let puckData: any = { content: [], root: {}, zones: {} };
   try {
     puckData = JSON.parse(page.body);
   } catch (e) {
     console.error('Error parsing Puck JSON:', e);
+  }
+
+  // Normalisasi puckData dengan menggabungkan defaultProps untuk mencegah TypeError undefined
+  const normalizeBlock = (item: any) => {
+    if (!item || !item.type) return item;
+    const compConfig = (puckConfig.components as any)?.[item.type];
+    const defaults = compConfig?.defaultProps || {};
+    return {
+      ...item,
+      props: {
+        ...defaults,
+        ...(item.props || {})
+      }
+    };
+  };
+
+  if (puckData && Array.isArray(puckData.content)) {
+    puckData.content = puckData.content.map(normalizeBlock);
+  }
+  if (puckData && puckData.zones && typeof puckData.zones === 'object') {
+    for (const zoneKey of Object.keys(puckData.zones)) {
+      if (Array.isArray(puckData.zones[zoneKey])) {
+        puckData.zones[zoneKey] = puckData.zones[zoneKey].map(normalizeBlock);
+      }
+    }
   }
 
   // Render Puck components to static HTML
