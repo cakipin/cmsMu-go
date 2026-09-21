@@ -49,23 +49,281 @@ export function renderAdmin(data: any): string {
             <title>CMSMu Redaksi Dashboard</title>
             <link rel="icon" id="admin-favicon" href="/favicon.svg">
             <script>
+                window.updateFavicon = function(url) {
+                    if (!url) return;
+                    try {
+                        var head = document.head || document.getElementsByTagName('head')[0];
+                        var existingLinks = document.querySelectorAll("link[rel*='icon']");
+                        for (var i = 0; i < existingLinks.length; i++) {
+                            if (existingLinks[i].parentNode) existingLinks[i].parentNode.removeChild(existingLinks[i]);
+                        }
+                        var link = document.createElement('link');
+                        link.id = 'admin-favicon';
+                        link.rel = 'icon';
+                        link.type = url.endsWith('.svg') ? 'image/svg+xml' : (url.endsWith('.png') ? 'image/png' : 'image/x-icon');
+                        link.href = url + (url.indexOf('?') === -1 ? '?v=' + Date.now() : '&v=' + Date.now());
+                        head.appendChild(link);
+                    } catch(e) {}
+                };
+
                 (function() {
                     try {
                         fetch('/api/settings').then(function(r){ return r.json(); }).then(function(d){
                             var data = (d && d.data) ? d.data : d;
                             if (data && data.site_favicon) {
-                                var fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
-                                if (fav) fav.href = data.site_favicon;
+                                window.updateFavicon(data.site_favicon);
                             }
                         }).catch(function(){});
                     } catch(e){}
                 })();
+
                 window.addEventListener('settings-updated', function(e) {
                     if (e.detail && e.detail.site_favicon) {
-                        var fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
-                        if (fav) fav.href = e.detail.site_favicon;
+                        window.updateFavicon(e.detail.site_favicon);
                     }
                 });
+
+                window.settingsPageData = function() {
+                    return {
+                        isLoading: false,
+                        isSaving: false,
+                        settings: { 
+                            site_title: '', 
+                            site_desc: '',
+                            admin_email: '', 
+                            site_logo: '',
+                            site_favicon: '',
+                            site_homepage_slug: 'home',
+                            theme_primary: '#2271b1',
+                            theme_primary_dark: '#135e96',
+                            theme_bg: '#ffffff',
+                            theme_text: '#1a1a2e',
+                            theme_accent: '#f0f7ff'
+                        },
+                        mediaModalOpen: false,
+                        mediaTab: 'library',
+                        mediaList: [],
+                        pagesList: [],
+                        uploadFile: null,
+                        uploadPreview: null,
+                        selectedMedia: null,
+                        mediaSearchQuery: '',
+                        mediaTarget: '', 
+                        isLoadingMedia: false,
+                        isUploading: false,
+                        mediaDisplayLimit: 10,
+                        mediaPageSize: 10,
+
+                        async init() {
+                            await this.loadSettings();
+                        },
+
+                        async loadSettings() {
+                            this.isLoading = true;
+                            const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                            try {
+                                const res = await fetch('/api/settings', { 
+                                    headers: { 'Authorization': 'Bearer ' + token } 
+                                });
+                                if(res.ok) {
+                                    const json = await res.json();
+                                    const data = json.data || json;
+                                    this.settings = { ...this.settings, ...data };
+                                    if (this.settings.site_favicon && window.updateFavicon) {
+                                        window.updateFavicon(this.settings.site_favicon);
+                                    }
+                                }
+                                const pagesRes = await fetch('/api/pages', { 
+                                    headers: { 'Authorization': 'Bearer ' + token } 
+                                });
+                                if (pagesRes.ok) {
+                                    const pagesJson = await pagesRes.json();
+                                    this.pagesList = pagesJson.data || pagesJson || [];
+                                }
+                            } catch(e) { console.error('Gagal load settings', e); }
+                            finally { this.isLoading = false; }
+                        },
+
+                        async saveSettings() {
+                            this.isSaving = true;
+                            const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                            try {
+                                const res = await fetch('/api/settings', { 
+                                    method: 'POST', 
+                                    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
+                                    body: JSON.stringify(this.settings)
+                                });
+                                if(res.ok) {
+                                    if (window.showToast) {
+                                        window.showToast('Pengaturan berhasil disimpan!', 'success');
+                                    } else {
+                                        alert('Pengaturan Berhasil Disimpan!');
+                                    }
+                                    if(this.settings.site_title) document.title = this.settings.site_title + ' - Admin';
+                                    if (this.settings.site_favicon && window.updateFavicon) {
+                                        window.updateFavicon(this.settings.site_favicon);
+                                    }
+                                    window.dispatchEvent(new CustomEvent('settings-updated', { detail: { ...this.settings } }));
+                                } else {
+                                    if (window.showToast) {
+                                        window.showToast('Gagal menyimpan pengaturan', 'error');
+                                    } else {
+                                        alert('Gagal menyimpan.');
+                                    }
+                                }
+                            } catch(e) { 
+                                if (window.showToast) {
+                                    window.showToast('Error: ' + e.message, 'error');
+                                } else {
+                                    alert('Error: ' + e.message); 
+                                }
+                            }
+                            finally { this.isSaving = false; }
+                        },
+
+                        async openMediaSelector(target) {
+                            this.mediaTarget = target; 
+                            this.mediaModalOpen = true;
+                            this.mediaTab = 'library';
+                            this.selectedMedia = null;
+                            this.mediaSearchQuery = '';
+                            this.mediaDisplayLimit = this.mediaPageSize;
+                            await this.loadMediaLibrary();
+                        },
+
+                        async loadMediaLibrary() {
+                            this.mediaList = [];
+                            this.isLoadingMedia = true;
+                            this.mediaDisplayLimit = this.mediaPageSize;
+                            try {
+                                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                                const res = await fetch('/api/media?t=' + Date.now(), { 
+                                    headers: { 'Authorization': 'Bearer ' + token } 
+                                });
+                                if(res.ok) {
+                                    const json = await res.json();
+                                    const raw = Array.isArray(json) ? json : (json.data || json.results || []);
+                                    const seen = new Set();
+                                    const list = [];
+                                    for (let i = 0; i < raw.length; i++) {
+                                        const m = raw[i];
+                                        const rawUrl = m.url || (m.key ? '/api/media/file/' + m.key : (m.file_url || ''));
+                                        if (!rawUrl || rawUrl.endsWith('/') || seen.has(rawUrl)) continue;
+                                        seen.add(rawUrl);
+                                        list.push({
+                                            id: m.id || ('media_' + (i + 1)),
+                                            url: rawUrl,
+                                            title: m.title || (m.key ? m.key.split('/').pop() : ('Gambar ' + (i + 1))),
+                                            key: m.key || ''
+                                        });
+                                    }
+                                    this.mediaList = list;
+                                }
+                            } catch(e) { console.error('Gagal load media:', e); }
+                            finally { this.isLoadingMedia = false; }
+                        },
+
+                        get filteredMediaList() {
+                            const q = (this.mediaSearchQuery || '').toLowerCase();
+                            return this.mediaList.filter(function(m) { return (m.title || '').toLowerCase().indexOf(q) !== -1; });
+                        },
+
+                        get displayedMediaList() {
+                            return this.filteredMediaList.slice(0, this.mediaDisplayLimit);
+                        },
+
+                        get hasMoreMedia() {
+                            return this.mediaDisplayLimit < this.filteredMediaList.length;
+                        },
+
+                        loadMoreMedia() {
+                            if (this.hasMoreMedia) {
+                                this.mediaDisplayLimit += this.mediaPageSize;
+                            }
+                        },
+
+                        handleMediaScroll(e) {
+                            var el = e.target;
+                            if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                                this.loadMoreMedia();
+                            }
+                        },
+
+                        selectMediaItem(img) {
+                            this.selectedMedia = img; 
+                        },
+
+                        confirmMediaSelection() {
+                            if (!this.selectedMedia || !this.selectedMedia.url) {
+                                if (window.showToast) window.showToast('Pilih salah satu gambar terlebih dahulu!', 'warning');
+                                else alert('Pilih gambar dulu!');
+                                return;
+                            }
+                            if (this.mediaTarget === 'logo') {
+                                this.settings.site_logo = this.selectedMedia.url;
+                            } else if (this.mediaTarget === 'favicon') {
+                                this.settings.site_favicon = this.selectedMedia.url;
+                                if (window.updateFavicon) window.updateFavicon(this.selectedMedia.url);
+                            }
+                            this.mediaModalOpen = false;
+                            if (window.showToast) window.showToast('Gambar berhasil dipilih!', 'success');
+                        },
+
+                        onFileSelect(e) {
+                            var file = e.target.files[0];
+                            if (!file) return;
+                            this.uploadFile = file;
+                            this.uploadPreview = URL.createObjectURL(file);
+                        },
+
+                        async uploadMediaAction() {
+                            if (!this.uploadFile) {
+                                if (window.showToast) window.showToast('Pilih file dari komputer terlebih dahulu!', 'warning');
+                                else alert('Pilih file dulu');
+                                return;
+                            }
+                            this.isUploading = true;
+                            const fd = new FormData();
+                            fd.append('file', this.uploadFile);
+                            fd.append('source', 'settings');
+                            
+                            try {
+                                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                                const res = await fetch('/api/media', { 
+                                    method: 'POST', 
+                                    headers: { 'Authorization': 'Bearer ' + token }, 
+                                    body: fd 
+                                });
+                                
+                                if (res.ok) {
+                                    const result = await res.json();
+                                    const newUrl = result.url || result.file_url;
+                                    
+                                    if (this.mediaTarget === 'logo') {
+                                        this.settings.site_logo = newUrl;
+                                    } else if (this.mediaTarget === 'favicon') {
+                                        this.settings.site_favicon = newUrl;
+                                        if (window.updateFavicon) window.updateFavicon(newUrl);
+                                    }
+                                    
+                                    this.uploadFile = null; 
+                                    this.uploadPreview = null;
+                                    this.mediaModalOpen = false;
+                                    if (window.showToast) window.showToast('Gambar berhasil diunggah & diterapkan!', 'success');
+                                    await this.loadMediaLibrary();
+                                } else { 
+                                    const err = await res.json().catch(function() { return {}; });
+                                    if (window.showToast) window.showToast(err.error || 'Gagal mengunggah media.', 'error');
+                                    else alert('Gagal upload: ' + (err.error || ''));
+                                }
+                            } catch(e) { 
+                                if (window.showToast) window.showToast('Error upload: ' + e.message, 'error');
+                                else alert('Error upload: ' + e.message); 
+                            }
+                            finally { this.isUploading = false; }
+                        }
+                    };
+                };
             </script>
             <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
             <script src="https://cdn.tailwindcss.com"></script>
