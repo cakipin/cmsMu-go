@@ -9,6 +9,33 @@ import { getGlobalData, getRenderer } from '../helpers';
 
 const emagazinePublicRouter = new Hono<{ Bindings: Bindings }>();
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return true; // Default aktif jika belum terdaftar
+    return Number(row.active) === 1;
+  } catch (e) {
+    return true;
+  }
+}
+
+// Middleware: Blokir rute publik e-magazine jika plugin dinonaktifkan
+emagazinePublicRouter.use('*', async (c, next) => {
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'emagazine');
+    if (!active) {
+      const { settings, menus } = await getGlobalData(db).catch(() => ({ settings: {}, menus: [] }));
+      const { Renderer } = await getRenderer(db).catch(() => ({ Renderer: null }));
+      if (Renderer?.render404) {
+        return c.html(Renderer.render404({ site: settings, menus }), 404);
+      }
+      return c.text('Halaman tidak ditemukan (Fitur e-Magazine dinonaktifkan)', 404);
+    }
+  }
+  await next();
+});
+
 // ============================================================
 // AGENT / KEAGENAN ROUTE
 // ============================================================

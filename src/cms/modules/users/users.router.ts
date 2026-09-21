@@ -212,16 +212,32 @@ usersRouter.post('/login', async (c) => {
   }
 });
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return true;
+    return Number(row.active) === 1;
+  } catch (e) {
+    return true;
+  }
+}
+
 // ---------------------------------------------------------------------
 // 6. SSO LOGIN (POST /sso)
 // ---------------------------------------------------------------------
 usersRouter.post('/sso', async (c) => {
   try {
+    if (!c.env.DB) return c.json({ error: 'Database tidak terhubung' }, 500);
+
+    const isSsoActive = await checkPluginActive(c.env.DB, 'sso-muhammadiyah');
+    if (!isSsoActive) {
+      return c.json({ error: 'Plugin Single Sign-On Muhammadiyah ID dinonaktifkan oleh administrator.' }, 403);
+    }
+
     const body = await c.req.json().catch(() => null);
     if (!body || !body.code || !body.redirectUri) {
       return c.json({ error: 'Data otorisasi tidak lengkap' }, 400);
     }
-    if (!c.env.DB) return c.json({ error: 'Database tidak terhubung' }, 500);
 
     const db = getDb(c.env.DB);
     const result = await processSsoLogin(c, db, body);

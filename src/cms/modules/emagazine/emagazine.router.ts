@@ -21,6 +21,39 @@ type Bindings = {
 export const emagazineRouter = new Hono<{ Bindings: Bindings }>();
 export const publicEmagazineRouter = new Hono<{ Bindings: Bindings }>();
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return true;
+    return Number(row.active) === 1;
+  } catch (e) {
+    return true;
+  }
+}
+
+// Middleware: Blokir operasi emagazine jika plugin dinonaktifkan
+emagazineRouter.use('*', async (c, next) => {
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'emagazine');
+    if (!active) {
+      return c.json({ success: false, error: 'Plugin e-Magazine dinonaktifkan oleh administrator.' }, 403);
+    }
+  }
+  await next();
+});
+
+publicEmagazineRouter.use('*', async (c, next) => {
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'emagazine');
+    if (!active) {
+      return c.json({ success: false, error: 'Plugin e-Magazine dinonaktifkan oleh administrator.' }, 403);
+    }
+  }
+  await next();
+});
+
 export const DEFAULT_PLANS_CONFIG = {
   plans: [
     { id: '1_bulan', name: '1 Bulan', months: 1, price: 50000, badge: '', desc: 'Akses Penuh 30 Hari', active: true },
