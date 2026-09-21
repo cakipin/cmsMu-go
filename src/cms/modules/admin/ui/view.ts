@@ -49,6 +49,17 @@ export function renderAdmin(data: any): string {
             <title>CMSMu Redaksi Dashboard</title>
             <link rel="icon" id="admin-favicon" href="/favicon.svg">
             <script>
+                (function() {
+                    try {
+                        fetch('/api/settings').then(function(r){ return r.json(); }).then(function(d){
+                            var data = (d && d.data) ? d.data : d;
+                            if (data && data.site_favicon) {
+                                var fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
+                                if (fav) fav.href = data.site_favicon;
+                            }
+                        }).catch(function(){});
+                    } catch(e){}
+                })();
                 window.addEventListener('settings-updated', function(e) {
                     if (e.detail && e.detail.site_favicon) {
                         var fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");

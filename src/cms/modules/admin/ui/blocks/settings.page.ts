@@ -1,6 +1,7 @@
 export const settingsPage = `
-<div x-show="view === 'settings'" class="animate-fade" style="padding-bottom:80px; position:relative;"
-     x-data="{
+<script>
+window.settingsPageData = function() {
+    return {
         isLoading: false,
         isSaving: false,
         
@@ -36,22 +37,19 @@ export const settingsPage = `
 
         // --- INIT ---
         async init() {
-            // Panggil saat komponen dimuat
             await this.loadSettings();
         },
 
-        // --- CORE LOGIC (Diadaptasi Lokal) ---
+        // --- CORE LOGIC ---
         async loadSettings() {
             this.isLoading = true;
             const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
             try {
-                // Endpoint API settings
                 const res = await fetch('/api/settings', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
                 if(res.ok) {
                     const json = await res.json();
-                    // Handle format { data: {...} } atau langsung {...}
                     const data = json.data || json;
                     this.settings = { ...this.settings, ...data };
                     
@@ -61,7 +59,6 @@ export const settingsPage = `
                     }
                 }
                 
-                // Fetch pages for homepage dropdown
                 const pagesRes = await fetch('/api/pages', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
                 });
@@ -94,7 +91,6 @@ export const settingsPage = `
                         const fav = document.getElementById('admin-favicon') || document.querySelector("link[rel*='icon']");
                         if (fav) fav.href = this.settings.site_favicon;
                     }
-                    // Sinkronisasi real-time ke root store dan sidebar
                     window.dispatchEvent(new CustomEvent('settings-updated', { detail: { ...this.settings } }));
                 } else {
                     if (window.showToast) {
@@ -125,139 +121,139 @@ export const settingsPage = `
         },
 
         async loadMediaLibrary() {
-             this.mediaList = [];
-             this.isLoadingMedia = true;
-             this.mediaDisplayLimit = this.mediaPageSize;
-             try {
-                 const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                 const res = await fetch('/api/media?t=' + Date.now(), { 
-                     headers: { 'Authorization': 'Bearer ' + token } 
-                 });
-                 if(res.ok) {
-                     const json = await res.json();
-                     const raw = Array.isArray(json) ? json : (json.data || json.results || []);
-                     const seen = new Set();
-                     const list = [];
-                     for (let i = 0; i < raw.length; i++) {
-                         const m = raw[i];
-                         const rawUrl = m.url || (m.key ? '/api/media/file/' + m.key : (m.file_url || ''));
-                         if (!rawUrl || rawUrl.endsWith('/') || seen.has(rawUrl)) continue;
-                         seen.add(rawUrl);
-                         list.push({
-                             id: m.id || ('media_' + (i + 1)),
-                             url: rawUrl,
-                             title: m.title || (m.key ? m.key.split('/').pop() : ('Gambar ' + (i + 1))),
-                             key: m.key || ''
-                         });
-                     }
-                     this.mediaList = list;
-                 }
-             } catch(e) { console.error('Gagal load media:', e); }
-             finally { this.isLoadingMedia = false; }
+            this.mediaList = [];
+            this.isLoadingMedia = true;
+            this.mediaDisplayLimit = this.mediaPageSize;
+            try {
+                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                const res = await fetch('/api/media?t=' + Date.now(), { 
+                    headers: { 'Authorization': 'Bearer ' + token } 
+                });
+                if(res.ok) {
+                    const json = await res.json();
+                    const raw = Array.isArray(json) ? json : (json.data || json.results || []);
+                    const seen = new Set();
+                    const list = [];
+                    for (let i = 0; i < raw.length; i++) {
+                        const m = raw[i];
+                        const rawUrl = m.url || (m.key ? '/api/media/file/' + m.key : (m.file_url || ''));
+                        if (!rawUrl || rawUrl.endsWith('/') || seen.has(rawUrl)) continue;
+                        seen.add(rawUrl);
+                        list.push({
+                            id: m.id || ('media_' + (i + 1)),
+                            url: rawUrl,
+                            title: m.title || (m.key ? m.key.split('/').pop() : ('Gambar ' + (i + 1))),
+                            key: m.key || ''
+                        });
+                    }
+                    this.mediaList = list;
+                }
+            } catch(e) { console.error('Gagal load media:', e); }
+            finally { this.isLoadingMedia = false; }
         },
 
         get filteredMediaList() {
-             var q = (this.mediaSearchQuery || '').toLowerCase();
-             return this.mediaList.filter(function(m) {
-                 return (m.title || '').toLowerCase().indexOf(q) !== -1;
-             });
+            const q = (this.mediaSearchQuery || '').toLowerCase();
+            return this.mediaList.filter(m => (m.title || '').toLowerCase().includes(q));
         },
 
         get displayedMediaList() {
-             return this.filteredMediaList.slice(0, this.mediaDisplayLimit);
+            return this.filteredMediaList.slice(0, this.mediaDisplayLimit);
         },
 
         get hasMoreMedia() {
-             return Boolean(Math.max(0, this.filteredMediaList.length - this.mediaDisplayLimit));
+            return this.mediaDisplayLimit < this.filteredMediaList.length;
         },
 
         loadMoreMedia() {
-             if (this.hasMoreMedia) {
-                 this.mediaDisplayLimit += this.mediaPageSize;
-             }
+            if (this.hasMoreMedia) {
+                this.mediaDisplayLimit += this.mediaPageSize;
+            }
         },
 
         handleMediaScroll(e) {
-             var el = e.target;
-             var remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
-             if (remaining <= 80) {
-                 this.loadMoreMedia();
-             }
+            const el = e.target;
+            if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+                this.loadMoreMedia();
+            }
         },
 
         selectMediaItem(img) {
-             this.selectedMedia = img; 
+            this.selectedMedia = img; 
         },
 
         confirmMediaSelection() {
-             if (!this.selectedMedia || !this.selectedMedia.url) {
-                 if (window.showToast) window.showToast('Pilih salah satu gambar terlebih dahulu!', 'warning');
-                 else alert('Pilih gambar dulu!');
-                 return;
-             }
-             
-             if (this.mediaTarget === 'logo') {
-                 this.settings.site_logo = this.selectedMedia.url;
-             } else if (this.mediaTarget === 'favicon') {
-                 this.settings.site_favicon = this.selectedMedia.url;
-             }
-             this.mediaModalOpen = false;
-             if (window.showToast) window.showToast('Gambar berhasil dipilih!', 'success');
+            if (!this.selectedMedia || !this.selectedMedia.url) {
+                if (window.showToast) window.showToast('Pilih salah satu gambar terlebih dahulu!', 'warning');
+                else alert('Pilih gambar dulu!');
+                return;
+            }
+            
+            if (this.mediaTarget === 'logo') {
+                this.settings.site_logo = this.selectedMedia.url;
+            } else if (this.mediaTarget === 'favicon') {
+                this.settings.site_favicon = this.selectedMedia.url;
+            }
+            this.mediaModalOpen = false;
+            if (window.showToast) window.showToast('Gambar berhasil dipilih!', 'success');
         },
 
         onFileSelect(e) {
-             const file = e.target.files[0];
-             if (!file) return;
-             this.uploadFile = file;
-             this.uploadPreview = URL.createObjectURL(file);
+            const file = e.target.files[0];
+            if (!file) return;
+            this.uploadFile = file;
+            this.uploadPreview = URL.createObjectURL(file);
         },
 
         async uploadMediaAction() {
-             if (!this.uploadFile) {
-                 if (window.showToast) window.showToast('Pilih file dari komputer terlebih dahulu!', 'warning');
-                 else alert('Pilih file dulu');
-                 return;
-             }
-             this.isUploading = true;
-             const fd = new FormData();
-             fd.append('file', this.uploadFile);
-             fd.append('source', 'settings');
-             
-             try {
-                 const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                 const res = await fetch('/api/media', { 
+            if (!this.uploadFile) {
+                if (window.showToast) window.showToast('Pilih file dari komputer terlebih dahulu!', 'warning');
+                else alert('Pilih file dulu');
+                return;
+            }
+            this.isUploading = true;
+            const fd = new FormData();
+            fd.append('file', this.uploadFile);
+            fd.append('source', 'settings');
+            
+            try {
+                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                const res = await fetch('/api/media', { 
                     method: 'POST', 
                     headers: { 'Authorization': 'Bearer ' + token }, 
                     body: fd 
-                 });
-                 
-                 if (res.ok) {
-                     const result = await res.json();
-                     const newUrl = result.url || result.file_url;
-                     
-                     if (this.mediaTarget === 'logo') {
-                         this.settings.site_logo = newUrl;
-                     } else if (this.mediaTarget === 'favicon') {
-                         this.settings.site_favicon = newUrl;
-                     }
-                     
-                     this.uploadFile = null; 
-                     this.uploadPreview = null;
-                     this.mediaModalOpen = false;
-                     if (window.showToast) window.showToast('Gambar berhasil diunggah & diterapkan!', 'success');
-                     await this.loadMediaLibrary();
-                 } else { 
-                     const err = await res.json().catch(() => ({}));
-                     if (window.showToast) window.showToast(err.error || 'Gagal mengunggah media.', 'error');
-                     else alert('Gagal upload: ' + (err.error || ''));
-                 }
-             } catch(e) { 
-                 if (window.showToast) window.showToast('Error upload: ' + e.message, 'error');
-                 else alert('Error upload: ' + e.message); 
-             }
-             finally { this.isUploading = false; }
+                });
+                
+                if (res.ok) {
+                    const result = await res.json();
+                    const newUrl = result.url || result.file_url;
+                    
+                    if (this.mediaTarget === 'logo') {
+                        this.settings.site_logo = newUrl;
+                    } else if (this.mediaTarget === 'favicon') {
+                        this.settings.site_favicon = newUrl;
+                    }
+                    
+                    this.uploadFile = null; 
+                    this.uploadPreview = null;
+                    this.mediaModalOpen = false;
+                    if (window.showToast) window.showToast('Gambar berhasil diunggah & diterapkan!', 'success');
+                    await this.loadMediaLibrary();
+                } else { 
+                    const err = await res.json().catch(function() { return {}; });
+                    if (window.showToast) window.showToast(err.error || 'Gagal mengunggah media.', 'error');
+                    else alert('Gagal upload: ' + (err.error || ''));
+                }
+            } catch(e) { 
+                if (window.showToast) window.showToast('Error upload: ' + e.message, 'error');
+                else alert('Error upload: ' + e.message); 
+            }
+            finally { this.isUploading = false; }
         }
-     }">
+    };
+};
+</script>
+<div x-show="view === 'settings'" class="animate-fade" style="padding-bottom:80px; position:relative;" x-data="settingsPageData()">
 
     <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
         <h2 style="margin:0; font-size:22px; font-weight:700; color:#1f2937;">Pengaturan Umum</h2>
