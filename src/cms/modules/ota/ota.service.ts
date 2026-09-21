@@ -34,15 +34,11 @@ export const otaService = {
                 'headless-api',
                 'puck-visual-editor',
                 'auto-db-migration',
-                'dynamic-plugin-toggle',
-                'aggregator-newsroom-addon',
+                'sso-muhammadiyah-auth',
                 'ota-client-runtime'
             ],
             bundledPlugins: [
-                'aggregator',
-                'newsroom',
-                'sso-muhammadiyah',
-                'emagazine'
+                'sso-muhammadiyah'
             ],
             updateUrl: `${cleanBase}/api/ota/manifest`,
             bundleUrl: `${cleanBase}/api/ota/bundle/admin.js`
