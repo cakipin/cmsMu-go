@@ -157,8 +157,10 @@ export const settingsPage = `
         },
 
         get filteredMediaList() {
-             const q = (this.mediaSearchQuery || '').toLowerCase();
-             return this.mediaList.filter(m => (m.title || '').toLowerCase().includes(q));
+             var q = (this.mediaSearchQuery || '').toLowerCase();
+             return this.mediaList.filter(function(m) {
+                 return (m.title || '').toLowerCase().indexOf(q) !== -1;
+             });
         },
 
         get displayedMediaList() {
@@ -166,7 +168,7 @@ export const settingsPage = `
         },
 
         get hasMoreMedia() {
-             return this.mediaDisplayLimit < this.filteredMediaList.length;
+             return Boolean(Math.max(0, this.filteredMediaList.length - this.mediaDisplayLimit));
         },
 
         loadMoreMedia() {
@@ -176,8 +178,9 @@ export const settingsPage = `
         },
 
         handleMediaScroll(e) {
-             const el = e.target;
-             if (el.scrollHeight - el.scrollTop - el.clientHeight < 80) {
+             var el = e.target;
+             var remaining = el.scrollHeight - el.scrollTop - el.clientHeight;
+             if (remaining <= 80) {
                  this.loadMoreMedia();
              }
         },

@@ -285,27 +285,56 @@ export const dashboardPage = `
              </div>
          </div>
 
-         <!-- System Status -->
-         <div class="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7 flex-grow">
-            <h4 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-3">
-                <span class="bg-indigo-50 text-indigo-500 p-2 rounded-lg flex items-center justify-center"><i class="fas fa-server"></i></span>
-                System Status
-            </h4>
-            <div class="overflow-hidden rounded-xl border border-slate-100">
-                <table class="w-full text-sm text-slate-600 text-left">
-                   <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                      <td class="py-3 px-4 font-semibold">Database</td>
-                      <td class="py-3 px-4 text-right"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold">Connected (D1)</span></td>
-                   </tr>
-                   <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
-                      <td class="py-3 px-4 font-semibold">Storage (R2)</td>
-                      <td class="py-3 px-4 text-right"><span class="bg-emerald-100 text-emerald-700 px-3 py-1 rounded-full text-[11px] font-bold">Connected</span></td>
-                   </tr>
-                   <tr class="hover:bg-slate-50 transition-colors">
-                      <td class="py-3 px-4 font-semibold">Version</td>
-                      <td class="py-3 px-4 text-right font-bold text-slate-800">CMSMu v6.1 Cloud Native</td>
-                   </tr>
-                </table>
+         <!-- Quick Actions & Web Preview -->
+         <div class="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 sm:p-7 flex-grow flex flex-col justify-between">
+            <div>
+                <h4 class="text-lg font-black text-slate-800 mb-5 flex items-center gap-3">
+                    <span class="bg-teal-50 text-teal-600 p-2 rounded-lg flex items-center justify-center"><i class="fas fa-bolt"></i></span>
+                    Aksi Cepat & Pratinjau
+                </h4>
+
+                <div class="space-y-3.5">
+                    <!-- Tombol Add Post -->
+                    <button @click="openEditor('post')" 
+                            class="w-full bg-gradient-to-r from-teal-600 to-teal-500 hover:from-teal-700 hover:to-teal-600 active:scale-[0.98] text-white p-3.5 rounded-xl font-semibold text-xs shadow-sm transition-all flex items-center justify-between group cursor-pointer border-0">
+                        <div class="flex items-center gap-3 text-left">
+                            <div class="w-8 h-8 rounded-lg bg-white/20 flex items-center justify-center text-white shrink-0">
+                                <i class="fas fa-pen-nib text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-teal-100 font-normal">Buat Konten Baru</div>
+                                <div class="font-bold text-xs text-white">Tulis Artikel Baru</div>
+                            </div>
+                        </div>
+                        <i class="fas fa-arrow-right text-xs group-hover:translate-x-1 transition-transform mr-1"></i>
+                    </button>
+
+                    <!-- Tombol Preview Web -->
+                    <a href="/" target="_blank" 
+                       class="w-full bg-slate-50 hover:bg-slate-100/90 border border-slate-200/80 p-3.5 rounded-xl text-slate-700 transition-all flex items-center justify-between group no-underline">
+                        <div class="flex items-center gap-3 text-left">
+                            <div class="w-8 h-8 rounded-lg bg-slate-200/70 text-slate-700 flex items-center justify-center shrink-0">
+                                <i class="fas fa-globe text-xs"></i>
+                            </div>
+                            <div>
+                                <div class="text-[10px] text-slate-400 font-normal">Portal Publik</div>
+                                <div class="font-bold text-slate-800 text-xs">Pratinjau Situs Web</div>
+                            </div>
+                        </div>
+                        <span class="text-[10px] bg-white border border-slate-200 text-slate-600 font-semibold px-2 py-1 rounded-md group-hover:border-teal-400 group-hover:text-teal-600 transition-colors flex items-center gap-1">
+                            Buka <i class="fas fa-external-link-alt text-[9px]"></i>
+                        </span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Footer Status Note -->
+            <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                <span class="flex items-center gap-1.5 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                    Sistem Berjalan Normal
+                </span>
+                <span class="font-semibold text-slate-500">CMSMu Cloud Native</span>
             </div>
          </div>
      </div>
