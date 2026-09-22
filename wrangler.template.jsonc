@@ -1,0 +1,37 @@
+{
+	"$schema": "./node_modules/wrangler/config-schema.json",
+	"compatibility_date": "2026-08-01",
+	"compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
+	"name": "cmsmu",
+	"pages_build_output_dir": "./dist",
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "cmsmu-db",
+			"database_id": "<YOUR_D1_DATABASE_ID>"
+		}
+	],
+	"r2_buckets": [
+		{
+			"binding": "MEDIA_BUCKET",
+			"bucket_name": "<YOUR_R2_MEDIA_BUCKET>"
+		},
+		{
+			"binding": "BUCKET",
+			"bucket_name": "<YOUR_R2_MEDIA_BUCKET>"
+		}
+	],
+	"kv_namespaces": [
+		{
+			"binding": "WIKIMU_CACHE",
+			"id": "<YOUR_KV_CACHE_ID>"
+		},
+		{
+			"binding": "SESSION",
+			"id": "<YOUR_KV_SESSION_ID>"
+		}
+	],
+	"observability": {
+		"enabled": true
+	}
+}

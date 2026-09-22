@@ -8,27 +8,27 @@
 		{
 			"binding": "DB",
 			"database_name": "cmsmu-db",
-			"database_id": "cf808b94-8328-478d-b5db-f0ad5a01be44"
+			"database_id": "<YOUR_D1_DATABASE_ID>"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA_BUCKET",
-			"bucket_name": "labmu-cms-dev"
+			"bucket_name": "<YOUR_R2_MEDIA_BUCKET>"
 		},
 		{
 			"binding": "BUCKET",
-			"bucket_name": "labmu-cms-dev"
+			"bucket_name": "<YOUR_R2_MEDIA_BUCKET>"
 		}
 	],
 	"kv_namespaces": [
 		{
 			"binding": "WIKIMU_CACHE",
-			"id": "888371371c0c41c88d3d474fed476f70"
+			"id": "<YOUR_KV_CACHE_ID>"
 		},
 		{
 			"binding": "SESSION",
-			"id": "72fcc89c00b0401283439ff7f50f912e"
+			"id": "<YOUR_KV_SESSION_ID>"
 		}
 	],
 	"observability": {

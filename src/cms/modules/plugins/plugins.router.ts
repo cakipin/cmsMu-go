@@ -37,6 +37,14 @@ const defaultPlugins = [
     author: 'CMSMu Core Team',
     version: '1.5.0',
     active: 1
+  },
+  {
+    id: 'ota',
+    name: 'Over-The-Air Update Engine (OTA)',
+    description: 'Modul distribusi pembaruan sistem, manifest rilis, dan push update ke seluruh instance pengguna CMSMu tanpa downtime.',
+    author: 'CMSMu Core Team',
+    version: '1.0.0',
+    active: 1
   }
 ];
 
@@ -137,6 +145,12 @@ plugins.post('/', async (c) => {
 plugins.delete('/:id', async (c) => {
   try {
     const id = c.req.param('id');
+    if (id === 'ota') {
+      return c.json({ 
+        success: false, 
+        message: 'Plugin Over-The-Air Update (OTA) adalah komponen inti sistem CMSMu dan tidak dapat dihapus.' 
+      }, 403);
+    }
     const db = getDb(c.env.DB);
     await db.delete(pluginsTable).where(eq(pluginsTable.id, id)).run();
     return c.json({ success: true, message: 'Plugin berhasil dihapus dari sistem' });

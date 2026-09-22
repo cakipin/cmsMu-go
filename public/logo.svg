@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 60" width="240" height="60" fill="none">
+  <defs>
+    <linearGradient id="cmsmu-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0d9488"/>
+      <stop offset="100%" stop-color="#0284c7"/>
+    </linearGradient>
+    <linearGradient id="cmsmu-accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38bdf8"/>
+      <stop offset="100%" stop-color="#14b8a6"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#0f172a" flood-opacity="0.15"/>
+    </filter>
+  </defs>
+
+  <!-- Logo Mark -->
+  <g transform="translate(6, 6)" filter="url(#shadow)">
+    <!-- Base Rounded Shield / Cube -->
+    <rect x="0" y="0" width="48" height="48" rx="14" fill="url(#cmsmu-grad)"/>
+    
+    <!-- Modern Layered Geometry (CMS Blocks) -->
+    <!-- Layer 1 -->
+    <path d="M12 24 L24 17 L36 24 L24 31 Z" fill="#ffffff" fill-opacity="0.95"/>
+    <!-- Layer 2 Left -->
+    <path d="M12 26 L24 33 L24 40 L12 33 Z" fill="#ffffff" fill-opacity="0.75"/>
+    <!-- Layer 2 Right -->
+    <path d="M24 33 L36 26 L36 33 L24 40 Z" fill="#ffffff" fill-opacity="0.55"/>
+    
+    <!-- Accent Core Starlet -->
+    <circle cx="24" cy="24" r="3.5" fill="url(#cmsmu-accent)"/>
+  </g>
+
+  <!-- Typography -->
+  <text x="66" y="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="26" font-weight="900" letter-spacing="-0.5">
+    <tspan fill="#0f172a">CMS</tspan><tspan fill="#0d9488">Mu</tspan>
+  </text>
+  
+  <!-- Subtitle -->
+  <text x="68" y="47" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-size="9" font-weight="700" letter-spacing="1.8" fill="#64748b" text-transform="uppercase">
+    CLOUD NATIVE
+  </text>
+  
+  <!-- Modern Pill Tag -->
+  <rect x="156" y="16" width="34" height="16" rx="8" fill="#ccfbf1" stroke="#99f6e4" stroke-width="1"/>
+  <text x="173" y="27" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-size="8.5" font-weight="800" fill="#0f766e" text-anchor="middle">GO</text>
+</svg>
