@@ -38,3 +38,18 @@ compose.override.yaml
 .env*
 !.env.example
 
+# Local SQLite & credentials
+*.sqlite
+*.sqlite3
+*.db
+credentials.json
+wrangler.jsonc.bak
+
+# AI Instructions & Internal SOP (Strict Ignore)
+GEMINI.md
+gemini.md
+*SOP*
+*sop*
+docs/*SOP*
+docs/*sop*
+.agents/
