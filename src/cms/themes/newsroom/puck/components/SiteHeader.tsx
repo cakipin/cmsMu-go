@@ -126,9 +126,26 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
         { label: "Serif", value: "serif" },
         { label: "Mono", value: "monospace" }
       ]
+    },
+    // === 5. PENGATURAN GLOBAL WEBSITE ===
+    applyGlobal: {
+      type: "radio",
+      options: [
+        { label: "Aktif di Seluruh Web (Page & Post)", value: "all" },
+        { label: "Hanya Halaman Ini", value: "page_only" }
+      ]
+    },
+    syncLogo: {
+      type: "radio",
+      options: [
+        { label: "Sinkronkan ke Logo Utama Website", value: "yes" },
+        { label: "Hanya Header Ini", value: "no" }
+      ]
     }
   },
   defaultProps: {
+    applyGlobal: "all",
+    syncLogo: "yes",
     logoType: "both",
     logoImage: "/logo-cmsmu.webp",
     logoHeight: "44px",

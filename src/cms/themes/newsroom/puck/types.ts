@@ -27,6 +27,8 @@ export type Props = {
     fontFamily: string;
     headerPadding: string;
     containerWidth?: string;
+    applyGlobal?: "all" | "page_only";
+    syncLogo?: "yes" | "no";
   };
   HeroSlider: {
     slides: { image: string; title: string; subtitle: string; buttonText: string; buttonLink: string }[];
