@@ -1,34 +1,61 @@
 import React from "react";
 import type { Config } from "@puckeditor/core";
 
+function getAuthToken(): string {
+  if (typeof window === 'undefined') return '';
+  try {
+    const cookies = document.cookie.split(';');
+    for (let i = 0; i < cookies.length; i++) {
+      const c = cookies[i].trim();
+      if (c.indexOf('labmu_token=') === 0) {
+        return decodeURIComponent(c.substring('labmu_token='.length));
+      }
+    }
+    if ((window as any).getCmsToken) {
+      const t = (window as any).getCmsToken();
+      if (t) return t;
+    }
+    return localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+  } catch (e) {
+    return '';
+  }
+}
+
 const ImageField = ({ value, onChange, name }: any) => {
   const [isUploading, setIsUploading] = React.useState(false);
+  const [statusMsg, setStatusMsg] = React.useState<{ text: string; isError: boolean } | null>(null);
 
   const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
+    setStatusMsg(null);
     const formData = new FormData();
     formData.append('file', file);
     
     try {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('labmu_token') || '' : '';
+      const token = getAuthToken();
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      }
+      
       const res = await fetch('/api/media', {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
+        headers,
+        credentials: 'include',
         body: formData
       });
       const data = await res.json();
-      if (data.url) {
+      if (res.ok && data.url) {
         onChange(data.url);
+        setStatusMsg({ text: "Gambar berhasil diunggah!", isError: false });
       } else {
-        alert("Upload gagal: " + (data.error || "Unknown error"));
+        setStatusMsg({ text: "Gagal: " + (data.error || "Gagal mengunggah gambar"), isError: true });
       }
     } catch (err: any) {
-      alert("Error upload: " + err.message);
+      setStatusMsg({ text: "Error upload: " + (err.message || "Gagal menghubungi server"), isError: true });
     } finally {
       setIsUploading(false);
     }
@@ -39,7 +66,39 @@ const ImageField = ({ value, onChange, name }: any) => {
       <label style={{ display: 'block', fontSize: 13, fontWeight: 'bold', marginBottom: 8, color: '#374151', textTransform: 'capitalize' }}>
         {name ? name.replace(/([A-Z])/g, ' $1').trim() : 'Image Upload'}
       </label>
-      {value && <img src={value} alt="Preview" style={{ width: '100%', height: 'auto', marginBottom: 8, borderRadius: 4, border: '1px solid #e5e7eb' }} />}
+      
+      {value && (
+        <div style={{ position: 'relative', marginBottom: 8 }}>
+          <img
+            src={value}
+            alt="Preview"
+            style={{ width: '100%', maxHeight: 120, objectFit: 'contain', background: '#f8fafc', borderRadius: 6, border: '1px solid #e2e8f0', padding: 4 }}
+          />
+          <button
+            type="button"
+            onClick={() => {
+              onChange('');
+              setStatusMsg(null);
+            }}
+            style={{
+              position: 'absolute',
+              top: 4,
+              right: 4,
+              background: '#ef4444',
+              color: '#ffffff',
+              border: 'none',
+              borderRadius: 4,
+              padding: '2px 6px',
+              fontSize: 11,
+              cursor: 'pointer'
+            }}
+            title="Hapus Logo"
+          >
+            Hapus
+          </button>
+        </div>
+      )}
+
       <input 
         type="file" 
         accept="image/*" 
@@ -47,12 +106,27 @@ const ImageField = ({ value, onChange, name }: any) => {
         disabled={isUploading}
         style={{ width: '100%', fontSize: 13, display: 'block', marginBottom: 8 }}
       />
-      {isUploading && <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Mengunggah...</div>}
+
+      {isUploading && (
+        <div style={{ fontSize: 12, color: '#0284c7', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span>Mengunggah file...</span>
+        </div>
+      )}
+
+      {statusMsg && (
+        <div style={{ fontSize: 12, color: statusMsg.isError ? '#dc2626' : '#16a34a', marginBottom: 8 }}>
+          {statusMsg.text}
+        </div>
+      )}
+
       <input 
         type="text" 
         value={value || ''} 
-        onChange={(e) => onChange(e.target.value)} 
-        placeholder="Atau masukkan URL gambar"
+        onChange={(e) => {
+          onChange(e.target.value);
+          setStatusMsg(null);
+        }} 
+        placeholder="Atau tempelkan URL gambar (contoh: /logo-cmsmu.webp)"
         style={{ width: '100%', padding: '6px 8px', fontSize: 13, border: '1px solid #d1d5db', borderRadius: 4, boxSizing: 'border-box' }}
       />
     </div>
@@ -61,19 +135,33 @@ const ImageField = ({ value, onChange, name }: any) => {
 
 type Props = {
   SiteHeader: {
+    logoType?: "both" | "image" | "text";
     logoImage: string;
+    logoHeight?: string;
     siteTitle: string;
     siteTitleHighlight: string;
+    highlightColor?: string;
     logoLetter: string;
     menuItems: { label: string; url: string }[];
+    menuPosition?: string;
+    menuItemSpacing?: string;
+    linkHoverColor?: string;
+    showCta?: "yes" | "no";
     ctaText: string;
     ctaUrl: string;
+    ctaStyle?: "solid" | "outline";
+    ctaBgColor?: string;
+    ctaTextColor?: string;
+    headerPosition?: "fixed" | "sticky" | "static";
     headerBgColor1: string;
     headerBgColor2: string;
+    headerGlassmorphism?: "yes" | "no";
     textColor: string;
+    showBorder?: "yes" | "no";
+    borderColor?: string;
     fontFamily: string;
-    menuPosition: string;
     headerPadding: string;
+    containerWidth?: string;
   };
   HeroSlider: {
     slides: { image: string; title: string; subtitle: string; buttonText: string; buttonLink: string }[];
@@ -154,10 +242,32 @@ export const puckConfig: Config<Props> = {
   components: {
     SiteHeader: {
       fields: {
+        // === 1. BRANDING & LOGO ===
+        logoType: {
+          type: "radio",
+          options: [
+            { label: "Logo + Nama", value: "both" },
+            { label: "Hanya Gambar Logo", value: "image" },
+            { label: "Hanya Teks & Inisial", value: "text" }
+          ]
+        },
+        logoImage: { type: "custom", render: ImageField },
+        logoHeight: {
+          type: "select",
+          options: [
+            { label: "Sangat Kecil (28px)", value: "28px" },
+            { label: "Kecil (36px)", value: "36px" },
+            { label: "Sedang (44px) - Default", value: "44px" },
+            { label: "Besar (52px)", value: "52px" },
+            { label: "Ekstra Besar (64px)", value: "64px" }
+          ]
+        },
+        logoLetter: { type: "text" },
         siteTitle: { type: "text" },
         siteTitleHighlight: { type: "text" },
-        logoLetter: { type: "text" },
-        logoImage: { type: "custom", render: ImageField },
+        highlightColor: { type: "text" },
+
+        // === 2. MENU NAVIGASI ===
         menuItems: {
           type: "array",
           arrayFields: {
@@ -165,59 +275,320 @@ export const puckConfig: Config<Props> = {
             url: { type: "text" }
           }
         },
+        menuPosition: {
+          type: "radio",
+          options: [
+            { label: "Kiri", value: "justify-start" },
+            { label: "Tengah", value: "justify-center" },
+            { label: "Kanan", value: "justify-end" }
+          ]
+        },
+        menuItemSpacing: {
+          type: "select",
+          options: [
+            { label: "Rapat (16px)", value: "space-x-4" },
+            { label: "Normal (24px)", value: "space-x-6" },
+            { label: "Renggang (32px)", value: "space-x-8" }
+          ]
+        },
+        linkHoverColor: { type: "text" },
+
+        // === 3. TOMBOL CALL TO ACTION (CTA) ===
+        showCta: {
+          type: "radio",
+          options: [
+            { label: "Tampilkan", value: "yes" },
+            { label: "Sembunyikan", value: "no" }
+          ]
+        },
         ctaText: { type: "text" },
         ctaUrl: { type: "text" },
+        ctaStyle: {
+          type: "select",
+          options: [
+            { label: "Pill Solid", value: "solid" },
+            { label: "Garis Tepi (Outline)", value: "outline" }
+          ]
+        },
+        ctaBgColor: { type: "text" },
+        ctaTextColor: { type: "text" },
+
+        // === 4. TATA LETAK & PENGATURAN HEADER ===
+        headerPosition: {
+          type: "radio",
+          options: [
+            { label: "Melayang (Fixed)", value: "fixed" },
+            { label: "Menempel (Sticky)", value: "sticky" },
+            { label: "Statis (Ikut Scroll)", value: "static" }
+          ]
+        },
         headerBgColor1: { type: "text" },
         headerBgColor2: { type: "text" },
+        headerGlassmorphism: {
+          type: "radio",
+          options: [
+            { label: "Efek Kaca (Blur)", value: "yes" },
+            { label: "Warna Solid", value: "no" }
+          ]
+        },
         textColor: { type: "text" },
-        fontFamily: { type: "select", options: [{label: "Sans (Default)", value: "sans-serif"}, {label: "Serif", value: "serif"}, {label: "Mono", value: "monospace"}] },
-        menuPosition: { type: "radio", options: [{label: "Kiri", value: "start"}, {label: "Tengah", value: "center"}, {label: "Kanan", value: "end"}] },
-        headerPadding: { type: "select", options: [{label: "Normal", value: "h-20"}, {label: "Kecil", value: "h-16"}, {label: "Besar", value: "h-24"}] }
+        showBorder: {
+          type: "radio",
+          options: [
+            { label: "Ya", value: "yes" },
+            { label: "Tidak", value: "no" }
+          ]
+        },
+        borderColor: { type: "text" },
+        headerPadding: {
+          type: "select",
+          options: [
+            { label: "Kompak (64px)", value: "h-16" },
+            { label: "Normal (80px)", value: "h-20" },
+            { label: "Lapang (96px)", value: "h-24" }
+          ]
+        },
+        containerWidth: {
+          type: "select",
+          options: [
+            { label: "Standar (1280px)", value: "max-w-7xl" },
+            { label: "Kompak (1152px)", value: "max-w-6xl" },
+            { label: "Penuh (Full Width)", value: "max-w-full px-4 sm:px-6 lg:px-8" }
+          ]
+        },
+        fontFamily: {
+          type: "select",
+          options: [
+            { label: "Sans (Default)", value: "sans-serif" },
+            { label: "Serif", value: "serif" },
+            { label: "Mono", value: "monospace" }
+          ]
+        }
       },
       defaultProps: {
+        logoType: "both",
+        logoImage: "/logo-cmsmu.webp",
+        logoHeight: "44px",
+        logoLetter: "M",
         siteTitle: "Ekraf",
         siteTitleHighlight: "Mu",
-        logoLetter: "M",
-        logoImage: "",
+        highlightColor: "#16a34a",
         menuItems: [
           { label: "Keunggulan", url: "#manfaat" },
           { label: "Kisah Sukses", url: "#testimoni" },
           { label: "Berita & Artikel", url: "#berita" },
           { label: "Daftar Inkubasi", url: "#gabung" }
         ],
+        menuPosition: "justify-center",
+        menuItemSpacing: "space-x-6",
+        linkHoverColor: "#16a34a",
+        showCta: "yes",
         ctaText: "Mulai Bergabung",
         ctaUrl: "#gabung",
+        ctaStyle: "solid",
+        ctaBgColor: "#16a34a",
+        ctaTextColor: "#ffffff",
+        headerPosition: "fixed",
         headerBgColor1: "#ffffff",
         headerBgColor2: "#ffffff",
+        headerGlassmorphism: "yes",
         textColor: "#1e293b",
-        fontFamily: "sans-serif",
-        menuPosition: "center",
-        headerPadding: "h-20"
+        showBorder: "yes",
+        borderColor: "#f1f5f9",
+        headerPadding: "h-20",
+        containerWidth: "max-w-7xl",
+        fontFamily: "sans-serif"
       },
-      render: ({ siteTitle, siteTitleHighlight, logoLetter, logoImage, menuItems, ctaText, ctaUrl, headerBgColor1, headerBgColor2, textColor, fontFamily, menuPosition, headerPadding }) => (
-        <nav id="navbar" className={`fixed w-full z-50 transition-all duration-300 backdrop-blur-md border-b border-gray-100`} style={{ background: `linear-gradient(90deg, ${headerBgColor1}, ${headerBgColor2})`, color: textColor, fontFamily: fontFamily }}>
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className={`flex justify-between items-center ${headerPadding}`}>
-              <div className="flex-shrink-0 flex items-center gap-2">
-                <div className="w-10 h-10 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-xl">{logoLetter}</div>
-                <span className="font-bold text-xl" style={{ color: textColor }}>{siteTitle}<span className="text-green-600 ml-1">{siteTitleHighlight}</span></span>
-              </div>
-              <div className={`hidden md:flex space-x-6 lg:space-x-8 flex-1 mx-8 justify-${menuPosition}`}>
-                {menuItems.map((item, i) => (
-                  <a key={i} href={item.url} className="hover:text-green-600 font-medium transition" style={{ color: textColor }}>
-                    {item.label}
-                  </a>
-                ))}
-              </div>
-              <div className="hidden md:flex">
-                <a href={ctaUrl} className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-full font-semibold transition shadow-lg shadow-green-600/30">
-                  {ctaText}
+      render: ({
+        logoType = "both",
+        logoImage = "",
+        logoHeight = "44px",
+        logoLetter = "M",
+        siteTitle = "Ekraf",
+        siteTitleHighlight = "Mu",
+        highlightColor = "#16a34a",
+        menuItems = [],
+        menuPosition = "justify-center",
+        menuItemSpacing = "space-x-6",
+        linkHoverColor = "#16a34a",
+        showCta = "yes",
+        ctaText = "Mulai Bergabung",
+        ctaUrl = "#gabung",
+        ctaStyle = "solid",
+        ctaBgColor = "#16a34a",
+        ctaTextColor = "#ffffff",
+        headerPosition = "fixed",
+        headerBgColor1 = "#ffffff",
+        headerBgColor2 = "#ffffff",
+        headerGlassmorphism = "yes",
+        textColor = "#1e293b",
+        showBorder = "yes",
+        borderColor = "#f1f5f9",
+        headerPadding = "h-20",
+        containerWidth = "max-w-7xl",
+        fontFamily = "sans-serif"
+      }) => {
+        let resolvedPosition = menuPosition;
+        if (menuPosition === "start") resolvedPosition = "justify-start";
+        else if (menuPosition === "center") resolvedPosition = "justify-center";
+        else if (menuPosition === "end") resolvedPosition = "justify-end";
+
+        let posClass = "fixed top-0 left-0 w-full z-50";
+        if (headerPosition === "sticky") posClass = "sticky top-0 w-full z-50";
+        else if (headerPosition === "static") posClass = "relative w-full z-50";
+
+        const bg1 = headerBgColor1 || "#ffffff";
+        const bg2 = headerBgColor2 || bg1;
+        const isGlass = headerGlassmorphism !== "no";
+        const borderStyle = showBorder !== "no" ? `1px solid ${borderColor || "#f1f5f9"}` : "none";
+
+        const navStyle: React.CSSProperties = {
+          background: `linear-gradient(90deg, ${bg1}, ${bg2})`,
+          color: textColor || "#1e293b",
+          fontFamily: fontFamily || "sans-serif",
+          borderBottom: borderStyle,
+          ...(isGlass ? { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" } : {})
+        };
+
+        const isOutline = ctaStyle === "outline";
+        const ctaButtonStyle: React.CSSProperties = isOutline
+          ? {
+              borderColor: ctaBgColor || "#16a34a",
+              color: ctaBgColor || "#16a34a",
+              backgroundColor: "transparent"
+            }
+          : {
+              backgroundColor: ctaBgColor || "#16a34a",
+              color: ctaTextColor || "#ffffff",
+              boxShadow: `0 8px 20px -4px ${(ctaBgColor || "#16a34a")}44`
+            };
+
+        const hasImage = Boolean(logoImage && logoImage.trim().length > 0);
+        const showImg = (logoType === "image" || logoType === "both") && hasImage;
+        const showText = logoType === "text" || logoType === "both" || !hasImage;
+
+        return (
+          <nav id="navbar" className={`${posClass} transition-all duration-300`} style={navStyle}>
+            <div className={`${containerWidth || "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8`}>
+              <div className={`flex justify-between items-center ${headerPadding || "h-20"}`}>
+                
+                {/* 1. BRANDING / LOGO */}
+                <a href="/" className="flex-shrink-0 flex items-center gap-2.5 text-decoration-none group">
+                  {showImg && (
+                    <img
+                      src={logoImage}
+                      alt={siteTitle || "Logo"}
+                      style={{ height: logoHeight || "44px", width: "auto", objectFit: "contain" }}
+                      className="transition-transform group-hover:scale-105"
+                    />
+                  )}
+                  {(!showImg || logoType === "text") && (
+                    <div
+                      className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-sm flex-shrink-0"
+                      style={{ backgroundColor: highlightColor || "#16a34a" }}
+                    >
+                      {logoLetter || "M"}
+                    </div>
+                  )}
+                  {showText && (
+                    <span className="font-extrabold text-xl tracking-tight leading-none" style={{ color: textColor || "#1e293b" }}>
+                      {siteTitle || "Ekraf"}
+                      <span className="ml-1" style={{ color: highlightColor || "#16a34a" }}>
+                        {siteTitleHighlight || "Mu"}
+                      </span>
+                    </span>
+                  )}
                 </a>
+
+                {/* 2. DESKTOP NAVIGATION MENU */}
+                <div className={`hidden md:flex flex-1 mx-8 ${resolvedPosition || "justify-center"}`}>
+                  <div className={`flex items-center ${menuItemSpacing || "space-x-6"}`}>
+                    {(menuItems || []).map((item, i) => (
+                      <a
+                        key={i}
+                        href={item.url}
+                        className="font-medium text-sm tracking-wide transition-colors duration-200 py-1"
+                        style={{ color: textColor || "#1e293b" }}
+                        onMouseEnter={(e) => {
+                          if (linkHoverColor) e.currentTarget.style.color = linkHoverColor;
+                        }}
+                        onMouseLeave={(e) => {
+                          if (textColor) e.currentTarget.style.color = textColor;
+                        }}
+                      >
+                        {item.label}
+                      </a>
+                    ))}
+                  </div>
+                </div>
+
+                {/* 3. CTA BUTTON (DESKTOP) */}
+                {showCta !== "no" && (
+                  <div className="hidden md:flex items-center">
+                    <a
+                      href={ctaUrl || "#gabung"}
+                      style={ctaButtonStyle}
+                      className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98] ${
+                        isOutline ? "border-2" : ""
+                      }`}
+                    >
+                      {ctaText || "Mulai Bergabung"}
+                    </a>
+                  </div>
+                )}
+
+                {/* 4. MOBILE HAMBURGER MENU */}
+                <div className="md:hidden flex items-center">
+                  <details className="relative">
+                    <summary
+                      className="list-none cursor-pointer p-2 rounded-lg transition-colors flex items-center justify-center focus:outline-none"
+                      style={{ color: textColor || "#1e293b" }}
+                      aria-label="Toggle Navigation Menu"
+                    >
+                      <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                      </svg>
+                    </summary>
+                    <div
+                      className="absolute right-0 mt-2 w-64 rounded-2xl shadow-2xl p-4 border flex flex-col gap-3 z-50"
+                      style={{
+                        backgroundColor: bg1,
+                        borderColor: borderColor || "#f1f5f9",
+                        color: textColor || "#1e293b"
+                      }}
+                    >
+                      {(menuItems || []).map((item, i) => (
+                        <a
+                          key={i}
+                          href={item.url}
+                          className="font-medium text-sm py-2 px-3 rounded-lg hover:bg-black/5 transition"
+                          style={{ color: textColor || "#1e293b" }}
+                        >
+                          {item.label}
+                        </a>
+                      ))}
+                      {showCta !== "no" && (
+                        <div className="pt-2 border-t mt-1" style={{ borderColor: borderColor || "#f1f5f9" }}>
+                          <a
+                            href={ctaUrl || "#gabung"}
+                            style={ctaButtonStyle}
+                            className={`block text-center w-full px-4 py-2.5 rounded-full text-sm font-semibold transition ${
+                              isOutline ? "border-2" : ""
+                            }`}
+                          >
+                            {ctaText || "Mulai Bergabung"}
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  </details>
+                </div>
+
               </div>
             </div>
-          </div>
-        </nav>
-      )
+          </nav>
+        );
+      }
     },
 
     HeroSlider: {
