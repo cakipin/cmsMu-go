@@ -332,7 +332,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         <div class="container sa-style-13" >
           <div class="header-logo-section sa-style-14" >
             <a href="${formatMenuUrl('/')}" aria-label="${escapeHtml(siteTitle || 'CMSMu')}" class="sa-style-15">
-              <img src="${(ctx && (ctx.site_logo || ctx.logo)) ? (ctx.site_logo || ctx.logo) : '/logo.svg'}" alt="${escapeHtml(siteTitle || 'CMSMu')}" class="logo-img sa-style-16" style="max-height:46px;width:auto;object-fit:contain;" onerror="this.outerHTML='<h1 style=\\'font-weight:900;color:#0d9488;font-size:24px;margin:0;\\'>CMSMu</h1>'" />
+              <img src="${(ctx && (ctx.site_logo || ctx.logo)) ? (ctx.site_logo || ctx.logo) : '/logo-cmsmu.webp'}" alt="${escapeHtml(siteTitle || 'CMSMu')}" class="logo-img sa-style-16" style="max-height:46px;width:auto;object-fit:contain;" onerror="this.outerHTML='<h1 style=\\'font-weight:900;color:#0d9488;font-size:24px;margin:0;\\'>CMSMu</h1>'" />
             </a>
             <span class="hide-mobile sa-style-17">${translateMenuLabel(siteDesc || 'Portal Berita & Publikasi Modern')}</span>
           </div>
