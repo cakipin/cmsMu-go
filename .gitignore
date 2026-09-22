@@ -44,3 +44,13 @@ compose.override.yaml
 *.db
 credentials.json
 wrangler.jsonc.bak
+
+# AI Instructions & Internal SOP (Strict Ignore)
+GEMINI.md
+gemini.md
+*SOP*
+*sop*
+docs/*SOP*
+docs/*sop*
+.agents/
+
