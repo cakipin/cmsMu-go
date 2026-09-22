@@ -5,6 +5,7 @@ import { emagazineLogic } from './emagazine.logic';
 import { coreLogic } from './logic/core.logic.ts';
 import { mediaLogic } from './logic/media.logic.ts';
 import { postLogic } from './logic/post.logic.ts';
+import { settingsLogic } from './logic/settings.logic.ts';
 import { globalModals } from './modals.ts'; 
 import { customEditorLogicScript } from './custom-editor.ts';
 
@@ -62,6 +63,9 @@ if (typeof window !== 'undefined') {
 
 // Injeksi logika editor custom
 ${customEditorLogicScript}
+
+// Injeksi logika pengaturan umum & OTA
+${settingsLogic}
 
 /** B. MAIN APP */
 if (typeof window !== 'undefined') {

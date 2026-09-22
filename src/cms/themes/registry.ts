@@ -1,7 +1,15 @@
+import SuaraAisyiyah from './suara-aisyiyah';
 import NewsroomTheme from './newsroom';
 
-// 1. Daftar Tema untuk API (Hanya Newsroom)
+// 1. Daftar Tema yang Tersedia
 export const availableThemes = [
+  {
+    "id": "suara-aisyiyah",
+    "name": "CMSMu Magazine & Portal (Default)",
+    "version": "1.0.0",
+    "author": "CMSMu Core Team",
+    "description": "Tema portal berita dan majalah modern dengan hero editorial, grid berita, dan identitas visual CMSMu."
+  },
   {
     "id": "newsroom",
     "name": "Newsroom Editorial",
@@ -11,7 +19,12 @@ export const availableThemes = [
   }
 ];
 
-// 2. Fungsi Render
-export const getActiveTheme = (_id?: string) => {
-  return NewsroomTheme;
+// 2. Fungsi Pengambilan Tema Aktif (Default: suara-aisyiyah)
+export const getActiveTheme = (id?: string) => {
+  const themes: Record<string, any> = {
+    'suara-aisyiyah': SuaraAisyiyah,
+    'newsroom': NewsroomTheme,
+  };
+  return (id && themes[id]) ? themes[id] : SuaraAisyiyah;
 };
+

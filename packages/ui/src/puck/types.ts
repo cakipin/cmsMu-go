@@ -1,18 +1,34 @@
 export type Props = {
   SiteHeader: {
+    logoType?: "both" | "image" | "text";
     logoImage: string;
+    logoHeight?: string;
     siteTitle: string;
     siteTitleHighlight: string;
+    highlightColor?: string;
     logoLetter: string;
     menuItems: { label: string; url: string }[];
+    menuPosition?: string;
+    menuItemSpacing?: string;
+    linkHoverColor?: string;
+    showCta?: "yes" | "no";
     ctaText: string;
     ctaUrl: string;
+    ctaStyle?: "solid" | "outline";
+    ctaBgColor?: string;
+    ctaTextColor?: string;
+    headerPosition?: "fixed" | "sticky" | "static";
     headerBgColor1: string;
     headerBgColor2: string;
+    headerGlassmorphism?: "yes" | "no";
     textColor: string;
+    showBorder?: "yes" | "no";
+    borderColor?: string;
     fontFamily: string;
-    menuPosition: string;
     headerPadding: string;
+    containerWidth?: string;
+    applyGlobal?: "all" | "page_only";
+    syncLogo?: "yes" | "no";
   };
   HeroSlider: {
     slides: { image: string; title: string; subtitle: string; buttonText: string; buttonLink: string }[];

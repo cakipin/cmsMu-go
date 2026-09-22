@@ -35,7 +35,7 @@ export const pluginsPage = `
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold"
                    :class="p.active ? 'bg-teal-50 text-teal-600' : 'bg-slate-100 text-slate-400'">
-                <i class="fas" :class="p.id === 'aggregator' ? 'fa-satellite-dish' : (p.id === 'newsroom' ? 'fa-newspaper' : (p.id === 'sso-muhammadiyah' ? 'fa-shield-alt' : (p.id === 'emagazine' ? 'fa-book-open' : 'fa-plug')))"></i>
+                <i class="fas" :class="p.id === 'aggregator' ? 'fa-satellite-dish' : (p.id === 'newsroom' ? 'fa-newspaper' : (p.id === 'sso-muhammadiyah' ? 'fa-shield-alt' : (p.id === 'emagazine' ? 'fa-book-open' : (p.id === 'ota' ? 'fa-cloud-upload-alt' : 'fa-plug'))))"></i>
               </div>
               <div>
                 <h3 class="text-sm font-bold text-slate-800 tracking-tight" x-text="p.name"></h3>
@@ -76,12 +76,19 @@ export const pluginsPage = `
               <i class="fas fa-toggle-off text-amber-600"></i> Nonaktifkan
             </button>
 
-            <!-- Delete Button -->
-            <button @click="deletePlugin(p.id, p.name)"
-                    class="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors"
-                    title="Hapus Plugin">
-              <i class="fas fa-trash-alt text-xs"></i>
-            </button>
+            <!-- Delete Button (OTA is Protected Core Addon) -->
+            <template x-if="p.id === 'ota'">
+              <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" title="Plugin sistem inti tidak dapat dihapus">
+                <i class="fas fa-lock text-[9px] text-slate-400"></i> Terproteksi
+              </span>
+            </template>
+            <template x-if="p.id !== 'ota'">
+              <button @click="deletePlugin(p.id, p.name)"
+                      class="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
+                      title="Hapus Plugin">
+                <i class="fas fa-trash-alt text-xs"></i>
+              </button>
+            </template>
           </div>
         </div>
 

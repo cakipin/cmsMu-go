@@ -49,12 +49,22 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
     if (!item || !item.type) return item;
     const compConfig = (puckConfig.components as any)?.[item.type];
     const defaults = compConfig?.defaultProps || {};
+    const mergedProps = {
+      ...defaults,
+      ...(item.props || {})
+    };
+
+    // Auto-Inherit & Sinkronisasi Logo dari Pengaturan Utama Website (site.site_logo)
+    if (item.type === 'SiteHeader') {
+      const siteLogo = site?.site_logo || site?.logo;
+      if (siteLogo && (!mergedProps.logoImage || mergedProps.logoImage === '/logo-cmsmu.webp')) {
+        mergedProps.logoImage = siteLogo;
+      }
+    }
+
     return {
       ...item,
-      props: {
-        ...defaults,
-        ...(item.props || {})
-      }
+      props: mergedProps
     };
   };
 
