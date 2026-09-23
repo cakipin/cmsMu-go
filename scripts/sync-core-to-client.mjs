@@ -49,7 +49,9 @@ const CORE_DIRS = [
 // 2. DAFTAR FILE CORE SPESIFIK
 const CORE_FILES = [
   'src/cms/types.ts',
-  'src/cms/index.ts'
+  'src/cms/index.ts',
+  'src/components/ThemeEditorApp.tsx',
+  'src/pages/theme-editor.astro'
 ];
 
 // 3. DAFTAR WILAYAH TERPROTEKSI MUTLAK (KATEGORI B - ZERO-TOUCH)
