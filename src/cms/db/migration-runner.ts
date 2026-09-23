@@ -79,6 +79,17 @@ export const MIGRATIONS: MigrationStep[] = [
             try { await db.prepare("ALTER TABLE media_sources ADD COLUMN auto_publish INTEGER DEFAULT 0;").run(); } catch(e) {}
             try { await db.prepare("ALTER TABLE curation_queue ADD COLUMN default_category TEXT DEFAULT 'Berita Daerah';").run(); } catch(e) {}
         }
+    },
+    {
+        id: '2026_09_23_004_pages_schema_alignment',
+        version: '0.1.2',
+        name: 'Align pages table schema with Drizzle ORM model',
+        up: async (db: any) => {
+            try { await db.prepare("ALTER TABLE pages ADD COLUMN excerpt TEXT;").run(); } catch(e) {}
+            try { await db.prepare("ALTER TABLE pages ADD COLUMN meta_title TEXT;").run(); } catch(e) {}
+            try { await db.prepare("ALTER TABLE pages ADD COLUMN meta_description TEXT;").run(); } catch(e) {}
+            try { await db.prepare("ALTER TABLE pages ADD COLUMN author_id INTEGER;").run(); } catch(e) {}
+        }
     }
 ];
 
