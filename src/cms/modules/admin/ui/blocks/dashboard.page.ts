@@ -6,7 +6,7 @@ export const dashboardPage = `
      <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-teal-50 blur-3xl pointer-events-none"></div>
      
      <div class="relative z-10">
-        <h2 class="text-xl sm:text-2xl font-black text-slate-800 mb-1 tracking-tight">Selamat Datang di Portal Redaksi CMSMu, <span x-text="userName || 'Redaksi'"></span>! 👋</h2>
+        <h2 class="text-xl sm:text-2xl font-black text-slate-800 mb-1 tracking-tight">Selamat Datang di Portal Redaksi<span x-text="(settings && settings.site_title) ? ' ' + settings.site_title : ''"></span>, <span x-text="userName || 'Redaksi'"></span>! 👋</h2>
         <p class="text-xs sm:text-sm text-slate-500 font-normal">Sistem berjalan normal. Siap untuk mempublikasikan ide-ide hebat hari ini?</p>
      </div>
 
@@ -334,7 +334,7 @@ export const dashboardPage = `
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
                     Sistem Berjalan Normal
                 </span>
-                <span class="font-semibold text-slate-500">CMSMu Cloud Native</span>
+                <span class="font-semibold text-slate-500" x-text="(settings && settings.site_title) ? settings.site_title : 'Cloud Native'"></span>
             </div>
          </div>
      </div>
