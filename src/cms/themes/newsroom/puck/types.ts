@@ -54,7 +54,7 @@ export type Props = {
   };
   Partners: {
     title: string;
-    partners: { name: string; logoUrl?: string }[];
+    partners: { name: string; logoUrl?: string; url?: string }[];
   };
   FeatureGrid: {
     title: string;

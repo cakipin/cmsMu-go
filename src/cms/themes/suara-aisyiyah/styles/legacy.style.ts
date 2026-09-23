@@ -121,7 +121,7 @@ export const legacyStyle = `
 .sa-style-115 { margin-right:4px; }
 .sa-style-116 { position:relative; margin-bottom: 20px; }
 .sa-style-117 { width:100%; height:auto; display:block; border-radius:12px; }
-.sa-style-118 { position:absolute; bottom:0; left:0; width:100%; padding:10px 15px; background:rgba(0,0,0,0.85); color:#fff; font-size:12px; text-align:center; box-sizing:border-box; border-bottom-left-radius:12px; border-bottom-right-radius:12px; }
+.sa-style-118 { position:static; width:100%; padding:6px 0 0 0; background:transparent; color:#64748b; font-size:13px; font-style:italic; text-align:left; box-sizing:border-box; }
 .sa-style-119 { align-items: center; }
 .sa-style-120 { width: 2px; height: 24px; background-color: #e2e8f0; margin: 0 10px; }
 .sa-style-121 { background: #ffffff; color: #444444; border: 1.5px solid #e2e8f0; display: flex; align-items: center; gap: 8px; padding: 7px 16px; }

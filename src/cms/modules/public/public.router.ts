@@ -5,7 +5,7 @@ import { posts as postsTable, pages as pagesTable } from '../../db/schema';
 import { eq, desc, asc, and, or, like, sql } from 'drizzle-orm';
 import { translateTextWithAI } from '../../services/ai-translate';
 import { getGlobalData, getRenderer, formatPostForFrontend } from './helpers';
-import { isPuckJson, renderPuckHtml } from '../../themes/newsroom/puck/render';
+import { isPuckJson, renderPuckHtml } from '../theme-builder';
 
 // Import Modular Sub-Routers
 import seoRouter from './routes/seo.router';
@@ -89,11 +89,17 @@ async function renderHomePage(c: any, lang?: 'en' | 'ar') {
 
       // Jika halaman berformat visual Puck
       if (isPuckJson(customHome.body)) {
+        let latestPosts: any[] = [];
+        try {
+          latestPosts = await db.select().from(postsTable).where(eq(postsTable.status, 'publish')).orderBy(desc(postsTable.createdAt)).limit(9).all();
+        } catch (e) {}
+
         return c.html(renderPuckHtml({
           site: settings,
           menus,
           page: customHome,
-          canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : '/')
+          canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : '/'),
+          latestPosts: (latestPosts || []).map(formatPostForFrontend)
         }));
       }
 
@@ -566,11 +572,17 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: 'en' | 'ar') {
 
       if (type === 'page') {
         if (isPuckJson(content.body)) {
+          let latestPosts: any[] = [];
+          try {
+            latestPosts = await orm.select().from(postsTable).where(eq(postsTable.status, 'publish')).orderBy(desc(postsTable.createdAt)).limit(9).all();
+          } catch (e) {}
+
           return c.html(renderPuckHtml({
             site: settings,
             menus,
             page: content,
-            canonical: canonicalUrl
+            canonical: canonicalUrl,
+            latestPosts: (latestPosts || []).map(formatPostForFrontend)
           }));
         }
         if (Renderer.renderPage) return c.html(Renderer.renderPage(context));

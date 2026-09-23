@@ -1,22 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Puck } from "@puckeditor/core";
 import "@puckeditor/core/dist/index.css";
-import { puckConfig } from "../cms/themes/newsroom/puck/config";
-
-const defaultHomePuck = {
-  content: [
-    { type: "SiteHeader", props: { id: "SiteHeader-1" } },
-    { type: "Hero", props: { id: "Hero-1" } },
-    { type: "Partners", props: { id: "Partners-1" } },
-    { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
-    { type: "Testimonial", props: { id: "Testimonial-1" } },
-    { type: "RecentPosts", props: { id: "RecentPosts-1" } },
-    { type: "CallToAction", props: { id: "CallToAction-1" } },
-    { type: "SiteFooter", props: { id: "SiteFooter-1" } }
-  ],
-  root: {},
-  zones: {}
-};
+import { puckConfig, defaultHomePuck, defaultLandingPuck } from "../cms/modules/theme-builder";
 
 function getAuthToken(): string {
   if (typeof window === 'undefined') return '';
@@ -58,6 +43,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   });
   const [showNewPageModal, setShowNewPageModal] = useState(false);
   const [newPageSlug, setNewPageSlug] = useState('');
+  const [newPageTemplate, setNewPageTemplate] = useState<'home' | 'landing' | 'blank'>('home');
   const [siteSettings, setSiteSettings] = useState<any>({});
   const [isGlobalHeaderActive, setIsGlobalHeaderActive] = useState<boolean>(false);
 
@@ -129,14 +115,25 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
               console.error("Gagal parse body JSON", e);
             }
           }
+          const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const templateParam = urlParams ? urlParams.get('template') : null;
+          const getFallback = () => {
+            if (templateParam === 'landing') return defaultLandingPuck;
+            if (templateParam === 'blank') return { content: [], root: {}, zones: {} };
+            if (slug === 'home' || templateParam === 'home') return defaultHomePuck;
+            return { content: [], root: {}, zones: {} };
+          };
+
           if (!parsedData) {
-            parsedData = slug === 'home' ? defaultHomePuck : { content: [], root: {}, zones: {} };
+            parsedData = getFallback();
           }
 
           setInitialData(parsedData);
           setCurrentData(parsedData);
         } else {
-          const fallback = slug === 'home' ? defaultHomePuck : { content: [], root: {}, zones: {} };
+          const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const templateParam = urlParams ? urlParams.get('template') : null;
+          const fallback = (templateParam === 'landing') ? defaultLandingPuck : (templateParam === 'blank' ? { content: [], root: {}, zones: {} } : (slug === 'home' || templateParam === 'home' ? defaultHomePuck : { content: [], root: {}, zones: {} }));
           setInitialData(fallback);
           setCurrentData(fallback);
         }
@@ -232,7 +229,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
     if (newPageSlug && newPageSlug.trim() !== "") {
       const formattedSlug = newPageSlug.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '');
       if (formattedSlug) {
-        window.location.href = `?slug=${formattedSlug}`;
+        window.location.href = `?slug=${formattedSlug}&template=${newPageTemplate}`;
       }
     }
   };
@@ -317,11 +314,14 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
               Masukkan slug unik untuk halaman baru (contoh: <code>tentang-kami</code>, <code>kontak</code>).
             </p>
             <form onSubmit={handleCreateNewPageSubmit}>
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '6px' }}>
+                Slug Halaman (URL):
+              </label>
               <input
                 type="text"
                 value={newPageSlug}
                 onChange={(e) => setNewPageSlug(e.target.value)}
-                placeholder="contoh: landing-page-v2"
+                placeholder="contoh: landing-page-v2, tentang-kami"
                 required
                 autoFocus
                 style={{
@@ -330,10 +330,34 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
                   borderRadius: '8px',
                   border: '1px solid #cbd5e1',
                   fontSize: '13px',
-                  marginBottom: '16px',
+                  marginBottom: '14px',
                   boxSizing: 'border-box'
                 }}
               />
+
+              <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#475569', marginBottom: '6px' }}>
+                Pilihan Layout Awal:
+              </label>
+              <select
+                value={newPageTemplate}
+                onChange={(e: any) => setNewPageTemplate(e.target.value)}
+                style={{
+                  width: '100%',
+                  padding: '10px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  marginBottom: '20px',
+                  boxSizing: 'border-box',
+                  background: '#ffffff',
+                  color: '#1e293b'
+                }}
+              >
+                <option value="home">Template Beranda Standar (Header, Hero, Fitur, Berita, Footer)</option>
+                <option value="landing">Template Landing Page (Header, Slider, Fitur, Berita, CTA, Footer)</option>
+                <option value="blank">Kanvas Kosong (Rancang Tata Letak Sendiri Bebas)</option>
+              </select>
+
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '8px' }}>
                 <button
                   type="button"

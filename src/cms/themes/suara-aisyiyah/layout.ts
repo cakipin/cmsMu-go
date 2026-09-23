@@ -1,7 +1,10 @@
 import type { ThemeContext } from '../types';
 import { css } from './style';
 import { escapeHtml } from './utils';
+import { renderGlobalHeaderHtml } from '../../modules/theme-builder';
+
 export function _layout(this: any, content: string, title: string, ctx: ThemeContext, pageType: string = '') {
+    const globalHeader = renderGlobalHeaderHtml(ctx.site, ctx.menus);
     const siteTitle = escapeHtml(ctx.site.site_title || ctx.site.title || "Suara 'Aisyiyah");
     const c = ctx as any;
     const siteDesc = escapeHtml(ctx.site.description || "Inspirasi perempuan berkemajuan");
@@ -304,10 +307,35 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       <meta name="twitter:site" content="@suaraaisyiyah">
       <!-- JSON-LD WebSite -->
       <script type="application/ld+json">${jsonLdWebsite}</script>
+      ${globalHeader ? `
+      <!-- Google Fonts & Tailwind CDN for Global Theme Header -->
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+      <script src="https://cdn.tailwindcss.com"></script>
+      <script>
+        tailwind.config = {
+          corePlugins: {
+            preflight: false,
+          },
+          theme: {
+            extend: {
+              fontFamily: {
+                sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+              }
+            }
+          }
+        }
+      </script>
+      ` : ''}
       <style>${css}</style>
 </head>
 <body>
     <div class="site-wrapper">
+      ${globalHeader ? `
+        ${globalHeader.html}
+        ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ''}
+      ` : `
       <div class="topbar">
         <div class="container">
           <ul class="topbar-links">
@@ -667,6 +695,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         <nav class="container nav" aria-label="Navigasi utama">${items}</nav>
       </div>
     </div>
+    `}
       
       ${topBannerHtml}
 
@@ -680,7 +709,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         </form>
       </dialog>
       
-      <main>${content}</main>
+      ${content}
       
       <footer class="footer">
         <div class="container">

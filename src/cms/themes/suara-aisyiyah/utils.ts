@@ -73,10 +73,17 @@ export function cleanAndFormatArticleContent(rawHtml: string, hasFeaturedImage =
     }
   }
 
+  // Ekstraksi caption dari p wp-caption-text pertama jika berdiri sendiri
+  const firstPMatch = str.match(/^\s*<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>([\s\S]*?)<\/p>/i);
+  if (firstPMatch && !extractedCaption) {
+    extractedCaption = firstPMatch[1].replace(/<[^>]+>/g, '').trim();
+  }
+
   // 2. Bersihkan gambar sebelum artikel postingan (gambar/caption pertama di awal body artikel)
   str = str.replace(/^\s*<div[^>]*class="[^"]*wp-caption[^"]*"[^>]*>[\s\S]*?<\/div>\s*/i, '');
   str = str.replace(/^\s*<figure[^>]*>[\s\S]*?<\/figure>\s*/i, '');
   str = str.replace(/^\s*<p[^>]*>\s*(?:<strong>|<b>)?\s*<img[^>]*>(?:\s*<br\s*\/?>)?\s*(?:<\/strong>|<\/b>)?\s*<\/p>\s*/i, '');
+  str = str.replace(/^\s*<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>[\s\S]*?<\/p>\s*/i, '');
 
   // 2.5. Hapus paragraf "Baca Juga:" dan tautan bawaan WordPress yang tertanam di body
   str = str.replace(/<p[^>]*>\s*(?:<strong>|<b>)?\s*Baca\s+Juga\s*:[\s\S]*?<\/p>/gi, '');
@@ -96,6 +103,13 @@ export function cleanAndFormatArticleContent(rawHtml: string, hasFeaturedImage =
     return `<div class="table-responsive-wrapper">${cleanedTable}</div>`;
   });
 
+  // 3.5. Sanitasi tag br mandiri di antara elemen blok, tag p kosong, dan tag penutup tanpa pasangan
+  str = str.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '$1\n$2');
+  str = str.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+/gi, '$1\n');
+  str = str.replace(/(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '\n$1');
+  str = str.replace(/<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>/gi, '');
+  str = str.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
+
   // 4. Smart Autop Paragraph Formatter
   str = str.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
   const blocks = str.split(/\n\s*\n+/);
@@ -110,12 +124,22 @@ export function cleanAndFormatArticleContent(rawHtml: string, hasFeaturedImage =
       return trimmed;
     }
 
+    // Jika blok berupa tag penutup saja, jangan dibungkus <p>
+    if (/^<\/(div|p|span|figure|figcaption|table|ul|ol|h[1-6]|section|article)>/i.test(trimmed)) {
+      return '';
+    }
+
     // Ubah newline tunggal di dalam paragraf menjadi <br />
     const withBr = trimmed.replace(/\n/g, '<br />');
     return `<p>${withBr}</p>`;
   }).filter(Boolean);
 
-  const finalBody = formattedBlocks.join('\n\n');
+  let finalBody = formattedBlocks.join('\n\n');
+  finalBody = finalBody.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '$1\n$2');
+  finalBody = finalBody.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+/gi, '$1\n');
+  finalBody = finalBody.replace(/(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '\n$1');
+  finalBody = finalBody.replace(/<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>/gi, '');
+  finalBody = finalBody.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
 
   return {
     body: finalBody,

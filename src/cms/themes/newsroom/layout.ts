@@ -1,8 +1,10 @@
 import type { ThemeContext } from '../types';
 import { newsroomCss } from './style';
 import { escapeHtml, formatDateIndo } from './utils';
+import { renderGlobalHeaderHtml } from '../../modules/theme-builder';
 
 export function _layout(this: any, content: string, title: string, ctx: ThemeContext, pageType: string = '') {
+  const globalHeader = renderGlobalHeaderHtml(ctx.site, ctx.menus);
   const siteTitle = escapeHtml(ctx.site?.site_title || ctx.site?.title || "CMSMu");
   const siteSlogan = escapeHtml(ctx.site?.site_desc || ctx.site?.site_tagline || "");
   const siteDesc = escapeHtml(ctx.site?.site_meta_desc || ctx.site?.site_desc || ctx.site?.site_tagline || ctx.site?.description || "CMSMu 1 Platform Untuk Keberkahan Bersama");
@@ -67,9 +69,30 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  ${globalHeader ? `
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      corePlugins: {
+        preflight: false,
+      },
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+  ` : ''}
   <style>${newsroomCss}</style>
 </head>
 <body>
+  ${globalHeader ? `
+    ${globalHeader.html}
+    ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ''}
+  ` : `
   <!-- Topbar: Live Date & Breaking News Ticker -->
   <aside class="nr-topbar">
     <div class="nr-container nr-topbar-inner">
@@ -166,6 +189,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       </div>
     </div>
   </div>
+  `}
 
   <!-- Content Body -->
   ${content}

@@ -150,8 +150,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     logoImage: "/logo-cmsmu.webp",
     logoHeight: "44px",
     logoLetter: "M",
-    siteTitle: "CMS",
-    siteTitleHighlight: "Mu",
+    siteTitle: "",
+    siteTitleHighlight: "",
     highlightColor: "#16a34a",
     menuItems: [
       { label: "Fitur Unggulan", url: "#fitur" },
@@ -184,8 +184,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     logoImage = "",
     logoHeight = "44px",
     logoLetter = "M",
-    siteTitle = "CMS",
-    siteTitleHighlight = "Mu",
+    siteTitle = "",
+    siteTitleHighlight = "",
     highlightColor = "#16a34a",
     menuItems = [],
     menuPosition = "justify-center",
@@ -277,10 +277,12 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
               )}
               {showText && (
                 <span className="font-extrabold text-xl tracking-tight leading-none" style={{ color: textColor || "#1e293b" }}>
-                  {siteTitle || "CMS"}
-                  <span className="ml-1" style={{ color: highlightColor || "#16a34a" }}>
-                    {siteTitleHighlight || "Mu"}
-                  </span>
+                  {siteTitle || ""}
+                  {siteTitleHighlight ? (
+                    <span className="ml-1" style={{ color: highlightColor || "#16a34a" }}>
+                      {siteTitleHighlight}
+                    </span>
+                  ) : null}
                 </span>
               )}
             </a>

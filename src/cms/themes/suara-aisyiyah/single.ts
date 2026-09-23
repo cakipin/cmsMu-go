@@ -73,8 +73,19 @@ export function renderSingle(this: any, ctx: ThemeContext) {
         const captionMatch = bodyHtml.match(/<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>(.*?)<\/p>/i) || bodyHtml.match(/<figcaption[^>]*>(.*?)<\/figcaption>/i);
         if (captionMatch) {
             captionText = captionMatch[1].replace(/<[^>]+>/g, '').trim();
+            bodyHtml = bodyHtml.replace(captionMatch[0], '');
         }
+    } else {
+        bodyHtml = bodyHtml.replace(/^\s*<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>[\s\S]*?<\/p>\s*/i, '');
     }
+
+    // Pembersihan ekstra tag <br> mandiri, tag <p> kosong, dan tag rusak di awal teks
+    bodyHtml = bodyHtml.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '$1\n$2');
+    bodyHtml = bodyHtml.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+/gi, '$1\n');
+    bodyHtml = bodyHtml.replace(/(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '\n$1');
+    bodyHtml = bodyHtml.replace(/<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>/gi, '');
+    bodyHtml = bodyHtml.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
+    bodyHtml = bodyHtml.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
     
     // AUTO-LINK KATEGORI DI DALAM TEKS (max 5, 1 per paragraf)
     const categoriesToLink = [
@@ -307,35 +318,37 @@ export function renderSingle(this: any, ctx: ThemeContext) {
     return this._layout(`
       <script type="application/ld+json">${jsonLdArticle}</script>
       <script type="application/ld+json">${jsonLdBreadcrumb}</script>
-      <main class="container" role="main">
+      <main class="container" role="main" style="padding-top: 24px; padding-bottom: 48px; margin-left: auto; margin-right: auto;">
         <article class="article-page" itemscope itemtype="https://schema.org/Article">
-          <nav class="breadcrumb" aria-label="Breadcrumb">
-            <ol>
-              <li><a href="${langPrefix || '/'}" aria-label="Beranda"><svg class="sa-style-111" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></a></li>
-              <li><a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}">${catName}</a></li>
-              <li aria-current="page">${escapeHtml(p.title)}</li>
+          <nav class="breadcrumb" aria-label="Breadcrumb" style="margin-bottom: 20px;">
+            <ol style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-text); padding: 0; margin: 0; list-style: none;">
+              <li><a href="${langPrefix || '/'}" aria-label="Beranda" style="display: inline-flex; align-items: center; color: var(--green);"><svg class="sa-style-111" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></a></li>
+              <li style="color: #cbd5e1;">&rsaquo;</li>
+              <li><a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}" style="color: var(--green); font-weight: 500;">${catName}</a></li>
+              <li style="color: #cbd5e1;">&rsaquo;</li>
+              <li aria-current="page" style="color: #64748b; font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.title)}</li>
             </ol>
           </nav>
           <header class="article-header">
-            <div class="sa-style-112">
-              <a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}" class="cat-tag sa-style-113" >${catName}</a>
+            <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; justify-content: flex-start;">
+              <a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}" class="cat-tag" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${catName}</a>
               ${p.is_premium === 1 ? '<span class="premium-badge sa-style-114" ><i class="fas fa-crown sa-style-115" ></i> Premium</span>' : ''}
             </div>
             <h1 itemprop="headline">${escapeHtml(p.title)}</h1>
             <div class="post-meta">
               <span class="author-meta" itemprop="author" itemscope itemtype="https://schema.org/Person">
-                <span itemprop="name">${escapeHtml(p.author || "Redaksi")}</span>
+                <span itemprop="name" style="font-weight: 600; color: #334155;">${escapeHtml(p.author || "Redaksi")}</span>
               </span>
-              <span class="meta-sep">&bull;</span>
-              <time datetime="${pubDateShort}" itemprop="datePublished">${date(p.created_at)}</time>
+              <span class="meta-sep" style="color: #94a3b8;">&bull;</span>
+              <time datetime="${pubDateShort}" itemprop="datePublished" style="color: #64748b;">${date(p.created_at)}</time>
               <meta itemprop="dateModified" content="${modDate}">
             </div>
           </header>
           ${p.featured_image ? `
-          <figure class="article-cover-wrap sa-style-116" itemprop="image" itemscope itemtype="https://schema.org/ImageObject" >
-            <img class="article-cover sa-style-117" src="${image(p)}" alt="${escapeHtml(p.title)}" loading="lazy" width="1200" height="630" itemprop="url" >
+          <figure class="article-cover-wrap" itemprop="image" itemscope itemtype="https://schema.org/ImageObject" style="margin: 0 0 32px 0;">
+            <img class="article-cover" src="${image(p)}" alt="${escapeHtml(p.title)}" loading="lazy" width="1200" height="630" itemprop="url" style="width: 100%; max-height: 520px; object-fit: cover; border-radius: 12px; display: block;">
             ${captionText ? `
-              <figcaption class="sa-style-118">
+              <figcaption class="sa-style-118" style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px; text-align: left; background: transparent; position: static; padding: 4px 0 0 0;">
                 ${captionText}
               </figcaption>
             ` : ''}
@@ -388,36 +401,36 @@ export function renderSingle(this: any, ctx: ThemeContext) {
           </footer>` : ''}
 
           ${p.allow_comments !== 0 ? `
-          <div class="comments-section sa-style-123" >
+          <div class="comments-section" style="margin-top: 48px; padding-top: 36px; border-top: 2px solid #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif;">
             
             <div id="comments-loading" class="sa-style-124">Memuat sistem komentar...</div>
             
-            <div id="comments-locked-ui" class="sa-style-125">
-              <h4 class="sa-style-126">Ikut Berdiskusi</h4>
-              <p class="sa-style-127">Anda harus memiliki akun dan login terlebih dahulu untuk dapat meninggalkan komentar.</p>
-              <a href="/admin/login" class="sa-style-128">Login Sekarang</a>
+            <div id="comments-locked-ui" class="sa-style-125" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; padding:28px 24px; border-radius:12px; text-align:center; margin-bottom: 28px;">
+              <h4 class="sa-style-126" style="margin:0 0 8px; font-size:18px; font-weight:700; color:#0f172a;">Ikut Berdiskusi</h4>
+              <p class="sa-style-127" style="margin:0 0 16px; font-size:14px; color:#64748b; line-height:1.6;">Anda harus memiliki akun dan login terlebih dahulu untuk dapat meninggalkan komentar.</p>
+              <a href="/admin/login" class="sa-style-128" style="display:inline-block; background:#0f172a; color:#fff; padding:10px 20px; border-radius:8px; font-weight:600; font-size:13.5px; text-decoration:none;">Login Sekarang</a>
             </div>
 
-            <div id="comments-form-ui" class="sa-style-129">
-                <h3 class="sa-style-130">Tinggalkan Komentar</h3>
-                <div class="sa-style-131">
+            <div id="comments-form-ui" class="sa-style-129" style="display:none; background:#f8fafc; border:1px solid #e2e8f0; padding:28px 24px; border-radius:12px; margin-bottom: 28px;">
+                <h3 class="sa-style-130" style="margin:0 0 12px; font-size:20px; font-weight:800; color:#0f172a;">Tinggalkan Komentar</h3>
+                <div class="sa-style-131" style="margin-bottom:18px; font-size:14px; color:#065f46; background:#d1fae5; padding:12px 16px; border-radius:8px; display:flex; align-items:center; gap:8px;">
                    <span>Selamat datang, <strong id="comment-user-name" class="sa-style-132">Pengguna</strong>! Silakan berdiskusi.</span>
                 </div>
                 <form id="comment-form" class="modern-comment-form">
                   <input type="hidden" id="comment-post-id" value="${p.id}">
-                  <div class="sa-style-133">
-                    <label class="sa-style-134">Tulis Komentar</label>
-                    <textarea id="comment-content" required rows="4" placeholder="Bagikan pendapat Anda tentang artikel ini..." class="sa-style-135"></textarea>
+                  <div class="sa-style-133" style="margin-bottom:16px;">
+                    <label class="sa-style-134" style="display:block; margin-bottom:6px; font-weight:600; font-size:13.5px; color:#334155;">Tulis Komentar</label>
+                    <textarea id="comment-content" required rows="4" placeholder="Bagikan pendapat Anda tentang artikel ini..." class="sa-style-135" style="width:100%; box-sizing:border-box; padding:12px 14px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; background:#fff; color:#0f172a; resize:vertical; outline:none;"></textarea>
                   </div>
-                  <button type="submit" id="comment-submit-btn" class="sa-style-136">Kirim Komentar</button>
-                  <div id="comment-status" class="sa-style-137"></div>
+                  <button type="submit" id="comment-submit-btn" class="sa-style-136" style="background:#059669; color:white; padding:12px 24px; border:none; border-radius:8px; font-weight:700; font-size:14px; cursor:pointer; display:inline-block;">Kirim Komentar</button>
+                  <div id="comment-status" class="sa-style-137" style="margin-top:10px; font-size:13.5px; font-weight:600;"></div>
                 </form>
             </div>
 
             <script>
             document.addEventListener('DOMContentLoaded', () => {
                 const getCookieToken = () => {
-                    const match = document.cookie.match(/(?:^|;\s*)labmu_token=([^;]+)/);
+                    const match = document.cookie.match(/(?:^|;\\s*)labmu_token=([^;]+)/);
                     if (match) return decodeURIComponent(match[1]);
                     try {
                         const local = localStorage.getItem('labmu_token');
@@ -528,7 +541,7 @@ export function renderSingle(this: any, ctx: ThemeContext) {
                         .then(data => {
                             const listEl = document.getElementById('comments-display-list');
                             if (!data || data.length === 0) {
-                                listEl.innerHTML = '<p class="sa-style-140">Belum ada komentar. Jadilah yang pertama berdiskusi!</p>';
+                                listEl.innerHTML = '<div class="comments-empty-state" style="text-align: center; padding: 28px 16px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; color: #64748b; font-size: 14px; margin-top: 12px;"><i class="far fa-comments" style="font-size: 24px; color: #94a3b8; display: block; margin-bottom: 8px;"></i>Belum ada komentar. Jadilah yang pertama berdiskusi!</div>';
                                 return;
                             }
                             
@@ -556,17 +569,17 @@ export function renderSingle(this: any, ctx: ThemeContext) {
                             listEl.innerHTML = html;
                         })
                         .catch(err => {
-                            document.getElementById('comments-display-list').innerHTML = '<p class="sa-style-150">Gagal memuat komentar.</p>';
+                            document.getElementById('comments-display-list').innerHTML = '<div style="color:#ef4444; font-size:14px; padding: 12px 0;">Gagal memuat komentar.</div>';
                         });
                 }
 
             });
             </script>
             
-            <div class="sa-style-89">
-                <h4 class="sa-style-151">Komentar Pembaca</h4>
+            <div style="margin-top: 24px;">
+                <h4 style="font-size:18px; font-weight:800; color:#0f172a; margin-bottom:16px;">Komentar Pembaca</h4>
                 <div id="comments-display-list">
-                    <div class="sa-style-152">Memuat komentar...</div>
+                    <div style="color:#64748b; font-size:14px; padding: 12px 0;">Memuat komentar...</div>
                 </div>
             </div>
             
@@ -574,24 +587,25 @@ export function renderSingle(this: any, ctx: ThemeContext) {
           ` : ''}
 
           ${(() => {
-            const bannerBox = ctx.site.sa_banner_html ? `
-              <div class="related-banner-slot sa-style-153">
-                ${ctx.site.sa_banner_html}
-              </div>
-            ` : (ctx.site.sa_banner_image ? `
-              <a href="${ctx.site.sa_banner_link || '#'}" class="related-banner-slot sa-style-154" style="background-image: url('${ctx.site.sa_banner_image}'); background-size: cover; background-position: center; border: none; padding: 0;" target="_blank"></a>
-            ` : `
-              <div class="related-banner-slot sa-style-87" style="display: flex; align-items: center; justify-content: center; min-height: 180px; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 8px; padding: 20px; text-align: center;">
-                <span class="sa-style-88" style="font-size: 13px; color: #94a3b8; font-weight: 500;">Ruang Iklan &mdash; Silahkan Hubungi Redaksi Suara 'Aisyiyah</span>
-              </div>
-            `);
+            let bannerBox = '';
+            if (ctx.site.sa_banner_html) {
+              bannerBox = `
+                <div class="related-banner-slot sa-style-153">
+                  ${ctx.site.sa_banner_html}
+                </div>
+              `;
+            } else if (ctx.site.sa_banner_image) {
+              bannerBox = `
+                <a href="${ctx.site.sa_banner_link || '#'}" class="related-banner-slot sa-style-154" style="background-image: url('${ctx.site.sa_banner_image}'); background-size: cover; background-position: center; border: none; padding: 0; display: block; min-height: 180px; border-radius: 8px;" target="_blank"></a>
+              `;
+            }
 
             if (!cx.relatedPosts || !cx.relatedPosts.length) {
-              return `
+              return bannerBox ? `
                 <div class="related-posts" style="margin-top: 36px;">
                   ${bannerBox}
                 </div>
-              `;
+              ` : '';
             }
 
             const relatedTitle = cx.lang === 'en' 
@@ -600,10 +614,10 @@ export function renderSingle(this: any, ctx: ThemeContext) {
             const langPrefix = cx.lang && cx.lang !== 'id' ? `/${cx.lang}` : '';
 
             return `
-              <div class="related-posts" style="margin-top: 36px;">
-                <h3>${relatedTitle}</h3>
-                <div class="card-grid related-grid">
-                  ${cx.relatedPosts.slice(0, 5).map((rp:any, i:number) => `
+              <div class="related-posts" style="margin-top: 48px; padding-top: 36px; border-top: 2px solid #f1f5f9;">
+                <h3 style="font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">${relatedTitle}</h3>
+                <div class="related-grid">
+                  ${cx.relatedPosts.slice(0, 4).map((rp:any, i:number) => `
                     <div class="grid-post">
                       <a href="${langPrefix}/${escapeHtml(rp.slug)}" class="post-img-wrap">
                         <img src="${image(rp, i)}" alt="${escapeHtml(rp.title)}" loading="lazy">
@@ -614,8 +628,8 @@ export function renderSingle(this: any, ctx: ThemeContext) {
                       </div>
                     </div>
                   `).join('')}
-                  ${bannerBox}
                 </div>
+                ${bannerBox ? `<div class="related-banner-container" style="margin-top: 24px;">${bannerBox}</div>` : ''}
               </div>
             `;
           })()}
