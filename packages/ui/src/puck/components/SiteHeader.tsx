@@ -262,7 +262,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
                   className="transition-transform group-hover:scale-105"
                 />
               )}
-              {(!showImg || logoType === "text") && (
+              {/* Fallback avatar letter jika mode text atau logo image kosong */}
+              {!showImg && (
                 <div
                   className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-sm flex-shrink-0"
                   style={{ backgroundColor: highlightColor || "#16a34a" }}

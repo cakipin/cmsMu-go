@@ -16,6 +16,7 @@
     "start": "astro dev",
     "build": "astro build",
     "build:all": "turbo run build",
+    "check:packages": "tsc --noEmit -p packages/db/tsconfig.json && tsc --noEmit -p packages/core/tsconfig.json && tsc --noEmit -p packages/ui/tsconfig.json && tsc --noEmit -p apps/cms-api/tsconfig.json && tsc --noEmit -p apps/web/tsconfig.json",
     "dev:all": "turbo run dev",
     "preview": "npm run build && wrangler pages dev dist",
     "sync": "astro sync",

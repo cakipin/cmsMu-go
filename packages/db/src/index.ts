@@ -7,3 +7,6 @@ export function getDb(d1: D1Database) {
 }
 
 export * from './schema';
+export * from './migration-runner';
+export * from './init';
+
