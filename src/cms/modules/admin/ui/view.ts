@@ -1,4 +1,4 @@
-import { pluginMenus } from '../../../registry/admin-menu';
+import { pluginMenus, renderPluginViews } from '../../../registry/admin-menu';
 
 // ... (Import blocks lainnya tetap sama) ...
 import { adminStyles } from './blocks/styles';
@@ -19,9 +19,6 @@ import { subscribersPage } from './blocks/subscribers.page';
 import { subscribersLogic } from './blocks/subscribers.logic';
 import { emagazinePage } from './blocks/emagazine.page';
 import { seoPage } from './blocks/seo.page';
-import { aggregatorView } from '../../../addons/aggregator/view';
-import { newsroomView } from '../../../addons/newsroom/view';
-import { otaView } from '../../../addons/ota/view';
 
 
 export function renderAdmin(data: any): string {
@@ -579,9 +576,7 @@ export function renderAdmin(data: any): string {
                                 ${ssoPage}
                                 ${commentsPage}
                                 ${seoPage}
-                                <template x-if="view === 'newsroom'">${newsroomView}</template>
-                                <template x-if="view === 'aggregator'">${aggregatorView}</template>
-                                <template x-if="view === 'ota'"><div class="exclusive-wrapper">${otaView}</div></template>
+                                ${renderPluginViews()}
                                 ${globalModals}
                             </div>
                         </main>

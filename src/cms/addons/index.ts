@@ -1,9 +1,12 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
-import { registerPluginMenu } from '../registry/admin-menu';
+import { registerPluginMenu, registerPluginView } from '../registry/admin-menu';
 import { aggregatorRouter } from './aggregator/router';
+import { aggregatorView } from './aggregator/view';
 import { newsroomRouter } from './newsroom/router';
+import { newsroomView } from './newsroom/view';
 import { otaRouter } from './ota/router';
+import { otaView } from './ota/view';
 
 export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
   // 1. Mount API Routes
@@ -11,7 +14,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
   app.route('/api/addons/newsroom', newsroomRouter);
   app.route('/api/addons/ota', otaRouter);
 
-  // 2. Register Admin Menus (Grup Plugins) dengan pluginId
+  // 2. Register Admin Menus & Views
   registerPluginMenu({
     group: 'Plugins',
     title: 'OTA Manager',
@@ -20,6 +23,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     role: ['admin'],
     pluginId: 'ota'
   });
+  registerPluginView('ota', otaView);
 
   registerPluginMenu({
     group: 'Plugins',
@@ -29,6 +33,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     role: ['admin', 'editor'],
     pluginId: 'newsroom'
   });
+  registerPluginView('newsroom', newsroomView);
 
   registerPluginMenu({
     group: 'Plugins',
@@ -38,6 +43,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     role: ['admin'],
     pluginId: 'aggregator'
   });
+  registerPluginView('aggregator', aggregatorView);
 
   console.log('🔌 Addons (OTA, Agregator, Newsroom) registered successfully');
 }

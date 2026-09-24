@@ -167,6 +167,11 @@ console.log('\n📄 Menyinkronkan berkas core:');
 for (const relFile of CORE_FILES) {
   const srcFull = path.join(CORE_DIR, relFile);
   const destFull = path.join(TARGET_DIR, relFile);
+  if (relFile === 'src/cms/index.ts' && fs.existsSync(destFull)) {
+    skippedCount++;
+    console.log(`  🛡️  MEMPERTAHANKAN RUTE KUSTOM KLIEN (TIDAK DITIMPA): ${relFile}`);
+    continue;
+  }
   if (fs.existsSync(srcFull) && !isProtected(relFile)) {
     copiedCount++;
     if (!isDryRun) {
@@ -183,39 +188,25 @@ for (const relFile of CORE_FILES) {
 const targetAddonsIndex = path.join(TARGET_DIR, 'src/cms/addons/index.ts');
 console.log('\n🔌 Menstandarkan registri addons (src/cms/addons/index.ts)...');
 
-const standardizedAddonsIndex = `import { Hono } from 'hono';
-import type { Bindings } from '../types';
-import { registerPluginMenu } from '../registry/admin-menu';
-import { aggregatorRouter } from './aggregator/router';
-import { newsroomRouter } from './newsroom/router';
-import { otaRouter } from './ota/router';
+const targetAddonsDir = path.join(TARGET_DIR, 'src/cms/addons');
+const hasOta = fs.existsSync(path.join(targetAddonsDir, 'ota')) || fs.existsSync(path.join(CORE_DIR, 'src/cms/addons/ota'));
+const hasAggregator = fs.existsSync(path.join(targetAddonsDir, 'aggregator'));
+const hasNewsroom = fs.existsSync(path.join(targetAddonsDir, 'newsroom'));
 
-export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
-  // 1. Mount API Routes
-  app.route('/api/addons/aggregator', aggregatorRouter);
-  app.route('/api/addons/newsroom', newsroomRouter);
-  app.route('/api/addons/ota', otaRouter);
+const imports = [
+  "import { Hono } from 'hono';",
+  "import type { Bindings } from '../types';",
+  "import { registerPluginMenu, registerPluginView } from '../registry/admin-menu';"
+];
+const routes = [];
+const menus = [];
+const registeredNames = [];
 
-  // 2. Register Admin Menus (Standar Grup: 'Plugins' dengan pluginId eksplisit)
-  registerPluginMenu({
-    group: 'Plugins',
-    title: 'OTA Manager',
-    view: 'ota',
-    icon: 'fas fa-cloud-upload-alt',
-    role: ['admin'],
-    pluginId: 'ota'
-  });
-
-  registerPluginMenu({
-    group: 'Plugins',
-    title: 'Meja Kurasi',
-    view: 'newsroom',
-    icon: 'fas fa-newspaper',
-    role: ['admin', 'editor'],
-    pluginId: 'newsroom'
-  });
-
-  registerPluginMenu({
+if (hasAggregator) {
+  imports.push("import { aggregatorRouter } from './aggregator/router';");
+  imports.push("import { aggregatorView } from './aggregator/view';");
+  routes.push("  app.route('/api/addons/aggregator', aggregatorRouter);");
+  menus.push(`  registerPluginMenu({
     group: 'Plugins',
     title: 'Sumber Agregator',
     view: 'aggregator',
@@ -223,18 +214,62 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     role: ['admin'],
     pluginId: 'aggregator'
   });
+  registerPluginView('aggregator', aggregatorView);`);
+  registeredNames.push('Agregator');
+}
 
-  console.log('🔌 Addons (OTA, Agregator, Newsroom) registered successfully');
+if (hasNewsroom) {
+  imports.push("import { newsroomRouter } from './newsroom/router';");
+  imports.push("import { newsroomView } from './newsroom/view';");
+  routes.push("  app.route('/api/addons/newsroom', newsroomRouter);");
+  menus.push(`  registerPluginMenu({
+    group: 'Plugins',
+    title: 'Meja Kurasi',
+    view: 'newsroom',
+    icon: 'fas fa-newspaper',
+    role: ['admin', 'editor'],
+    pluginId: 'newsroom'
+  });
+  registerPluginView('newsroom', newsroomView);`);
+  registeredNames.push('Newsroom');
+}
+
+if (hasOta) {
+  imports.push("import { otaRouter } from './ota/router';");
+  imports.push("import { otaView } from './ota/view';");
+  routes.push("  app.route('/api/addons/ota', otaRouter);");
+  menus.push(`  registerPluginMenu({
+    group: 'Plugins',
+    title: 'OTA Manager',
+    view: 'ota',
+    icon: 'fas fa-cloud-upload-alt',
+    role: ['admin'],
+    pluginId: 'ota'
+  });
+  registerPluginView('ota', otaView);`);
+  registeredNames.push('OTA');
+}
+
+const standardizedAddonsIndex = `${imports.join('\n')}
+
+export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
+  // 1. Mount API Routes
+${routes.join('\n')}
+
+  // 2. Register Admin Menus (Standar Grup: 'Plugins' dengan pluginId eksplisit)
+${menus.join('\n\n')}
+
+  console.log('🔌 Addons (${registeredNames.join(', ') || 'None'}) registered successfully');
 }
 `;
 
 if (!isDryRun) {
   if (fs.existsSync(path.dirname(targetAddonsIndex))) {
     fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
-    console.log('  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan group: Plugins dan pluginId valid.');
+    console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
   }
 } else {
-  console.log('  [DRY-RUN] Will standardize src/cms/addons/index.ts with valid group and pluginId.');
+  console.log(`  [DRY-RUN] Will standardize src/cms/addons/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
 }
 
 const duration = Date.now() - startTime;
