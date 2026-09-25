@@ -1018,6 +1018,33 @@ if (typeof window !== 'undefined') {
             }
         };
     };
+
+    // Safety net showToast (SOP 16 - Floating Toast In-System)
+    if (!window.showToast) {
+        window.showToast = function(msg, type) {
+            type = type || 'info';
+            let container = document.getElementById('cms-toast-container');
+            if (!container) {
+                container = document.createElement('div');
+                container.id = 'cms-toast-container';
+                container.className = 'fixed bottom-5 right-5 z-[9999] flex flex-col gap-2 pointer-events-none';
+                document.body.appendChild(container);
+            }
+            const toast = document.createElement('div');
+            const bgClass = type === 'success' ? 'bg-emerald-600 text-white' : (type === 'error' ? 'bg-rose-600 text-white' : (type === 'warning' ? 'bg-amber-600 text-white' : 'bg-slate-800 text-white'));
+            const iconClass = type === 'success' ? 'fa-check-circle' : (type === 'error' ? 'fa-exclamation-circle' : (type === 'warning' ? 'fa-exclamation-triangle' : 'fa-info-circle'));
+            toast.className = 'px-4 py-2.5 rounded-xl shadow-lg text-xs font-semibold flex items-center gap-2.5 pointer-events-auto transition-all transform translate-y-2 opacity-0 duration-200 ' + bgClass;
+            toast.innerHTML = '<i class="fas ' + iconClass + '"></i><span>' + msg + '</span>';
+            container.appendChild(toast);
+            requestAnimationFrame(function() {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+            setTimeout(function() {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 3500);
+        };
+    }
 }
 </script>
 `;
