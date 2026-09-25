@@ -3,8 +3,8 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = '0.1.1';
-export const CORE_BUILD_DATE = '2026-09-22';
+export const CORE_VERSION = '0.1.2';
+export const CORE_BUILD_DATE = '2026-09-25';
 export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
 export interface OtaManifest {
