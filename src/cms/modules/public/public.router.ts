@@ -63,11 +63,28 @@ async function renderHomePage(c: any, lang?: 'en' | 'ar') {
     const totalPages = Math.max(1, 1 + Math.ceil(remainingAfterHero / limit));
 
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);
-    const structuredData = {
+    let structuredData: Record<string, any> = {
       heroPosts: mapList(heroPosts),
       regularPosts: mapList(regularPostsRaw),
       latest: mapList([...heroPosts, ...regularPostsRaw]),
     };
+
+    // ─── THEME DATA HOOK ────────────────────────────────────────────────
+    // Core tidak tahu & tidak peduli data apa yang tema butuhkan.
+    // Jika tema aktif mengimplementasikan loadHomeData(), panggil dan merge.
+    // Tema yang tidak mengimplementasikannya tetap mendapat data generic di atas.
+    if (Renderer && typeof Renderer.loadHomeData === 'function') {
+      try {
+        const themeData = await Renderer.loadHomeData(c.env.DB, settings, structuredData);
+        if (themeData && typeof themeData === 'object') {
+          structuredData = { ...structuredData, ...themeData };
+        }
+      } catch (hookErr) {
+        console.error('[Core] theme.loadHomeData() hook error:', hookErr);
+        // Graceful fallback: lanjut dengan generic data, tidak crash
+      }
+    }
+    // ────────────────────────────────────────────────────────────────────
 
     if (lang === 'en' || lang === 'ar') {
       if (structuredData.heroPosts && structuredData.heroPosts.length > 0) {

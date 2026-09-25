@@ -26,6 +26,26 @@ export interface ThemeStructure {
   version: string;
   author: string;
 
+  /**
+   * Optional hook: tema menyediakan data homepage-nya sendiri secara mandiri.
+   * Core memanggil ini jika tema mengimplementasikannya, lalu merge hasilnya
+   * ke dalam structuredData sebelum dikirim ke renderHome().
+   *
+   * @param db       - D1Database raw. Tema bebas query apapun.
+   * @param settings - Seluruh settings dari tabel options + settings.
+   * @param generic  - Data generic yang sudah disiapkan Core
+   *                   (heroPosts, regularPosts, latest).
+   * @returns        - Plain object bebas key, sesuai kebutuhan tema.
+   *
+   * Tema yang tidak mengimplementasikan hook ini akan tetap mendapat
+   * data generic dari Core (heroPosts, regularPosts, latest).
+   */
+  loadHomeData?(
+    db: any,
+    settings: Record<string, any>,
+    generic: Record<string, any>
+  ): Promise<Record<string, any>>;
+
   renderHome(ctx: ThemeContext): string;
   renderSingle(ctx: ThemeContext): string;
   renderPage(ctx: ThemeContext): string;
