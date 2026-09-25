@@ -2,21 +2,24 @@
   "name": "CMSMu Core Framework",
   "version": "0.1.2",
   "buildDate": "2026-09-25",
+  "changelog": "Rilis v0.1.2: Fitur Dynamic Theme Data Hook (loadHomeData) untuk mendukung tema kustom apa pun tanpa hardcode, perbaikan query rubrik dinamis, dan standarisasi rilis OTA via GitHub cmsMu-go.",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
-  "changelog": "Rilis v0.1.2: Fitur Dynamic Theme Data Hook (loadHomeData) untuk mendukung tema kustom apa pun tanpa hardcode, perbaikan query rubrik dinamis, dan standarisasi rilis OTA via GitHub cmsMu-go.",
   "capabilities": [
     "headless-api",
     "puck-visual-editor",
     "auto-db-migration",
     "sso-muhammadiyah-auth",
     "ota-client-runtime",
+    "dynamic-home-hook",
     "theme-data-hooks"
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",
     "ota"
   ],
+  "updateUrl": "https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json",
+  "bundleUrl": "https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json",
   "repository": "https://github.com/cakipin/cmsMu-go",
   "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.2.zip"
 }
