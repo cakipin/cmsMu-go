@@ -442,6 +442,120 @@ otaRouter.post('/trigger-deploy', async (c) => {
     }
 });
 
+// 7g. GET /git-config - Status konfigurasi GitHub Actions Sync
+otaRouter.get('/git-config', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: true, data: { configured: false, repo: '' } });
+        const repoRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_repo' LIMIT 1").first();
+        const tokenRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_token' LIMIT 1").first();
+        
+        const repo = repoRow?.value ? repoRow.value.trim() : '';
+        const hasToken = !!(tokenRow?.value && tokenRow.value.trim());
+        const configured = !!(repo && hasToken);
+
+        return c.json({
+            success: true,
+            data: {
+                configured,
+                repo,
+                hasToken,
+                tokenMasked: hasToken ? 'ghp_••••••••••••••••' : ''
+            }
+        });
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 7h. POST /git-config - Simpan konfigurasi GitHub Repo & Token
+otaRouter.post('/git-config', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
+        const body = await c.req.json().catch(() => ({}));
+        const repo = (body.repo || '').trim();
+        const token = (body.token || '').trim();
+
+        await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
+        
+        if (repo) {
+            await db.prepare(`
+                INSERT INTO settings (key, value) VALUES ('ota_github_repo', ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            `).bind(repo).run();
+        }
+
+        if (token) {
+            await db.prepare(`
+                INSERT INTO settings (key, value) VALUES ('ota_github_token', ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            `).bind(token).run();
+        }
+
+        return c.json({
+            success: true,
+            message: 'Konfigurasi GitHub Sync berhasil disimpan!'
+        });
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 7i. POST /trigger-git-sync - Picu GitHub Actions Workflow via repository_dispatch API
+otaRouter.post('/trigger-git-sync', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
+        
+        const repoRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_repo' LIMIT 1").first();
+        const tokenRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_token' LIMIT 1").first();
+
+        const repo = repoRow?.value ? repoRow.value.trim() : '';
+        const token = tokenRow?.value ? tokenRow.value.trim() : '';
+
+        if (!repo || !token) {
+            return c.json({
+                success: false,
+                error: 'GitHub Repository dan Token belum dikonfigurasi. Masukkan informasi GitHub di panel pengaturan OTA.'
+            }, 400);
+        }
+
+        // Trigger GitHub Actions repository_dispatch event
+        const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Accept': 'application/vnd.github.v3+json',
+                'User-Agent': 'CMSMu-OTA-Sync/1.0',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                event_type: 'core-ota-update',
+                client_payload: {
+                    source: 'cmsMu-go',
+                    timestamp: new Date().toISOString()
+                }
+            })
+        });
+
+        if (res.status === 204 || res.ok) {
+            return c.json({
+                success: true,
+                message: 'Trigger Git Sync berhasil dikirim ke GitHub Actions! Workflow penarikan kode dari cmsMu-go sedang berjalan otomatis.'
+            });
+        } else {
+            const errData = await res.text().catch(() => '');
+            return c.json({
+                success: false,
+                error: `GitHub API menolak pemicuan (HTTP ${res.status}): ${errData || 'Pastikan token memiliki scope repo/workflow.'}`
+            }, 500);
+        }
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
 // 8. GET /status - Status engine OTA
 otaRouter.get('/status', async (c) => {
     const db = c.env?.DB;
