@@ -64,14 +64,9 @@ export const otaView = `
                 </div>
                 <div class="flex items-center gap-2 shrink-0">
                     <button @click="openApplyModal()" :disabled="isApplying"
-                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
-                        <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-database'"></i>
-                        <span>Migrasi DB</span>
-                    </button>
-                    <button @click="openPatchModal()"
-                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
-                        <i class="fas fa-code-branch"></i>
-                        <span>Terapkan Patch Kode</span>
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
+                        <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
+                        <span x-text="isApplying ? 'Memproses Pembaruan...' : 'Perbarui Sekarang'">Perbarui Sekarang</span>
                     </button>
                 </div>
             </div>
@@ -277,45 +272,6 @@ export const otaView = `
                     Dapatkan URL ini di Dashboard Cloudflare: <strong>Workers &amp; Pages &gt; [Project Anda] &gt; Settings &gt; Builds &amp; deployments &gt; Deploy hooks</strong>.
                 </p>
             </div>
-
-            <!-- GitHub Actions Sync Card (Git OTA Trigger) -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800 m-0">Konfigurasi GitHub Actions Sync (Git OTA Trigger)</h3>
-                        <p class="text-xs text-slate-500 m-0 mt-0.5">
-                            Memungkinkan pembaruan patch kode ditarik langsung dari repositori upstream <span class="font-mono text-teal-600 font-semibold">cmsMu-go</span> via GitHub Actions.
-                        </p>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 self-start sm:self-auto"
-                          :class="gitConfigForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'"
-                          x-text="gitConfigForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">GitHub Repository (owner/repo)</label>
-                        <input type="text" x-model="gitConfigForm.repo"
-                               placeholder="contoh: cakipin/suaraaisyiyah.id"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-teal-500 bg-slate-50/30 font-mono">
-                    </div>
-                    <div>
-                        <label class="block text-[11px] font-semibold text-slate-600 mb-1">GitHub Personal Access Token (PAT)</label>
-                        <input type="password" x-model="gitConfigForm.token"
-                               :placeholder="gitConfigForm.hasToken ? 'Tersimpan (ghp_••••••••••••••••)' : 'ghp_xxxxxxxxxxxxxxxxxxxx'"
-                               class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-teal-500 bg-slate-50/30 font-mono">
-                    </div>
-                </div>
-                <div class="flex items-center justify-between mt-3">
-                    <p class="m-0 text-[11px] text-slate-400">
-                        Token memerlukan scope: <strong>repo</strong> atau <strong>workflow</strong> untuk memicu workflow <code class="bg-slate-100 px-1 py-0.5 rounded text-slate-600">sync-core-ota.yml</code>.
-                    </p>
-                    <button @click="saveGitConfig()" :disabled="isSavingGitConfig"
-                            class="px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer border-0 shrink-0">
-                        <i class="fas" :class="isSavingGitConfig ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                        <span x-text="isSavingGitConfig ? 'Menyimpan...' : 'Simpan Konfigurasi Git'">Simpan Konfigurasi Git</span>
-                    </button>
-                </div>
-            </div>
         </div>
     </template>
 
@@ -412,147 +368,43 @@ export const otaView = `
          @keydown.escape.window="showApplyModal = false">
         <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
              @click.outside="showApplyModal = false">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-amber-50/50">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-teal-50/50">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center text-sm">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm">
                         <i class="fas fa-bolt"></i>
                     </div>
-                    <h3 class="text-sm font-bold text-slate-800 m-0">Terapkan Pembaruan CMSMu</h3>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 m-0">Terapkan Pembaruan CMSMu</h3>
+                        <span class="text-[11px] text-teal-700" x-text="'Target Versi: v' + (updateInfo?.latestVersion || '0.1.2')"></span>
+                    </div>
                 </div>
                 <button @click="showApplyModal = false" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-6 text-xs text-slate-600 leading-relaxed">
-                <p class="m-0 mb-3">Anda akan menerapkan pembaruan ke versi <strong class="text-slate-900 font-bold" x-text="'v' + (updateInfo?.latestVersion || '0.1.1')">v0.1.1</strong>.</p>
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 mb-3">
-                    <span class="font-semibold text-slate-700 block mb-1">Catatan Pembaruan:</span>
-                    <p class="m-0 text-[11px] text-slate-600 italic" x-text="updateInfo?.changelog || '-'"></p>
+            <div class="p-6 text-xs text-slate-600 leading-relaxed space-y-3">
+                <p class="m-0">Anda akan menerapkan pembaruan sistem ke versi <strong class="text-slate-900 font-bold" x-text="'v' + (updateInfo?.latestVersion || '0.1.2')">v0.1.2</strong>.</p>
+                <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/70 text-amber-900">
+                    <span class="font-bold block mb-1">Catatan Pembaruan (Changelog):</span>
+                    <p class="m-0 text-[11px] leading-relaxed italic" x-text="updateInfo?.changelog || '-'"></p>
                 </div>
-                <p class="m-0 text-[11px] text-slate-500">Sistem akan secara otomatis menyelaraskan migrasi skema database D1 Anda tanpa downtime.</p>
+                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+                    <span class="font-semibold text-slate-700 block mb-1">Aksi Pembaruan:</span>
+                    <ul class="m-0 pl-4 list-disc space-y-1 text-[11px] text-slate-600">
+                        <li>Penyelarasan otomatis migrasi skema database Cloudflare D1.</li>
+                        <li>Pemicuan Re-Deploy Cloudflare Pages untuk memperbarui patch kode aplikasi.</li>
+                    </ul>
+                </div>
+                <p class="m-0 text-[11px] text-slate-400">Proses pembaruan skema berjalan aman tanpa downtime.</p>
             </div>
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2.5">
                 <button @click="showApplyModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
                     Batal
                 </button>
                 <button @click="executeApplyUpdate()" :disabled="isApplying"
-                        class="px-5 py-2 rounded-xl text-xs font-semibold bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center gap-2 cursor-pointer border-0">
+                        class="px-5 py-2 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs flex items-center gap-2 cursor-pointer border-0">
                     <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-check'"></i>
                     <span x-text="isApplying ? 'Menerapkan...' : 'Ya, Perbarui Sekarang'">Ya, Perbarui Sekarang</span>
-                </button>
-            </div>
-        </div>
-    </div>
-
-    <!-- IN-SYSTEM MODAL: APPLY CODE PATCH (SOP 16 - Zero Native Browser Alert) -->
-    <div x-show="showPatchModal" style="display:none;" 
-         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
-         @keydown.escape.window="showPatchModal = false">
-        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
-             @click.outside="showPatchModal = false">
-            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-teal-50/50">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm">
-                        <i class="fas fa-code-branch"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800 m-0">Terapkan Patch Kode Core CMSMu</h3>
-                        <span class="text-[11px] text-teal-700" x-text="'Rilis Target: v' + (updateInfo?.latestVersion || '0.1.2')"></span>
-                    </div>
-                </div>
-                <button @click="showPatchModal = false" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6 text-xs text-slate-600 space-y-4">
-                <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/70 text-amber-900">
-                    <span class="font-bold block mb-1">Catatan Pembaruan (Changelog):</span>
-                    <p class="m-0 text-[11px] leading-relaxed" x-text="updateInfo?.changelog || '-'"></p>
-                </div>
-
-                <!-- OPSI 1: GitHub Actions Sync (Pemicu Git Upstream cmsMu-go) -->
-                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center gap-2">
-                            <span class="font-bold text-slate-800">Opsi 1: Pemicu Git via GitHub Actions</span>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-teal-100 text-teal-800 uppercase">Rekomendasi</span>
-                        </div>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                              :class="gitConfigForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'"
-                              x-text="gitConfigForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
-                    </div>
-                    <p class="m-0 text-[11px] text-slate-500 leading-relaxed">
-                        Memicu workflow <code class="bg-slate-200 px-1 py-0.5 rounded">sync-core-ota.yml</code> di GitHub untuk menarik patch terbaru dari repositori upstream <code class="bg-slate-200 px-1 py-0.5 rounded text-teal-700 font-semibold">cmsMu-go</code> ke cabang downstream dan otomatis deploy.
-                    </p>
-                    <template x-if="gitConfigForm.configured">
-                        <button @click="triggerGitSync()" :disabled="isTriggeringGitSync"
-                                class="w-full py-2.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-2">
-                            <i class="fas" :class="isTriggeringGitSync ? 'fa-spinner fa-spin' : 'fa-code-branch'"></i>
-                            <span x-text="isTriggeringGitSync ? 'Memicu GitHub Action...' : 'Picu Sinkronisasi Git Sekarang 🚀'">Picu Sinkronisasi Git Sekarang 🚀</span>
-                        </button>
-                    </template>
-                    <template x-if="!gitConfigForm.configured">
-                        <div class="mt-2 p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-[11px]">
-                            <p class="m-0">GitHub Token/Repo belum diisi di form konfigurasi bawah. Anda dapat mengatur GitHub PAT atau menggunakan Opsi 2 / Opsi 3 di bawah ini.</p>
-                        </div>
-                    </template>
-                </div>
-
-                <!-- OPSI 2: Deploy Hook Cloudflare (Satu-Klik) -->
-                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-800">Opsi 2: Otomatis via Cloudflare Deploy Hook</span>
-                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
-                              :class="deployHookForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'"
-                              x-text="deployHookForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
-                    </div>
-                    <p class="m-0 text-[11px] text-slate-500 leading-relaxed">
-                        Pemicu webhook ke Cloudflare Pages untuk me-rebuild website secara otomatis dari commit terbaru di branch target.
-                    </p>
-                    <template x-if="deployHookForm.configured">
-                        <button @click="triggerDeployHook()" :disabled="isTriggeringDeploy"
-                                class="w-full py-2.5 rounded-lg text-xs font-bold bg-slate-800 hover:bg-slate-900 text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-2">
-                            <i class="fas" :class="isTriggeringDeploy ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
-                            <span x-text="isTriggeringDeploy ? 'Mengirim Sinyal Deploy...' : 'Picu Re-Deploy Cloudflare Sekarang'">Picu Re-Deploy Cloudflare Sekarang</span>
-                        </button>
-                    </template>
-                    <template x-if="!deployHookForm.configured">
-                        <p class="m-0 text-[11px] text-slate-400">
-                            Deploy Hook belum diatur. Anda dapat mengonfigurasinya pada formulir di bagian bawah halaman ini.
-                        </p>
-                    </template>
-                </div>
-
-                <!-- OPSI 3: Git Command Upstream (Developer Manual) -->
-                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
-                    <div class="flex items-center justify-between">
-                        <span class="font-bold text-slate-800">Opsi 3: Terminal Git Manual (Developer)</span>
-                        <button @click="copyGitCommand()" class="text-teal-600 hover:text-teal-700 text-xs font-semibold border-0 bg-transparent cursor-pointer flex items-center gap-1">
-                            <i class="fas fa-copy"></i>
-                            <span>Salin Perintah</span>
-                        </button>
-                    </div>
-                    <p class="m-0 text-[11px] text-slate-500">
-                        Jalankan perintah ini di root repositori downstream Anda:
-                    </p>
-                    <div class="p-2.5 bg-slate-900 text-slate-100 rounded-lg font-mono text-[11px] flex items-center justify-between overflow-x-auto">
-                        <span>git remote add upstream https://github.com/cakipin/cmsMu-go.git 2>/dev/null || true; git fetch upstream main && git merge upstream/main -m "chore: sync core from cmsMu-go"</span>
-                    </div>
-                </div>
-
-                <!-- OPSI 3: Unduh Berkas ZIP Rilis -->
-                <div class="flex items-center justify-between text-[11px] pt-1 text-slate-500">
-                    <span>Repositori Upstream:</span>
-                    <a :href="updateInfo?.manifest?.repository || 'https://github.com/cakipin/cmsMu-go'" target="_blank"
-                       class="text-teal-600 font-semibold hover:underline flex items-center gap-1">
-                        <span>Lihat Rilis di GitHub</span>
-                        <i class="fas fa-external-link-alt text-[10px]"></i>
-                    </a>
-                </div>
-            </div>
-            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
-                <button @click="showPatchModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
-                    Tutup
                 </button>
             </div>
         </div>
@@ -569,22 +421,12 @@ if (typeof window !== 'undefined') {
             showPushModal: false,
             showApplyModal: false,
             showManualModal: false,
-            showPatchModal: false,
             isTriggeringDeploy: false,
             isSavingHook: false,
             deployHookForm: {
                 url: '',
                 configured: false,
                 masked: ''
-            },
-            isTriggeringGitSync: false,
-            isSavingGitConfig: false,
-            gitConfigForm: {
-                repo: '',
-                token: '',
-                configured: false,
-                hasToken: false,
-                tokenMasked: ''
             },
             autoUpdateEnabled: true,
             isTogglingAutoUpdate: false,
@@ -608,7 +450,6 @@ if (typeof window !== 'undefined') {
                 await this.loadConfig();
                 await this.loadStatus(false);
                 await this.loadDeployHook();
-                await this.loadGitConfig();
                 if (this.isHub) {
                     await this.loadReleases();
                 } else {
@@ -935,85 +776,6 @@ if (typeof window !== 'undefined') {
                     if (window.showToast) window.showToast('Error: ' + e.message, 'error');
                 } finally {
                     this.isTriggeringDeploy = false;
-                }
-            },
-
-            async loadGitConfig() {
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/git-config', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json.data) {
-                            this.gitConfigForm.configured = !!json.data.configured;
-                            this.gitConfigForm.repo = json.data.repo || '';
-                            this.gitConfigForm.hasToken = !!json.data.hasToken;
-                            this.gitConfigForm.tokenMasked = json.data.tokenMasked || '';
-                        }
-                    }
-                } catch(e) {}
-            },
-
-            async saveGitConfig() {
-                if (!this.gitConfigForm.repo || !this.gitConfigForm.repo.trim()) {
-                    if (window.showToast) window.showToast('GitHub Repository wajib diisi (misal: owner/repo)!', 'warning');
-                    return;
-                }
-
-                this.isSavingGitConfig = true;
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/git-config', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({
-                            repo: this.gitConfigForm.repo,
-                            token: this.gitConfigForm.token
-                        })
-                    });
-
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (window.showToast) window.showToast(json.message || 'Konfigurasi Git berhasil disimpan!', 'success');
-                        this.gitConfigForm.token = '';
-                        await this.loadGitConfig();
-                    } else {
-                        const err = await res.json().catch(function() { return {}; });
-                        if (window.showToast) window.showToast(err.error || 'Gagal menyimpan konfigurasi Git', 'error');
-                    }
-                } catch(e) {
-                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
-                } finally {
-                    this.isSavingGitConfig = false;
-                }
-            },
-
-            async triggerGitSync() {
-                this.isTriggeringGitSync = true;
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/trigger-git-sync', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (window.showToast) window.showToast(json.message || 'Pemicu Git Sync berhasil dikirim ke GitHub Actions!', 'success');
-                        this.showPatchModal = false;
-                    } else {
-                        const err = await res.json().catch(function() { return {}; });
-                        if (window.showToast) window.showToast(err.error || 'Gagal memicu Git Sync', 'error');
-                    }
-                } catch(e) {
-                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
-                } finally {
-                    this.isTriggeringGitSync = false;
                 }
             }
         };
