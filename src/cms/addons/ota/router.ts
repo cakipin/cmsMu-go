@@ -297,21 +297,49 @@ otaRouter.post('/webhook-notify', async (c) => {
     }
 });
 
-// 7. POST /apply-update - Terapkan migrasi database otomatis atau pembaruan manual
+// 7. POST /apply-update - Terapkan migrasi database otomatis dan picu pembaruan kode
 otaRouter.post('/apply-update', async (c) => {
     try {
         const db = c.env?.DB;
         const body = await c.req.json().catch(() => ({}));
         const isManual = !!body.manual || !!body.force;
+        
+        // 1. Jalankan auto-migration skema database D1
         const migrationResult = await runAutoMigration(db);
 
-        const msg = isManual
-            ? (migrationResult.appliedCount > 0 
-                ? `Pembaruan manual selesai: ${migrationResult.appliedCount} migrasi D1 berhasil diterapkan!` 
-                : 'Pembaruan manual selesai: Skema database D1 sudah dalam kondisi mutakhir dan tersinkron.')
-            : (migrationResult.appliedCount > 0
-                ? `Berhasil menerapkan ${migrationResult.appliedCount} migrasi database D1!`
-                : 'Skema database CMSMu sudah dalam kondisi mutakhir.');
+        // 2. Picu pembaruan kode via Cloudflare Pages Deploy Hook jika tersedia
+        let deployTriggered = false;
+        let deployMessage = '';
+        if (db) {
+            try {
+                const hookRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
+                const hookUrl = hookRow?.value ? hookRow.value.trim() : '';
+                if (hookUrl) {
+                    const hookRes = await fetch(hookUrl, { method: 'POST' });
+                    if (hookRes.ok) {
+                        deployTriggered = true;
+                        deployMessage = 'Proses deploy patch kode terbaru di Cloudflare Pages sedang berjalan di latar belakang.';
+                    } else {
+                        deployMessage = `Peringatan: Deploy Hook merespons status HTTP ${hookRes.status}.`;
+                    }
+                }
+            } catch (hookErr: any) {
+                deployMessage = `Peringatan Deploy Hook: ${hookErr.message}`;
+            }
+        }
+
+        let msg = '';
+        if (migrationResult.appliedCount > 0) {
+            msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1!`;
+        } else {
+            msg = 'Skema database D1 sudah dalam kondisi mutakhir.';
+        }
+
+        if (deployTriggered) {
+            msg += ' Sinyal Deploy Hook berhasil dikirim: pembaruan kode aplikasi sedang dibangun otomatis di Cloudflare!';
+        } else if (deployMessage) {
+            msg += ` (${deployMessage})`;
+        }
 
         return c.json({
             success: true,
@@ -321,6 +349,7 @@ otaRouter.post('/apply-update', async (c) => {
                 schemaVersion: migrationResult.currentVersion,
                 appliedCount: migrationResult.appliedCount,
                 history: migrationResult.history,
+                deployTriggered,
                 isManual
             }
         });
@@ -435,120 +464,6 @@ otaRouter.post('/trigger-deploy', async (c) => {
             return c.json({
                 success: false,
                 error: `Deploy Hook gagal merespons (HTTP ${res.status}). Pastikan URL Deploy Hook Cloudflare Anda valid.`
-            }, 500);
-        }
-    } catch (e: any) {
-        return c.json({ success: false, error: e.message }, 500);
-    }
-});
-
-// 7g. GET /git-config - Status konfigurasi GitHub Actions Sync
-otaRouter.get('/git-config', async (c) => {
-    try {
-        const db = c.env?.DB;
-        if (!db) return c.json({ success: true, data: { configured: false, repo: '' } });
-        const repoRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_repo' LIMIT 1").first();
-        const tokenRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_token' LIMIT 1").first();
-        
-        const repo = repoRow?.value ? repoRow.value.trim() : '';
-        const hasToken = !!(tokenRow?.value && tokenRow.value.trim());
-        const configured = !!(repo && hasToken);
-
-        return c.json({
-            success: true,
-            data: {
-                configured,
-                repo,
-                hasToken,
-                tokenMasked: hasToken ? 'ghp_••••••••••••••••' : ''
-            }
-        });
-    } catch (e: any) {
-        return c.json({ success: false, error: e.message }, 500);
-    }
-});
-
-// 7h. POST /git-config - Simpan konfigurasi GitHub Repo & Token
-otaRouter.post('/git-config', async (c) => {
-    try {
-        const db = c.env?.DB;
-        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
-        const body = await c.req.json().catch(() => ({}));
-        const repo = (body.repo || '').trim();
-        const token = (body.token || '').trim();
-
-        await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
-        
-        if (repo) {
-            await db.prepare(`
-                INSERT INTO settings (key, value) VALUES ('ota_github_repo', ?)
-                ON CONFLICT(key) DO UPDATE SET value = excluded.value
-            `).bind(repo).run();
-        }
-
-        if (token) {
-            await db.prepare(`
-                INSERT INTO settings (key, value) VALUES ('ota_github_token', ?)
-                ON CONFLICT(key) DO UPDATE SET value = excluded.value
-            `).bind(token).run();
-        }
-
-        return c.json({
-            success: true,
-            message: 'Konfigurasi GitHub Sync berhasil disimpan!'
-        });
-    } catch (e: any) {
-        return c.json({ success: false, error: e.message }, 500);
-    }
-});
-
-// 7i. POST /trigger-git-sync - Picu GitHub Actions Workflow via repository_dispatch API
-otaRouter.post('/trigger-git-sync', async (c) => {
-    try {
-        const db = c.env?.DB;
-        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
-        
-        const repoRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_repo' LIMIT 1").first();
-        const tokenRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_github_token' LIMIT 1").first();
-
-        const repo = repoRow?.value ? repoRow.value.trim() : '';
-        const token = tokenRow?.value ? tokenRow.value.trim() : '';
-
-        if (!repo || !token) {
-            return c.json({
-                success: false,
-                error: 'GitHub Repository dan Token belum dikonfigurasi. Masukkan informasi GitHub di panel pengaturan OTA.'
-            }, 400);
-        }
-
-        // Trigger GitHub Actions repository_dispatch event
-        const res = await fetch(`https://api.github.com/repos/${repo}/dispatches`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Accept': 'application/vnd.github.v3+json',
-                'User-Agent': 'CMSMu-OTA-Sync/1.0',
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                event_type: 'core-ota-update',
-                client_payload: {
-                    source: 'cmsMu-go',
-                    timestamp: new Date().toISOString()
-                }
-            })
-        });
-
-        if (res.status === 204 || res.ok) {
-            return c.json({
-                success: true,
-                message: 'Trigger Git Sync berhasil dikirim ke GitHub Actions! Workflow penarikan kode dari cmsMu-go sedang berjalan otomatis.'
-            });
-        } else {
-            const errData = await res.text().catch(() => '');
-            return c.json({
-                success: false,
-                error: `GitHub API menolak pemicuan (HTTP ${res.status}): ${errData || 'Pastikan token memiliki scope repo/workflow.'}`
             }, 500);
         }
     } catch (e: any) {
