@@ -89,12 +89,12 @@ export const otaView = `
         </div>
     </template>
 
-    <!-- Status Metric Cards -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+    <!-- Status Metric Cards (3 Kolom Simetris) -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Versi Core Framework</span>
             <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '0.1.1')">v0.1.1</span>
+                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '0.1.2')">v0.1.2</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Aktif</span>
             </div>
         </div>
@@ -102,16 +102,8 @@ export const otaView = `
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block" x-text="isHub ? 'Versi Manifest Publik' : 'Versi Server Pusat'">Versi Manifest Publik</span>
             <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-teal-600" x-text="'v' + (isHub ? statusData.activeManifestVersion : (updateInfo?.latestVersion || statusData.currentCoreVersion))">v0.1.1</span>
+                <span class="text-2xl font-black text-teal-600" x-text="'v' + (isHub ? statusData.activeManifestVersion : (updateInfo?.latestVersion || statusData.currentCoreVersion || '0.1.2'))">v0.1.2</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="isHub ? 'bg-teal-50 text-teal-700' : (hasUpdate ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700')" x-text="isHub ? 'Online' : (hasUpdate ? 'Pembaruan Siap' : 'Mutakhir')">Online</span>
-            </div>
-        </div>
-
-        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
-            <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Peran Operasional</span>
-            <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-slate-800" x-text="isHub ? 'Hub Pusat' : 'Klien Pengguna'">Hub Pusat</span>
-                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700" x-text="isHub ? 'Distributor' : 'Downstream'">Publik</span>
             </div>
         </div>
 
@@ -700,6 +692,21 @@ if (typeof window !== 'undefined') {
                         if (window.showToast) {
                             window.showToast(json.message || 'Pembaruan sistem berhasil diterapkan!', 'success');
                         }
+
+                        // Laporkan keberhasilan update ke Hub
+                        fetch('https://cms.labmu.dev/api/addons/ota/clients/report-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                client_url: window.location.origin,
+                                site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
+                                installed_version: (json.data && json.data.coreVersion) || '0.1.2',
+                                target_version: (json.data && json.data.coreVersion) || '0.1.2',
+                                rollout_status: 'updated',
+                                error_reason: null
+                            })
+                        }).catch(function() {});
+
                         await this.loadStatus(false);
                         await this.checkUpdates(false);
                     } else {
@@ -707,9 +714,34 @@ if (typeof window !== 'undefined') {
                         if (window.showToast) {
                             window.showToast(err.error || 'Gagal menerapkan pembaruan.', 'error');
                         }
+                        // Laporkan kegagalan update ke Hub
+                        fetch('https://cms.labmu.dev/api/addons/ota/clients/report-status', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                client_url: window.location.origin,
+                                site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
+                                installed_version: this.statusData.currentCoreVersion || '0.1.1',
+                                target_version: this.statusData.activeManifestVersion || '0.1.2',
+                                rollout_status: 'failed',
+                                error_reason: err.error || 'Gagal menerapkan pembaruan server'
+                            })
+                        }).catch(function() {});
                     }
                 } catch (e) {
                     if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                    fetch('https://cms.labmu.dev/api/addons/ota/clients/report-status', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            client_url: window.location.origin,
+                            site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
+                            installed_version: this.statusData.currentCoreVersion || '0.1.1',
+                            target_version: this.statusData.activeManifestVersion || '0.1.2',
+                            rollout_status: 'failed',
+                            error_reason: e.message || 'Eksekusi pembaruan klien terputus'
+                        })
+                    }).catch(function() {});
                 } finally {
                     this.isApplying = false;
                 }
