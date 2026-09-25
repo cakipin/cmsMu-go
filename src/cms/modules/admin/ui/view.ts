@@ -591,7 +591,7 @@ export function renderAdmin(data: any): string {
                                 <p class="text-xs font-medium text-slate-500 flex items-center gap-1">
                                     Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Cloud Native'"></span>
                                     <span class="mx-1 opacity-50">|</span> 
-                                    <span class="font-bold">v.0.1.1</span>
+                                    <span class="font-bold" x-text="systemVersion">v0.1.2</span>
                                 </p>
                             </div>
                         </footer>

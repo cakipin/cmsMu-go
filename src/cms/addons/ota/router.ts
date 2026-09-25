@@ -35,7 +35,17 @@ otaRouter.get('/check-update', async (c) => {
     try {
         const db = c.env?.DB;
         const migrationInfo = await getMigrationStatus(db);
-        const clientVersion = c.req.query('client_version') || CORE_VERSION;
+
+        let currentInstalledVersion = CORE_VERSION;
+        if (db) {
+            try {
+                const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
+                if (verRow && verRow.value && verRow.value.trim()) {
+                    currentInstalledVersion = verRow.value.trim();
+                }
+            } catch (_) {}
+        }
+        const clientVersion = c.req.query('client_version') || currentInstalledVersion;
         
         const url = new URL(c.req.url);
         const baseUrl = `${url.protocol}//${url.host}`;
@@ -86,7 +96,7 @@ otaRouter.get('/check-update', async (c) => {
         return c.json({
             success: true,
             data: {
-                coreVersion: CORE_VERSION,
+                coreVersion: currentInstalledVersion,
                 latestVersion,
                 clientVersion,
                 channel,
@@ -307,49 +317,41 @@ otaRouter.post('/apply-update', async (c) => {
         // 1. Jalankan auto-migration skema database D1
         const migrationResult = await runAutoMigration(db);
 
-        // 2. Picu pembaruan kode via Cloudflare Pages Deploy Hook jika tersedia
-        let deployTriggered = false;
-        let deployMessage = '';
-        if (db) {
-            try {
-                const hookRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
-                const hookUrl = hookRow?.value ? hookRow.value.trim() : '';
-                if (hookUrl) {
-                    const hookRes = await fetch(hookUrl, { method: 'POST' });
-                    if (hookRes.ok) {
-                        deployTriggered = true;
-                        deployMessage = 'Proses deploy patch kode terbaru di Cloudflare Pages sedang berjalan di latar belakang.';
-                    } else {
-                        deployMessage = `Peringatan: Deploy Hook merespons status HTTP ${hookRes.status}.`;
-                    }
-                }
-            } catch (hookErr: any) {
-                deployMessage = `Peringatan Deploy Hook: ${hookErr.message}`;
+        // 2. Dapatkan target versi rilis dari upstream
+        let targetVersion = CORE_VERSION;
+        try {
+            const upstream = await otaAddonService.checkUpstreamUpdate(CORE_VERSION);
+            if (upstream && upstream.upstreamVersion) {
+                targetVersion = upstream.upstreamVersion;
             }
+        } catch (_) {}
+
+        // 3. Simpan versi terpasang baru ke database settings
+        if (db && targetVersion) {
+            try {
+                await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
+                await db.prepare(`
+                    INSERT INTO settings (key, value) VALUES ('installed_core_version', ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                `).bind(targetVersion).run();
+            } catch (_) {}
         }
 
         let msg = '';
         if (migrationResult.appliedCount > 0) {
-            msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1!`;
+            msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1 dan memperbarui core ke v${targetVersion}!`;
         } else {
-            msg = 'Skema database D1 sudah dalam kondisi mutakhir.';
-        }
-
-        if (deployTriggered) {
-            msg += ' Sinyal Deploy Hook berhasil dikirim: pembaruan kode aplikasi sedang dibangun otomatis di Cloudflare!';
-        } else if (deployMessage) {
-            msg += ` (${deployMessage})`;
+            msg = `Sistem berhasil diselaraskan dan diperbarui ke versi v${targetVersion}!`;
         }
 
         return c.json({
             success: true,
             message: msg,
             data: {
-                coreVersion: CORE_VERSION,
+                coreVersion: targetVersion,
                 schemaVersion: migrationResult.currentVersion,
                 appliedCount: migrationResult.appliedCount,
                 history: migrationResult.history,
-                deployTriggered,
                 isManual
             }
         });
@@ -480,13 +482,23 @@ otaRouter.get('/status', async (c) => {
     const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
     const isHub = isHubMode(url.host);
 
+    let currentCoreVersion = CORE_VERSION;
+    if (db) {
+        try {
+            const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
+            if (verRow && verRow.value && verRow.value.trim()) {
+                currentCoreVersion = verRow.value.trim();
+            }
+        } catch (_) {}
+    }
+
     return c.json({
         success: true,
         data: {
             engine: 'CMSMu Over-The-Air Update Engine (Plugin Addon)',
             role: isHub ? 'hub' : 'client',
             isHub,
-            currentCoreVersion: CORE_VERSION,
+            currentCoreVersion,
             activeManifestVersion: manifest.version,
             buildDate: CORE_BUILD_DATE,
             databaseIntegrity: {

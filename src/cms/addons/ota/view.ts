@@ -222,55 +222,6 @@ export const otaView = `
                                   :class="autoUpdateEnabled ? 'translate-x-5' : 'translate-x-0'"></span>
                         </button>
                     </div>
-                </div>
-            </div>
-
-            <!-- Client Connection Info Card -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6 mb-6">
-                <h3 class="text-sm font-bold text-slate-800 m-0 mb-4">Informasi Sambungan Pusat CMSMu</h3>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-                    <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-100">
-                        <span class="text-slate-400 block mb-1">Pusat Rilis Resmi (GitHub):</span>
-                        <a href="https://github.com/cakipin/cmsMu-go" target="_blank" class="font-mono text-teal-600 hover:underline flex items-center gap-1">
-                            <span>github.com/cakipin/cmsMu-go</span>
-                            <i class="fas fa-external-link-alt text-[10px]"></i>
-                        </a>
-                    </div>
-                    <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-100">
-                        <span class="text-slate-400 block mb-1">Upstream Manifest Endpoint:</span>
-                        <a href="https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json" target="_blank" class="font-mono text-teal-600 hover:underline truncate block">
-                            ota-manifest.json (GitHub CDN)
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Cloudflare Deploy Hook Card (Code Patch Trigger) -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
-                    <div>
-                        <h3 class="text-sm font-bold text-slate-800 m-0">Konfigurasi Cloudflare Pages Deploy Hook</h3>
-                        <p class="text-xs text-slate-500 m-0 mt-0.5">
-                            Memungkinkan pembaruan patch kode dan deployment Cloudflare Pages otomatis secara langsung dari tombol admin.
-                        </p>
-                    </div>
-                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 self-start sm:self-auto"
-                          :class="deployHookForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'"
-                          x-text="deployHookForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
-                </div>
-                <div class="flex flex-col sm:flex-row gap-2.5 mt-3">
-                    <input type="url" x-model="deployHookForm.url"
-                           :placeholder="deployHookForm.configured ? ('Tersimpan: ' + deployHookForm.masked) : 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/...'"
-                           class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-teal-500 bg-slate-50/30 font-mono">
-                    <button @click="saveDeployHook()" :disabled="isSavingHook"
-                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer border-0 shrink-0">
-                        <i class="fas" :class="isSavingHook ? 'fa-spinner fa-spin' : 'fa-save'"></i>
-                        <span x-text="isSavingHook ? 'Menyimpan...' : 'Simpan Hook'">Simpan Hook</span>
-                    </button>
-                </div>
-                <p class="m-0 text-[11px] text-slate-400 mt-2">
-                    Dapatkan URL ini di Dashboard Cloudflare: <strong>Workers &amp; Pages &gt; [Project Anda] &gt; Settings &gt; Builds &amp; deployments &gt; Deploy hooks</strong>.
-                </p>
             </div>
         </div>
     </template>
@@ -392,7 +343,7 @@ export const otaView = `
                     <span class="font-semibold text-slate-700 block mb-1">Aksi Pembaruan:</span>
                     <ul class="m-0 pl-4 list-disc space-y-1 text-[11px] text-slate-600">
                         <li>Penyelarasan otomatis migrasi skema database Cloudflare D1.</li>
-                        <li>Pemicuan Re-Deploy Cloudflare Pages untuk memperbarui patch kode aplikasi.</li>
+                        <li>Penyegaran status rilis core engine dan sinkronisasi manifest resmi.</li>
                     </ul>
                 </div>
                 <p class="m-0 text-[11px] text-slate-400">Proses pembaruan skema berjalan aman tanpa downtime.</p>
@@ -421,13 +372,6 @@ if (typeof window !== 'undefined') {
             showPushModal: false,
             showApplyModal: false,
             showManualModal: false,
-            isTriggeringDeploy: false,
-            isSavingHook: false,
-            deployHookForm: {
-                url: '',
-                configured: false,
-                masked: ''
-            },
             autoUpdateEnabled: true,
             isTogglingAutoUpdate: false,
             isHub: false,
@@ -449,7 +393,6 @@ if (typeof window !== 'undefined') {
                 await this.detectMode();
                 await this.loadConfig();
                 await this.loadStatus(false);
-                await this.loadDeployHook();
                 if (this.isHub) {
                     await this.loadReleases();
                 } else {
@@ -688,94 +631,6 @@ if (typeof window !== 'undefined') {
                     if (window.showToast) window.showToast('Error: ' + e.message, 'error');
                 } finally {
                     this.isApplying = false;
-                }
-            },
-
-            openPatchModal() {
-                this.showPatchModal = true;
-            },
-
-            copyGitCommand() {
-                const cmd = 'git fetch upstream && git merge upstream/main';
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(cmd).then(() => {
-                        if (window.showToast) window.showToast('Perintah Git berhasil disalin ke clipboard!', 'success');
-                    }).catch(() => {
-                        if (window.showToast) window.showToast('Silakan salin manual: ' + cmd, 'info');
-                    });
-                } else {
-                    if (window.showToast) window.showToast('Silakan salin manual: ' + cmd, 'info');
-                }
-            },
-
-            async loadDeployHook() {
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/deploy-hook', {
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        this.deployHookForm.configured = !!json.data?.configured;
-                        this.deployHookForm.masked = json.data?.masked || '';
-                    }
-                } catch(e) {}
-            },
-
-            async saveDeployHook() {
-                if (!this.deployHookForm.url || !this.deployHookForm.url.trim()) {
-                    if (window.showToast) window.showToast('URL Deploy Hook tidak boleh kosong!', 'warning');
-                    return;
-                }
-
-                this.isSavingHook = true;
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/deploy-hook', {
-                        method: 'POST',
-                        headers: {
-                            'Authorization': 'Bearer ' + token,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify({ deploy_hook_url: this.deployHookForm.url })
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        this.deployHookForm.configured = !!json.data?.configured;
-                        this.deployHookForm.url = '';
-                        if (window.showToast) window.showToast(json.message || 'Deploy hook berhasil disimpan!', 'success');
-                        await this.loadDeployHook();
-                    } else {
-                        const err = await res.json().catch(function() { return {}; });
-                        if (window.showToast) window.showToast(err.error || 'Gagal menyimpan hook', 'error');
-                    }
-                } catch(e) {
-                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
-                } finally {
-                    this.isSavingHook = false;
-                }
-            },
-
-            async triggerDeployHook() {
-                this.isTriggeringDeploy = true;
-                try {
-                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
-                    const res = await fetch('/api/addons/ota/trigger-deploy', {
-                        method: 'POST',
-                        headers: { 'Authorization': 'Bearer ' + token }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (window.showToast) window.showToast(json.message || 'Sinyal deploy berhasil dikirim!', 'success');
-                        this.showPatchModal = false;
-                    } else {
-                        const err = await res.json().catch(function() { return {}; });
-                        if (window.showToast) window.showToast(err.error || 'Gagal memicu deploy hook', 'error');
-                    }
-                } catch(e) {
-                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
-                } finally {
-                    this.isTriggeringDeploy = false;
                 }
             }
         };
