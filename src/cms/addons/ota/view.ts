@@ -42,6 +42,7 @@ export const otaView = `
     </div>
 
     <!-- CLIENT MODE BANNER: UPDATE AVAILABLE -->
+    <!-- CLIENT MODE BANNER: UPDATE AVAILABLE -->
     <template x-if="!isHub && hasUpdate">
         <div class="p-5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 shadow-xs mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -51,18 +52,28 @@ export const otaView = `
                     </div>
                     <div>
                         <div class="flex items-center gap-2">
-                            <h3 class="text-base font-bold text-amber-950 m-0">Pembaruan CMSMu Tersedia!</h3>
-                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-900 uppercase" x-text="'v' + (updateInfo?.latestVersion || '0.1.1')">v0.1.1</span>
+                            <h3 class="text-base font-bold text-amber-950 m-0">Pembaruan Core CMSMu Tersedia!</h3>
+                            <span class="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-amber-200 text-amber-900 uppercase" x-text="'v' + (updateInfo?.latestVersion || '0.1.2')">v0.1.2</span>
                         </div>
                         <p class="text-xs text-amber-800 m-0 mt-1 max-w-xl leading-relaxed" x-text="updateInfo?.changelog || 'Pembaruan core engine dan peningkatan stabilitas CMSMu.'"></p>
-                        <p class="text-[11px] text-amber-700/80 m-0 mt-1">Versi Anda saat ini: <strong x-text="'v' + (statusData.currentCoreVersion || '0.1.0')">v0.1.0</strong> • Sumber: <span class="font-mono">cms.labmu.dev</span></p>
+                        <p class="text-[11px] text-amber-700/80 m-0 mt-1">
+                            Versi terpasang saat ini: <strong x-text="'v' + (statusData.currentCoreVersion || '0.1.1')">v0.1.1</strong> • 
+                            Pusat rilis: <span class="font-mono font-semibold" x-text="updateInfo?.source === 'github' ? 'GitHub (cakipin/cmsMu-go)' : 'Hub (cms.labmu.dev)'">GitHub (cakipin/cmsMu-go)</span>
+                        </p>
                     </div>
                 </div>
-                <button @click="openApplyModal()" :disabled="isApplying"
-                        class="px-5 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm transition-all flex items-center gap-2 cursor-pointer border-0 shrink-0">
-                    <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-bolt'"></i>
-                    <span>Perbarui Sekarang</span>
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <button @click="openApplyModal()" :disabled="isApplying"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
+                        <i class="fas" :class="isApplying ? 'fa-spinner fa-spin' : 'fa-database'"></i>
+                        <span>Migrasi DB</span>
+                    </button>
+                    <button @click="openPatchModal()"
+                            class="px-4 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
+                        <i class="fas fa-code-branch"></i>
+                        <span>Terapkan Patch Kode</span>
+                    </button>
+                </div>
             </div>
         </div>
     </template>
@@ -220,18 +231,51 @@ export const otaView = `
             </div>
 
             <!-- Client Connection Info Card -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6 mb-6">
                 <h3 class="text-sm font-bold text-slate-800 m-0 mb-4">Informasi Sambungan Pusat CMSMu</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
                     <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-100">
-                        <span class="text-slate-400 block mb-1">Alamat Upstream Manifest:</span>
-                        <a href="https://cms.labmu.dev/api/addons/ota/manifest" target="_blank" class="font-mono text-teal-600 hover:underline">https://cms.labmu.dev/api/addons/ota/manifest</a>
+                        <span class="text-slate-400 block mb-1">Pusat Rilis Resmi (GitHub):</span>
+                        <a href="https://github.com/cakipin/cmsMu-go" target="_blank" class="font-mono text-teal-600 hover:underline flex items-center gap-1">
+                            <span>github.com/cakipin/cmsMu-go</span>
+                            <i class="fas fa-external-link-alt text-[10px]"></i>
+                        </a>
                     </div>
                     <div class="p-3.5 rounded-lg bg-slate-50 border border-slate-100">
-                        <span class="text-slate-400 block mb-1">Webhook Listener Lokal:</span>
-                        <span class="font-mono text-slate-700">/api/ota/webhook-notify</span>
+                        <span class="text-slate-400 block mb-1">Upstream Manifest Endpoint:</span>
+                        <a href="https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json" target="_blank" class="font-mono text-teal-600 hover:underline truncate block">
+                            ota-manifest.json (GitHub CDN)
+                        </a>
                     </div>
                 </div>
+            </div>
+
+            <!-- Cloudflare Deploy Hook Card (Code Patch Trigger) -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 m-0">Konfigurasi Cloudflare Pages Deploy Hook</h3>
+                        <p class="text-xs text-slate-500 m-0 mt-0.5">
+                            Memungkinkan pembaruan patch kode dan deployment Cloudflare Pages otomatis secara langsung dari tombol admin.
+                        </p>
+                    </div>
+                    <span class="px-2.5 py-1 rounded-full text-[10px] font-bold shrink-0 self-start sm:self-auto"
+                          :class="deployHookForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-800'"
+                          x-text="deployHookForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
+                </div>
+                <div class="flex flex-col sm:flex-row gap-2.5 mt-3">
+                    <input type="url" x-model="deployHookForm.url"
+                           :placeholder="deployHookForm.configured ? ('Tersimpan: ' + deployHookForm.masked) : 'https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/...'"
+                           class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs focus:outline-teal-500 bg-slate-50/30 font-mono">
+                    <button @click="saveDeployHook()" :disabled="isSavingHook"
+                            class="px-5 py-2.5 rounded-xl text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer border-0 shrink-0">
+                        <i class="fas" :class="isSavingHook ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                        <span x-text="isSavingHook ? 'Menyimpan...' : 'Simpan Hook'">Simpan Hook</span>
+                    </button>
+                </div>
+                <p class="m-0 text-[11px] text-slate-400 mt-2">
+                    Dapatkan URL ini di Dashboard Cloudflare: <strong>Workers &amp; Pages &gt; [Project Anda] &gt; Settings &gt; Builds &amp; deployments &gt; Deploy hooks</strong>.
+                </p>
             </div>
         </div>
     </template>
@@ -360,6 +404,89 @@ export const otaView = `
             </div>
         </div>
     </div>
+
+    <!-- IN-SYSTEM MODAL: APPLY CODE PATCH (SOP 16 - Zero Native Browser Alert) -->
+    <div x-show="showPatchModal" style="display:none;" 
+         class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
+         @keydown.escape.window="showPatchModal = false">
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
+             @click.outside="showPatchModal = false">
+            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-teal-50/50">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center text-sm">
+                        <i class="fas fa-code-branch"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm font-bold text-slate-800 m-0">Terapkan Patch Kode Core CMSMu</h3>
+                        <span class="text-[11px] text-teal-700" x-text="'Rilis Target: v' + (updateInfo?.latestVersion || '0.1.2')"></span>
+                    </div>
+                </div>
+                <button @click="showPatchModal = false" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6 text-xs text-slate-600 space-y-4">
+                <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/70 text-amber-900">
+                    <span class="font-bold block mb-1">Catatan Pembaruan (Changelog):</span>
+                    <p class="m-0 text-[11px] leading-relaxed" x-text="updateInfo?.changelog || '-'"></p>
+                </div>
+
+                <!-- OPSI 1: Deploy Hook Cloudflare (Satu-Klik) -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <div class="flex items-center justify-between">
+                        <span class="font-bold text-slate-800">Opsi 1: Otomatis via Cloudflare Deploy Hook</span>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold"
+                              :class="deployHookForm.configured ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'"
+                              x-text="deployHookForm.configured ? 'Terkonfigurasi' : 'Belum Diatur'"></span>
+                    </div>
+                    <p class="m-0 text-[11px] text-slate-500 leading-relaxed">
+                        Pemicu webhook ke Cloudflare Pages untuk menarik kode upstream dan me-rebuild website secara otomatis.
+                    </p>
+                    <template x-if="deployHookForm.configured">
+                        <button @click="triggerDeployHook()" :disabled="isTriggeringDeploy"
+                                class="w-full py-2.5 rounded-lg text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs flex items-center justify-center gap-2 cursor-pointer border-0 mt-2">
+                            <i class="fas" :class="isTriggeringDeploy ? 'fa-spinner fa-spin' : 'fa-cloud-upload-alt'"></i>
+                            <span x-text="isTriggeringDeploy ? 'Mengirim Sinyal Deploy...' : 'Picu Re-Deploy Cloudflare Sekarang'">Picu Re-Deploy Cloudflare Sekarang</span>
+                        </button>
+                    </template>
+                    <template x-if="!deployHookForm.configured">
+                        <p class="m-0 text-[11px] text-amber-600">
+                            Deploy Hook belum diatur. Anda dapat mengonfigurasinya pada formulir di bagian bawah halaman ini.
+                        </p>
+                    </template>
+                </div>
+
+                <!-- OPSI 2: Git Command Upstream -->
+                <div class="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2">
+                    <span class="font-bold text-slate-800 block">Opsi 2: Sinkronisasi Git Upstream (Developer)</span>
+                    <p class="m-0 text-[11px] text-slate-500">
+                        Jalankan perintah ini di direktori proyek downstream Anda di terminal:
+                    </p>
+                    <div class="p-2.5 bg-slate-900 text-slate-100 rounded-lg font-mono text-[11px] flex items-center justify-between">
+                        <span>git fetch upstream && git merge upstream/main</span>
+                        <button @click="copyGitCommand()" class="text-teal-400 hover:text-teal-300 border-0 bg-transparent cursor-pointer ml-2">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- OPSI 3: Unduh Berkas ZIP Rilis -->
+                <div class="flex items-center justify-between text-[11px] pt-1 text-slate-500">
+                    <span>Repositori Upstream:</span>
+                    <a :href="updateInfo?.manifest?.repository || 'https://github.com/cakipin/cmsMu-go'" target="_blank"
+                       class="text-teal-600 font-semibold hover:underline flex items-center gap-1">
+                        <span>Lihat Rilis di GitHub</span>
+                        <i class="fas fa-external-link-alt text-[10px]"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                <button @click="showPatchModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
@@ -372,27 +499,36 @@ if (typeof window !== 'undefined') {
             showPushModal: false,
             showApplyModal: false,
             showManualModal: false,
+            showPatchModal: false,
+            isTriggeringDeploy: false,
+            isSavingHook: false,
+            deployHookForm: {
+                url: '',
+                configured: false,
+                masked: ''
+            },
             autoUpdateEnabled: true,
             isTogglingAutoUpdate: false,
             isHub: false,
             hasUpdate: false,
             updateInfo: null,
             statusData: {
-                currentCoreVersion: '0.1.1',
-                activeManifestVersion: '0.1.1',
+                currentCoreVersion: '0.1.2',
+                activeManifestVersion: '0.1.2',
                 databaseIntegrity: { appliedMigrations: 3, totalMigrations: 3, status: 'synced' }
             },
             releases: [],
             pushForm: {
-                version: '0.1.1',
+                version: '0.1.2',
                 channel: 'stable',
-                changelog: 'Rilis pembaruan OTA Engine Addon CMSMu v0.1.1.'
+                changelog: 'Rilis pembaruan OTA Engine Addon CMSMu v0.1.2.'
             },
 
             async init() {
                 await this.detectMode();
                 await this.loadConfig();
                 await this.loadStatus(false);
+                await this.loadDeployHook();
                 if (this.isHub) {
                     await this.loadReleases();
                 } else {
@@ -631,6 +767,94 @@ if (typeof window !== 'undefined') {
                     if (window.showToast) window.showToast('Error: ' + e.message, 'error');
                 } finally {
                     this.isApplying = false;
+                }
+            },
+
+            openPatchModal() {
+                this.showPatchModal = true;
+            },
+
+            copyGitCommand() {
+                const cmd = 'git fetch upstream && git merge upstream/main';
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(cmd).then(() => {
+                        if (window.showToast) window.showToast('Perintah Git berhasil disalin ke clipboard!', 'success');
+                    }).catch(() => {
+                        if (window.showToast) window.showToast('Silakan salin manual: ' + cmd, 'info');
+                    });
+                } else {
+                    if (window.showToast) window.showToast('Silakan salin manual: ' + cmd, 'info');
+                }
+            },
+
+            async loadDeployHook() {
+                try {
+                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                    const res = await fetch('/api/addons/ota/deploy-hook', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.deployHookForm.configured = !!json.data?.configured;
+                        this.deployHookForm.masked = json.data?.masked || '';
+                    }
+                } catch(e) {}
+            },
+
+            async saveDeployHook() {
+                if (!this.deployHookForm.url || !this.deployHookForm.url.trim()) {
+                    if (window.showToast) window.showToast('URL Deploy Hook tidak boleh kosong!', 'warning');
+                    return;
+                }
+
+                this.isSavingHook = true;
+                try {
+                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                    const res = await fetch('/api/addons/ota/deploy-hook', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ deploy_hook_url: this.deployHookForm.url })
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.deployHookForm.configured = !!json.data?.configured;
+                        this.deployHookForm.url = '';
+                        if (window.showToast) window.showToast(json.message || 'Deploy hook berhasil disimpan!', 'success');
+                        await this.loadDeployHook();
+                    } else {
+                        const err = await res.json().catch(function() { return {}; });
+                        if (window.showToast) window.showToast(err.error || 'Gagal menyimpan hook', 'error');
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                } finally {
+                    this.isSavingHook = false;
+                }
+            },
+
+            async triggerDeployHook() {
+                this.isTriggeringDeploy = true;
+                try {
+                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                    const res = await fetch('/api/addons/ota/trigger-deploy', {
+                        method: 'POST',
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (window.showToast) window.showToast(json.message || 'Sinyal deploy berhasil dikirim!', 'success');
+                        this.showPatchModal = false;
+                    } else {
+                        const err = await res.json().catch(function() { return {}; });
+                        if (window.showToast) window.showToast(err.error || 'Gagal memicu deploy hook', 'error');
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                } finally {
+                    this.isTriggeringDeploy = false;
                 }
             }
         };
