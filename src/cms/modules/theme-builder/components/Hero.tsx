@@ -23,7 +23,7 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
     title: "Satu Fondasi CMS Terpadu untuk Website & Media Muhammadiyah",
     titleHighlight: "Muhammadiyah",
     titleColor: "text-slate-900",
-    description: "CMSMu hadir sebagai Content Management System modern, tangguh, dan fleksibel untuk membangun website resmi pimpinan persyarikatan, majelis, lembaga, dan amal usaha Muhammadiyah secara mudah dan terstruktur.",
+    description: "Platform Content Management System modern, tangguh, dan fleksibel untuk membangun website resmi pimpinan persyarikatan, majelis, lembaga, dan amal usaha Muhammadiyah secara mudah dan terstruktur.",
     descriptionColor: "text-slate-600",
     primaryButtonText: "Jelajahi Fitur",
     primaryButtonLink: "#fitur",

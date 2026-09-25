@@ -2,7 +2,7 @@
   "name": "CMSMu Core Framework",
   "version": "0.1.2",
   "buildDate": "2026-09-25",
-  "changelog": "Rilis pembaruan OTA Engine & Hook loadHomeData v0.1.2 dari cmsMu-go",
+  "changelog": "Rilis v0.1.2: Fitur Dynamic Theme Data Hook (loadHomeData) untuk mendukung tema kustom apa pun tanpa hardcode, perbaikan query rubrik dinamis, dan standarisasi rilis OTA via GitHub cmsMu-go.",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
   "capabilities": [
@@ -11,7 +11,8 @@
     "auto-db-migration",
     "sso-muhammadiyah-auth",
     "ota-client-runtime",
-    "dynamic-home-hook"
+    "dynamic-home-hook",
+    "theme-data-hooks"
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",

@@ -44,7 +44,7 @@ export function renderAdmin(data: any): string {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>CMSMu Redaksi Dashboard</title>
+            <title>Portal Redaksi Dashboard</title>
             <link rel="icon" id="admin-favicon" href="/favicon.svg">
             <script>
                 window.updateFavicon = function(url) {
@@ -586,10 +586,10 @@ export function renderAdmin(data: any): string {
                         <footer class="sticky bottom-0 z-40 w-full py-4 px-4 md:px-6 2xl:px-8 border-t border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                                 <p class="text-xs font-medium text-slate-500 text-center sm:text-left">
-                                    &copy; <span x-text="new Date().getFullYear()"></span> CMSMu Cloud Native. All rights reserved.
+                                    &copy; <span x-text="new Date().getFullYear()"></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'"></span>. All rights reserved.
                                 </p>
                                 <p class="text-xs font-medium text-slate-500 flex items-center gap-1">
-                                    Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> by CmsMu
+                                    Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Cloud Native'"></span>
                                     <span class="mx-1 opacity-50">|</span> 
                                     <span class="font-bold" x-text="systemVersion">v0.1.2</span>
                                 </p>
