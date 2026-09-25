@@ -10,6 +10,18 @@
     "esModuleInterop": true,
     "declaration": true,
     "declarationMap": true,
-    "isolatedModules": true
+    "isolatedModules": true,
+    "ignoreDeprecations": "6.0",
+    "baseUrl": ".",
+    "paths": {
+      "@cmsmu/db": ["packages/db/src/index.ts"],
+      "@cmsmu/db/*": ["packages/db/src/*"],
+      "@cmsmu/core": ["packages/core/src/index.ts"],
+      "@cmsmu/core/*": ["packages/core/src/*"],
+      "@cmsmu/ui": ["packages/ui/src/index.ts"],
+      "@cmsmu/ui/*": ["packages/ui/src/*"],
+      "@cmsmu/cms-api": ["apps/cms-api/src/index.ts"],
+      "@cmsmu/cms-api/*": ["apps/cms-api/src/*"]
+    }
   }
 }

@@ -71,7 +71,7 @@ app.onError((err, c) => {
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
   const method = c.req.method;
-  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) ||
+  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) || path === '/api/health' ||
     ((method === 'GET' || method === 'HEAD') && (path.startsWith('/api/media') || path.startsWith('/api/posts') || path.startsWith('/api/pages') || path.startsWith('/api/contents') || path.startsWith('/api/comments') || path === '/api/settings'));
 
   if (isWhitelisted) return await next();
@@ -80,6 +80,20 @@ app.use('/api/*', async (c, next) => {
 
 // 3. ROUTES DEFINITION
 registerAddons(app);
+
+// Health Check Endpoints
+app.get('/health', (c) => c.json({
+  status: 'ok',
+  service: 'cmsMu Core Engine',
+  engine: 'Hono on Cloudflare Workers / Astro SSR',
+  time: new Date().toISOString()
+}));
+app.get('/api/health', (c) => c.json({
+  status: 'ok',
+  service: 'cmsMu Core Engine',
+  engine: 'Hono on Cloudflare Workers / Astro SSR',
+  time: new Date().toISOString()
+}));
 
 // Admin & Sys
 app.get('/admin', (c) => c.html(renderAdmin({ view: 'dash' }))); 

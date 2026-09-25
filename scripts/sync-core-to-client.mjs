@@ -1,11 +1,12 @@
 #!/usr/bin/env node
 /**
  * 🔄 Sync Core CMSMu to Downstream Client Repository
- * SOP 19 Compliant: Zero-Touch Client Themes & Custom Scrapers
+ * SOP 19 & SOP 20 Compliant: Zero-Touch Core Engine & Zero-Touch Client Themes
  * 
  * Penggunaan:
- *   node scripts/sync-core-to-client.mjs <target-client-dir>
+ *   node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run]
  * Contoh:
+ *   node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom --dry-run
  *   node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom
  */
 
@@ -17,27 +18,58 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const CORE_DIR = path.resolve(__dirname, '..');
 
-const targetArg = process.argv[2];
+// 1. ARGUMENT PARSING & FLAGS
+const args = process.argv.slice(2);
+const isDryRun = args.includes('--dry-run') || args.includes('-d');
+const isVerbose = args.includes('--verbose') || args.includes('-v');
+const targetArg = args.find(arg => !arg.startsWith('--') && !arg.startsWith('-'));
+
 if (!targetArg) {
-  console.error('❌ Harap tentukan direktori target klien!');
-  console.error('Contoh: node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom');
+  console.log('====================================================');
+  console.log('📘 PANDUAN PENGGUNAAN ORKESTRATOR SINKRONISASI CORE');
+  console.log('====================================================');
+  console.log('Perintah: node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run]\n');
+  console.log('Opsi:');
+  console.log('  --dry-run, -d  Simulasi sinkronisasi tanpa mengubah berkas fisik di disk');
+  console.log('  --verbose, -v  Menampilkan detail setiap berkas yang diperiksa\n');
+  console.log('Contoh:');
+  console.log('  node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom --dry-run');
+  console.log('  node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom');
   process.exit(1);
 }
 
 const TARGET_DIR = path.resolve(process.cwd(), targetArg);
 
+// 2. PRE-FLIGHT SAFETY CHECKS
 if (!fs.existsSync(TARGET_DIR)) {
   console.error(`❌ Direktori target tidak ditemukan: ${TARGET_DIR}`);
   process.exit(1);
 }
 
+if (TARGET_DIR === CORE_DIR) {
+  console.error('❌ Error: Target klien tidak boleh sama dengan direktori Core CMSMu!');
+  process.exit(1);
+}
+
+const targetPackageJson = path.join(TARGET_DIR, 'package.json');
+if (!fs.existsSync(targetPackageJson)) {
+  console.warn('⚠️  Peringatan: Direktori target tidak memiliki package.json. Pastikan path benar.');
+}
+
+const startTime = Date.now();
+let copiedCount = 0;
+let skippedCount = 0;
+
 console.log('====================================================');
-console.log('🚀 MEMULAI AUTO PUSH / SYNC CORE CMSMU KE KLIEN');
+console.log(`🚀 MEMULAI AUTO PUSH / SYNC CORE CMSMU KE KLIEN ${isDryRun ? '🔍 [DRY-RUN]' : ''}`);
 console.log(`📦 Sumber Core:   ${CORE_DIR}`);
 console.log(`🎯 Target Klien:  ${TARGET_DIR}`);
+if (isDryRun) {
+  console.log('ℹ️  MODE SIMULASI: Tidak ada berkas fisik yang akan dimodifikasi di disk.');
+}
 console.log('====================================================\n');
 
-// 1. DAFTAR DIREKTORI CORE YANG WAJIB DISINKRONKAN (KATEGORI A)
+// 3. DAFTAR DIREKTORI CORE YANG WAJIB DISINKRONKAN (KATEGORI A)
 const CORE_DIRS = [
   'src/cms/modules',
   'src/cms/db',
@@ -46,7 +78,7 @@ const CORE_DIRS = [
   'src/cms/storage'
 ];
 
-// 2. DAFTAR FILE CORE SPESIFIK
+// 4. DAFTAR FILE CORE SPESIFIK
 const CORE_FILES = [
   'src/cms/types.ts',
   'src/cms/index.ts',
@@ -54,7 +86,7 @@ const CORE_FILES = [
   'src/pages/theme-editor.astro'
 ];
 
-// 3. DAFTAR WILAYAH TERPROTEKSI MUTLAK (KATEGORI B - ZERO-TOUCH)
+// 5. DAFTAR WILAYAH TERPROTEKSI MUTLAK (SOP 19 & SOP 20 ZERO-TOUCH CLIENT)
 const PROTECTED_PREFIXES = [
   'src/cms/themes',
   'src/cms/addons/newsroom',
@@ -62,7 +94,8 @@ const PROTECTED_PREFIXES = [
   'wrangler.jsonc',
   'wrangler.toml',
   '.env',
-  '.wrangler'
+  '.wrangler',
+  'public'
 ];
 
 function isProtected(relPath) {
@@ -72,7 +105,9 @@ function isProtected(relPath) {
 
 function copyDirRecursive(srcDir, destDir, relBase = '') {
   if (!fs.existsSync(srcDir)) return;
-  fs.mkdirSync(destDir, { recursive: true });
+  if (!isDryRun) {
+    fs.mkdirSync(destDir, { recursive: true });
+  }
 
   const entries = fs.readdirSync(srcDir, { withFileTypes: true });
   for (const entry of entries) {
@@ -82,7 +117,10 @@ function copyDirRecursive(srcDir, destDir, relBase = '') {
 
     if (entry.name === '.DS_Store' || isProtected(itemRel)) {
       if (entry.name !== '.DS_Store') {
-        console.log(`🛡️  MELEWATI (TERPROTEKSI): ${itemRel}`);
+        skippedCount++;
+        if (isVerbose || isProtected(itemRel)) {
+          console.log(`  🛡️  MELEWATI (TERPROTEKSI SOP 19/20): ${itemRel}`);
+        }
       }
       continue;
     }
@@ -90,13 +128,18 @@ function copyDirRecursive(srcDir, destDir, relBase = '') {
     if (entry.isDirectory()) {
       copyDirRecursive(srcPath, destPath, itemRel);
     } else {
-      fs.copyFileSync(srcPath, destPath);
-      console.log(`  ✓ Sync: ${itemRel}`);
+      copiedCount++;
+      if (!isDryRun) {
+        fs.copyFileSync(srcPath, destPath);
+        console.log(`  ✓ Sync: ${itemRel}`);
+      } else {
+        console.log(`  [DRY-RUN] Will sync: ${itemRel}`);
+      }
     }
   }
 }
 
-// EKSEKUSI SINKRONISASI DIREKTORI KATEGORI A
+// 6. EKSEKUSI SINKRONISASI DIREKTORI KATEGORI A
 for (const relDir of CORE_DIRS) {
   const srcFull = path.join(CORE_DIR, relDir);
   const destFull = path.join(TARGET_DIR, relDir);
@@ -104,55 +147,66 @@ for (const relDir of CORE_DIRS) {
   copyDirRecursive(srcFull, destFull, relDir);
 }
 
-// EKSEKUSI SINKRONISASI BERKAS SPESIFIK KATEGORI A
+// 7. SINKRONISASI MONOREPO PACKAGES (JIKA TARGET MENGADOPSI PACKAGES)
+const targetPackagesDir = path.join(TARGET_DIR, 'packages');
+if (fs.existsSync(targetPackagesDir)) {
+  const MONOREPO_PACKAGES = ['packages/db', 'packages/core', 'packages/ui'];
+  console.log('\n📦 Terdeteksi arsitektur monorepo pada target, menyinkronkan packages:');
+  for (const pkg of MONOREPO_PACKAGES) {
+    const srcPkg = path.join(CORE_DIR, pkg);
+    const destPkg = path.join(TARGET_DIR, pkg);
+    if (fs.existsSync(srcPkg)) {
+      console.log(`  📂 Package: ${pkg}`);
+      copyDirRecursive(srcPkg, destPkg, pkg);
+    }
+  }
+}
+
+// 8. EKSEKUSI SINKRONISASI BERKAS SPESIFIK KATEGORI A
 console.log('\n📄 Menyinkronkan berkas core:');
 for (const relFile of CORE_FILES) {
   const srcFull = path.join(CORE_DIR, relFile);
   const destFull = path.join(TARGET_DIR, relFile);
+  if (relFile === 'src/cms/index.ts' && fs.existsSync(destFull)) {
+    skippedCount++;
+    console.log(`  🛡️  MEMPERTAHANKAN RUTE KUSTOM KLIEN (TIDAK DITIMPA): ${relFile}`);
+    continue;
+  }
   if (fs.existsSync(srcFull) && !isProtected(relFile)) {
-    fs.mkdirSync(path.dirname(destFull), { recursive: true });
-    fs.copyFileSync(srcFull, destFull);
-    console.log(`  ✓ Sync berkas: ${relFile}`);
+    copiedCount++;
+    if (!isDryRun) {
+      fs.mkdirSync(path.dirname(destFull), { recursive: true });
+      fs.copyFileSync(srcFull, destFull);
+      console.log(`  ✓ Sync berkas: ${relFile}`);
+    } else {
+      console.log(`  [DRY-RUN] Will sync berkas: ${relFile}`);
+    }
   }
 }
 
-// 4. STANDARISASI REGISTRY ADDONS (src/cms/addons/index.ts)
+// 9. STANDARISASI REGISTRY ADDONS (src/cms/addons/index.ts)
 const targetAddonsIndex = path.join(TARGET_DIR, 'src/cms/addons/index.ts');
 console.log('\n🔌 Menstandarkan registri addons (src/cms/addons/index.ts)...');
 
-const standardizedAddonsIndex = `import { Hono } from 'hono';
-import type { Bindings } from '../types';
-import { registerPluginMenu } from '../registry/admin-menu';
-import { aggregatorRouter } from './aggregator/router';
-import { newsroomRouter } from './newsroom/router';
-import { otaRouter } from './ota/router';
+const targetAddonsDir = path.join(TARGET_DIR, 'src/cms/addons');
+const hasOta = fs.existsSync(path.join(targetAddonsDir, 'ota')) || fs.existsSync(path.join(CORE_DIR, 'src/cms/addons/ota'));
+const hasAggregator = fs.existsSync(path.join(targetAddonsDir, 'aggregator'));
+const hasNewsroom = fs.existsSync(path.join(targetAddonsDir, 'newsroom'));
 
-export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
-  // 1. Mount API Routes
-  app.route('/api/addons/aggregator', aggregatorRouter);
-  app.route('/api/addons/newsroom', newsroomRouter);
-  app.route('/api/addons/ota', otaRouter);
+const imports = [
+  "import { Hono } from 'hono';",
+  "import type { Bindings } from '../types';",
+  "import { registerPluginMenu, registerPluginView } from '../registry/admin-menu';"
+];
+const routes = [];
+const menus = [];
+const registeredNames = [];
 
-  // 2. Register Admin Menus (Standar Grup: 'Plugins' dengan pluginId eksplisit)
-  registerPluginMenu({
-    group: 'Plugins',
-    title: 'OTA Manager',
-    view: 'ota',
-    icon: 'fas fa-cloud-upload-alt',
-    role: ['admin'],
-    pluginId: 'ota'
-  });
-
-  registerPluginMenu({
-    group: 'Plugins',
-    title: 'Meja Kurasi',
-    view: 'newsroom',
-    icon: 'fas fa-newspaper',
-    role: ['admin', 'editor'],
-    pluginId: 'newsroom'
-  });
-
-  registerPluginMenu({
+if (hasAggregator) {
+  imports.push("import { aggregatorRouter } from './aggregator/router';");
+  imports.push("import { aggregatorView } from './aggregator/view';");
+  routes.push("  app.route('/api/addons/aggregator', aggregatorRouter);");
+  menus.push(`  registerPluginMenu({
     group: 'Plugins',
     title: 'Sumber Agregator',
     view: 'aggregator',
@@ -160,14 +214,70 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     role: ['admin'],
     pluginId: 'aggregator'
   });
+  registerPluginView('aggregator', aggregatorView);`);
+  registeredNames.push('Agregator');
+}
 
-  console.log('🔌 Addons (OTA, Agregator, Newsroom) registered successfully');
+if (hasNewsroom) {
+  imports.push("import { newsroomRouter } from './newsroom/router';");
+  imports.push("import { newsroomView } from './newsroom/view';");
+  routes.push("  app.route('/api/addons/newsroom', newsroomRouter);");
+  menus.push(`  registerPluginMenu({
+    group: 'Plugins',
+    title: 'Meja Kurasi',
+    view: 'newsroom',
+    icon: 'fas fa-newspaper',
+    role: ['admin', 'editor'],
+    pluginId: 'newsroom'
+  });
+  registerPluginView('newsroom', newsroomView);`);
+  registeredNames.push('Newsroom');
+}
+
+if (hasOta) {
+  imports.push("import { otaRouter } from './ota/router';");
+  imports.push("import { otaView } from './ota/view';");
+  routes.push("  app.route('/api/addons/ota', otaRouter);");
+  menus.push(`  registerPluginMenu({
+    group: 'Plugins',
+    title: 'OTA Manager',
+    view: 'ota',
+    icon: 'fas fa-cloud-upload-alt',
+    role: ['admin'],
+    pluginId: 'ota'
+  });
+  registerPluginView('ota', otaView);`);
+  registeredNames.push('OTA');
+}
+
+const standardizedAddonsIndex = `${imports.join('\n')}
+
+export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
+  // 1. Mount API Routes
+${routes.join('\n')}
+
+  // 2. Register Admin Menus (Standar Grup: 'Plugins' dengan pluginId eksplisit)
+${menus.join('\n\n')}
+
+  console.log('🔌 Addons (${registeredNames.join(', ') || 'None'}) registered successfully');
 }
 `;
 
-fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
-console.log('  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan group: Plugins dan pluginId valid.');
+if (!isDryRun) {
+  if (fs.existsSync(path.dirname(targetAddonsIndex))) {
+    fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
+    console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
+  }
+} else {
+  console.log(`  [DRY-RUN] Will standardize src/cms/addons/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
+}
+
+const duration = Date.now() - startTime;
 
 console.log('\n====================================================');
-console.log('✅ AUTO PUSH / SYNC CORE KE KLIEN SELESAI DENGAN SUKSES!');
-console.log('====================================================');
+console.log(`✅ ${isDryRun ? 'SIMULASI [DRY-RUN]' : 'SINKRONISASI'} SELESAI DENGAN SUKSES!`);
+console.log(`📊 Statistik:`);
+console.log(`   - Berkas ${isDryRun ? 'disimulasikan' : 'disinkronkan'} : ${copiedCount} berkas`);
+console.log(`   - Berkas terproteksi dilewati: ${skippedCount} entitas`);
+console.log(`   - Waktu eksekusi            : ${duration} ms`);
+console.log('====================================================\n');

@@ -229,4 +229,26 @@ export const curationQueue = sqliteTable('curation_queue', {
   createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
 });
 
+export const consultations = sqliteTable('consultations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  category: text('category').notNull(),
+  name: text('name').notNull(),
+  phone: text('phone').notNull(),
+  email: text('email'),
+  region: text('region'),
+  question: text('question').notNull(),
+  status: text('status').default('pending'),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
+export const translations = sqliteTable('translations', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  cacheKey: text('cache_key').unique().notNull(),
+  lang: text('lang').notNull(),
+  originalText: text('original_text'),
+  translatedText: text('translated_text').notNull(),
+  createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+  updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+});
+
 

@@ -14,6 +14,8 @@
     "@cmsmu/core": "workspace:*",
     "@cmsmu/db": "workspace:*",
     "@cmsmu/ui": "workspace:*",
+    "@cmsmu/cms-api": "workspace:*",
+    "hono": "^4.12.33",
     "@astrojs/cloudflare": "^14.1.7",
     "@astrojs/react": "^6.0.2",
     "@puckeditor/core": "^0.22.4",

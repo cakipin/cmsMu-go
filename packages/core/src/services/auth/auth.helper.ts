@@ -16,3 +16,16 @@ export function generateUserToken(user: { id: number | string; username: string;
   };
   return btoa(JSON.stringify(payload));
 }
+
+export function verifyUserToken(token: string): { id: number | string; username: string; n: string; role: string; avatar: string; iat: number } | null {
+  try {
+    if (!token) return null;
+    const raw = atob(token.trim());
+    const payload = JSON.parse(raw);
+    if (!payload || !payload.id) return null;
+    return payload;
+  } catch {
+    return null;
+  }
+}
+
