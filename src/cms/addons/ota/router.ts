@@ -511,7 +511,7 @@ otaRouter.get('/status', async (c) => {
     });
 });
 
-// 9. GET /clients - Daftar downstream clients terdaftar di Hub
+// 9. GET /clients - Daftar downstream clients terdaftar di Hub beserta ringkasan status rollout
 otaRouter.get('/clients', async (c) => {
     try {
         const db = c.env?.DB;
@@ -522,18 +522,106 @@ otaRouter.get('/clients', async (c) => {
                 client_url TEXT UNIQUE NOT NULL,
                 site_name TEXT,
                 is_active INTEGER DEFAULT 1,
+                installed_version TEXT DEFAULT '0.1.1',
+                target_version TEXT,
+                rollout_status TEXT DEFAULT 'pending',
+                error_reason TEXT,
+                last_reported_at DATETIME,
                 last_synced_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
-        `).run();
+        `).run().catch(() => {});
+
+        // Alter table migrations fallback jika kolom belum ada
+        const cols = ['installed_version', 'target_version', 'rollout_status', 'error_reason', 'last_reported_at'];
+        for (const col of cols) {
+            await db.prepare(`ALTER TABLE ota_clients ADD COLUMN ${col} TEXT;`).run().catch(() => {});
+        }
+
         const res = await db.prepare("SELECT * FROM ota_clients ORDER BY created_at DESC").all();
-        return c.json({ success: true, data: res.results || [] });
+        const clients = res.results || [];
+
+        // Hitung ringkasan status rollout
+        const summary = {
+            total: clients.length,
+            updated: clients.filter((k: any) => k.rollout_status === 'updated').length,
+            received: clients.filter((k: any) => k.rollout_status === 'received').length,
+            failed: clients.filter((k: any) => k.rollout_status === 'failed').length,
+            pending: clients.filter((k: any) => !k.rollout_status || k.rollout_status === 'pending').length
+        };
+
+        return c.json({ success: true, data: clients, summary });
     } catch(e: any) {
         return c.json({ success: false, error: e.message }, 500);
     }
 });
 
-// 10. POST /clients/register - Pendaftaran otomatis klien downstream ke Hub
+// 10. POST /clients/report-status - Laporan balik status pembaruan dari instansi Klien ke Hub
+otaRouter.post('/clients/report-status', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'DB binding tidak ditemukan' }, 500);
+        const body = await c.req.json().catch(() => ({}));
+        const { client_url, site_name, installed_version, target_version, rollout_status, error_reason } = body;
+
+        if (!client_url || typeof client_url !== 'string') {
+            return c.json({ success: false, error: 'client_url wajib diisi' }, 400);
+        }
+
+        const cleanUrl = client_url.trim().replace(/\/+$/, '');
+        const statusVal = rollout_status || 'received'; // 'received' | 'updated' | 'failed'
+
+        await db.prepare(`
+            CREATE TABLE IF NOT EXISTS ota_clients (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                client_url TEXT UNIQUE NOT NULL,
+                site_name TEXT,
+                is_active INTEGER DEFAULT 1,
+                installed_version TEXT DEFAULT '0.1.1',
+                target_version TEXT,
+                rollout_status TEXT DEFAULT 'pending',
+                error_reason TEXT,
+                last_reported_at DATETIME,
+                last_synced_at DATETIME,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+        `).run().catch(() => {});
+
+        for (const col of ['installed_version', 'target_version', 'rollout_status', 'error_reason', 'last_reported_at']) {
+            await db.prepare(`ALTER TABLE ota_clients ADD COLUMN ${col} TEXT;`).run().catch(() => {});
+        }
+
+        await db.prepare(`
+            INSERT INTO ota_clients (client_url, site_name, installed_version, target_version, rollout_status, error_reason, is_active, last_reported_at, last_synced_at)
+            VALUES (?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+            ON CONFLICT(client_url) DO UPDATE SET
+                site_name = COALESCE(excluded.site_name, ota_clients.site_name),
+                installed_version = COALESCE(excluded.installed_version, ota_clients.installed_version),
+                target_version = COALESCE(excluded.target_version, ota_clients.target_version),
+                rollout_status = excluded.rollout_status,
+                error_reason = excluded.error_reason,
+                last_reported_at = CURRENT_TIMESTAMP,
+                last_synced_at = CURRENT_TIMESTAMP
+        `).bind(
+            cleanUrl,
+            site_name || cleanUrl,
+            installed_version || '0.1.1',
+            target_version || '0.1.2',
+            statusVal,
+            error_reason || null
+        ).run();
+
+        return c.json({
+            success: true,
+            message: `Status pembaruan klien '${cleanUrl}' berhasil dicatat: ${statusVal}`,
+            data: { client_url: cleanUrl, rollout_status: statusVal }
+        });
+    } catch(e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 11. POST /clients/register - Pendaftaran otomatis klien downstream ke Hub
 otaRouter.post('/clients/register', async (c) => {
     try {
         const db = c.env?.DB;
@@ -550,10 +638,15 @@ otaRouter.post('/clients/register', async (c) => {
                 client_url TEXT UNIQUE NOT NULL,
                 site_name TEXT,
                 is_active INTEGER DEFAULT 1,
+                installed_version TEXT DEFAULT '0.1.1',
+                target_version TEXT,
+                rollout_status TEXT DEFAULT 'pending',
+                error_reason TEXT,
+                last_reported_at DATETIME,
                 last_synced_at DATETIME,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             );
-        `).run();
+        `).run().catch(() => {});
         await db.prepare(`
             INSERT INTO ota_clients (client_url, site_name, is_active, last_synced_at)
             VALUES (?, ?, 1, CURRENT_TIMESTAMP)

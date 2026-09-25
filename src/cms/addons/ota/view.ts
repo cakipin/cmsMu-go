@@ -187,6 +187,162 @@ export const otaView = `
                 </table>
             </div>
         </div>
+
+        <!-- CLIENT ROLLOUT MONITOR (Hub Mode) -->
+        <div class="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden mt-6">
+            <div class="p-4 sm:px-6 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-sm font-bold text-slate-800 m-0">Pemantauan Distribusi Pembaruan Pengguna (Client Rollout Status)</h3>
+                        <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-50 text-teal-700 border border-teal-200" x-text="clients.length + ' Instansi'"></span>
+                    </div>
+                    <p class="text-xs text-slate-500 m-0 mt-0.5">Pantau status penerimaan sinyal, keberhasilan update, atau kendala galat pada instansi pengguna CMSMu</p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <!-- Status Filter Tabs -->
+                    <div class="flex p-0.5 bg-slate-100 rounded-lg text-[11px] font-medium text-slate-600">
+                        <button type="button" @click="clientFilter = 'all'" :class="clientFilter === 'all' ? 'bg-white shadow-xs font-bold text-slate-800' : 'text-slate-500 hover:text-slate-800'" class="px-2.5 py-1 rounded-md border-0 cursor-pointer transition-all">Semua</button>
+                        <button type="button" @click="clientFilter = 'updated'" :class="clientFilter === 'updated' ? 'bg-white shadow-xs font-bold text-emerald-700' : 'text-slate-500 hover:text-slate-800'" class="px-2.5 py-1 rounded-md border-0 cursor-pointer transition-all">Sudah Update</button>
+                        <button type="button" @click="clientFilter = 'received'" :class="clientFilter === 'received' ? 'bg-white shadow-xs font-bold text-amber-700' : 'text-slate-500 hover:text-slate-800'" class="px-2.5 py-1 rounded-md border-0 cursor-pointer transition-all">Menunggu</button>
+                        <button type="button" @click="clientFilter = 'failed'" :class="clientFilter === 'failed' ? 'bg-white shadow-xs font-bold text-rose-700' : 'text-slate-500 hover:text-slate-800'" class="px-2.5 py-1 rounded-md border-0 cursor-pointer transition-all">Gagal</button>
+                    </div>
+                    <button type="button" @click="loadClients(true)" :disabled="isLoadingClients" class="p-1.5 rounded-lg border border-slate-200 text-slate-500 hover:bg-slate-50 cursor-pointer shadow-xs" title="Segarkan Data Klien">
+                        <i class="fas" :class="isLoadingClients ? 'fa-spinner fa-spin text-teal-600' : 'fa-sync-alt'"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Metric Summary Mini Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 sm:px-6 bg-slate-50/50 border-b border-slate-100">
+                <div class="p-3 bg-white rounded-lg border border-slate-200 shadow-xs flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block">Total Terdaftar</span>
+                        <span class="text-lg font-bold text-slate-800" x-text="clientSummary.total || clients.length">0</span>
+                    </div>
+                    <i class="fas fa-network-wired text-slate-300 text-lg"></i>
+                </div>
+                <div class="p-3 bg-white rounded-lg border border-emerald-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-emerald-600 uppercase tracking-wider block">Sudah Update</span>
+                        <span class="text-lg font-bold text-emerald-700" x-text="clientSummary.updated || 0">0</span>
+                    </div>
+                    <i class="fas fa-check-circle text-emerald-400 text-lg"></i>
+                </div>
+                <div class="p-3 bg-white rounded-lg border border-amber-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-amber-600 uppercase tracking-wider block">Menunggu Update</span>
+                        <span class="text-lg font-bold text-amber-700" x-text="clientSummary.received || 0">0</span>
+                    </div>
+                    <i class="fas fa-clock text-amber-400 text-lg"></i>
+                </div>
+                <div class="p-3 bg-white rounded-lg border border-rose-200/80 shadow-xs flex items-center justify-between">
+                    <div>
+                        <span class="text-[10px] font-semibold text-rose-600 uppercase tracking-wider block">Gagal Update</span>
+                        <span class="text-lg font-bold text-rose-700" x-text="clientSummary.failed || 0">0</span>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-rose-400 text-lg"></i>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 text-slate-600 border-b border-slate-100">
+                            <th class="py-3 px-4 sm:px-6 font-semibold">Nama / Domain Instansi Pengguna</th>
+                            <th class="py-3 px-4 font-semibold text-center">Versi Terpasang</th>
+                            <th class="py-3 px-4 font-semibold text-center">Target Versi</th>
+                            <th class="py-3 px-4 font-semibold text-center">Status Pembaruan</th>
+                            <th class="py-3 px-4 font-semibold">Keterangan / Kendala Galat</th>
+                            <th class="py-3 px-4 font-semibold text-right sm:pr-6">Terakhir Dilaporkan</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <template x-if="isLoadingClients">
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-400">
+                                    <i class="fas fa-spinner fa-spin text-teal-600 text-lg mb-2"></i>
+                                    <p class="m-0 text-xs">Memuat data pemantauan pengguna...</p>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-if="!isLoadingClients && filteredClients().length === 0">
+                            <tr>
+                                <td colspan="6" class="py-8 text-center text-slate-400">
+                                    <i class="fas fa-users-slash text-2xl text-slate-300 mb-2"></i>
+                                    <p class="m-0 text-xs font-medium text-slate-500">Tidak ada data pengguna dalam filter ini</p>
+                                    <p class="m-0 text-[11px] text-slate-400 mt-1">Belum ada klien yang melapor status pembaruan ke Hub.</p>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-for="c in filteredClients()" :key="c.id || c.client_url">
+                            <tr class="hover:bg-slate-50 transition-colors">
+                                <td class="py-3 px-4 sm:px-6">
+                                    <div class="font-bold text-slate-800" x-text="c.site_name || c.client_url"></div>
+                                    <div class="text-[11px] font-mono text-slate-400 truncate max-w-xs" x-text="c.client_url"></div>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="px-2 py-0.5 rounded-md font-mono text-xs font-bold"
+                                          :class="c.installed_version === (statusData.activeManifestVersion || '0.1.2') ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-700'"
+                                          x-text="'v' + (c.installed_version || '0.1.1')">v0.1.1</span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <span class="px-2 py-0.5 rounded-md bg-teal-50 text-teal-700 border border-teal-200 font-mono text-xs font-bold"
+                                          x-text="'v' + (c.target_version || statusData.activeManifestVersion || '0.1.2')">v0.1.2</span>
+                                </td>
+                                <td class="py-3 px-4 text-center">
+                                    <template x-if="c.rollout_status === 'updated'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                                            <i class="fas fa-check-circle"></i>
+                                            <span>Sudah Update (Sukses)</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="c.rollout_status === 'received'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                            <i class="fas fa-clock"></i>
+                                            <span>Sudah Menerima (Menunggu)</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="c.rollout_status === 'failed'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 border border-rose-200">
+                                            <i class="fas fa-times-circle"></i>
+                                            <span>Gagal Update</span>
+                                        </span>
+                                    </template>
+                                    <template x-if="!c.rollout_status || c.rollout_status === 'pending'">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">
+                                            <i class="fas fa-hourglass-start"></i>
+                                            <span>Terdaftar</span>
+                                        </span>
+                                    </template>
+                                </td>
+                                <td class="py-3 px-4 max-w-sm">
+                                    <template x-if="c.rollout_status === 'failed' && c.error_reason">
+                                        <div class="p-2 rounded-lg bg-rose-50 border border-rose-200/80 text-rose-700 text-[11px] leading-relaxed">
+                                            <span class="font-bold flex items-center gap-1 mb-0.5"><i class="fas fa-exclamation-circle text-rose-500"></i> Galat:</span>
+                                            <span x-text="c.error_reason"></span>
+                                        </div>
+                                    </template>
+                                    <template x-if="c.rollout_status === 'updated'">
+                                        <span class="text-emerald-700 text-[11px] flex items-center gap-1">
+                                            <i class="fas fa-check-double text-emerald-500"></i> Berhasil diperbarui ke versi target
+                                        </span>
+                                    </template>
+                                    <template x-if="c.rollout_status === 'received'">
+                                        <span class="text-amber-700 text-[11px] flex items-center gap-1">
+                                            <i class="fas fa-bell text-amber-500"></i> Notifikasi diterima oleh klien, menunggu aksi update
+                                        </span>
+                                    </template>
+                                    <template x-if="!c.rollout_status || c.rollout_status === 'pending'">
+                                        <span class="text-slate-400 text-[11px]">-</span>
+                                    </template>
+                                </td>
+                                <td class="py-3 px-4 text-right sm:pr-6 text-slate-500 text-[11px] font-mono" x-text="c.last_reported_at || c.last_synced_at || c.created_at || '-'"></td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </template>
 
     <!-- Client System Status (Client Mode) -->
@@ -383,10 +539,22 @@ if (typeof window !== 'undefined') {
                 databaseIntegrity: { appliedMigrations: 3, totalMigrations: 3, status: 'synced' }
             },
             releases: [],
+            clients: [],
+            clientSummary: { total: 0, updated: 0, received: 0, failed: 0 },
+            clientFilter: 'all',
+            isLoadingClients: false,
             pushForm: {
                 version: '0.1.2',
                 channel: 'stable',
                 changelog: 'Rilis pembaruan OTA Engine Addon CMSMu v0.1.2.'
+            },
+
+            filteredClients() {
+                if (this.clientFilter === 'all') return this.clients;
+                if (this.clientFilter === 'updated') return this.clients.filter(function(c) { return c.rollout_status === 'updated'; });
+                if (this.clientFilter === 'received') return this.clients.filter(function(c) { return c.rollout_status === 'received'; });
+                if (this.clientFilter === 'failed') return this.clients.filter(function(c) { return c.rollout_status === 'failed'; });
+                return this.clients;
             },
 
             async init() {
@@ -395,6 +563,7 @@ if (typeof window !== 'undefined') {
                 await this.loadStatus(false);
                 if (this.isHub) {
                     await this.loadReleases();
+                    await this.loadClients();
                 } else {
                     await this.checkUpdates(false);
                 }
@@ -478,6 +647,33 @@ if (typeof window !== 'undefined') {
                 }
             },
 
+            async loadClients(showToast = false) {
+                this.isLoadingClients = true;
+                try {
+                    const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                    const res = await fetch('/api/addons/ota/clients', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.clients = json.data || [];
+                        this.clientSummary = json.summary || {
+                            total: this.clients.length,
+                            updated: this.clients.filter(function(c) { return c.rollout_status === 'updated'; }).length,
+                            received: this.clients.filter(function(c) { return c.rollout_status === 'received'; }).length,
+                            failed: this.clients.filter(function(c) { return c.rollout_status === 'failed'; }).length
+                        };
+                        if (showToast && window.showToast) {
+                            window.showToast('Data pemantauan status pengguna berhasil disegarkan!', 'success');
+                        }
+                    }
+                } catch(e) {
+                    console.error('Gagal load clients:', e);
+                } finally {
+                    this.isLoadingClients = false;
+                }
+            },
+
             openPushModal() {
                 this.pushForm.version = this.statusData.activeManifestVersion || '0.1.1';
                 this.pushForm.channel = 'stable';
@@ -545,6 +741,7 @@ if (typeof window !== 'undefined') {
                         }
                         await this.loadStatus(false);
                         await this.loadReleases();
+                        await this.loadClients();
                     } else {
                         const err = await res.json().catch(function() { return {}; });
                         if (window.showToast) {
