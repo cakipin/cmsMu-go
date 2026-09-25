@@ -46,6 +46,17 @@ otaRouter.get('/check-update', async (c) => {
         let channel: 'stable' | 'beta' = 'stable';
         let hasCoreUpdate = false;
 
+        let hasDeployHook = false;
+        if (db) {
+            try {
+                const hookRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
+                hasDeployHook = !!(hookRow && hookRow.value && hookRow.value.trim());
+            } catch (_) {}
+        }
+
+        let upstreamManifest: any = null;
+        let upstreamSource: string = 'hub';
+
         if (isHub) {
             // Mode Hub: Periksa manifest lokal dinamis dari D1 pusat
             const latestManifest = await otaAddonService.getDynamicManifest(db, baseUrl);
@@ -53,13 +64,16 @@ otaRouter.get('/check-update', async (c) => {
             changelog = latestManifest.changelog || changelog;
             channel = latestManifest.channel || 'stable';
             hasCoreUpdate = otaAddonService.compareVersions(latestVersion, clientVersion) > 0;
+            upstreamManifest = latestManifest;
         } else {
-            // Mode Client: Periksa manifest ke upstream server pusat (cms.labmu.dev)
+            // Mode Client: Periksa manifest ke upstream (GitHub cmsMu-go / Hub)
             const upstream = await otaAddonService.checkUpstreamUpdate(clientVersion);
             latestVersion = upstream.upstreamVersion;
             changelog = upstream.changelog || changelog;
             channel = upstream.channel || 'stable';
             hasCoreUpdate = upstream.hasUpdate;
+            upstreamManifest = upstream.manifest;
+            upstreamSource = upstream.source || 'hub';
 
             // Jika ada update baru, otomatis suntikkan notifikasi ke tabel notifications lokal klien
             if (hasCoreUpdate && db) {
@@ -81,6 +95,9 @@ otaRouter.get('/check-update', async (c) => {
                 hasDbPending,
                 isHub,
                 dbSchema: migrationInfo,
+                manifest: upstreamManifest,
+                source: upstreamSource,
+                hasDeployHook,
                 upToDate: !hasCoreUpdate && !hasDbPending
             }
         });
@@ -350,6 +367,77 @@ otaRouter.post('/config', async (c) => {
             data: { auto_update: autoUpdate }
         });
     } catch(e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 7d. GET /deploy-hook - Status konfigurasi Cloudflare Deploy Hook
+otaRouter.get('/deploy-hook', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: true, data: { configured: false } });
+        const row: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
+        const configured = !!(row && row.value && row.value.trim());
+        const hookUrl = configured ? row.value.trim() : '';
+        const masked = configured ? (hookUrl.substring(0, 20) + '...' + hookUrl.substring(hookUrl.length - 8)) : '';
+        return c.json({ success: true, data: { configured, masked } });
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 7e. POST /deploy-hook - Simpan Cloudflare Deploy Hook URL
+otaRouter.post('/deploy-hook', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
+        const body = await c.req.json().catch(() => ({}));
+        const hookUrl = (body.deploy_hook_url || '').trim();
+
+        await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
+        await db.prepare(`
+            INSERT INTO settings (key, value) VALUES ('ota_deploy_hook_url', ?)
+            ON CONFLICT(key) DO UPDATE SET value = excluded.value
+        `).bind(hookUrl).run();
+
+        return c.json({
+            success: true,
+            message: hookUrl ? 'Cloudflare Deploy Hook berhasil disimpan!' : 'Deploy Hook dihapus.',
+            data: { configured: !!hookUrl }
+        });
+    } catch (e: any) {
+        return c.json({ success: false, error: e.message }, 500);
+    }
+});
+
+// 7f. POST /trigger-deploy - Picu Cloudflare Pages Rebuild & Deploy via Deploy Hook
+otaRouter.post('/trigger-deploy', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'Database binding tidak ditemukan' }, 500);
+        const row: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
+        const hookUrl = row?.value ? row.value.trim() : '';
+
+        if (!hookUrl) {
+            return c.json({
+                success: false,
+                error: 'Deploy Hook belum dikonfigurasi. Masukkan URL Deploy Hook Cloudflare Pages di formulir pengaturan.'
+            }, 400);
+        }
+
+        const res = await fetch(hookUrl, { method: 'POST' });
+        if (res.ok) {
+            return c.json({
+                success: true,
+                message: 'Sinyal Deploy Hook berhasil dikirim! Cloudflare Pages sedang melakukan proses build & deploy pembaruan kode terbaru di latar belakang.'
+            });
+        } else {
+            return c.json({
+                success: false,
+                error: `Deploy Hook gagal merespons (HTTP ${res.status}). Pastikan URL Deploy Hook Cloudflare Anda valid.`
+            }, 500);
+        }
+    } catch (e: any) {
         return c.json({ success: false, error: e.message }, 500);
     }
 });

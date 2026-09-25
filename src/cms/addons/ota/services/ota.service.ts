@@ -18,9 +18,13 @@ export interface OtaManifest {
     bundledPlugins: string[];
     updateUrl: string;
     bundleUrl: string;
+    repository?: string;
+    downloadUrl?: string;
 }
 
 export const DEFAULT_UPSTREAM_URL = 'https://cms.labmu.dev';
+export const DEFAULT_GITHUB_MANIFEST_URL = 'https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json';
+export const DEFAULT_GITHUB_REPO_URL = 'https://github.com/cakipin/cmsMu-go';
 
 export function isHubMode(host: string = ''): boolean {
     const cleanHost = host.toLowerCase();
@@ -114,8 +118,47 @@ export const otaAddonService = {
         changelog: string;
         channel: 'stable' | 'beta';
         manifest?: OtaManifest;
+        source?: 'github' | 'hub';
         error?: string;
     }> {
+        // 1. Coba ambil rilis dari GitHub cmsMu-go terlebih dahulu (Single Source of Truth Rilis)
+        try {
+            const ghRes = await fetch(`${DEFAULT_GITHUB_MANIFEST_URL}?t=${Date.now()}`, {
+                headers: { 'Accept': 'application/json' }
+            });
+            if (ghRes.ok) {
+                const ghManifest: any = await ghRes.json();
+                if (ghManifest && ghManifest.version) {
+                    const upstreamVersion = ghManifest.version;
+                    const changelog = ghManifest.changelog || 'Pembaruan sistem CMSMu.';
+                    const channel = ghManifest.channel || 'stable';
+                    const hasUpdate = this.compareVersions(upstreamVersion, clientVersion) > 0;
+                    return {
+                        hasUpdate,
+                        upstreamVersion,
+                        changelog,
+                        channel,
+                        source: 'github',
+                        manifest: {
+                            name: ghManifest.name || 'CMSMu Core Framework',
+                            version: upstreamVersion,
+                            buildDate: ghManifest.buildDate || '',
+                            changelog,
+                            minCompatibleSchema: ghManifest.minCompatibleSchema || MIN_COMPATIBLE_SCHEMA_VERSION,
+                            channel,
+                            capabilities: ghManifest.capabilities || [],
+                            bundledPlugins: ghManifest.bundledPlugins || [],
+                            updateUrl: DEFAULT_GITHUB_MANIFEST_URL,
+                            bundleUrl: ghManifest.downloadUrl || `${DEFAULT_GITHUB_REPO_URL}/archive/refs/tags/v${upstreamVersion}.zip`,
+                            repository: DEFAULT_GITHUB_REPO_URL,
+                            downloadUrl: ghManifest.downloadUrl || `${DEFAULT_GITHUB_REPO_URL}/archive/refs/tags/v${upstreamVersion}.zip`
+                        }
+                    };
+                }
+            }
+        } catch (_) {}
+
+        // 2. Fallback: Ambil dari Upstream Hub (cms.labmu.dev)
         try {
             const cleanUpstream = upstreamUrl.replace(/\/+$/, '');
             const targetUrl = `${cleanUpstream}/api/addons/ota/manifest?t=${Date.now()}`;
@@ -129,6 +172,7 @@ export const otaAddonService = {
                     upstreamVersion: clientVersion,
                     changelog: '',
                     channel: 'stable',
+                    source: 'hub',
                     error: `Gagal mengambil manifest dari upstream (${res.status})`
                 };
             }
@@ -145,7 +189,12 @@ export const otaAddonService = {
                 upstreamVersion,
                 changelog,
                 channel,
-                manifest
+                source: 'hub',
+                manifest: {
+                    ...manifest,
+                    repository: manifest?.repository || DEFAULT_GITHUB_REPO_URL,
+                    downloadUrl: manifest?.downloadUrl || `${DEFAULT_GITHUB_REPO_URL}/archive/refs/tags/v${upstreamVersion}.zip`
+                }
             };
         } catch (err: any) {
             return {
@@ -153,6 +202,7 @@ export const otaAddonService = {
                 upstreamVersion: clientVersion,
                 changelog: '',
                 channel: 'stable',
+                source: 'hub',
                 error: err.message || 'Koneksi ke upstream OTA gagal'
             };
         }
