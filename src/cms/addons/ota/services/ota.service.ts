@@ -3,7 +3,7 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = '0.1.2';
+export const CORE_VERSION = '0.1.3';
 export const CORE_BUILD_DATE = '2026-09-25';
 export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
@@ -103,13 +103,16 @@ export const otaAddonService = {
     },
 
     compareVersions(v1: string, v2: string): number {
-        const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
-        const [maj1, min1, pat1] = parse(v1);
-        const [maj2, min2, pat2] = parse(v2);
-
-        if (maj1 !== maj2) return maj1 - maj2;
-        if (min1 !== min2) return min1 - min2;
-        return pat1 - pat2;
+        const parse = (v: string) => v.replace(/^v/, '').split(/[-+.]/).map(n => parseInt(n, 10) || 0);
+        const p1 = parse(v1);
+        const p2 = parse(v2);
+        const maxLen = Math.max(p1.length, p2.length, 3);
+        for (let i = 0; i < maxLen; i++) {
+            const num1 = p1[i] || 0;
+            const num2 = p2[i] || 0;
+            if (num1 !== num2) return num1 - num2;
+        }
+        return 0;
     },
 
     async checkUpstreamUpdate(clientVersion: string, upstreamUrl: string = DEFAULT_UPSTREAM_URL): Promise<{
@@ -161,7 +164,7 @@ export const otaAddonService = {
         // 2. Fallback: Ambil dari Upstream Hub (cms.labmu.dev)
         try {
             const cleanUpstream = upstreamUrl.replace(/\/+$/, '');
-            const targetUrl = `${cleanUpstream}/api/addons/ota/manifest?t=${Date.now()}`;
+            const targetUrl = `${cleanUpstream}/api/addons/ota/manifest?client_version=${encodeURIComponent(clientVersion)}&t=${Date.now()}`;
             const res = await fetch(targetUrl, {
                 headers: { 'Accept': 'application/json' }
             });
