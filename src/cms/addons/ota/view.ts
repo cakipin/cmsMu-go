@@ -42,7 +42,6 @@ export const otaView = `
     </div>
 
     <!-- CLIENT MODE BANNER: UPDATE AVAILABLE -->
-    <!-- CLIENT MODE BANNER: UPDATE AVAILABLE -->
     <template x-if="!isHub && hasUpdate">
         <div class="p-5 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/80 shadow-xs mb-6">
             <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -94,7 +93,7 @@ export const otaView = `
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Versi Core Framework</span>
             <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '0.1.2')">v0.1.2</span>
+                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '0.1.3')">v0.1.3</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Aktif</span>
             </div>
         </div>
@@ -903,7 +902,7 @@ if (typeof window !== 'undefined') {
             },
 
             get activeVersion() {
-                return (this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '0.1.2').replace(/^v/, '');
+                return (this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '0.1.3').replace(/^v/, '');
             },
 
             suggestVersion(type) {
@@ -1184,7 +1183,7 @@ if (typeof window !== 'undefined') {
                                 client_url: window.location.origin,
                                 site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
                                 installed_version: this.statusData.currentCoreVersion || '0.1.1',
-                                target_version: this.statusData.activeManifestVersion || '0.1.2',
+                                target_version: this.statusData.activeManifestVersion || this.activeVersion || '0.1.3',
                                 rollout_status: 'failed',
                                 error_reason: err.error || 'Gagal menerapkan pembaruan server'
                             })
@@ -1199,7 +1198,7 @@ if (typeof window !== 'undefined') {
                             client_url: window.location.origin,
                             site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
                             installed_version: this.statusData.currentCoreVersion || '0.1.1',
-                            target_version: this.statusData.activeManifestVersion || '0.1.2',
+                            target_version: this.statusData.activeManifestVersion || this.activeVersion || '0.1.3',
                             rollout_status: 'failed',
                             error_reason: e.message || 'Eksekusi pembaruan klien terputus'
                         })
