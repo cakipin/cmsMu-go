@@ -23,7 +23,7 @@ otaRouter.get('/manifest', async (c) => {
                 const clientOrigin = `${parsed.protocol}//${parsed.host}`;
                 const rawClientVer = c.req.query('client_version');
                 const siteName = c.req.query('site_name') || parsed.hostname;
-                const targetVersion = manifest?.version || '0.1.3';
+                const targetVersion = manifest?.version || CORE_VERSION;
 
                 let isUpdated = false;
                 if (rawClientVer) {
@@ -839,7 +839,7 @@ otaRouter.post('/clients/report-status', async (c) => {
             cleanUrl,
             site_name || cleanUrl,
             installed_version || '0.1.1',
-            target_version || '0.1.2',
+            target_version || CORE_VERSION,
             statusVal,
             finalError
         ).run();
@@ -908,7 +908,7 @@ const handleClientRegister = async (c: any) => {
             cleanUrl,
             site_name || cleanUrl,
             installed_version || '0.1.1',
-            target_version || '0.1.2',
+            target_version || CORE_VERSION,
             statusVal,
             finalError
         ).run();
@@ -938,7 +938,7 @@ otaRouter.get('/git-status', async (c) => {
         const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
         const hubVersion = manifest.version || CORE_VERSION;
 
-        let latestGitTag = '0.1.2';
+        let latestGitTag = CORE_VERSION;
         let lastPushedAt = null;
         if (db) {
             try {
