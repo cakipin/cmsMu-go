@@ -110,14 +110,20 @@ export const editorPage = `
              }
          },
 
-         get filteredMediaList() {
-             if(!this.searchQuery) return this.mediaList;
-             const q = this.searchQuery.toLowerCase();
-             return this.mediaList.filter(m => 
-                 (m.title && m.title.toLowerCase().includes(q)) || 
-                 (m.alt && m.alt.toLowerCase().includes(q))
-             );
-         },
+        getMediaItems() {
+            const list = Array.isArray(this.mediaList) ? this.mediaList : [];
+            if (!this.searchQuery) return list.slice(0, 60);
+            const q = this.searchQuery.toLowerCase().trim();
+            return list.filter(m => 
+                (m.title && m.title.toLowerCase().includes(q)) || 
+                (m.alt && m.alt.toLowerCase().includes(q)) ||
+                (m.key && m.key.toLowerCase().includes(q))
+            ).slice(0, 60);
+        },
+
+        get filteredMediaList() {
+            return this.getMediaItems();
+        },
 
          selectMediaItem(img) {
              this.selectedMedia = { ...img }; 

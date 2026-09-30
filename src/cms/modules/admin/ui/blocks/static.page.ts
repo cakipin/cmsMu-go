@@ -25,13 +25,18 @@ export const staticPage = `
          selectedMedia: null,
          mediaSearchQuery: '',
          mediaForm: { title: '', alt: '', caption: '', description: '' },
+         isLoadingMedia: false,
+
+         getToken() {
+             return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+         },
 
          // ============================================================
          // 1. PAGE LIST LOGIC
          // ============================================================
          async loadPages() {
              this.isLoading = true;
-             const token = localStorage.getItem('labmu_token');
+             const token = this.getToken();
              try {
                  const res = await fetch('/api/pages', { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) {
@@ -70,7 +75,7 @@ export const staticPage = `
          async deletePages() {
              if (this.selectedItems.length === 0) return;
              if (!confirm('Hapus ' + this.selectedItems.length + ' item terpilih?')) return;
-             const token = localStorage.getItem('labmu_token');
+             const token = this.getToken();
              for (const id of this.selectedItems) {
                  await fetch('/api/pages', { 
                      method: 'DELETE', 
@@ -84,7 +89,7 @@ export const staticPage = `
 
          async deleteSinglePage(p) {
              if (!confirm('Hapus halaman ' + p.title + '?')) return;
-             const token = localStorage.getItem('labmu_token');
+             const token = this.getToken();
              try {
                  const res = await fetch('/api/pages', { 
                      method: 'DELETE', 
@@ -122,7 +127,7 @@ export const staticPage = `
 
          async loadSinglePage(id) {
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/pages/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) this.form = await res.json();
              } catch(e) { alert('Gagal load data'); }
@@ -133,7 +138,7 @@ export const staticPage = `
              // form.body is automatically updated by the custom editor
              if(!this.form.slug) this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-             const token = localStorage.getItem('labmu_token');
+             const token = this.getToken();
              const isEdit = !!window.editingPageId;
              const url = isEdit ? '/api/pages/' + window.editingPageId : '/api/pages';
              const method = isEdit ? 'PUT' : 'POST';
@@ -169,8 +174,9 @@ export const staticPage = `
 
          async loadMediaLibrary() {
              this.mediaList = [];
+             this.isLoadingMedia = true;
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  const json = await res.json();
                  let raw = Array.isArray(json) ? json : (json.results || []);
@@ -178,14 +184,24 @@ export const staticPage = `
                      ...m,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
-                 }));
+                 })).filter(m => m.url);
              } catch(e) { console.error('Library Error', e); }
+             finally { this.isLoadingMedia = false; }
+         },
+
+         getMediaItems() {
+             const list = Array.isArray(this.mediaList) ? this.mediaList : [];
+             if (!this.mediaSearchQuery) return list.slice(0, 60);
+             const q = this.mediaSearchQuery.toLowerCase().trim();
+             return list.filter(m => 
+                 (m.title && m.title.toLowerCase().includes(q)) || 
+                 (m.alt && m.alt.toLowerCase().includes(q)) ||
+                 (m.key && m.key.toLowerCase().includes(q))
+             ).slice(0, 60);
          },
 
          get filteredMediaList() {
-             if(!this.mediaSearchQuery) return this.mediaList;
-             const q = this.mediaSearchQuery.toLowerCase();
-             return this.mediaList.filter(m => (m.title||'').toLowerCase().includes(q));
+             return this.getMediaItems();
          },
 
          selectMediaItem(img) {
@@ -224,7 +240,7 @@ export const staticPage = `
              fd.append('description', this.mediaForm.description);
              
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/media', { method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: fd });
                  if (res.ok) {
                      const result = await res.json();
@@ -241,7 +257,7 @@ export const staticPage = `
          async updateMediaDetails() {
              if(!this.selectedMedia) return;
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  await fetch('/api/media/meta', { 
                      method: 'POST', 
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -449,8 +465,14 @@ export const staticPage = `
                 <div style="flex:1; background:#f9fafb; overflow-y:auto; padding:24px; position:relative;">
                     
                     <div x-show="mediaTab === 'library'">
-                        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px;">
-                            <template x-for="img in filteredMediaList" :key="img.key">
+                        <!-- Loading Indicator -->
+                        <div x-show="isLoadingMedia" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:240px; color:#6b7280; gap:12px;">
+                            <i class="fas fa-spinner fa-spin fa-2x" style="color:#2563eb;"></i>
+                            <span style="font-size:13px; font-weight:500;">Memuat pustaka media...</span>
+                        </div>
+
+                        <div x-show="!isLoadingMedia" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px;">
+                            <template x-for="img in getMediaItems()" :key="img.key || img.id || img.url">
                                 <div @click="selectMediaItem(img)" 
                                      style="cursor:pointer; position:relative; aspect-ratio:1; background:white; border-radius:8px; overflow:hidden; transition:all 0.2s;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'box-shadow: 0 0 0 4px rgba(37,99,235,0.3); border:2px solid #2563eb;' : 'border:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,0.05);'"
@@ -468,7 +490,7 @@ export const staticPage = `
                             </template>
                         </div>
 
-                        <div x-show="filteredMediaList.length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
+                        <div x-show="!isLoadingMedia && getMediaItems().length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
                             <div style="width:80px; height:80px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
                                 <i class="fas fa-search fa-2x" style="color:#9ca3af;"></i>
                             </div>

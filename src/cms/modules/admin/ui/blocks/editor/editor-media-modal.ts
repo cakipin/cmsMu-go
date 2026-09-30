@@ -50,7 +50,7 @@ export const editorMediaModal = `
                         </div>
 
                         <div x-show="!isLoadingMedia" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px;">
-                            <template x-for="img in filteredMediaList" :key="img.key || img.id || img.url">
+                            <template x-for="img in getMediaItems()" :key="img.key || img.id || img.url">
                                 <div @click="selectMediaItem(img)" 
                                      style="aspect-ratio:1; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; background:#e5e7eb; border:3px solid transparent; transition:all 0.15s ease-in-out;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'border-color:#2563eb; transform:scale(0.96); box-shadow:0 0 0 2px #93c5fd;' : ''"
@@ -71,7 +71,7 @@ export const editorMediaModal = `
                             </template>
                         </div>
 
-                        <div x-show="!isLoadingMedia && filteredMediaList.length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
+                        <div x-show="!isLoadingMedia && getMediaItems().length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
                             <div style="width:80px; height:80px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
                                 <i class="fas fa-search fa-2x" style="color:#9ca3af;"></i>
                             </div>
