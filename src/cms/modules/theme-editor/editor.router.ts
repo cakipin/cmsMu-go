@@ -80,10 +80,14 @@ themeEditorRouter.post('/page', async (c) => {
       }).where(eq(pages.slug, slug)).run();
     } else {
       await db.insert(pages).values({
-        title: slug === 'home' ? 'Beranda Utama' : title,
+        title,
         slug,
         body: content,
+        excerpt: '',
+        metaTitle: title,
+        metaDescription: '',
         status: 'publish',
+        layout: 'standard',
         createdAt: now,
         updatedAt: now
       }).run();

@@ -16,7 +16,7 @@ export const FeatureGrid: ComponentConfig<Props["FeatureGrid"]> = {
     }
   },
   defaultProps: {
-    title: "Fitur & Keunggulan Fondasi CMSMu",
+    title: "Fitur & Keunggulan Portal",
     description: "Fondasi teknologi portal publikasi modern dengan arsitektur headless, visual page editor, dan manajemen konten terpadu untuk kebutuhan persyarikatan.",
     features: [
       {

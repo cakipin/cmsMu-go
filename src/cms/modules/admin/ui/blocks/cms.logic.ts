@@ -84,6 +84,7 @@ if (typeof window !== 'undefined') {
             activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
             logoType: 'site_logo',
             isLoggingIn: false,
+            systemVersion: localStorage.getItem('cms_core_version') || 'v0.1.3',
             
             // Data Buckets
             posts: [], pages: [], mediaList: [], usersList: [], 
@@ -120,6 +121,18 @@ if (typeof window !== 'undefined') {
             
             loadSettings() { if(window.__CMS_CORE?.loadSettings) return window.__CMS_CORE.loadSettings.call(this); },
             saveSettings() { if(window.__CMS_CORE?.saveSettings) return window.__CMS_CORE.saveSettings.call(this); },
+            async loadSystemVersion() {
+                try {
+                    const res = await fetch('/api/addons/ota/status');
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json.data && json.data.currentCoreVersion) {
+                            this.systemVersion = 'v' + json.data.currentCoreVersion;
+                            localStorage.setItem('cms_core_version', this.systemVersion);
+                        }
+                    }
+                } catch(_) {}
+            },
             
             loadMenus() { if(window.__CMS_CORE?.loadMenus) return window.__CMS_CORE.loadMenus.call(this); },
             loadMenu() { if(window.__CMS_CORE?.loadMenus) return window.__CMS_CORE.loadMenus.call(this); },
@@ -175,6 +188,7 @@ if (typeof window !== 'undefined') {
             init() {
                 this.posts = []; this.pages = []; this.mediaList = []; this.usersList = [];
                 this.initRouter();
+                this.loadSystemVersion();
                 
                 if (this.token) {
                     try { 

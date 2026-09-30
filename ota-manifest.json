@@ -1,8 +1,8 @@
 {
   "name": "CMSMu Core Framework",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "buildDate": "2026-09-25",
-  "changelog": "Rilis pembaruan OTA Engine & Hook loadHomeData v0.1.2 dari cmsMu-go",
+  "changelog": "Rilis patch pembaruan CMSMu v0.1.3 (OTA Engine & SemVer Fix)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
   "capabilities": [
@@ -10,15 +10,14 @@
     "puck-visual-editor",
     "auto-db-migration",
     "sso-muhammadiyah-auth",
-    "ota-client-runtime",
-    "dynamic-home-hook"
+    "ota-client-runtime"
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",
     "ota"
   ],
-  "updateUrl": "https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json",
-  "bundleUrl": "https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json",
+  "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
+  "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",
-  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.2.zip"
+  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.3.zip"
 }

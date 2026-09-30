@@ -4,12 +4,89 @@ import { runAutoMigration, getMigrationStatus } from '../../db/migration-runner'
 
 export const otaRouter = new Hono<{ Bindings: any }>();
 
+// 0. OPTIONS /* - Handle CORS preflight requests
+otaRouter.options('*', (c) => c.text('', 204));
+
 // 1. GET /manifest - Manifest publik versi Core CMSMu
 otaRouter.get('/manifest', async (c) => {
     const url = new URL(c.req.url);
     const baseUrl = `${url.protocol}//${url.host}`;
     const db = c.env?.DB;
     const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
+
+    // Auto-discovery downstream klien saat mengecek manifest rilis ke Hub
+    if (db) {
+        try {
+            const rawClient = c.req.query('client_url') || c.req.header('Origin') || c.req.header('Referer') || '';
+            if (rawClient && !rawClient.includes('cms.labmu.dev') && !rawClient.includes('localhost')) {
+                const parsed = new URL(rawClient);
+                const clientOrigin = `${parsed.protocol}//${parsed.host}`;
+                const rawClientVer = c.req.query('client_version');
+                const siteName = c.req.query('site_name') || parsed.hostname;
+                const targetVersion = manifest?.version || '0.1.3';
+
+                let isUpdated = false;
+                if (rawClientVer) {
+                    isUpdated = otaAddonService.compareVersions(rawClientVer, targetVersion) >= 0;
+                }
+                const rolloutStatus = isUpdated ? 'updated' : (rawClientVer ? 'received' : 'pending');
+                const errorReason = isUpdated ? null : (rawClientVer ? 'Notifikasi diterima oleh klien, menunggu aksi update' : null);
+
+                await db.prepare(`
+                    CREATE TABLE IF NOT EXISTS ota_clients (
+                        id INTEGER PRIMARY KEY AUTOINCREMENT,
+                        client_url TEXT UNIQUE NOT NULL,
+                        site_name TEXT,
+                        is_active INTEGER DEFAULT 1,
+                        installed_version TEXT DEFAULT '0.1.1',
+                        target_version TEXT,
+                        rollout_status TEXT DEFAULT 'pending',
+                        error_reason TEXT,
+                        last_reported_at DATETIME,
+                        last_synced_at DATETIME,
+                        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                    );
+                `).run().catch(() => {});
+
+                await db.prepare(`
+                    INSERT INTO ota_clients (client_url, site_name, installed_version, target_version, rollout_status, error_reason, is_active, last_reported_at, last_synced_at)
+                    VALUES (?, ?, COALESCE(?, '0.1.1'), ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+                    ON CONFLICT(client_url) DO UPDATE SET
+                        site_name = COALESCE(excluded.site_name, ota_clients.site_name),
+                        installed_version = CASE 
+                            WHEN ? IS NOT NULL THEN excluded.installed_version 
+                            ELSE ota_clients.installed_version 
+                        END,
+                        target_version = COALESCE(excluded.target_version, ota_clients.target_version),
+                        rollout_status = CASE 
+                            WHEN excluded.rollout_status = 'updated' THEN 'updated'
+                            WHEN ota_clients.rollout_status = 'updated' THEN 'updated'
+                            WHEN ? IS NOT NULL THEN excluded.rollout_status
+                            ELSE ota_clients.rollout_status
+                        END,
+                        error_reason = CASE 
+                            WHEN excluded.rollout_status = 'updated' OR ota_clients.rollout_status = 'updated' THEN NULL
+                            WHEN ? IS NOT NULL THEN excluded.error_reason
+                            ELSE ota_clients.error_reason
+                        END,
+                        is_active = 1,
+                        last_reported_at = CURRENT_TIMESTAMP,
+                        last_synced_at = CURRENT_TIMESTAMP
+                `).bind(
+                    clientOrigin, 
+                    siteName, 
+                    rawClientVer, 
+                    targetVersion, 
+                    rolloutStatus, 
+                    errorReason,
+                    rawClientVer,
+                    rawClientVer,
+                    rawClientVer
+                ).run().catch(() => {});
+            }
+        } catch (_) {}
+    }
+
     return c.json({ success: true, data: manifest });
 });
 
@@ -35,7 +112,17 @@ otaRouter.get('/check-update', async (c) => {
     try {
         const db = c.env?.DB;
         const migrationInfo = await getMigrationStatus(db);
-        const clientVersion = c.req.query('client_version') || CORE_VERSION;
+
+        let currentInstalledVersion = CORE_VERSION;
+        if (db) {
+            try {
+                const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
+                if (verRow && verRow.value && verRow.value.trim()) {
+                    currentInstalledVersion = verRow.value.trim();
+                }
+            } catch (_) {}
+        }
+        const clientVersion = c.req.query('client_version') || currentInstalledVersion;
         
         const url = new URL(c.req.url);
         const baseUrl = `${url.protocol}//${url.host}`;
@@ -65,6 +152,35 @@ otaRouter.get('/check-update', async (c) => {
             channel = latestManifest.channel || 'stable';
             hasCoreUpdate = otaAddonService.compareVersions(latestVersion, clientVersion) > 0;
             upstreamManifest = latestManifest;
+
+            // Jika ada sinyal client_url masuk ke Hub, otomatis catat/perbarui di tabel ota_clients
+            const incomingClient = c.req.query('client_url') || c.req.header('Origin') || c.req.header('Referer');
+            if (incomingClient && db) {
+                try {
+                    const parsedUrl = new URL(incomingClient);
+                    const clientOrigin = `${parsedUrl.protocol}//${parsedUrl.host}`;
+                    if (!clientOrigin.includes('cms.labmu.dev')) {
+                        const clientName = c.req.query('site_name') || clientOrigin;
+                        await db.prepare(`
+                            INSERT INTO ota_clients (client_url, site_name, installed_version, target_version, rollout_status, is_active, last_synced_at)
+                            VALUES (?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP)
+                            ON CONFLICT(client_url) DO UPDATE SET
+                                site_name = COALESCE(excluded.site_name, ota_clients.site_name),
+                                installed_version = excluded.installed_version,
+                                target_version = excluded.target_version,
+                                rollout_status = excluded.rollout_status,
+                                is_active = 1,
+                                last_synced_at = CURRENT_TIMESTAMP
+                        `).bind(
+                            clientOrigin,
+                            clientName,
+                            clientVersion,
+                            latestVersion,
+                            hasCoreUpdate ? 'received' : 'updated'
+                        ).run();
+                    }
+                } catch (_) {}
+            }
         } else {
             // Mode Client: Periksa manifest ke upstream (GitHub cmsMu-go / Hub)
             const upstream = await otaAddonService.checkUpstreamUpdate(clientVersion);
@@ -79,6 +195,38 @@ otaRouter.get('/check-update', async (c) => {
             if (hasCoreUpdate && db) {
                 await otaAddonService.injectLocalNotification(db, latestVersion, changelog);
             }
+
+            // Laporkan status penerimaan sinyal rilis ke Upstream Hub secara non-blocking
+            try {
+                let siteName = url.host;
+                if (db) {
+                    try {
+                        const nameRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'site_title' OR key = 'site_name' LIMIT 1").first();
+                        if (nameRow?.value) siteName = nameRow.value;
+                    } catch (_) {}
+                }
+
+                const statusVal = hasCoreUpdate ? 'received' : 'updated';
+                const reasonVal = hasCoreUpdate ? 'Notifikasi diterima oleh klien, menunggu aksi update' : null;
+                const reportPromise = fetch(`${DEFAULT_UPSTREAM_URL}/api/addons/ota/clients/report-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_url: baseUrl,
+                        site_name: siteName,
+                        installed_version: currentInstalledVersion,
+                        target_version: latestVersion,
+                        rollout_status: statusVal,
+                        error_reason: reasonVal
+                    })
+                }).catch(() => {});
+
+                if ((c as any).executionCtx && typeof (c as any).executionCtx.waitUntil === 'function') {
+                    (c as any).executionCtx.waitUntil(reportPromise);
+                } else {
+                    await reportPromise;
+                }
+            } catch (_) {}
         }
 
         const hasDbPending = migrationInfo.appliedCount < migrationInfo.totalMigrations;
@@ -86,7 +234,7 @@ otaRouter.get('/check-update', async (c) => {
         return c.json({
             success: true,
             data: {
-                coreVersion: CORE_VERSION,
+                coreVersion: currentInstalledVersion,
                 latestVersion,
                 clientVersion,
                 channel,
@@ -112,6 +260,30 @@ otaRouter.get('/releases', async (c) => {
         const db = c.env?.DB;
         const releases = await otaAddonService.getAllReleases(db);
         return c.json({ success: true, data: releases });
+    } catch (err: any) {
+        return c.json({ success: false, error: err.message }, 500);
+    }
+});
+
+// 4b. POST /releases/clear - Bersihkan riwayat rilis OTA (arsip log lama)
+otaRouter.post('/releases/clear', async (c) => {
+    try {
+        const db = c.env?.DB;
+        if (!db) return c.json({ success: false, error: 'Database binding (DB) tidak ditemukan.' }, 500);
+        const body = await c.req.json().catch(() => ({}));
+        const clearAll = !!body.all;
+
+        if (clearAll) {
+            await db.prepare("DELETE FROM ota_releases").run().catch(() => {});
+        } else {
+            // Hapus rilis arsip (is_active = 0) dan sisakan rilis aktif terkini
+            await db.prepare("DELETE FROM ota_releases WHERE is_active = 0").run().catch(() => {});
+        }
+
+        return c.json({
+            success: true,
+            message: clearAll ? 'Seluruh riwayat rilis berhasil dikosongkan.' : 'Log riwayat rilis arsip berhasil dibersihkan.'
+        });
     } catch (err: any) {
         return c.json({ success: false, error: err.message }, 500);
     }
@@ -299,61 +471,104 @@ otaRouter.post('/webhook-notify', async (c) => {
 
 // 7. POST /apply-update - Terapkan migrasi database otomatis dan picu pembaruan kode
 otaRouter.post('/apply-update', async (c) => {
+    const url = new URL(c.req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    const db = c.env?.DB;
+    const body = await c.req.json().catch(() => ({}));
+    const isManual = !!body.manual || !!body.force;
+    
+    let siteName = url.host;
+    if (db) {
+        try {
+            const nameRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'site_title' OR key = 'site_name' LIMIT 1").first();
+            if (nameRow?.value) siteName = nameRow.value;
+        } catch (_) {}
+    }
+
+    let targetVersion = CORE_VERSION;
     try {
-        const db = c.env?.DB;
-        const body = await c.req.json().catch(() => ({}));
-        const isManual = !!body.manual || !!body.force;
-        
+        const upstream = await otaAddonService.checkUpstreamUpdate(CORE_VERSION);
+        if (upstream && upstream.upstreamVersion) {
+            targetVersion = upstream.upstreamVersion;
+        }
+    } catch (_) {}
+
+    try {
         // 1. Jalankan auto-migration skema database D1
         const migrationResult = await runAutoMigration(db);
 
-        // 2. Picu pembaruan kode via Cloudflare Pages Deploy Hook jika tersedia
-        let deployTriggered = false;
-        let deployMessage = '';
-        if (db) {
+        // 2. Simpan versi terpasang baru ke database settings
+        if (db && targetVersion) {
             try {
-                const hookRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1").first();
-                const hookUrl = hookRow?.value ? hookRow.value.trim() : '';
-                if (hookUrl) {
-                    const hookRes = await fetch(hookUrl, { method: 'POST' });
-                    if (hookRes.ok) {
-                        deployTriggered = true;
-                        deployMessage = 'Proses deploy patch kode terbaru di Cloudflare Pages sedang berjalan di latar belakang.';
-                    } else {
-                        deployMessage = `Peringatan: Deploy Hook merespons status HTTP ${hookRes.status}.`;
-                    }
+                await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
+                await db.prepare(`
+                    INSERT INTO settings (key, value) VALUES ('installed_core_version', ?)
+                    ON CONFLICT(key) DO UPDATE SET value = excluded.value
+                `).bind(targetVersion).run();
+            } catch (_) {}
+        }
+
+        // 3. Laporkan status updated ke Upstream Hub secara non-blocking
+        if (!isHubMode(url.host)) {
+            try {
+                const reportPromise = fetch(`${DEFAULT_UPSTREAM_URL}/api/addons/ota/clients/report-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_url: baseUrl,
+                        site_name: siteName,
+                        installed_version: targetVersion,
+                        target_version: targetVersion,
+                        rollout_status: 'updated',
+                        error_reason: null
+                    })
+                }).catch(() => {});
+
+                if ((c as any).executionCtx && typeof (c as any).executionCtx.waitUntil === 'function') {
+                    (c as any).executionCtx.waitUntil(reportPromise);
+                } else {
+                    await reportPromise;
                 }
-            } catch (hookErr: any) {
-                deployMessage = `Peringatan Deploy Hook: ${hookErr.message}`;
-            }
+            } catch (_) {}
         }
 
         let msg = '';
         if (migrationResult.appliedCount > 0) {
-            msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1!`;
+            msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1 dan memperbarui core ke v${targetVersion}!`;
         } else {
-            msg = 'Skema database D1 sudah dalam kondisi mutakhir.';
-        }
-
-        if (deployTriggered) {
-            msg += ' Sinyal Deploy Hook berhasil dikirim: pembaruan kode aplikasi sedang dibangun otomatis di Cloudflare!';
-        } else if (deployMessage) {
-            msg += ` (${deployMessage})`;
+            msg = `Sistem berhasil diselaraskan dan diperbarui ke versi v${targetVersion}!`;
         }
 
         return c.json({
             success: true,
             message: msg,
             data: {
-                coreVersion: CORE_VERSION,
+                coreVersion: targetVersion,
                 schemaVersion: migrationResult.currentVersion,
                 appliedCount: migrationResult.appliedCount,
                 history: migrationResult.history,
-                deployTriggered,
                 isManual
             }
         });
     } catch (err: any) {
+        // Laporkan kegagalan update ke Upstream Hub beserta error_reason
+        if (!isHubMode(url.host)) {
+            try {
+                fetch(`${DEFAULT_UPSTREAM_URL}/api/addons/ota/clients/report-status`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        client_url: baseUrl,
+                        site_name: siteName,
+                        installed_version: CORE_VERSION,
+                        target_version: targetVersion,
+                        rollout_status: 'failed',
+                        error_reason: err.message || 'Gagal menerapkan pembaruan sistem'
+                    })
+                }).catch(() => {});
+            } catch (_) {}
+        }
+
         return c.json({ success: false, error: err.message }, 500);
     }
 });
@@ -480,13 +695,23 @@ otaRouter.get('/status', async (c) => {
     const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
     const isHub = isHubMode(url.host);
 
+    let currentCoreVersion = CORE_VERSION;
+    if (db && !isHub) {
+        try {
+            const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
+            if (verRow && verRow.value && verRow.value.trim()) {
+                currentCoreVersion = verRow.value.trim();
+            }
+        } catch (_) {}
+    }
+
     return c.json({
         success: true,
         data: {
             engine: 'CMSMu Over-The-Air Update Engine (Plugin Addon)',
             role: isHub ? 'hub' : 'client',
             isHub,
-            currentCoreVersion: CORE_VERSION,
+            currentCoreVersion,
             activeManifestVersion: manifest.version,
             buildDate: CORE_BUILD_DATE,
             databaseIntegrity: {
@@ -499,59 +724,6 @@ otaRouter.get('/status', async (c) => {
     });
 });
 
-// 9. GET /clients - Daftar downstream clients terdaftar di Hub
-otaRouter.get('/clients', async (c) => {
-    try {
-        const db = c.env?.DB;
-        if (!db) return c.json({ success: true, data: [] });
-        await db.prepare(`
-            CREATE TABLE IF NOT EXISTS ota_clients (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_url TEXT UNIQUE NOT NULL,
-                site_name TEXT,
-                is_active INTEGER DEFAULT 1,
-                last_synced_at DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        `).run();
-        const res = await db.prepare("SELECT * FROM ota_clients ORDER BY created_at DESC").all();
-        return c.json({ success: true, data: res.results || [] });
-    } catch(e: any) {
-        return c.json({ success: false, error: e.message }, 500);
-    }
-});
-
-// 10. POST /clients/register - Pendaftaran otomatis klien downstream ke Hub
-otaRouter.post('/clients/register', async (c) => {
-    try {
-        const db = c.env?.DB;
-        if (!db) return c.json({ success: false, error: 'DB binding tidak ditemukan' }, 500);
-        const body = await c.req.json().catch(() => ({}));
-        const { client_url, site_name } = body;
-        if (!client_url || typeof client_url !== 'string') {
-            return c.json({ success: false, error: 'client_url wajib diisi' }, 400);
-        }
-        const cleanUrl = client_url.trim().replace(/\/+$/, '');
-        await db.prepare(`
-            CREATE TABLE IF NOT EXISTS ota_clients (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                client_url TEXT UNIQUE NOT NULL,
-                site_name TEXT,
-                is_active INTEGER DEFAULT 1,
-                last_synced_at DATETIME,
-                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-            );
-        `).run();
-        await db.prepare(`
-            INSERT INTO ota_clients (client_url, site_name, is_active, last_synced_at)
-            VALUES (?, ?, 1, CURRENT_TIMESTAMP)
-            ON CONFLICT(client_url) DO UPDATE SET
-                site_name = excluded.site_name,
-                is_active = 1,
-                last_synced_at = CURRENT_TIMESTAMP
-        `).bind(cleanUrl, site_name || cleanUrl).run();
-        return c.json({ success: true, message: 'Klien downstream berhasil terdaftar' });
-    } catch(e: any) {
-        return c.json({ success: false, error: e.message }, 500);
-    }
-});
+// Mount OTA Hub Sub-Router (SOP Poin 20 Modular Architecture)
+import { otaHubRouter } from "./hub.router";
+otaRouter.route("/", otaHubRouter);

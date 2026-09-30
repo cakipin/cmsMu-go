@@ -28,8 +28,8 @@ export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
     highlightColor: { type: "text" }
   },
   defaultProps: {
-    siteName: "CMSMu",
-    copyrightText: "© 2026 CMSMu - Content Management System Muhammadiyah. Hak Cipta Dilindungi.",
+    siteName: "Portal Redaksi",
+    copyrightText: "© 2026 Hak Cipta Dilindungi.",
     logoType: "both",
     logoImage: "",
     logoHeight: "36px",
@@ -37,8 +37,8 @@ export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
     highlightColor: "#059669"
   },
   render: ({
-    siteName = "CMSMu",
-    copyrightText = "© 2026 CMSMu - Content Management System Muhammadiyah. Hak Cipta Dilindungi.",
+    siteName = "Portal Redaksi",
+    copyrightText = "© 2026 Hak Cipta Dilindungi.",
     logoType = "both",
     logoImage = "",
     logoHeight = "36px",

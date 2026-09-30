@@ -71,7 +71,7 @@ app.onError((err, c) => {
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
   const method = c.req.method;
-  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) || path === '/api/health' ||
+  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) || path.startsWith('/api/addons/ota/clients/report-status') || path.startsWith('/api/addons/ota/clients/register') || path.startsWith('/api/addons/ota/clients/heartbeat') || path.startsWith('/api/addons/ota/git-push') || path === '/api/health' ||
     ((method === 'GET' || method === 'HEAD') && (path.startsWith('/api/media') || path.startsWith('/api/posts') || path.startsWith('/api/pages') || path.startsWith('/api/contents') || path.startsWith('/api/comments') || path === '/api/settings'));
 
   if (isWhitelisted) return await next();

@@ -8,10 +8,10 @@ export const sidebarBlock = `
 >
   <!-- SIDEBAR HEADER (Dynamic Brand synced with Settings) -->
   <div class="flex items-center px-3.5 py-3.5 border-b border-slate-700/40" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
-    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'CMSMu Dashboard'">
+    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'">
       <!-- Logo Container -->
       <template x-if="settings && (settings.site_logo || settings.logo)">
-        <img :src="settings.site_logo || settings.logo" class="w-8 h-8 object-contain rounded-lg shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200" :alt="settings.site_title || 'CMSMu'">
+        <img :src="settings.site_logo || settings.logo" class="w-8 h-8 object-contain rounded-lg shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200" :alt="settings.site_title || 'Logo'">
       </template>
       <template x-if="!settings || (!settings.site_logo && !settings.logo)">
         <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200">
@@ -22,7 +22,7 @@ export const sidebarBlock = `
       <!-- Brand Text -->
       <div x-show="sidebarOpen" class="flex flex-col text-left leading-none transition-opacity duration-200 overflow-hidden">
         <span class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
-          <span x-text="(settings && settings.site_title) ? settings.site_title : 'CMSMu'" class="truncate"></span>
+          <span x-text="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'" class="truncate"></span>
           <span class="text-[9px] font-medium px-1 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded leading-none shrink-0">CMS</span>
         </span>
         <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1 truncate max-w-[140px]" x-text="(settings && settings.site_desc) ? settings.site_desc : 'Redaksi Dashboard'"></span>

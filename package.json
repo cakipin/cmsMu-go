@@ -1,7 +1,7 @@
 {
   "name": "cmsmu",
   "type": "module",
-  "version": "0.1.1",
+  "version": "0.1.3",
   "engines": {
     "node": ">=22.12.0"
   },
@@ -26,6 +26,7 @@
     "lint": "eslint .",
     "generate-types": "wrangler types",
     "deploy": "npm run build && rm -rf dist/server/wrangler.json .wrangler/deploy && cp -r dist/client/* dist/ && echo \"export { default } from './server/entry.mjs';\" > dist/_worker.js && npx wrangler pages deploy dist --project-name cmsmu --branch main",
+    "release:git": "node scripts/push-to-git-upstream.mjs",
     "setup": "node scripts/setup-cloud.mjs",
     "install:cloud": "node scripts/setup-cloud.mjs",
     "sync:client": "node scripts/sync-core-to-client.mjs",

@@ -37,8 +37,8 @@ export function isPuckJson(contentStr: string | null | undefined): boolean {
 
 export function renderPuckHtml(options: PuckRenderOptions): string {
   const { site, page, canonical, latestPosts, menus } = options;
-  const siteTitle = escapeHtml(site?.site_title || site?.title || 'CMSMu');
-  const siteTagline = escapeHtml(site?.site_desc || site?.site_tagline || '1 Platform Untuk Sindikasi Media Muhammadiyah');
+  const siteTitle = escapeHtml(site?.site_title || site?.title || 'Portal Redaksi');
+  const siteTagline = escapeHtml(site?.site_desc || site?.site_tagline || '');
   const pageTitle = page?.title ? `${escapeHtml(page.title)} — ${siteTitle}` : (siteTagline ? `${siteTitle} | ${siteTagline}` : siteTitle);
   const metaDesc = escapeHtml(site?.site_meta_desc || siteTagline);
   const faviconUrl = escapeHtml(site?.site_favicon || site?.favicon || '/favicon.svg');

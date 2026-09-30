@@ -3,8 +3,8 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = '0.1.1';
-export const CORE_BUILD_DATE = '2026-09-22';
+export const CORE_VERSION = '0.1.3';
+export const CORE_BUILD_DATE = '2026-09-25';
 export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
 export interface OtaManifest {
@@ -39,7 +39,7 @@ export const otaAddonService = {
             name: 'CMSMu Core Framework',
             version: CORE_VERSION,
             buildDate: CORE_BUILD_DATE,
-            changelog: 'Rilis stabil CMSMu Core Framework v0.1.1 (OTA Engine Addon).',
+            changelog: `Rilis stabil CMSMu Core Framework v${CORE_VERSION} (OTA Engine Addon).`,
             minCompatibleSchema: MIN_COMPATIBLE_SCHEMA_VERSION,
             channel: 'stable',
             capabilities: [
@@ -62,7 +62,7 @@ export const otaAddonService = {
         const cleanBase = baseUrl.replace(/\/+$/, '');
         let version = CORE_VERSION;
         let buildDate = CORE_BUILD_DATE;
-        let changelog = 'Rilis stabil CMSMu Core Framework v0.1.1 (OTA Engine Addon).';
+        let changelog = `Rilis stabil CMSMu Core Framework v${CORE_VERSION} (OTA Engine Addon).`;
         let channel: 'stable' | 'beta' = 'stable';
 
         if (db) {
@@ -103,13 +103,25 @@ export const otaAddonService = {
     },
 
     compareVersions(v1: string, v2: string): number {
-        const parse = (v: string) => v.replace(/^v/, '').split('.').map(n => parseInt(n, 10) || 0);
-        const [maj1, min1, pat1] = parse(v1);
-        const [maj2, min2, pat2] = parse(v2);
+        const clean = (v: string) => (v || '').trim().replace(/^v/, '');
+        const [core1, pre1] = clean(v1).split('-', 2);
+        const [core2, pre2] = clean(v2).split('-', 2);
 
-        if (maj1 !== maj2) return maj1 - maj2;
-        if (min1 !== min2) return min1 - min2;
-        return pat1 - pat2;
+        const p1 = core1.split('.').map(n => parseInt(n, 10) || 0);
+        const p2 = core2.split('.').map(n => parseInt(n, 10) || 0);
+        const maxLen = Math.max(p1.length, p2.length, 3);
+        for (let i = 0; i < maxLen; i++) {
+            const num1 = p1[i] || 0;
+            const num2 = p2[i] || 0;
+            if (num1 !== num2) return num1 - num2;
+        }
+
+        // Jika core sama (misal 0.1.3 vs 0.1.3-beta.1), versi tanpa pre-release lebih tinggi
+        if (!pre1 && pre2) return 1;
+        if (pre1 && !pre2) return -1;
+        if (pre1 && pre2) return pre1.localeCompare(pre2);
+
+        return 0;
     },
 
     async checkUpstreamUpdate(clientVersion: string, upstreamUrl: string = DEFAULT_UPSTREAM_URL): Promise<{
@@ -161,7 +173,7 @@ export const otaAddonService = {
         // 2. Fallback: Ambil dari Upstream Hub (cms.labmu.dev)
         try {
             const cleanUpstream = upstreamUrl.replace(/\/+$/, '');
-            const targetUrl = `${cleanUpstream}/api/addons/ota/manifest?t=${Date.now()}`;
+            const targetUrl = `${cleanUpstream}/api/addons/ota/manifest?client_version=${encodeURIComponent(clientVersion)}&t=${Date.now()}`;
             const res = await fetch(targetUrl, {
                 headers: { 'Accept': 'application/json' }
             });

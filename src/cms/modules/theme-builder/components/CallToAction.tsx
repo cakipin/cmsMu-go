@@ -12,7 +12,7 @@ export const CallToAction: ComponentConfig<Props["CallToAction"]> = {
   },
   defaultProps: {
     title: "Mulai Bangun & Kelola Website Persyarikatan Anda",
-    description: "Gunakan fondasi CMSMu untuk mengelola portal resmi pimpinan, majelis, lembaga, dan amal usaha Muhammadiyah dengan aman, cepat, dan terstruktur.",
+    description: "Kelola portal resmi pimpinan, majelis, lembaga, dan amal usaha dengan aman, cepat, dan terstruktur.",
     buttonText: "Masuk Dashboard Admin",
     buttonLink: "/admin",
     footerText: "Tersedia untuk seluruh tingkatan pimpinan dan amal usaha Muhammadiyah."

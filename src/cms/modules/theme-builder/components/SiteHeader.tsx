@@ -147,7 +147,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     applyGlobal: "all",
     syncLogo: "yes",
     logoType: "both",
-    logoImage: "/logo-cmsmu.webp",
+    logoImage: "",
     logoHeight: "44px",
     logoLetter: "M",
     siteTitle: "",
@@ -247,7 +247,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
           boxShadow: `0 8px 20px -4px ${(ctaBgColor || "#16a34a")}44`
         };
 
-    const hasImage = Boolean(logoImage && logoImage.trim().length > 0);
+    const hasImage = Boolean(logoImage && logoImage.trim().length > 0 && logoImage !== "/logo-cmsmu.webp");
     const showImg = (logoType === "image" || logoType === "both") && hasImage;
     const showText = logoType === "text" || logoType === "both" || !hasImage;
 
