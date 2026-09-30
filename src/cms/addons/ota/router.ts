@@ -7,6 +7,29 @@ export const otaRouter = new Hono<{ Bindings: any }>();
 // 0. OPTIONS /* - Handle CORS preflight requests
 otaRouter.options('*', (c) => c.text('', 204));
 
+async function checkPluginActive(db: any, pluginId: string): Promise<boolean> {
+  try {
+    const row = await db.prepare("SELECT active FROM plugins WHERE id = ?").bind(pluginId).first();
+    if (!row) return false;
+    return Number(row.active) === 1;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Middleware: Blokir seluruh operasi OTA jika plugin dinonaktifkan
+otaRouter.use('*', async (c, next) => {
+  if (c.req.method === 'OPTIONS') return await next();
+  const db = c.env?.DB;
+  if (db) {
+    const active = await checkPluginActive(db, 'ota');
+    if (!active) {
+      return c.json({ success: false, error: "Plugin 'ota' is inactive or disabled." }, 403);
+    }
+  }
+  await next();
+});
+
 // 1. GET /manifest - Manifest publik versi Core CMSMu
 otaRouter.get('/manifest', async (c) => {
     const url = new URL(c.req.url);

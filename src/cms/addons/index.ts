@@ -1,12 +1,13 @@
 import { Hono } from 'hono';
 import type { Bindings } from '../types';
-import { registerPluginMenu, registerPluginView } from '../registry/admin-menu';
+import { registerPluginMenu, registerPluginView, registerPluginScript } from '../registry/admin-menu';
 import { aggregatorRouter } from './aggregator/router';
 import { aggregatorView } from './aggregator/view';
 import { newsroomRouter } from './newsroom/router';
 import { newsroomView } from './newsroom/view';
 import { otaRouter } from './ota/router';
 import { otaView } from './ota/view';
+import { otaManagerScript } from './ota/view.client';
 
 export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
   // 1. Mount API Routes
@@ -24,6 +25,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     pluginId: 'ota'
   });
   registerPluginView('ota', otaView);
+  registerPluginScript(otaManagerScript);
 
   registerPluginMenu({
     group: 'Plugins',

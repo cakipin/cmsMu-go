@@ -1,4 +1,4 @@
-import { pluginMenus, renderPluginViews } from '../../../registry/admin-menu';
+import { pluginMenus, renderPluginViews, renderPluginScripts } from '../../../registry/admin-menu';
 
 // ... (Import blocks lainnya tetap sama) ...
 import { adminStyles } from './blocks/styles';
@@ -383,6 +383,9 @@ export function renderAdmin(data: any): string {
 
             <!-- CMSMu Core Logic with OTA Fallback Safety -->
             <script>${cmsLogic}</script>
+
+            <!-- Plugins Client Scripts -->
+            ${renderPluginScripts()}
         </head>
         <body x-data="cms()" x-init="init()" x-cloak class="bg-slate-50 text-slate-800 font-sans">
             
