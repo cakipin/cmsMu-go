@@ -1,5 +1,6 @@
 export const editorMediaModal = `
     <!-- MODAL SELECTOR MEDIA / GAMBAR -->
+    <template x-teleport="body">
     <div x-show="mediaModalOpen" 
          style="position:fixed; inset:0; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;" 
          x-transition.opacity
@@ -43,14 +44,8 @@ export const editorMediaModal = `
                     </div>
 
                     <div x-show="mediaTab === 'library'" style="flex:1; overflow-y:auto; padding-right:5px;">
-                        <!-- Loading Indicator -->
-                        <div x-show="isLoadingMedia" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:240px; color:#6b7280; gap:12px;">
-                            <i class="fas fa-spinner fa-spin fa-2x" style="color:#2563eb;"></i>
-                            <span style="font-size:13px; font-weight:500;">Memuat pustaka media...</span>
-                        </div>
-
-                        <div x-show="!isLoadingMedia" style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px;">
-                            <template x-for="img in getMediaItems()" :key="img.key || img.id || img.url">
+                        <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px;">
+                            <template x-for="img in filteredMediaList" :key="img.url">
                                 <div @click="selectMediaItem(img)" 
                                      style="aspect-ratio:1; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; background:#e5e7eb; border:3px solid transparent; transition:all 0.15s ease-in-out;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'border-color:#2563eb; transform:scale(0.96); box-shadow:0 0 0 2px #93c5fd;' : ''"
@@ -71,7 +66,7 @@ export const editorMediaModal = `
                             </template>
                         </div>
 
-                        <div x-show="!isLoadingMedia && getMediaItems().length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
+                        <div x-show="filteredMediaList.length===0" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#9ca3af; padding:40px;">
                             <div style="width:80px; height:80px; background:#e5e7eb; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:20px;">
                                 <i class="fas fa-search fa-2x" style="color:#9ca3af;"></i>
                             </div>
@@ -177,4 +172,5 @@ export const editorMediaModal = `
             </div>
         </div>
     </div>
+    </template>
 `;

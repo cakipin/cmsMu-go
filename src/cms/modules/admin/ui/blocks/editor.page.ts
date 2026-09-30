@@ -24,8 +24,7 @@ export const editorPage = `
          allPosts: [],          
 
          // STATE MEDIA
-         mediaTab: 'library',
-         isLoadingMedia: false,
+         mediaTab: 'library', 
          uploadFile: null,
          uploadPreview: null,
          selectedMedia: null,
@@ -91,7 +90,6 @@ export const editorPage = `
 
          async loadMediaLibrary() {
              this.mediaList = [];
-             this.isLoadingMedia = true;
              try {
                  const token = this.getToken();
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -102,28 +100,18 @@ export const editorPage = `
                      ...m,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
-                 })).filter(m => m.url);
-             } catch(e) {
-                 console.error('Library Error', e);
-             } finally {
-                 this.isLoadingMedia = false;
-             }
+                 }));
+             } catch(e) { console.error('Library Error', e); }
          },
 
-        getMediaItems() {
-            const list = Array.isArray(this.mediaList) ? this.mediaList : [];
-            if (!this.searchQuery) return list.slice(0, 60);
-            const q = this.searchQuery.toLowerCase().trim();
-            return list.filter(m => 
-                (m.title && m.title.toLowerCase().includes(q)) || 
-                (m.alt && m.alt.toLowerCase().includes(q)) ||
-                (m.key && m.key.toLowerCase().includes(q))
-            ).slice(0, 60);
-        },
-
-        get filteredMediaList() {
-            return this.getMediaItems();
-        },
+         get filteredMediaList() {
+             if(!this.searchQuery) return this.mediaList;
+             const q = this.searchQuery.toLowerCase();
+             return this.mediaList.filter(m => 
+                 (m.title && m.title.toLowerCase().includes(q)) || 
+                 (m.alt && m.alt.toLowerCase().includes(q))
+             );
+         },
 
          selectMediaItem(img) {
              this.selectedMedia = { ...img }; 
