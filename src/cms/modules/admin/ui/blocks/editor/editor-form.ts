@@ -201,6 +201,7 @@ export const editorForm = `
                     <template x-for="tag in uniqueTags.slice(0, 15)" :key="tag">
                         <span @click="addTag(tag)" style="font-size:11px; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:12px; cursor:pointer; border:1px solid #e5e7eb;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'" x-text="'+ ' + tag"></span>
                     </template>
+                </div>
             </div>
         </div>
     </div>
