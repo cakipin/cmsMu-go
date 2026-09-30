@@ -19,9 +19,14 @@ export const editorForm = `
 
             <!-- SEO & Metadata Section -->
             <div class="card" style="padding: 20px; border: 1px solid #e5e7eb; border-radius: 8px; background: white; margin-bottom: 20px;">
-                <h3 style="margin: 0 0 15px 0; font-size: 16px; font-weight: 600; color: #1f2937; border-bottom: 1px solid #f3f4f6; padding-bottom: 10px;">
-                    <i class="fas fa-search" style="color: #6b7280; margin-right: 8px;"></i> SEO & Metadata
-                </h3>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 15px; border-bottom: 1px solid #f3f4f6; padding-bottom: 10px;">
+                    <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #1f2937;">
+                        <i class="fas fa-search" style="color: #6b7280; margin-right: 8px;"></i> SEO & Metadata
+                    </h3>
+                    <button type="button" @click="autoGenerateSeo()" style="font-size:11px; padding:4px 10px; background:#eff6ff; color:#2563eb; border:1px solid #bfdbfe; border-radius:5px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:5px;" title="Isi otomatis Excerpt dan Meta Description dari isi tulisan">
+                        <i class="fas fa-magic"></i> Auto-Generate dari Konten
+                    </button>
+                </div>
                 
                 <div style="margin-bottom: 15px;">
                     <label style="display: block; font-size: 13px; font-weight: 600; color: #4b5563; margin-bottom: 6px;">Excerpt (Ringkasan)</label>
@@ -144,6 +149,20 @@ export const editorForm = `
                     <input type="datetime-local" x-model="form.date" class="input" style="width:100%; font-size:13px; padding:6px 10px; border-radius:6px; border:1px solid #d1d5db; box-sizing:border-box;">
                 </div>
 
+                <div style="margin-bottom:15px; padding-top:10px; border-top:1px dashed #e5e7eb; display:flex; justify-content:space-between; align-items:center;">
+                    <label style="font-size:12px; font-weight:600; color:#374151; display:flex; align-items:center; gap:6px; cursor:pointer;" @click="form.allow_comments = (form.allow_comments == 1 || form.allow_comments === true || form.allow_comments === '1') ? 0 : 1">
+                        <i class="fas fa-comments" style="color:#0d9488;"></i> Izinkan Komentar
+                    </label>
+                    <button type="button" role="switch"
+                            class="comment-toggle-switch"
+                            :class="{ 'active': (form.allow_comments == 1 || form.allow_comments === true || form.allow_comments === '1') }"
+                            @click="form.allow_comments = (form.allow_comments == 1 || form.allow_comments === true || form.allow_comments === '1') ? 0 : 1"
+                            :aria-checked="(form.allow_comments == 1 || form.allow_comments === true || form.allow_comments === '1') ? 'true' : 'false'"
+                            title="Aktifkan / Nonaktifkan Komentar">
+                        <span class="comment-toggle-thumb"></span>
+                    </button>
+                </div>
+
                 <button @click="save()" class="btn" style="width:100%; background:#2271b1; color:white; padding:10px; font-size:14px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:8px;" :disabled="isSaving">
                     <i class="fas fa-spinner fa-spin" x-show="isSaving"></i>
                     <span x-text="isSaving ? 'Menyimpan...' : (editingId ? 'Perbarui Tulisan' : 'Terbitkan Sekarang')"></span>
@@ -182,25 +201,45 @@ export const editorForm = `
                     <template x-for="tag in uniqueTags.slice(0, 15)" :key="tag">
                         <span @click="addTag(tag)" style="font-size:11px; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:12px; cursor:pointer; border:1px solid #e5e7eb;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'" x-text="'+ ' + tag"></span>
                     </template>
-                </div>
-            </div>
-
-            <!-- PENGATURAN LAINNYA -->
-            <div class="card" style="padding:15px; border-radius:8px; background:white; border:1px solid #e5e7eb;">
-                <h3 style="margin:0 0 10px 0; font-size:13px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">Pengaturan Lain</h3>
-                
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:13px; color:#4b5563;">Izinkan Komentar</span>
-                    <label class="switch" style="position:relative; display:inline-block; width:40px; height:22px;">
-                        <input type="checkbox" x-model="form.allow_comments" :true-value="1" :false-value="0" style="opacity:0; width:0; height:0;">
-                        <span class="slider round" style="position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#ccc; transition:.4s; border-radius:34px;" 
-                              :style="form.allow_comments == 1 ? 'background-color:#10b981;' : ''">
-                            <span style="position:absolute; content:''; height:14px; width:14px; left:4px; bottom:4px; background-color:white; transition:.4s; border-radius:50%;"
-                                  :style="form.allow_comments == 1 ? 'transform:translateX(18px);' : ''"></span>
-                        </span>
-                    </label>
-                </div>
             </div>
         </div>
     </div>
+
+    <style>
+        .comment-toggle-switch {
+            position: relative !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            width: 44px !important;
+            height: 24px !important;
+            min-width: 44px !important;
+            max-width: 44px !important;
+            border-radius: 9999px !important;
+            border: none !important;
+            cursor: pointer !important;
+            background-color: #cbd5e1 !important;
+            transition: background-color 0.2s ease !important;
+            padding: 2px !important;
+            box-sizing: border-box !important;
+            outline: none !important;
+            flex-shrink: 0 !important;
+        }
+        .comment-toggle-switch.active {
+            background-color: #10b981 !important;
+        }
+        .comment-toggle-thumb {
+            display: block !important;
+            width: 20px !important;
+            height: 20px !important;
+            background-color: #ffffff !important;
+            border-radius: 50% !important;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important;
+            transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+            pointer-events: none !important;
+            transform: translateX(0px) !important;
+        }
+        .comment-toggle-switch.active .comment-toggle-thumb {
+            transform: translateX(20px) !important;
+        }
+    </style>
 `;

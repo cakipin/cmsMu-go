@@ -110,4 +110,24 @@ export const adminStyles = `
   /* LOGIN PAGE */
   .login-page { display: flex; justify-content: center; align-items: center; height: 100vh; background: #e9ecef; position: fixed; top: 0; left: 0; width: 100%; z-index: 9999; }
   .login-box { background: white; padding: 40px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); width: 350px; text-align: center; }
+
+  /* EDITOR TABS, TOOLBAR & COMMENT TOGGLE FIX */
+  .editor-top-bar { display: flex !important; justify-content: space-between !important; align-items: flex-end !important; margin-bottom: -1px !important; z-index: 2 !important; width: 100% !important; }
+  .editor-tab-btn { display: inline-flex !important; align-items: center !important; gap: 6px !important; border: 1px solid #cbd5e1 !important; border-bottom: 1px solid #cbd5e1 !important; border-radius: 6px 6px 0 0 !important; padding: 6px 14px !important; font-size: 12px !important; font-weight: 500 !important; color: #64748b !important; background: #f1f5f9 !important; cursor: pointer !important; transition: all 0.15s ease !important; outline: none !important; line-height: 1.2 !important; text-decoration: none !important; }
+  .editor-tab-btn:hover { background: #e2e8f0 !important; color: #1e293b !important; }
+  .editor-tab-btn.active { background: #ffffff !important; border-color: #cbd5e1 !important; border-bottom-color: #ffffff !important; color: #0f172a !important; font-weight: 700 !important; }
+  .editor-media-btn { display: inline-flex !important; align-items: center !important; gap: 6px !important; background: #ffffff !important; border: 1px solid #cbd5e1 !important; border-bottom-color: #ffffff !important; border-radius: 6px 6px 0 0 !important; padding: 6px 14px !important; font-size: 13px !important; font-weight: 600 !important; color: #1e293b !important; cursor: pointer !important; box-shadow: 0 -1px 2px rgba(0,0,0,0.02) !important; outline: none !important; }
+  .editor-media-btn:hover { background: #f8fafc !important; }
+
+  .editor-toolbar { display: flex !important; flex-direction: row !important; flex-wrap: wrap !important; align-items: center !important; gap: 4px !important; padding: 6px 10px !important; background: #f8fafc !important; border-bottom: 1px solid #e2e8f0 !important; box-sizing: border-box !important; }
+  .editor-toolbar select.editor-select { display: inline-block !important; height: 28px !important; padding: 2px 8px !important; border: 1px solid #cbd5e1 !important; border-radius: 4px !important; background: #ffffff !important; font-size: 12px !important; font-weight: 500 !important; color: #334155 !important; cursor: pointer !important; outline: none !important; flex-shrink: 0 !important; }
+  .editor-toolbar button.editor-btn { display: inline-flex !important; align-items: center !important; justify-content: center !important; width: 28px !important; height: 28px !important; min-width: 28px !important; max-width: 28px !important; padding: 0 !important; color: #475569 !important; background: transparent !important; border: 1px solid transparent !important; border-radius: 4px !important; cursor: pointer !important; transition: all 0.15s ease !important; font-size: 13px !important; flex-shrink: 0 !important; outline: none !important; }
+  .editor-toolbar button.editor-btn:hover { background: #ffffff !important; border-color: #cbd5e1 !important; color: #0f172a !important; box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important; }
+  .editor-toolbar button.editor-btn.active { background: #e2e8f0 !important; border-color: #94a3b8 !important; color: #1e40af !important; }
+  .editor-toolbar .toolbar-divider { display: inline-block !important; width: 1px !important; height: 18px !important; background: #cbd5e1 !important; margin: 0 3px !important; flex-shrink: 0 !important; }
+
+  .comment-toggle-switch { position: relative !important; display: inline-flex !important; align-items: center !important; width: 44px !important; height: 24px !important; min-width: 44px !important; max-width: 44px !important; border-radius: 9999px !important; border: none !important; cursor: pointer !important; background-color: #cbd5e1 !important; transition: background-color 0.2s ease !important; padding: 2px !important; box-sizing: border-box !important; outline: none !important; flex-shrink: 0 !important; }
+  .comment-toggle-switch.active { background-color: #10b981 !important; }
+  .comment-toggle-thumb { display: block !important; width: 20px !important; height: 20px !important; background-color: #ffffff !important; border-radius: 50% !important; box-shadow: 0 1px 3px rgba(0,0,0,0.25) !important; transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important; pointer-events: none !important; transform: translateX(0px) !important; }
+  .comment-toggle-switch.active .comment-toggle-thumb { transform: translateX(20px) !important; }
 `;

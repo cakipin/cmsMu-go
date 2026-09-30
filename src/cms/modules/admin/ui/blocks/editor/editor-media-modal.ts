@@ -1,11 +1,12 @@
 export const editorMediaModal = `
     <!-- MODAL SELECTOR MEDIA / GAMBAR -->
+    <template x-teleport="body">
     <div x-show="mediaModalOpen" 
-         style="position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px;" 
+         style="position:fixed; inset:0; top:0; left:0; right:0; bottom:0; width:100vw; height:100vh; background:rgba(0,0,0,0.6); backdrop-filter:blur(5px); z-index:999999; display:flex; justify-content:center; align-items:center; padding:20px; box-sizing:border-box;" 
          x-transition.opacity
          x-cloak>
         
-        <div style="background:white; width:100%; max-width:1100px; height:85vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+        <div style="background:white; width:100%; max-width:1100px; height:85vh; border-radius:16px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 25px 50px -12px rgba(0,0,0,0.25); font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; margin:auto;">
             
             <div style="padding:16px 24px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#fff;">
                 <div style="display:flex; align-items:center; gap:24px;">
@@ -171,4 +172,5 @@ export const editorMediaModal = `
             </div>
         </div>
     </div>
+    </template>
 `;
