@@ -5,6 +5,7 @@
  */
 
 import { otaManagerScript } from "./view.client";
+import { otaReportModal } from "./report.modal";
 
 export const otaView = `
 <div class="animate-fade" style="padding-bottom:60px;" x-data="otaManagerData()">
@@ -78,17 +79,23 @@ export const otaView = `
 
     <!-- CLIENT MODE BANNER: UP TO DATE -->
     <template x-if="!isHub && !hasUpdate && !isLoading">
-        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 shadow-xs mb-6 flex items-center justify-between">
+        <div class="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/70 shadow-xs mb-6 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div class="flex items-center gap-3">
                 <div class="w-8 h-8 rounded-lg bg-emerald-500 text-white flex items-center justify-center shrink-0">
                     <i class="fas fa-check"></i>
                 </div>
                 <div>
                     <h4 class="text-xs font-bold text-emerald-950 m-0">Sistem CMSMu Anda Sudah Dalam Versi Terkini</h4>
-                    <p class="text-[11px] text-emerald-700 m-0 mt-0.5">Versi terpasang: <strong x-text="'v' + (statusData.currentCoreVersion || '0.1.1')">v0.1.1</strong> • Terhubung ke server rilis resmi <span class="font-mono">cms.labmu.dev</span></p>
+                    <p class="text-[11px] text-emerald-700 m-0 mt-0.5">Versi terpasang: <strong x-text="'v' + (statusData.currentCoreVersion || '0.1.3')">v0.1.3</strong> • Terhubung ke server rilis resmi <span class="font-mono">cms.labmu.dev</span></p>
                 </div>
             </div>
-            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersinkron</span>
+            <div class="flex items-center gap-2">
+                <button type="button" @click="openReportModal()" class="px-3 py-1.5 rounded-xl text-xs font-semibold bg-white border border-emerald-300 text-emerald-800 hover:bg-emerald-100/50 shadow-xs flex items-center gap-1.5 cursor-pointer">
+                    <i class="fas fa-clipboard-list text-emerald-600"></i>
+                    <span>Lihat Laporan Pembaruan</span>
+                </button>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">Tersinkron</span>
+            </div>
         </div>
     </template>
 
@@ -861,5 +868,8 @@ export const otaView = `
             </div>
         </div>
     </div>
+
+    <!-- MODAL LAPORAN PEMBARUAN SISTEM (AUDIT REPORT) -->
+    ${otaReportModal}
 </div>
 `;

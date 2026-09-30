@@ -7,6 +7,47 @@ export const CORE_VERSION = '0.1.3';
 export const CORE_BUILD_DATE = '2026-09-25';
 export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
+export interface OtaUpdatedComponent {
+    name: string;
+    path: string;
+    type: 'core' | 'editor' | 'addon' | 'theme' | 'db';
+    description: string;
+    status?: 'synced' | 'pending' | 'success';
+}
+
+export const DEFAULT_UPDATED_COMPONENTS: OtaUpdatedComponent[] = [
+    {
+        name: 'Perbaikan Editor & Media Selector Modal',
+        path: 'src/cms/modules/admin/ui/blocks/editor/',
+        type: 'editor',
+        description: 'Modal Media Manager terpusat di tengah layar (x-teleport body, z-index 999999), integrasi selector gambar artikel, dan toolbar WP Classic.'
+    },
+    {
+        name: 'Komponen Custom Editor WYSIWYG',
+        path: 'src/cms/modules/admin/ui/blocks/custom-editor.ts',
+        type: 'editor',
+        description: 'Dukungan dual-mode Visual & Text/HTML, auto-format heading/quote, dan tombol Add Media responsif.'
+    },
+    {
+        name: 'Formulir Penulisan & Metadata SEO',
+        path: 'src/cms/modules/admin/ui/blocks/editor/editor-form.ts',
+        type: 'editor',
+        description: 'Auto-generate excerpt dan meta description dari isi tulisan, serta pemilih Featured Image interaktif.'
+    },
+    {
+        name: 'Router Halaman Redaksi Unified',
+        path: 'src/cms/modules/admin/ui/blocks/editor.page.ts',
+        type: 'core',
+        description: 'Pengalihan aman rute /admin/add dan /admin/edit ke komponen modular terisolasi.'
+    },
+    {
+        name: 'Engine Distribusi OTA & Audit Laporan',
+        path: 'src/cms/addons/ota/',
+        type: 'addon',
+        description: 'Laporan pembaruan transparan dengan daftar path file yang diperbarui dan status migrasi database.'
+    }
+];
+
 export interface OtaManifest {
     name: string;
     version: string;
@@ -20,6 +61,7 @@ export interface OtaManifest {
     bundleUrl: string;
     repository?: string;
     downloadUrl?: string;
+    updatedComponents?: OtaUpdatedComponent[];
 }
 
 export const DEFAULT_UPSTREAM_URL = 'https://cms.labmu.dev';
@@ -54,7 +96,8 @@ export const otaAddonService = {
                 'ota'
             ],
             updateUrl: `${cleanBase}/api/addons/ota/manifest`,
-            bundleUrl: `${cleanBase}/api/addons/ota/bundle/admin.js`
+            bundleUrl: `${cleanBase}/api/addons/ota/bundle/admin.js`,
+            updatedComponents: DEFAULT_UPDATED_COMPONENTS
         };
     },
 
@@ -98,7 +141,8 @@ export const otaAddonService = {
                 'ota'
             ],
             updateUrl: `${cleanBase}/api/addons/ota/manifest`,
-            bundleUrl: `${cleanBase}/api/addons/ota/bundle/admin.js`
+            bundleUrl: `${cleanBase}/api/addons/ota/bundle/admin.js`,
+            updatedComponents: DEFAULT_UPDATED_COMPONENTS
         };
     },
 

@@ -25,6 +25,43 @@ if (typeof window !== 'undefined') {
             showClearReleasesModal: false,
             showClearClientsModal: false,
             showGitPushModal: false,
+            showReportModal: false,
+            updateReport: null,
+            defaultUpdatedComponents: [
+                {
+                    name: 'Perbaikan Editor & Media Selector Modal',
+                    path: 'src/cms/modules/admin/ui/blocks/editor/',
+                    type: 'editor',
+                    description: 'Modal Media Manager terpusat di tengah layar (x-teleport body, z-index 999999), integrasi selector gambar artikel, dan toolbar WP Classic.'
+                },
+                {
+                    name: 'Komponen Custom Editor WYSIWYG',
+                    path: 'src/cms/modules/admin/ui/blocks/custom-editor.ts',
+                    type: 'editor',
+                    description: 'Dukungan dual-mode Visual & Text/HTML, auto-format heading/quote, dan tombol Add Media responsif.'
+                },
+                {
+                    name: 'Formulir Penulisan & Metadata SEO',
+                    path: 'src/cms/modules/admin/ui/blocks/editor/editor-form.ts',
+                    type: 'editor',
+                    description: 'Auto-generate excerpt dan meta description dari isi tulisan, serta pemilih Featured Image interaktif.'
+                },
+                {
+                    name: 'Router Halaman Redaksi Unified',
+                    path: 'src/cms/modules/admin/ui/blocks/editor.page.ts',
+                    type: 'core',
+                    description: 'Pengalihan aman rute /admin/add dan /admin/edit ke komponen modular terisolasi.'
+                },
+                {
+                    name: 'Engine Distribusi OTA & Audit Laporan',
+                    path: 'src/cms/addons/ota/',
+                    type: 'addon',
+                    description: 'Laporan pembaruan transparan dengan daftar path file yang diperbarui dan status migrasi database.'
+                }
+            ],
+            openReportModal() {
+                this.showReportModal = true;
+            },
             isClearingReleases: false,
             isClearingClients: false,
             isPushingGit: false,
@@ -296,6 +333,14 @@ if (typeof window !== 'undefined') {
                         const json = await res.json();
                         this.showApplyModal = false;
                         this.hasUpdate = false;
+                        this.updateReport = {
+                            version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || '0.1.3',
+                            schemaVersion: (json.data && json.data.schemaVersion) || '0.1.0',
+                            appliedCount: json.data?.appliedCount ?? 0,
+                            history: json.data?.history || [],
+                            components: json.data?.updatedComponents || this.defaultUpdatedComponents
+                        };
+                        this.showReportModal = true;
                         if (window.showToast) {
                             window.showToast(json.message || 'Pembaruan sistem berhasil diterapkan!', 'success');
                         }

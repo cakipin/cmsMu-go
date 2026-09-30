@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { otaAddonService, CORE_VERSION, CORE_BUILD_DATE, isHubMode, DEFAULT_UPSTREAM_URL } from './services/ota.service';
+import { otaAddonService, CORE_VERSION, CORE_BUILD_DATE, isHubMode, DEFAULT_UPSTREAM_URL, DEFAULT_UPDATED_COMPONENTS } from './services/ota.service';
 import { runAutoMigration, getMigrationStatus } from '../../db/migration-runner';
 
 export const otaRouter = new Hono<{ Bindings: any }>();
@@ -547,7 +547,8 @@ otaRouter.post('/apply-update', async (c) => {
                 schemaVersion: migrationResult.currentVersion,
                 appliedCount: migrationResult.appliedCount,
                 history: migrationResult.history,
-                isManual
+                isManual,
+                updatedComponents: DEFAULT_UPDATED_COMPONENTS
             }
         });
     } catch (err: any) {
