@@ -24,7 +24,8 @@ export const editorPage = `
          allPosts: [],          
 
          // STATE MEDIA
-         mediaTab: 'library', 
+         mediaTab: 'library',
+         isLoadingMedia: false,
          uploadFile: null,
          uploadPreview: null,
          selectedMedia: null,
@@ -90,6 +91,7 @@ export const editorPage = `
 
          async loadMediaLibrary() {
              this.mediaList = [];
+             this.isLoadingMedia = true;
              try {
                  const token = this.getToken();
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
@@ -100,8 +102,12 @@ export const editorPage = `
                      ...m,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
-                 }));
-             } catch(e) { console.error('Library Error', e); }
+                 })).filter(m => m.url);
+             } catch(e) {
+                 console.error('Library Error', e);
+             } finally {
+                 this.isLoadingMedia = false;
+             }
          },
 
          get filteredMediaList() {
