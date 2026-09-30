@@ -33,12 +33,16 @@ export const editorPage = `
          // Form Metadata
          mediaForm: { title: '', alt: '', caption: '', description: '' },
 
+         getToken() {
+             return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+         },
+
          // ===============================================
          // 2. LOAD DATA
          // ===============================================
          async loadGlobalData() {
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/posts?t=' + Date.now(), {
                      headers: { 'Authorization': 'Bearer ' + token }
                  });
@@ -87,7 +91,7 @@ export const editorPage = `
          async loadMediaLibrary() {
              this.mediaList = [];
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  const json = await res.json();
                  
@@ -145,7 +149,7 @@ export const editorPage = `
              this.selectedMedia.description = this.mediaForm.description;
 
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  await fetch('/api/media/meta', { 
                      method: 'POST', 
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
@@ -174,7 +178,7 @@ export const editorPage = `
              fd.append('description', this.mediaForm.description);
 
              try {
-                 const token = localStorage.getItem('labmu_token');
+                 const token = this.getToken();
                  const res = await fetch('/api/media', {
                      method: 'POST',
                      headers: { 'Authorization': 'Bearer ' + token },
@@ -256,7 +260,7 @@ export const editorPage = `
 
               this.isRenamingTaxonomy = true;
               try {
-                  const token = localStorage.getItem('labmu_token');
+                  const token = this.getToken();
                   const endpoint = this.renameTargetType === 'category' 
                       ? '/api/posts/taxonomy/rename-category' 
                       : '/api/posts/taxonomy/rename-tag';
@@ -307,7 +311,7 @@ export const editorPage = `
 
               this.isDeletingTaxonomy = true;
               try {
-                  const token = localStorage.getItem('labmu_token');
+                  const token = this.getToken();
                   const endpoint = this.deleteTargetType === 'category' 
                       ? '/api/posts/taxonomy/delete-category' 
                       : '/api/posts/taxonomy/delete-tag';
@@ -371,7 +375,7 @@ export const editorPage = `
                   featured_image_caption: this.form.featured_image_caption || '',
                   featured_image_alt: this.form.featured_image_alt || '',
                   is_premium: this.form.is_premium || false,
-                  allow_comments: this.form.allow_comments !== undefined ? this.form.allow_comments : true,
+                  allow_comments: (this.form.allow_comments === 0 || this.form.allow_comments === false || this.form.allow_comments === '0') ? 0 : 1,
                   type: this.form.type || 'post',
                   video_url: this.form.video_url || ''
               }));
@@ -384,7 +388,7 @@ export const editorPage = `
               try {
                    this.isSaving = true;
                    this.saveError = '';
-                   const token = localStorage.getItem('labmu_token');
+                   const token = this.getToken();
                    const method = this.editingId ? 'PUT' : 'POST';
                    const url = this.editingId ? ('/api/posts/' + this.editingId) : '/api/posts';
                    const res = await fetch(url, {
@@ -471,7 +475,28 @@ export const editorPage = `
                }
            },
 
-          makeSlug() { if(!this.editingId) this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-'); },
+          makeSlug() {
+              if (!this.editingId && this.form.title) {
+                  this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              }
+              if (!this.form.meta_title || this.form.meta_title === this._autoMetaTitle) {
+                  this.form.meta_title = (this.form.title || '').slice(0, 60);
+                  this._autoMetaTitle = this.form.meta_title;
+              }
+          },
+          autoGenerateSeo() {
+              if (this.form.title && !this.form.meta_title) {
+                  this.form.meta_title = this.form.title.slice(0, 60);
+              }
+              const temp = document.createElement('div');
+              temp.innerHTML = this.form.body || '';
+              const plain = (temp.innerText || temp.textContent || '').replace(/\s+/g, ' ').trim();
+              if (plain) {
+                  const snippet = plain.slice(0, 160);
+                  this.form.excerpt = snippet;
+                  this.form.meta_description = snippet;
+              }
+          },
           addTag(t) {
               let cur = this.form.tags || '';
               const arr = cur.split(',').map(x => x.trim());
