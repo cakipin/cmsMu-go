@@ -109,6 +109,8 @@ export const staticPage = `
          // ============================================================
          // --- MEDIA LOGIC UNTUK CUSTOM EDITOR ---
          openMediaForEditor() {
+             const v = (typeof this.view !== 'undefined' ? this.view : (typeof view !== 'undefined' ? view : ''));
+             if (v !== 'add-page' && v !== 'pages') return;
              // Trigger buka selector buat editor statis
              window.dispatchEvent(new CustomEvent('save-editor-selection'));
              this.openMediaSelector();
@@ -187,9 +189,9 @@ export const staticPage = `
          },
 
          get filteredMediaList() {
-             if(!this.mediaSearchQuery) return this.mediaList;
+             if(!this.mediaSearchQuery) return this.mediaList.slice(0, 60);
              const q = this.mediaSearchQuery.toLowerCase();
-             return this.mediaList.filter(m => (m.title||'').toLowerCase().includes(q));
+             return this.mediaList.filter(m => (m.title||'').toLowerCase().includes(q)).slice(0, 60);
          },
 
          selectMediaItem(img) {

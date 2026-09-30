@@ -105,12 +105,12 @@ export const editorPage = `
          },
 
          get filteredMediaList() {
-             if(!this.searchQuery) return this.mediaList;
+             if(!this.searchQuery) return this.mediaList.slice(0, 60);
              const q = this.searchQuery.toLowerCase();
              return this.mediaList.filter(m => 
                  (m.title && m.title.toLowerCase().includes(q)) || 
                  (m.alt && m.alt.toLowerCase().includes(q))
-             );
+             ).slice(0, 60);
          },
 
          selectMediaItem(img) {
@@ -349,6 +349,8 @@ export const editorPage = `
           },
 
           openMediaForEditor() {
+              const v = (typeof this.view !== 'undefined' ? this.view : (typeof view !== 'undefined' ? view : ''));
+              if (v !== 'add' && v !== 'edit') return;
               this.openMediaSelector();
               this.mediaSelectorTarget = 'custom-editor';
           },
