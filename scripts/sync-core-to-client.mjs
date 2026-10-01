@@ -196,7 +196,7 @@ const hasNewsroom = fs.existsSync(path.join(targetAddonsDir, 'newsroom'));
 const imports = [
   "import { Hono } from 'hono';",
   "import type { Bindings } from '../types';",
-  "import { registerPluginMenu, registerPluginView } from '../registry/admin-menu';"
+  "import { registerPluginMenu, registerPluginView, registerPluginScript } from '../registry/admin-menu';"
 ];
 const routes = [];
 const menus = [];
@@ -211,7 +211,7 @@ if (hasAggregator) {
     title: 'Sumber Agregator',
     view: 'aggregator',
     icon: 'fas fa-satellite-dish',
-    role: ['admin'],
+    role: ['superadmin', 'admin'],
     pluginId: 'aggregator'
   });
   registerPluginView('aggregator', aggregatorView);`);
@@ -227,7 +227,7 @@ if (hasNewsroom) {
     title: 'Meja Kurasi',
     view: 'newsroom',
     icon: 'fas fa-newspaper',
-    role: ['admin', 'editor'],
+    role: ['superadmin', 'admin', 'editor'],
     pluginId: 'newsroom'
   });
   registerPluginView('newsroom', newsroomView);`);
@@ -237,16 +237,18 @@ if (hasNewsroom) {
 if (hasOta) {
   imports.push("import { otaRouter } from './ota/router';");
   imports.push("import { otaView } from './ota/view';");
+  imports.push("import { otaManagerScript } from './ota/view.client';");
   routes.push("  app.route('/api/addons/ota', otaRouter);");
   menus.push(`  registerPluginMenu({
     group: 'Plugins',
     title: 'OTA Manager',
     view: 'ota',
     icon: 'fas fa-cloud-upload-alt',
-    role: ['admin'],
+    role: ['superadmin', 'admin'],
     pluginId: 'ota'
   });
-  registerPluginView('ota', otaView);`);
+  registerPluginView('ota', otaView);
+  registerPluginScript(otaManagerScript);`);
   registeredNames.push('OTA');
 }
 

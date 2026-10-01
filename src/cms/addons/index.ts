@@ -21,7 +21,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     title: 'OTA Manager',
     view: 'ota',
     icon: 'fas fa-cloud-upload-alt',
-    role: ['admin'],
+    role: ['superadmin', 'admin'],
     pluginId: 'ota'
   });
   registerPluginView('ota', otaView);
@@ -32,7 +32,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     title: 'Meja Kurasi',
     view: 'newsroom',
     icon: 'fas fa-newspaper',
-    role: ['admin', 'editor'],
+    role: ['superadmin', 'admin', 'editor'],
     pluginId: 'newsroom'
   });
   registerPluginView('newsroom', newsroomView);
@@ -42,7 +42,7 @@ export default function registerAddons(app: Hono<{ Bindings: Bindings }>) {
     title: 'Sumber Agregator',
     view: 'aggregator',
     icon: 'fas fa-satellite-dish',
-    role: ['admin'],
+    role: ['superadmin', 'admin'],
     pluginId: 'aggregator'
   });
   registerPluginView('aggregator', aggregatorView);

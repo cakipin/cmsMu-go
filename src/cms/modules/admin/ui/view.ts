@@ -23,6 +23,7 @@ import { seoPage } from './blocks/seo.page';
 
 export function renderAdmin(data: any): string {
     const isLoginView = data.view === 'login';
+    const renderedPluginViews = renderPluginViews();
 
     const injectedPlugins = pluginMenus.map(p => {
         return `{
@@ -579,7 +580,7 @@ export function renderAdmin(data: any): string {
                                 ${ssoPage}
                                 ${commentsPage}
                                 ${seoPage}
-                                ${renderPluginViews()}
+                                ${renderedPluginViews}
                                 ${globalModals}
                             </div>
                         </main>
