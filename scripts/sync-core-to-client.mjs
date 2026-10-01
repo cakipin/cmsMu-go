@@ -147,6 +147,17 @@ for (const relDir of CORE_DIRS) {
   copyDirRecursive(srcFull, destFull, relDir);
 }
 
+// Menjaga integritas skema modular SimsMu
+const targetSchemaFile = path.join(TARGET_DIR, 'src/cms/db/schema.ts');
+const targetSimsSchemaFile = path.join(TARGET_DIR, 'src/cms/db/schema.sims.ts');
+if (!isDryRun && fs.existsSync(targetSchemaFile) && fs.existsSync(targetSimsSchemaFile)) {
+  const content = fs.readFileSync(targetSchemaFile, 'utf-8');
+  if (!content.includes("export * from './schema.sims';")) {
+    fs.appendFileSync(targetSchemaFile, "\n// Re-export Modular SimsMu School Schema\nexport * from './schema.sims';\n");
+    console.log("  🛡️  Menjaga re-export schema.sims pada src/cms/db/schema.ts");
+  }
+}
+
 // 7. SINKRONISASI MONOREPO PACKAGES (JIKA TARGET MENGADOPSI PACKAGES)
 const targetPackagesDir = path.join(TARGET_DIR, 'packages');
 if (fs.existsSync(targetPackagesDir)) {
@@ -192,6 +203,7 @@ const targetAddonsDir = path.join(TARGET_DIR, 'src/cms/addons');
 const hasOta = fs.existsSync(path.join(targetAddonsDir, 'ota')) || fs.existsSync(path.join(CORE_DIR, 'src/cms/addons/ota'));
 const hasAggregator = fs.existsSync(path.join(targetAddonsDir, 'aggregator'));
 const hasNewsroom = fs.existsSync(path.join(targetAddonsDir, 'newsroom'));
+const hasSimsmu = fs.existsSync(path.join(targetAddonsDir, 'simsmu'));
 
 const imports = [
   "import { Hono } from 'hono';",
@@ -232,6 +244,39 @@ if (hasNewsroom) {
   });
   registerPluginView('newsroom', newsroomView);`);
   registeredNames.push('Newsroom');
+}
+
+if (hasSimsmu) {
+  imports.push("import { simsmuRouter } from './simsmu/router';");
+  imports.push("import { ppdbView } from './simsmu/views/ppdb.view';");
+  imports.push("import { gtkView } from './simsmu/views/gtk.view';");
+  imports.push("import { kesiswaanView } from './simsmu/views/kesiswaan.view';");
+  imports.push("import { academicView } from './simsmu/views/academic.view';");
+  imports.push("import { financeView } from './simsmu/views/finance.view';");
+  imports.push("import { profileView } from './simsmu/views/profile.view';");
+  imports.push("import { simsmuAppScript } from './simsmu/view.client';");
+  imports.push("import { simsmuSidebarScript } from './simsmu/sidebar.client';");
+  imports.push("import { schoolDashboardClientScript } from './simsmu/views/dashboard.client';");
+  routes.push("  app.route('/api/addons/simsmu', simsmuRouter);");
+  menus.push(`  registerPluginMenu({
+    group: 'Plugins',
+    title: 'Portal Sekolah & PPDB',
+    view: 'simsmu',
+    icon: 'fas fa-school',
+    role: ['superadmin', 'admin', 'editor'],
+    pluginId: 'simsmu'
+  });
+  registerPluginView('simsmu', ppdbView);
+  registerPluginView('ppdb', ppdbView);
+  registerPluginView('gtk', gtkView);
+  registerPluginView('kesiswaan', kesiswaanView);
+  registerPluginView('akademik', academicView);
+  registerPluginView('keuangan', financeView);
+  registerPluginView('dapodik', profileView);
+  registerPluginScript(simsmuAppScript);
+  registerPluginScript(schoolDashboardClientScript);
+  registerPluginScript(simsmuSidebarScript);`);
+  registeredNames.push('SimsMu');
 }
 
 if (hasOta) {
