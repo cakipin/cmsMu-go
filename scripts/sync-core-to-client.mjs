@@ -115,8 +115,8 @@ function copyDirRecursive(srcDir, destDir, relBase = '') {
     const destPath = path.join(destDir, entry.name);
     const itemRel = path.join(relBase, entry.name).replace(/\\/g, '/');
 
-    if (entry.name === '.DS_Store' || isProtected(itemRel)) {
-      if (entry.name !== '.DS_Store') {
+    if (entry.name === '.DS_Store' || entry.name === 'node_modules' || entry.name === '.git' || isProtected(itemRel)) {
+      if (entry.name !== '.DS_Store' && entry.name !== 'node_modules' && entry.name !== '.git') {
         skippedCount++;
         if (isVerbose || isProtected(itemRel)) {
           console.log(`  🛡️  MELEWATI (TERPROTEKSI SOP 19/20): ${itemRel}`);

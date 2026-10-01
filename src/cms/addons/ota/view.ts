@@ -871,5 +871,10 @@ export const otaView = `
 
     <!-- MODAL LAPORAN PEMBARUAN SISTEM (AUDIT REPORT) -->
     ${otaReportModal}
+
+    <!-- SCRIPT CLIENT ALPINE LOGIC (SELF-CONTAINED) -->
+    <script>
+    ${otaManagerScript}
+    </script>
 </div>
 `;
