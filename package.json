@@ -31,6 +31,7 @@
     "install:cloud": "node scripts/setup-cloud.mjs",
     "sync:client": "node scripts/sync-core-to-client.mjs",
     "sync:client:dry": "node scripts/sync-core-to-client.mjs --dry-run",
+    "commit:modular": "node scripts/commit-modular.mjs",
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {

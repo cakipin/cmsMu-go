@@ -1,7 +1,7 @@
 {
   "name": "CMSMu Core Framework",
   "version": "0.1.3",
-  "buildDate": "2026-09-25",
+  "buildDate": "2026-10-02",
   "changelog": "Rilis patch pembaruan CMSMu v0.1.3 (Editor Centered Modal & Transparent OTA Report)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
@@ -22,34 +22,14 @@
   "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.3.zip",
   "updatedComponents": [
     {
-      "name": "Perbaikan Editor & Media Selector Modal",
-      "path": "src/cms/modules/admin/ui/blocks/editor/",
-      "type": "editor",
-      "description": "Modal Media Manager terpusat di tengah layar (x-teleport body, z-index 999999), integrasi selector gambar artikel, dan toolbar WP Classic."
-    },
-    {
-      "name": "Komponen Custom Editor WYSIWYG",
-      "path": "src/cms/modules/admin/ui/blocks/custom-editor.ts",
-      "type": "editor",
-      "description": "Dukungan dual-mode Visual & Text/HTML, auto-format heading/quote, dan tombol Add Media responsif."
-    },
-    {
-      "name": "Formulir Penulisan & Metadata SEO",
-      "path": "src/cms/modules/admin/ui/blocks/editor/editor-form.ts",
-      "type": "editor",
-      "description": "Auto-generate excerpt dan meta description dari isi tulisan, serta pemilih Featured Image interaktif."
-    },
-    {
-      "name": "Router Halaman Redaksi Unified",
-      "path": "src/cms/modules/admin/ui/blocks/editor.page.ts",
-      "type": "core",
-      "description": "Pengalihan aman rute /admin/add dan /admin/edit ke komponen modular terisolasi."
-    },
-    {
-      "name": "Engine Distribusi OTA & Audit Laporan",
-      "path": "src/cms/addons/ota/",
-      "type": "addon",
-      "description": "Laporan pembaruan transparan dengan daftar path file yang diperbarui dan status migrasi database."
+      "name": "Pembaruan Plugin & Addon Ekstensi",
+      "type": "plugin",
+      "paths": [
+        "src/cms/addons/ota/report.modal.ts",
+        "src/cms/addons/ota/view.client.ts"
+      ],
+      "description": "feat(ota): add modular commit helper, manifest audit logger, and category tabs on OTA modal (Plugin/Addon Module)",
+      "updatedAt": "2026-10-02T06:13:11.655Z"
     }
   ]
 }
