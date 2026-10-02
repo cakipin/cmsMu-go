@@ -75,12 +75,34 @@ export const otaReportModal = `
 
             <!-- Tabel Daftar Berkas & Komponen yang Diperbarui -->
             <div class="border border-slate-200 rounded-xl overflow-hidden shadow-xs">
-                <div class="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div class="p-3 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                     <div class="font-bold text-slate-700 flex items-center gap-2">
                         <i class="fas fa-file-code text-teal-600"></i>
                         <span>Daftar Komponen & Path Berkas yang Diperbarui</span>
                     </div>
-                    <span class="text-[11px] text-slate-500 font-mono" x-text="((updateReport && updateReport.components) ? updateReport.components.length : 5) + ' Komponen'"></span>
+                    <!-- Filter Kategori Tabs (All / Theme / Plugin / Core) -->
+                    <div class="flex items-center gap-1 bg-white p-1 rounded-lg border border-slate-200 text-[11px] font-semibold">
+                        <button type="button" @click="activeComponentTab = 'all'"
+                                :class="activeComponentTab === 'all' ? 'bg-slate-900 text-white shadow-xs' : 'text-slate-600 hover:text-slate-900 bg-transparent'"
+                                class="px-2.5 py-1 rounded-md transition-all border-0 cursor-pointer">
+                            Semua
+                        </button>
+                        <button type="button" @click="activeComponentTab = 'theme'"
+                                :class="activeComponentTab === 'theme' ? 'bg-purple-600 text-white shadow-xs' : 'text-slate-600 hover:text-purple-700 bg-transparent'"
+                                class="px-2.5 py-1 rounded-md transition-all border-0 cursor-pointer flex items-center gap-1">
+                            <i class="fas fa-paint-brush text-[10px]"></i> Theme
+                        </button>
+                        <button type="button" @click="activeComponentTab = 'plugin'"
+                                :class="activeComponentTab === 'plugin' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-600 hover:text-blue-700 bg-transparent'"
+                                class="px-2.5 py-1 rounded-md transition-all border-0 cursor-pointer flex items-center gap-1">
+                            <i class="fas fa-puzzle-piece text-[10px]"></i> Plugin
+                        </button>
+                        <button type="button" @click="activeComponentTab = 'core'"
+                                :class="activeComponentTab === 'core' ? 'bg-teal-600 text-white shadow-xs' : 'text-slate-600 hover:text-teal-700 bg-transparent'"
+                                class="px-2.5 py-1 rounded-md transition-all border-0 cursor-pointer flex items-center gap-1">
+                            <i class="fas fa-cog text-[10px]"></i> Core
+                        </button>
+                    </div>
                 </div>
 
                 <div class="overflow-x-auto">
@@ -94,31 +116,48 @@ export const otaReportModal = `
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-xs">
-                            <template x-for="comp in ((updateReport && updateReport.components) || defaultUpdatedComponents)" :key="comp.path">
+                            <template x-for="comp in filteredComponents()" :key="comp.path || (comp.paths ? comp.paths[0] : comp.name)">
                                 <tr class="hover:bg-slate-50/50 transition-colors">
                                     <td class="p-3">
                                         <div class="font-bold text-slate-800" x-text="comp.name"></div>
                                         <div class="mt-0.5">
                                             <span class="px-2 py-0.5 rounded text-[10px] font-semibold uppercase tracking-wider"
                                                   :class="{
-                                                    'bg-blue-50 text-blue-700 border border-blue-200': comp.type === 'editor',
-                                                    'bg-teal-50 text-teal-700 border border-teal-200': comp.type === 'core',
-                                                    'bg-purple-50 text-purple-700 border border-purple-200': comp.type === 'addon',
-                                                    'bg-emerald-50 text-emerald-700 border border-emerald-200': comp.type === 'db'
+                                                    'bg-purple-50 text-purple-700 border border-purple-200': ['theme', 'ui'].includes(comp.type),
+                                                    'bg-blue-50 text-blue-700 border border-blue-200': ['plugin', 'addon'].includes(comp.type),
+                                                    'bg-teal-50 text-teal-700 border border-teal-200': ['core', 'editor', 'db'].includes(comp.type)
                                                   }"
                                                   x-text="comp.type"></span>
                                         </div>
                                     </td>
                                     <td class="p-3">
-                                        <code class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-mono text-[11px] block truncate max-w-[240px]" 
-                                              :title="comp.path" 
-                                              x-text="comp.path"></code>
+                                        <template x-if="comp.paths && Array.isArray(comp.paths)">
+                                            <div class="space-y-1">
+                                                <template x-for="p in comp.paths">
+                                                    <code class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[10px] block truncate max-w-[240px]" 
+                                                          :title="p" 
+                                                          x-text="p"></code>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="!comp.paths && comp.path">
+                                            <code class="px-2 py-1 rounded bg-slate-100 text-slate-700 font-mono text-[11px] block truncate max-w-[240px]" 
+                                                  :title="comp.path" 
+                                                  x-text="comp.path"></code>
+                                        </template>
                                     </td>
                                     <td class="p-3 text-slate-600 text-[11px] leading-relaxed" x-text="comp.description"></td>
                                     <td class="p-3 text-right">
                                         <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                             <i class="fas fa-check text-[10px]"></i> Tersinkron
                                         </span>
+                                    </td>
+                                </tr>
+                            </template>
+                            <template x-if="filteredComponents().length === 0">
+                                <tr>
+                                    <td colspan="4" class="p-6 text-center text-slate-400 text-xs">
+                                        Tidak ada komponen dalam kategori ini.
                                     </td>
                                 </tr>
                             </template>

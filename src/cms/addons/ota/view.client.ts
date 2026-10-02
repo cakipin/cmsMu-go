@@ -27,24 +27,25 @@ if (typeof window !== 'undefined') {
             showGitPushModal: false,
             showReportModal: false,
             updateReport: null,
+            activeComponentTab: 'all',
             defaultUpdatedComponents: [
                 {
                     name: 'Perbaikan Editor & Media Selector Modal',
                     path: 'src/cms/modules/admin/ui/blocks/editor/',
-                    type: 'editor',
+                    type: 'core',
                     description: 'Modal Media Manager terpusat di tengah layar (x-teleport body, z-index 999999), integrasi selector gambar artikel, dan toolbar WP Classic.'
                 },
                 {
-                    name: 'Komponen Custom Editor WYSIWYG',
-                    path: 'src/cms/modules/admin/ui/blocks/custom-editor.ts',
-                    type: 'editor',
-                    description: 'Dukungan dual-mode Visual & Text/HTML, auto-format heading/quote, dan tombol Add Media responsif.'
+                    name: 'Engine Distribusi OTA & Custom Sidebar',
+                    path: 'src/cms/addons/ota/',
+                    type: 'plugin',
+                    description: 'Laporan pembaruan transparan dengan daftar path file yang diperbarui dan status migrasi database.'
                 },
                 {
-                    name: 'Formulir Penulisan & Metadata SEO',
-                    path: 'src/cms/modules/admin/ui/blocks/editor/editor-form.ts',
-                    type: 'editor',
-                    description: 'Auto-generate excerpt dan meta description dari isi tulisan, serta pemilih Featured Image interaktif.'
+                    name: 'Komponen Visual & Theme Builder Puck',
+                    path: 'src/cms/modules/theme-builder/',
+                    type: 'theme',
+                    description: 'Template blok visual responsif, field gambar banner, dan integrasi Puck Editor.'
                 },
                 {
                     name: 'Router Halaman Redaksi Unified',
@@ -53,12 +54,23 @@ if (typeof window !== 'undefined') {
                     description: 'Pengalihan aman rute /admin/add dan /admin/edit ke komponen modular terisolasi.'
                 },
                 {
-                    name: 'Engine Distribusi OTA & Audit Laporan',
-                    path: 'src/cms/addons/ota/',
-                    type: 'addon',
-                    description: 'Laporan pembaruan transparan dengan daftar path file yang diperbarui dan status migrasi database.'
+                    name: 'Helper Atomic Commit & Path Logger',
+                    path: 'scripts/commit-modular.mjs',
+                    type: 'plugin',
+                    description: 'Otomasi pemisahan commit Git per kategori (Theme, Plugin, Core) dan pencatatan audit manifest.'
                 }
             ],
+            filteredComponents() {
+                const list = (this.updateReport && this.updateReport.components) || this.defaultUpdatedComponents || [];
+                if (this.activeComponentTab === 'all') return list;
+                return list.filter(c => {
+                    const t = (c.type || '').toLowerCase();
+                    if (this.activeComponentTab === 'theme') return t === 'theme' || t === 'ui';
+                    if (this.activeComponentTab === 'plugin') return t === 'plugin' || t === 'addon';
+                    if (this.activeComponentTab === 'core') return t === 'core' || t === 'editor' || t === 'db';
+                    return true;
+                });
+            },
             openReportModal() {
                 this.showReportModal = true;
             },
