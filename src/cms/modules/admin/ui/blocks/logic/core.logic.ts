@@ -6,18 +6,21 @@
 export const coreLogic = {
     // Helper Internal: Wrapper Fetch yang Aman
     async _fetch(url: string, options: any = {}) {
-        const token = (typeof window !== 'undefined' && (window as any).getCmsToken ? (window as any).getCmsToken() : '') || (typeof localStorage !== 'undefined' ? localStorage.getItem('labmu_token') : '');
-        const headers = {
+        const token = (typeof window !== 'undefined' && (window as any).getCmsToken ? (window as any).getCmsToken() : '');
+        const isFormData = typeof FormData !== 'undefined' && options.body instanceof FormData;
+        const headers: any = {
             'Authorization': 'Bearer ' + token,
-            'Content-Type': 'application/json',
             ...(options.headers || {})
         };
+        if (!isFormData && !headers['Content-Type']) {
+            headers['Content-Type'] = 'application/json';
+        }
         
         // Cek jika ada fungsi apiFetch global dari CMS wrapper
         // @ts-ignore
         if (typeof this.apiFetch === 'function') {
             // @ts-ignore
-            return this.apiFetch(url, options);
+            return this.apiFetch(url, { ...options, headers });
         }
 
         // Fallback fetch manual
@@ -198,6 +201,80 @@ export const coreLogic = {
     availablePlugins: [],
     showAddPluginModal: false,
     newPluginForm: { id: '', name: '', description: '', author: '', version: '1.0.0' },
+    
+    // Upload & Import Plugin State (SOP 16)
+    showUploadPluginModal: false,
+    uploadPluginTab: 'file',
+    selectedPluginFile: null,
+    pluginImportUrl: '',
+    isUploadingPlugin: false,
+
+    handlePluginFileSelect(e: any) {
+        if (e && e.target && e.target.files && e.target.files[0]) {
+            this.selectedPluginFile = e.target.files[0];
+        }
+    },
+
+    async submitPluginUpload() {
+        if (!this.selectedPluginFile) {
+            if (window.showToast) window.showToast('Silakan pilih berkas plugin (.zip / .json) terlebih dahulu', 'warning');
+            return;
+        }
+
+        this.isUploadingPlugin = true;
+        try {
+            const formData = new FormData();
+            formData.append('file', this.selectedPluginFile);
+
+            const res = await this._fetch('/api/plugins/upload', {
+                method: 'POST',
+                body: formData
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (window.showToast) window.showToast(json.message || 'Plugin berhasil dipasang!', 'success');
+                this.showUploadPluginModal = false;
+                this.selectedPluginFile = null;
+                const fileInput = document.getElementById('pluginFileInput') as HTMLInputElement | null;
+                if (fileInput) fileInput.value = '';
+                await this.loadPlugins();
+            } else {
+                if (window.showToast) window.showToast(json.error || 'Gagal memasang plugin', 'error');
+            }
+        } catch (err: any) {
+            if (window.showToast) window.showToast('Gagal mengunggah plugin: ' + err.message, 'error');
+        } finally {
+            this.isUploadingPlugin = false;
+        }
+    },
+
+    async submitPluginImportUrl() {
+        if (!this.pluginImportUrl || !this.pluginImportUrl.trim()) {
+            if (window.showToast) window.showToast('Masukkan URL manifest plugin terlebih dahulu', 'warning');
+            return;
+        }
+
+        this.isUploadingPlugin = true;
+        try {
+            const res = await this._fetch('/api/plugins/upload', {
+                method: 'POST',
+                body: JSON.stringify({ url_source: this.pluginImportUrl.trim() })
+            });
+            const json = await res.json();
+            if (json.success) {
+                if (window.showToast) window.showToast(json.message || 'Plugin berhasil diimpor & dipasang!', 'success');
+                this.showUploadPluginModal = false;
+                this.pluginImportUrl = '';
+                await this.loadPlugins();
+            } else {
+                if (window.showToast) window.showToast(json.error || 'Gagal mengimpor plugin dari URL', 'error');
+            }
+        } catch (err: any) {
+            if (window.showToast) window.showToast('Gagal mengimpor plugin: ' + err.message, 'error');
+        } finally {
+            this.isUploadingPlugin = false;
+        }
+    },
     
     isPluginActive(id: string) {
         if (!id) return true;

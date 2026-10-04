@@ -379,12 +379,15 @@ export function renderAdmin(data: any): string {
 
                 const plugins = [${injectedPlugins}]; 
                 window.adminMenus = window.adminMenus.concat(plugins);
-                window.__CMS_CORE_VERSION = '0.1.0';
-                window.__CMS_OTA_ENDPOINT = '/api/ota';
+                window.__CMS_CORE_VERSION = '${CORE_VERSION}';
+                window.__CMS_OTA_ENDPOINT = '/api/addons/ota';
             </script>
 
-            <!-- CMSMu Core Logic with OTA Fallback Safety -->
+            <!-- CMSMu Core Logic with Local Fallback Safety -->
             <script>${cmsLogic}</script>
+
+            <!-- Dynamic OTA Runtime Script (Loads active D1 bundle if updated via OTA) -->
+            <script src="/api/addons/ota/bundle/admin.js" defer></script>
 
             <!-- Plugins Client Scripts -->
             ${renderPluginScripts()}

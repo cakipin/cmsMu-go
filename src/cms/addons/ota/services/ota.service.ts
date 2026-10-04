@@ -332,5 +332,67 @@ export const otaAddonService = {
         } catch(e) {
             return [];
         }
+    },
+
+    async getActiveBundle(db: any): Promise<string | null> {
+        if (!db) return null;
+        try {
+            await db.prepare(`
+                CREATE TABLE IF NOT EXISTS ota_bundles (
+                    version TEXT PRIMARY KEY,
+                    script TEXT NOT NULL,
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            `).run();
+
+            const row: any = await db.prepare("SELECT script FROM ota_bundles WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1").first();
+            return row ? row.script : null;
+        } catch (_) {
+            return null;
+        }
+    },
+
+    async saveBundleToD1(db: any, version: string, script: string): Promise<boolean> {
+        if (!db || !script) return false;
+        try {
+            await db.prepare(`
+                CREATE TABLE IF NOT EXISTS ota_bundles (
+                    version TEXT PRIMARY KEY,
+                    script TEXT NOT NULL,
+                    is_active INTEGER DEFAULT 1,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                );
+            `).run();
+
+            await db.prepare("UPDATE ota_bundles SET is_active = 0").run().catch(() => {});
+            await db.prepare(`
+                INSERT INTO ota_bundles (version, script, is_active, created_at)
+                VALUES (?, ?, 1, CURRENT_TIMESTAMP)
+                ON CONFLICT(version) DO UPDATE SET script = excluded.script, is_active = 1, created_at = CURRENT_TIMESTAMP
+            `).bind(version, script).run();
+
+            return true;
+        } catch (e) {
+            console.error('[OTA] Gagal menyimpan bundle ke D1:', e);
+            return false;
+        }
+    },
+
+    async fetchMasterBundle(upstreamUrl?: string): Promise<{ success: boolean; version?: string; script?: string; error?: string }> {
+        const hubUrl = upstreamUrl || DEFAULT_UPSTREAM_URL;
+        try {
+            const res = await fetch(`${hubUrl}/api/addons/ota/bundle/admin.js`, {
+                headers: { 'Accept': 'application/javascript, text/javascript' }
+            });
+            if (!res.ok) {
+                return { success: false, error: `Hub bundle returned HTTP ${res.status}` };
+            }
+            const script = await res.text();
+            const verHeader = res.headers.get('X-CMS-Version') || CORE_VERSION;
+            return { success: true, version: verHeader, script };
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
     }
 };

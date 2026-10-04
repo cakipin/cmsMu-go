@@ -507,7 +507,7 @@ otaRouter.post('/apply-update', async (c) => {
         // 1. Jalankan auto-migration skema database D1
         const migrationResult = await runAutoMigration(db);
 
-        // 2. Simpan versi terpasang baru ke database settings
+        // 2. Simpan versi terpasang baru ke database settings & runtime bundle
         if (db && targetVersion) {
             try {
                 await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
@@ -515,6 +515,14 @@ otaRouter.post('/apply-update', async (c) => {
                     INSERT INTO settings (key, value) VALUES ('installed_core_version', ?)
                     ON CONFLICT(key) DO UPDATE SET value = excluded.value
                 `).bind(targetVersion).run();
+
+                // Ambil dan simpan runtime bundle terbaru dari Upstream Hub
+                if (!isHubMode(url.host)) {
+                    const bundleRes = await otaAddonService.fetchMasterBundle(DEFAULT_UPSTREAM_URL);
+                    if (bundleRes.success && bundleRes.script) {
+                        await otaAddonService.saveBundleToD1(db, targetVersion, bundleRes.script);
+                    }
+                }
             } catch (_) {}
         }
 
@@ -581,6 +589,107 @@ otaRouter.post('/apply-update', async (c) => {
         }
 
         return c.json({ success: false, error: err.message }, 500);
+    }
+});
+
+// 7a. GET /bundle/admin.js - Melayani active runtime bundle JS dari D1 untuk dynamic execution
+otaRouter.get('/bundle/admin.js', async (c) => {
+    const db = c.env?.DB;
+    try {
+        const script = await otaAddonService.getActiveBundle(db);
+        if (script) {
+            return new Response(script, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'Cache-Control': 'public, max-age=300',
+                    'X-CMS-Version': CORE_VERSION
+                }
+            });
+        }
+    } catch (_) {}
+    return c.text('/* No active runtime bundle in D1 */', 200, {
+        'Content-Type': 'application/javascript; charset=utf-8'
+    });
+});
+
+// 7a-2. POST /sync-master - Sinkronisasi mandiri langsung dari Master OTA (GitHub / Hub) tanpa deploy ulang
+otaRouter.post('/sync-master', async (c) => {
+    const db = c.env?.DB;
+    const url = new URL(c.req.url);
+    const baseUrl = `${url.protocol}//${url.host}`;
+    
+    let siteName = url.host;
+    if (db) {
+        try {
+            const nameRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'site_title' OR key = 'site_name' LIMIT 1").first();
+            if (nameRow?.value) siteName = nameRow.value;
+        } catch (_) {}
+    }
+
+    try {
+        // 1. Ambil info rilis terbaru dari Master GitHub atau Hub
+        let targetVersion = CORE_VERSION;
+        let changelog = '';
+        try {
+            const upstream = await otaAddonService.checkUpstreamUpdate(CORE_VERSION);
+            if (upstream && upstream.upstreamVersion) {
+                targetVersion = upstream.upstreamVersion;
+                changelog = upstream.changelog || '';
+            }
+        } catch (_) {}
+
+        // 2. Jalankan migrasi skema database D1 jika ada
+        const migrationResult = await runAutoMigration(db);
+
+        // 3. Ambil runtime bundle terbaru dari Master OTA
+        let bundleSynced = false;
+        if (db && !isHubMode(url.host)) {
+            const bundleRes = await otaAddonService.fetchMasterBundle(DEFAULT_UPSTREAM_URL);
+            if (bundleRes.success && bundleRes.script) {
+                await otaAddonService.saveBundleToD1(db, targetVersion, bundleRes.script);
+                bundleSynced = true;
+            }
+        }
+
+        // 4. Perbarui settings installed_core_version di D1
+        if (db && targetVersion) {
+            await db.prepare(`CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT);`).run().catch(() => {});
+            await db.prepare(`
+                INSERT INTO settings (key, value) VALUES ('installed_core_version', ?)
+                ON CONFLICT(key) DO UPDATE SET value = excluded.value
+            `).bind(targetVersion).run();
+        }
+
+        // 5. Laporkan status ke Upstream Hub
+        if (!isHubMode(url.host)) {
+            fetch(`${DEFAULT_UPSTREAM_URL}/api/addons/ota/clients/report-status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    client_url: baseUrl,
+                    site_name: siteName,
+                    installed_version: targetVersion,
+                    target_version: targetVersion,
+                    rollout_status: 'updated',
+                    error_reason: null
+                })
+            }).catch(() => {});
+        }
+
+        return c.json({
+            success: true,
+            message: `Sistem berhasil disinkronkan mandiri dengan Master OTA ke versi v${targetVersion}!`,
+            data: {
+                targetVersion,
+                changelog,
+                bundleSynced,
+                schemaVersion: migrationResult.currentVersion,
+                appliedCount: migrationResult.appliedCount
+            }
+        });
+    } catch (err: any) {
+        return c.json({ success: false, error: err.message || 'Gagal menyinkronkan dengan Master OTA' }, 500);
     }
 });
 
