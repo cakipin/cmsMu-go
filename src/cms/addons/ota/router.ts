@@ -118,7 +118,17 @@ otaRouter.get('/check-update', async (c) => {
             try {
                 const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
                 if (verRow && verRow.value && verRow.value.trim()) {
-                    currentInstalledVersion = verRow.value.trim();
+                    const dbVer = verRow.value.trim();
+                    if (otaAddonService.compareVersions(CORE_VERSION, dbVer) >= 0) {
+                        currentInstalledVersion = CORE_VERSION;
+                        if (CORE_VERSION !== dbVer) {
+                            await db.prepare("UPDATE settings SET value = ? WHERE key = 'installed_core_version'").bind(CORE_VERSION).run().catch(() => {});
+                        }
+                    } else {
+                        currentInstalledVersion = dbVer;
+                    }
+                } else {
+                    await db.prepare("INSERT INTO settings (key, value) VALUES ('installed_core_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(CORE_VERSION).run().catch(() => {});
                 }
             } catch (_) {}
         }
@@ -701,7 +711,17 @@ otaRouter.get('/status', async (c) => {
         try {
             const verRow: any = await db.prepare("SELECT value FROM settings WHERE key = 'installed_core_version' LIMIT 1").first();
             if (verRow && verRow.value && verRow.value.trim()) {
-                currentCoreVersion = verRow.value.trim();
+                const dbVer = verRow.value.trim();
+                if (otaAddonService.compareVersions(CORE_VERSION, dbVer) >= 0) {
+                    currentCoreVersion = CORE_VERSION;
+                    if (CORE_VERSION !== dbVer) {
+                        await db.prepare("UPDATE settings SET value = ? WHERE key = 'installed_core_version'").bind(CORE_VERSION).run().catch(() => {});
+                    }
+                } else {
+                    currentCoreVersion = dbVer;
+                }
+            } else {
+                await db.prepare("INSERT INTO settings (key, value) VALUES ('installed_core_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value").bind(CORE_VERSION).run().catch(() => {});
             }
         } catch (_) {}
     }
