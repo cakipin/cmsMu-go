@@ -49,7 +49,7 @@ const THUMB_REGEX = /-([0-9]+)x([0-9]+)(\.[a-zA-Z0-9]+)$/i;
 uploadsRouter.get('*', async (c) => {
   try {
     const fullPath = c.req.path;
-    const subpath = fullPath.replace(/^\/wp-content\/uploads\/?/, '');
+    const subpath = fullPath.replace(/^(\/wp-content\/uploads\/|\/uploads\/)/i, '');
     if (!subpath) {
       return c.text('Not Found', 404);
     }
@@ -82,7 +82,7 @@ uploadsRouter.get('*', async (c) => {
       // 1. Cek apakah gambar aslinya sudah ada di R2
       if (bucket) {
         for (const cand of candidates) {
-          const keys = [`wp-content/uploads/${cand}`, cand];
+          const keys = [`wp-content/uploads/${cand}`, `uploads/${cand}`, cand];
           for (const key of keys) {
             const obj = await bucket.get(key);
             if (obj) {
@@ -178,6 +178,7 @@ uploadsRouter.get('*', async (c) => {
     // 1. Cek langsung ke Cloudflare R2
     if (bucket) {
       const r2KeysToCheck = [
+        `uploads/${decodedSubpath}`,
         `wp-content/uploads/${decodedSubpath}`,
         decodedSubpath
       ];

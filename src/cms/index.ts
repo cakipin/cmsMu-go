@@ -155,7 +155,8 @@ app.get('/media/*', async (c) => {
 // =====================================================================
 // Menangani Homepage, Login, Search, dan URL lain yang tidak ada di DB
 
-// WordPress Media Proxy & Smart Fallback (/wp-content/uploads/*)
+// WordPress Media Proxy & Clean Uploads Router (/uploads/* and /wp-content/uploads/*)
+app.route('/uploads', uploadsRouter);
 app.route('/wp-content/uploads', uploadsRouter);
 
 app.route('/', publicRouter);

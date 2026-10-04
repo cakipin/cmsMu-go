@@ -3,8 +3,8 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = '0.1.3';
-export const CORE_BUILD_DATE = '2026-09-25';
+export const CORE_VERSION = '0.1.4';
+export const CORE_BUILD_DATE = '2026-10-05';
 export const MIN_COMPATIBLE_SCHEMA_VERSION = '0.1.0';
 
 export interface OtaUpdatedComponent {
@@ -16,6 +16,12 @@ export interface OtaUpdatedComponent {
 }
 
 export const DEFAULT_UPDATED_COMPONENTS: OtaUpdatedComponent[] = [
+    {
+        name: 'Standardisasi Rute Upload Media (/uploads/)',
+        path: 'src/cms/modules/media/media.router.ts',
+        type: 'core',
+        description: 'Standardisasi folder simpan R2 mutlak ke uploads/YYYY/MM/, URL publik langsung /uploads/..., dan pembersihan rute usang /api/media/file/.'
+    },
     {
         name: 'Perbaikan Editor & Media Selector Modal',
         path: 'src/cms/modules/admin/ui/blocks/editor/',

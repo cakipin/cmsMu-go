@@ -57,7 +57,10 @@ mediaRouter.get('/setup', async (c) => {
                 continue;
             }
 
-            const url = `/api/media/file/${obj.key}`;
+            let url = `/${obj.key}`;
+            if (!url.startsWith('/uploads/') && !url.startsWith('/wp-content/uploads/')) {
+                url = `/uploads/${obj.key}`;
+            }
             let type = 'application/octet-stream';
             if (obj.key.match(/\.(jpg|jpeg)$/i)) type = 'image/jpeg';
             else if (obj.key.match(/\.png$/i)) type = 'image/png';
@@ -102,11 +105,10 @@ mediaRouter.post('/', async (c) => {
         const r2 = getBucket(c);
         if (!r2) return c.json({ error: 'R2 Putus (Cek MY_BUCKET)' }, 500);
 
-        const sourceFolder = (body['source'] ? String(body['source']).toLowerCase().replace(/[^a-z0-9_-]/g, '') : 'newsroom') || 'newsroom';
         const date = new Date();
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
-        const folder = `${sourceFolder}/${year}/${month}`;
+        const folder = `uploads/${year}/${month}`;
 
         let fileBuffer = Buffer.from(await file.arrayBuffer());
         let mimeType = file.type;
@@ -131,7 +133,7 @@ mediaRouter.post('/', async (c) => {
 
         await r2.put(key, fileBuffer, { httpMetadata: { contentType: mimeType } });
 
-        const url = `/api/media/file/${key}`;
+        const url = `/${key}`;
         const db = getDb(c.env.DB);
 
         await db.insert(mediaMeta).values({

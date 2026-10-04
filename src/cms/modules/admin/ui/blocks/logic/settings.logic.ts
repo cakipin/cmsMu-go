@@ -150,7 +150,7 @@ if (typeof window !== 'undefined') {
                         const list = [];
                         for (let i = 0; i < raw.length; i++) {
                             const m = raw[i];
-                            const rawUrl = m.url || (m.key ? '/api/media/file/' + m.key : (m.file_url || ''));
+                            const rawUrl = m.url || (m.key ? (m.key.startsWith('uploads/') ? '/' + m.key : (m.key.startsWith('wp-content/uploads/') ? '/uploads/' + m.key.replace('wp-content/uploads/', '') : '/uploads/' + m.key)) : (m.file_url || ''));
                             if (!rawUrl || rawUrl.endsWith('/') || seen.has(rawUrl)) continue;
                             seen.add(rawUrl);
                             list.push({
@@ -230,7 +230,6 @@ if (typeof window !== 'undefined') {
                 this.isUploading = true;
                 const fd = new FormData();
                 fd.append('file', this.uploadFile);
-                fd.append('source', 'settings');
                 
                 try {
                     const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof localStorage !== 'undefined' ? (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '') : '');
