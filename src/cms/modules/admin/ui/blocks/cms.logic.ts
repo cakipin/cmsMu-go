@@ -85,7 +85,7 @@ if (typeof window !== 'undefined') {
             activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
             logoType: 'site_logo',
             isLoggingIn: false,
-            systemVersion: 'v' + CORE_VERSION,
+            systemVersion: 'v${CORE_VERSION}',
             
             // Data Buckets
             posts: [], pages: [], mediaList: [], usersList: [], 
