@@ -1,7 +1,4 @@
-/**
- * 📦 OTA Manager Client-side Alpine Logic
- * Dipisahkan sesuai SOP Rule 20 (Clean Architecture & Batas < 1000 Baris)
- */
+import { CORE_VERSION } from './services/ota.service';
 
 export const otaManagerScript = `
 if (typeof window !== 'undefined') {
@@ -81,9 +78,9 @@ if (typeof window !== 'undefined') {
             isGitCopied: false,
             gitStatus: null,
             statusData: {
-                currentCoreVersion: '0.1.3',
-                activeManifestVersion: '0.1.3',
-                databaseIntegrity: { appliedMigrations: 3, totalMigrations: 3, status: 'synced' }
+                currentCoreVersion: '${CORE_VERSION}',
+                activeManifestVersion: '${CORE_VERSION}',
+                databaseIntegrity: { appliedMigrations: 0, totalMigrations: 0, status: 'synced' }
             },
             releases: [],
             clients: [],
@@ -91,13 +88,13 @@ if (typeof window !== 'undefined') {
             clientFilter: 'all',
             isLoadingClients: false,
             pushForm: {
-                version: '0.1.3',
+                version: '${CORE_VERSION}',
                 channel: 'stable',
-                changelog: 'Rilis pembaruan patch CMSMu v0.1.3'
+                changelog: 'Rilis pembaruan CMSMu v${CORE_VERSION}'
             },
 
             get activeVersion() {
-                return (this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '0.1.2').replace(/^v/, '');
+                return (this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '${CORE_VERSION}').replace(/^v/, '');
             },
 
             suggestVersion(type) {
@@ -364,8 +361,8 @@ if (typeof window !== 'undefined') {
                             body: JSON.stringify({
                                 client_url: window.location.origin,
                                 site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
-                                installed_version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '0.1.3',
-                                target_version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '0.1.3',
+                                installed_version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '${CORE_VERSION}',
+                                target_version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || this.statusData?.currentCoreVersion || '${CORE_VERSION}',
                                 rollout_status: 'updated',
                                 error_reason: null
                             })
@@ -385,8 +382,8 @@ if (typeof window !== 'undefined') {
                             body: JSON.stringify({
                                 client_url: window.location.origin,
                                 site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
-                                installed_version: this.statusData.currentCoreVersion || '0.1.1',
-                                target_version: this.statusData.activeManifestVersion || '0.1.2',
+                                installed_version: this.statusData.currentCoreVersion || '${CORE_VERSION}',
+                                target_version: this.statusData.activeManifestVersion || '${CORE_VERSION}',
                                 rollout_status: 'failed',
                                 error_reason: err.error || 'Gagal menerapkan pembaruan server'
                             })
@@ -400,8 +397,8 @@ if (typeof window !== 'undefined') {
                         body: JSON.stringify({
                             client_url: window.location.origin,
                             site_name: document.title ? document.title.split('-')[0].trim() : window.location.hostname,
-                            installed_version: this.statusData.currentCoreVersion || '0.1.1',
-                            target_version: this.statusData.activeManifestVersion || '0.1.2',
+                            installed_version: this.statusData.currentCoreVersion || '${CORE_VERSION}',
+                            target_version: this.statusData.activeManifestVersion || '${CORE_VERSION}',
                             rollout_status: 'failed',
                             error_reason: e.message || 'Eksekusi pembaruan klien terputus'
                         })

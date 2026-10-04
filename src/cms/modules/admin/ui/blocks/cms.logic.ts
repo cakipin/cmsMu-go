@@ -8,6 +8,7 @@ import { postLogic } from './logic/post.logic.ts';
 import { settingsLogic } from './logic/settings.logic.ts';
 import { globalModals } from './modals.ts'; 
 import { customEditorLogicScript } from './custom-editor.ts';
+import { CORE_VERSION } from '../../../../addons/ota/services/ota.service';
 
 /**
  * 🧱 CMS MAIN MANAGER (THE MASTER KEY - LOCKED VERSION)
@@ -84,7 +85,7 @@ if (typeof window !== 'undefined') {
             activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
             logoType: 'site_logo',
             isLoggingIn: false,
-            systemVersion: localStorage.getItem('cms_core_version') || 'v0.1.3',
+            systemVersion: 'v' + CORE_VERSION,
             
             // Data Buckets
             posts: [], pages: [], mediaList: [], usersList: [], 
@@ -126,9 +127,9 @@ if (typeof window !== 'undefined') {
                     const res = await fetch('/api/addons/ota/status');
                     if (res.ok) {
                         const json = await res.json();
-                        if (json.data && json.data.currentCoreVersion) {
-                            this.systemVersion = 'v' + json.data.currentCoreVersion;
-                            localStorage.setItem('cms_core_version', this.systemVersion);
+                        const ver = json.data?.currentCoreVersion || json.data?.coreVersion;
+                        if (ver) {
+                            this.systemVersion = 'v' + String(ver).replace(/^v/, '');
                         }
                     }
                 } catch(_) {}

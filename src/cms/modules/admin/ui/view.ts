@@ -19,6 +19,7 @@ import { subscribersPage } from './blocks/subscribers.page';
 import { subscribersLogic } from './blocks/subscribers.logic';
 import { emagazinePage } from './blocks/emagazine.page';
 import { seoPage } from './blocks/seo.page';
+import { CORE_VERSION } from '../../../addons/ota/services/ota.service';
 
 
 export function renderAdmin(data: any): string {
@@ -595,7 +596,7 @@ export function renderAdmin(data: any): string {
                                 <p class="text-xs font-medium text-slate-500 flex items-center gap-1">
                                     Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Cloud Native'"></span>
                                     <span class="mx-1 opacity-50">|</span> 
-                                    <span class="font-bold" x-text="systemVersion">v0.1.3</span>
+                                    <span class="font-bold" x-text="systemVersion">v${CORE_VERSION}</span>
                                 </p>
                             </div>
                         </footer>

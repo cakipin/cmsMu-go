@@ -6,6 +6,7 @@
 
 import { otaManagerScript } from "./view.client";
 import { otaReportModal } from "./report.modal";
+import { CORE_VERSION } from "./services/ota.service";
 
 export const otaView = `
 <div class="animate-fade" style="padding-bottom:60px;" x-data="otaManagerData()">
@@ -86,7 +87,7 @@ export const otaView = `
                 </div>
                 <div>
                     <h4 class="text-xs font-bold text-emerald-950 m-0">Sistem CMSMu Anda Sudah Dalam Versi Terkini</h4>
-                    <p class="text-[11px] text-emerald-700 m-0 mt-0.5">Versi terpasang: <strong x-text="'v' + (statusData.currentCoreVersion || '0.1.3')">v0.1.3</strong> • Terhubung ke server rilis resmi <span class="font-mono">cms.labmu.dev</span></p>
+                    <p class="text-[11px] text-emerald-700 m-0 mt-0.5">Versi terpasang: <strong x-text="'v' + (statusData.currentCoreVersion || '${CORE_VERSION}')">v${CORE_VERSION}</strong> • Terhubung ke server rilis resmi <span class="font-mono">cms.labmu.dev</span></p>
                 </div>
             </div>
             <div class="flex items-center gap-2">
@@ -104,7 +105,7 @@ export const otaView = `
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block">Versi Core Framework</span>
             <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '0.1.2')">v0.1.2</span>
+                <span class="text-2xl font-black text-slate-800" x-text="'v' + (statusData.currentCoreVersion || '${CORE_VERSION}')">v${CORE_VERSION}</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Aktif</span>
             </div>
         </div>
@@ -112,7 +113,7 @@ export const otaView = `
         <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-xs">
             <span class="text-[11px] font-semibold text-slate-400 uppercase tracking-wider block" x-text="isHub ? 'Versi Manifest Publik' : 'Versi Server Pusat'">Versi Manifest Publik</span>
             <div class="flex items-baseline gap-2 mt-1.5">
-                <span class="text-2xl font-black text-teal-600" x-text="'v' + (isHub ? statusData.activeManifestVersion : (updateInfo?.latestVersion || statusData.currentCoreVersion || '0.1.2'))">v0.1.2</span>
+                <span class="text-2xl font-black text-teal-600" x-text="'v' + (isHub ? statusData.activeManifestVersion : (updateInfo?.latestVersion || statusData.currentCoreVersion || '${CORE_VERSION}'))">v${CORE_VERSION}</span>
                 <span class="px-2 py-0.5 rounded-full text-[10px] font-bold" :class="isHub ? 'bg-teal-50 text-teal-700' : (hasUpdate ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-700')" x-text="isHub ? 'Online' : (hasUpdate ? 'Pembaruan Siap' : 'Mutakhir')">Online</span>
             </div>
         </div>
