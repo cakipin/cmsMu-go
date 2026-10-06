@@ -7,7 +7,7 @@
  * (c.env.MEDIA_BUCKET || c.env.BUCKET || c.env.MY_BUCKET || c.env.R2).
  */
 
-import { AwsClient } from 'aws4fetch';
+import { AwsClient } from "aws4fetch";
 
 export interface S3R2AdapterConfig {
   accountId: string;
@@ -27,28 +27,30 @@ export class S3R2BucketAdapter {
     this.client = new AwsClient({
       accessKeyId: config.accessKeyId.trim(),
       secretAccessKey: config.secretAccessKey.trim(),
-      service: 's3',
-      region: 'auto'
+      service: "s3",
+      region: "auto",
     });
   }
 
   private buildObjectUrl(key: string): string {
-    const cleanKey = key.startsWith('/') ? key.slice(1) : key;
+    const cleanKey = key.startsWith("/") ? key.slice(1) : key;
     const encodedKey = cleanKey
-      .split('/')
-      .map((part) => encodeURIComponent(part))
-      .join('/');
+      .split("/")
+      .map(part => encodeURIComponent(part))
+      .join("/");
     return `https://${this.accountId}.r2.cloudflarestorage.com/${this.bucketName}/${encodedKey}`;
   }
 
   private extractMetadata(headers: Headers): R2HTTPMetadata {
     return {
-      contentType: headers.get('content-type') || undefined,
-      contentLanguage: headers.get('content-language') || undefined,
-      contentDisposition: headers.get('content-disposition') || undefined,
-      contentEncoding: headers.get('content-encoding') || undefined,
-      cacheControl: headers.get('cache-control') || undefined,
-      cacheExpiry: headers.get('expires') ? new Date(headers.get('expires')!) : undefined
+      contentType: headers.get("content-type") || undefined,
+      contentLanguage: headers.get("content-language") || undefined,
+      contentDisposition: headers.get("content-disposition") || undefined,
+      contentEncoding: headers.get("content-encoding") || undefined,
+      cacheControl: headers.get("cache-control") || undefined,
+      cacheExpiry: headers.get("expires")
+        ? new Date(headers.get("expires")!)
+        : undefined,
     };
   }
 
@@ -62,38 +64,38 @@ export class S3R2BucketAdapter {
     if (options?.range) {
       const r = options.range;
       if (r.offset !== undefined && r.length !== undefined) {
-        headers['Range'] = `bytes=${r.offset}-${r.offset + r.length - 1}`;
+        headers["Range"] = `bytes=${r.offset}-${r.offset + r.length - 1}`;
       } else if (r.offset !== undefined) {
-        headers['Range'] = `bytes=${r.offset}-`;
+        headers["Range"] = `bytes=${r.offset}-`;
       } else if (r.suffix !== undefined) {
-        headers['Range'] = `bytes=-${r.suffix}`;
+        headers["Range"] = `bytes=-${r.suffix}`;
       }
     }
 
     const res = await this.client.fetch(url, {
-      method: 'GET',
-      headers
+      method: "GET",
+      headers,
     });
 
     if (res.status === 404 || !res.ok) {
       return null;
     }
 
-    const etag = (res.headers.get('etag') || '').replace(/"/g, '');
+    const etag = (res.headers.get("etag") || "").replace(/"/g, "");
     const httpMetadata = this.extractMetadata(res.headers);
 
-    let totalSize = Number(res.headers.get('content-length') || 0);
+    let totalSize = Number(res.headers.get("content-length") || 0);
     let rangeResult: { offset: number; length: number } | undefined = undefined;
 
     if (res.status === 206) {
-      const contentRange = res.headers.get('content-range');
+      const contentRange = res.headers.get("content-range");
       if (contentRange) {
         const match = contentRange.match(/bytes\s+(\d+)-(\d+)\/(\d+|\*)/);
         if (match) {
           const start = parseInt(match[1], 10);
           const end = parseInt(match[2], 10);
           rangeResult = { offset: start, length: end - start + 1 };
-          if (match[3] !== '*') {
+          if (match[3] !== "*") {
             totalSize = parseInt(match[3], 10);
           }
         }
@@ -106,19 +108,25 @@ export class S3R2BucketAdapter {
       size: totalSize,
       etag,
       httpEtag: `"${etag}"`,
-      uploaded: new Date(res.headers.get('last-modified') || Date.now()),
+      uploaded: new Date(res.headers.get("last-modified") || Date.now()),
       httpMetadata,
       customMetadata: {},
       body: res.body,
       bodyUsed: false,
       range: rangeResult,
       writeHttpMetadata(h: Headers) {
-        if (httpMetadata.contentType) h.set('content-type', httpMetadata.contentType);
-        if (httpMetadata.contentLanguage) h.set('content-language', httpMetadata.contentLanguage);
-        if (httpMetadata.contentDisposition) h.set('content-disposition', httpMetadata.contentDisposition);
-        if (httpMetadata.contentEncoding) h.set('content-encoding', httpMetadata.contentEncoding);
-        if (httpMetadata.cacheControl) h.set('cache-control', httpMetadata.cacheControl);
-        if (httpMetadata.cacheExpiry) h.set('expires', httpMetadata.cacheExpiry.toUTCString());
+        if (httpMetadata.contentType)
+          h.set("content-type", httpMetadata.contentType);
+        if (httpMetadata.contentLanguage)
+          h.set("content-language", httpMetadata.contentLanguage);
+        if (httpMetadata.contentDisposition)
+          h.set("content-disposition", httpMetadata.contentDisposition);
+        if (httpMetadata.contentEncoding)
+          h.set("content-encoding", httpMetadata.contentEncoding);
+        if (httpMetadata.cacheControl)
+          h.set("cache-control", httpMetadata.cacheControl);
+        if (httpMetadata.cacheExpiry)
+          h.set("expires", httpMetadata.cacheExpiry.toUTCString());
       },
       async arrayBuffer(): Promise<ArrayBuffer> {
         return await res.arrayBuffer();
@@ -127,11 +135,11 @@ export class S3R2BucketAdapter {
         return await res.text();
       },
       async json<T = unknown>(): Promise<T> {
-        return await res.json() as T;
+        return (await res.json()) as T;
       },
       async blob(): Promise<Blob> {
         return await res.blob();
-      }
+      },
     };
 
     return objBody as R2ObjectBody;
@@ -143,16 +151,16 @@ export class S3R2BucketAdapter {
   async head(key: string): Promise<R2Object | null> {
     const url = this.buildObjectUrl(key);
     const res = await this.client.fetch(url, {
-      method: 'HEAD'
+      method: "HEAD",
     });
 
     if (res.status === 404 || !res.ok) {
       return null;
     }
 
-    const etag = (res.headers.get('etag') || '').replace(/"/g, '');
+    const etag = (res.headers.get("etag") || "").replace(/"/g, "");
     const httpMetadata = this.extractMetadata(res.headers);
-    const size = Number(res.headers.get('content-length') || 0);
+    const size = Number(res.headers.get("content-length") || 0);
 
     const obj: any = {
       key,
@@ -160,17 +168,23 @@ export class S3R2BucketAdapter {
       size,
       etag,
       httpEtag: `"${etag}"`,
-      uploaded: new Date(res.headers.get('last-modified') || Date.now()),
+      uploaded: new Date(res.headers.get("last-modified") || Date.now()),
       httpMetadata,
       customMetadata: {},
       writeHttpMetadata(h: Headers) {
-        if (httpMetadata.contentType) h.set('content-type', httpMetadata.contentType);
-        if (httpMetadata.contentLanguage) h.set('content-language', httpMetadata.contentLanguage);
-        if (httpMetadata.contentDisposition) h.set('content-disposition', httpMetadata.contentDisposition);
-        if (httpMetadata.contentEncoding) h.set('content-encoding', httpMetadata.contentEncoding);
-        if (httpMetadata.cacheControl) h.set('cache-control', httpMetadata.cacheControl);
-        if (httpMetadata.cacheExpiry) h.set('expires', httpMetadata.cacheExpiry.toUTCString());
-      }
+        if (httpMetadata.contentType)
+          h.set("content-type", httpMetadata.contentType);
+        if (httpMetadata.contentLanguage)
+          h.set("content-language", httpMetadata.contentLanguage);
+        if (httpMetadata.contentDisposition)
+          h.set("content-disposition", httpMetadata.contentDisposition);
+        if (httpMetadata.contentEncoding)
+          h.set("content-encoding", httpMetadata.contentEncoding);
+        if (httpMetadata.cacheControl)
+          h.set("cache-control", httpMetadata.cacheControl);
+        if (httpMetadata.cacheExpiry)
+          h.set("expires", httpMetadata.cacheExpiry.toUTCString());
+      },
     };
 
     return obj as R2Object;
@@ -181,29 +195,30 @@ export class S3R2BucketAdapter {
    */
   async put(
     key: string,
-    value: ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
+    value:
+      ReadableStream | ArrayBuffer | ArrayBufferView | string | null | Blob,
     options?: R2PutOptions
   ): Promise<R2Object | null> {
     const url = this.buildObjectUrl(key);
     const headers: Record<string, string> = {};
 
     if (options?.httpMetadata?.contentType) {
-      headers['Content-Type'] = options.httpMetadata.contentType;
+      headers["Content-Type"] = options.httpMetadata.contentType;
     } else {
-      headers['Content-Type'] = 'application/octet-stream';
+      headers["Content-Type"] = "application/octet-stream";
     }
 
     if (options?.httpMetadata?.cacheControl) {
-      headers['Cache-Control'] = options.httpMetadata.cacheControl;
+      headers["Cache-Control"] = options.httpMetadata.cacheControl;
     }
     if (options?.httpMetadata?.contentDisposition) {
-      headers['Content-Disposition'] = options.httpMetadata.contentDisposition;
+      headers["Content-Disposition"] = options.httpMetadata.contentDisposition;
     }
     if (options?.httpMetadata?.contentEncoding) {
-      headers['Content-Encoding'] = options.httpMetadata.contentEncoding;
+      headers["Content-Encoding"] = options.httpMetadata.contentEncoding;
     }
     if (options?.httpMetadata?.contentLanguage) {
-      headers['Content-Language'] = options.httpMetadata.contentLanguage;
+      headers["Content-Language"] = options.httpMetadata.contentLanguage;
     }
 
     if (options?.customMetadata) {
@@ -213,17 +228,19 @@ export class S3R2BucketAdapter {
     }
 
     const res = await this.client.fetch(url, {
-      method: 'PUT',
+      method: "PUT",
       headers,
-      body: value as any
+      body: value as any,
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => '');
-      throw new Error(`S3 PUT (${key}) gagal dengan status ${res.status}: ${errText}`);
+      const errText = await res.text().catch(() => "");
+      throw new Error(
+        `S3 PUT (${key}) gagal dengan status ${res.status}: ${errText}`
+      );
     }
 
-    const etag = (res.headers.get('etag') || '').replace(/"/g, '');
+    const etag = (res.headers.get("etag") || "").replace(/"/g, "");
     const meta = options?.httpMetadata || {};
 
     const obj: any = {
@@ -236,8 +253,8 @@ export class S3R2BucketAdapter {
       httpMetadata: meta,
       customMetadata: options?.customMetadata || {},
       writeHttpMetadata(h: Headers) {
-        if (meta.contentType) h.set('content-type', meta.contentType);
-      }
+        if (meta.contentType) h.set("content-type", meta.contentType);
+      },
     };
 
     return obj as R2Object;
@@ -251,7 +268,7 @@ export class S3R2BucketAdapter {
     for (const key of keyList) {
       const url = this.buildObjectUrl(key);
       await this.client.fetch(url, {
-        method: 'DELETE'
+        method: "DELETE",
       });
     }
   }
@@ -260,19 +277,19 @@ export class S3R2BucketAdapter {
    * Mendapatkan daftar berkas dari R2 via S3 ListObjectsV2
    */
   async list(options?: R2ListOptions): Promise<R2Objects> {
-    const params = new URLSearchParams({ 'list-type': '2' });
-    if (options?.prefix) params.set('prefix', options.prefix);
-    if (options?.limit) params.set('max-keys', String(options.limit));
-    if (options?.cursor) params.set('continuation-token', options.cursor);
-    if (options?.delimiter) params.set('delimiter', options.delimiter);
+    const params = new URLSearchParams({ "list-type": "2" });
+    if (options?.prefix) params.set("prefix", options.prefix);
+    if (options?.limit) params.set("max-keys", String(options.limit));
+    if (options?.cursor) params.set("continuation-token", options.cursor);
+    if (options?.delimiter) params.set("delimiter", options.delimiter);
 
     const url = `https://${this.accountId}.r2.cloudflarestorage.com/${this.bucketName}?${params.toString()}`;
     const res = await this.client.fetch(url, {
-      method: 'GET'
+      method: "GET",
     });
 
     if (!res.ok) {
-      const errText = await res.text().catch(() => '');
+      const errText = await res.text().catch(() => "");
       throw new Error(`S3 LIST gagal dengan status ${res.status}: ${errText}`);
     }
 
@@ -292,7 +309,7 @@ export class S3R2BucketAdapter {
         const key = keyMatch[1];
         const size = sizeMatch ? parseInt(sizeMatch[1], 10) : 0;
         const uploaded = dateMatch ? new Date(dateMatch[1]) : new Date();
-        const etag = etagMatch ? etagMatch[1].replace(/"/g, '') : '';
+        const etag = etagMatch ? etagMatch[1].replace(/"/g, "") : "";
 
         objects.push({
           key,
@@ -303,18 +320,22 @@ export class S3R2BucketAdapter {
           uploaded,
           httpMetadata: {},
           customMetadata: {},
-          writeHttpMetadata() {}
+          writeHttpMetadata() {},
         } as unknown as R2Object);
       }
     }
 
     const isTruncatedMatch = /<IsTruncated>(.*?)<\/IsTruncated>/.exec(xml);
-    const isTruncated = isTruncatedMatch ? isTruncatedMatch[1] === 'true' : false;
-    const nextTokenMatch = /<NextContinuationToken>(.*?)<\/NextContinuationToken>/.exec(xml);
+    const isTruncated = isTruncatedMatch
+      ? isTruncatedMatch[1] === "true"
+      : false;
+    const nextTokenMatch =
+      /<NextContinuationToken>(.*?)<\/NextContinuationToken>/.exec(xml);
     const cursor = nextTokenMatch ? nextTokenMatch[1] : undefined;
 
     const prefixes: string[] = [];
-    const cpRegex = /<CommonPrefixes>[\s\S]*?<Prefix>(.*?)<\/Prefix>[\s\S]*?<\/CommonPrefixes>/g;
+    const cpRegex =
+      /<CommonPrefixes>[\s\S]*?<Prefix>(.*?)<\/Prefix>[\s\S]*?<\/CommonPrefixes>/g;
     let cpMatch: RegExpExecArray | null;
     while ((cpMatch = cpRegex.exec(xml)) !== null) {
       prefixes.push(cpMatch[1]);
@@ -324,14 +345,14 @@ export class S3R2BucketAdapter {
       objects,
       truncated: isTruncated,
       cursor,
-      delimitedPrefixes: prefixes
+      delimitedPrefixes: prefixes,
     } as unknown as R2Objects;
   }
 }
 
 // Memory cache untuk instance adapter agar tidak instantiate berulang di setiap request
 let cachedAdapter: S3R2BucketAdapter | null = null;
-let cachedKey: string = '';
+let cachedKey: string = "";
 
 /**
  * Helper terpadu untuk mendapatkan instance storage bucket R2:
@@ -354,7 +375,7 @@ export function getStorageBucket(contextOrEnv: any): R2Bucket | undefined {
         accountId,
         accessKeyId,
         secretAccessKey,
-        bucketName
+        bucketName,
       });
       cachedKey = cacheKey;
     }

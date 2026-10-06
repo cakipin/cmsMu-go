@@ -40,6 +40,6 @@ export const themesLogic = `
           }
        } catch(e) { alert('Error Network'); }
     }
-`; 
+`;
 // CATATAN PENTING: Jangan ada koma (,) di baris paling akhir ini.
 // Karena di scripts.ts sudah ada koma setelah \${themesLogic},

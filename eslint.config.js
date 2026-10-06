@@ -18,5 +18,16 @@ export default [
     },
   },
   { rules: { "no-console": "warn" } },
-  { ignores: ["dist/**", ".astro/**", "public/pagefind/**", "**/*_copy*", "**/*.old", "generate-perfect-config.mjs", "test-*", "tests/**"] },
+  {
+    ignores: [
+      "dist/**",
+      ".astro/**",
+      "public/pagefind/**",
+      "**/*_copy*",
+      "**/*.old",
+      "generate-perfect-config.mjs",
+      "test-*",
+      "tests/**",
+    ],
+  },
 ];

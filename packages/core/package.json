@@ -10,6 +10,9 @@
     "./services/*": "./src/services/*",
     "./utils/*": "./src/utils/*"
   },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "@cmsmu/db": "workspace:*",
     "drizzle-orm": "^0.45.2"

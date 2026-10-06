@@ -31,7 +31,13 @@ export type Props = {
     syncLogo?: "yes" | "no";
   };
   HeroSlider: {
-    slides: { image: string; title: string; subtitle: string; buttonText: string; buttonLink: string }[];
+    slides: {
+      image: string;
+      title: string;
+      subtitle: string;
+      buttonText: string;
+      buttonLink: string;
+    }[];
     sliderHeight: string;
     textPosition: string;
     overlayOpacity: number;
@@ -64,7 +70,13 @@ export type Props = {
   Testimonial: {
     title: string;
     subtitle: string;
-    testimonials: { quote: string; author: string; role: string; initials: string; bgColor: string }[];
+    testimonials: {
+      quote: string;
+      author: string;
+      role: string;
+      initials: string;
+      bgColor: string;
+    }[];
   };
   RecentPosts: {
     title: string;

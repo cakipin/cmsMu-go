@@ -1,5 +1,5 @@
-import { aggregatorTable } from './ui/aggregator-table.ts';
-import { aggregatorModals } from './ui/aggregator-modals.ts';
+import { aggregatorTable } from "./ui/aggregator-table.ts";
+import { aggregatorModals } from "./ui/aggregator-modals.ts";
 
 export const aggregatorView = `
 <div x-show="view === 'aggregator'" class="exclusive-wrapper" x-data="{

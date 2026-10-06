@@ -184,6 +184,9 @@ importers:
       '@astrojs/react':
         specifier: ^6.0.2
         version: 6.0.2(@types/node@24.12.2)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(esbuild@0.28.1)(jiti@2.7.0)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(tsx@4.23.13)(yaml@2.8.3)
+      '@cmsmu/cms-api':
+        specifier: workspace:*
+        version: link:../cms-api
       '@cmsmu/core':
         specifier: workspace:*
         version: link:../../packages/core
@@ -199,6 +202,9 @@ importers:
       astro:
         specifier: ^7.0.3
         version: 7.0.3(@astrojs/markdown-remark@7.2.0)(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.1)(@types/node@24.12.2)(aws4fetch@1.0.20)(jiti@2.7.0)(rollup@4.60.4)(tsx@4.23.13)(yaml@2.8.3)
+      hono:
+        specifier: ^4.12.33
+        version: 4.12.33
       react:
         specifier: ^19.2.8
         version: 19.2.8

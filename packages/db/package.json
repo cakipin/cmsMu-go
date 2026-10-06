@@ -10,7 +10,8 @@
     "./schema": "./src/schema.ts"
   },
   "scripts": {
-    "db:generate": "drizzle-kit generate"
+    "db:generate": "drizzle-kit generate",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "drizzle-orm": "^0.45.2"

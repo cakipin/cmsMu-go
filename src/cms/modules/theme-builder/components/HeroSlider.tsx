@@ -10,16 +10,16 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
       options: [
         { label: "Medium (600px)", value: "600px" },
         { label: "Large (80vh)", value: "80vh" },
-        { label: "Full Screen", value: "100vh" }
-      ]
+        { label: "Full Screen", value: "100vh" },
+      ],
     },
     textPosition: {
       type: "radio",
       options: [
         { label: "Kiri", value: "left" },
         { label: "Tengah", value: "center" },
-        { label: "Kanan", value: "right" }
-      ]
+        { label: "Kanan", value: "right" },
+      ],
     },
     overlayOpacity: { type: "number" },
     titleColor: { type: "text" },
@@ -27,8 +27,8 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
       type: "select",
       options: [
         { label: "Normal", value: "3.5rem" },
-        { label: "Besar", value: "4.5rem" }
-      ]
+        { label: "Besar", value: "4.5rem" },
+      ],
     },
     slides: {
       type: "array",
@@ -37,9 +37,9 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
         subtitle: { type: "textarea" },
         image: { type: "custom", render: ImageField },
         buttonText: { type: "text" },
-        buttonLink: { type: "text" }
-      }
-    }
+        buttonLink: { type: "text" },
+      },
+    },
   },
   defaultProps: {
     sliderHeight: "600px",
@@ -50,51 +50,77 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
     slides: [
       {
         title: "Solusi Media & Dakwah Digital",
-        subtitle: "Memberdayakan ekosistem persyarikatan melalui teknologi publikasi modern yang amanah dan terpadu.",
-        image: "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=2000",
+        subtitle:
+          "Memberdayakan ekosistem persyarikatan melalui teknologi publikasi modern yang amanah dan terpadu.",
+        image:
+          "https://images.unsplash.com/photo-1542744173-8e7e53415bb0?auto=format&fit=crop&q=80&w=2000",
         buttonText: "Pelajari Lebih Lanjut",
-        buttonLink: "#"
-      }
-    ]
+        buttonLink: "#",
+      },
+    ],
   },
-  render: ({ slides, sliderHeight, textPosition, overlayOpacity, titleColor, titleSize }) => {
+  render: ({
+    slides,
+    sliderHeight,
+    textPosition,
+    overlayOpacity,
+    titleColor,
+    titleSize,
+  }) => {
     const uid = `muslider_${Math.random().toString(36).slice(2, 7)}`;
 
     const heightMap: Record<string, string> = {
-      'h-[600px]': '600px', 'h-[800px]': '800px', 'h-screen': '100vh',
-      '600px': '600px', '80vh': '80vh', '100vh': '100vh'
+      "h-[600px]": "600px",
+      "h-[800px]": "800px",
+      "h-screen": "100vh",
+      "600px": "600px",
+      "80vh": "80vh",
+      "100vh": "100vh",
     };
-    const height = heightMap[sliderHeight] || sliderHeight || '600px';
+    const height = heightMap[sliderHeight] || sliderHeight || "600px";
 
     const posMap: Record<string, string> = {
-      'items-start text-left': 'left', 'items-center text-center': 'center', 'items-end text-right': 'right',
-      'left': 'left', 'center': 'center', 'right': 'right'
+      "items-start text-left": "left",
+      "items-center text-center": "center",
+      "items-end text-right": "right",
+      left: "left",
+      center: "center",
+      right: "right",
     };
-    const pos = posMap[textPosition] || 'center';
+    const pos = posMap[textPosition] || "center";
 
     const fontMap: Record<string, string> = {
-      'text-4xl md:text-6xl': '3.5rem', 'text-5xl md:text-7xl': '4.5rem',
-      '3.5rem': '3.5rem', '4.5rem': '4.5rem'
+      "text-4xl md:text-6xl": "3.5rem",
+      "text-5xl md:text-7xl": "4.5rem",
+      "3.5rem": "3.5rem",
+      "4.5rem": "4.5rem",
     };
-    const fontSize = fontMap[titleSize] || titleSize || '3.5rem';
+    const fontSize = fontMap[titleSize] || titleSize || "3.5rem";
 
     const overlayColor = `rgba(15,23,42,${(overlayOpacity ?? 50) / 100})`;
     const textAlign = pos;
-    const alignItems = pos === 'left' ? 'flex-start' : pos === 'right' ? 'flex-end' : 'center';
+    const alignItems =
+      pos === "left" ? "flex-start" : pos === "right" ? "flex-end" : "center";
 
-    const slidesHtml = (slides || []).map((slide: any, idx: number) => `
-      <div class="${uid}-slide${idx === 0 ? ' active' : ''}">
-        ${slide.image ? `<img src="${slide.image}" alt="${slide.title || ''}" class="${uid}-bg" />` : `<div class="${uid}-bg" style="background:#1e293b"></div>`}
+    const slidesHtml = (slides || [])
+      .map(
+        (slide: any, idx: number) => `
+      <div class="${uid}-slide${idx === 0 ? " active" : ""}">
+        ${slide.image ? `<img src="${slide.image}" alt="${slide.title || ""}" class="${uid}-bg" />` : `<div class="${uid}-bg" style="background:#1e293b"></div>`}
         <div class="${uid}-overlay"></div>
         <div class="${uid}-content" style="align-items:${alignItems};text-align:${textAlign};">
-          <h2 class="${uid}-title" style="color:${titleColor ?? '#fff'};font-size:${fontSize}">${slide.title || ''}</h2>
-          <p class="${uid}-desc">${slide.subtitle || ''}</p>
-          ${slide.buttonText ? `<a href="${slide.buttonLink || '#'}" class="${uid}-btn">${slide.buttonText}</a>` : ''}
+          <h2 class="${uid}-title" style="color:${titleColor ?? "#fff"};font-size:${fontSize}">${slide.title || ""}</h2>
+          <p class="${uid}-desc">${slide.subtitle || ""}</p>
+          ${slide.buttonText ? `<a href="${slide.buttonLink || "#"}" class="${uid}-btn">${slide.buttonText}</a>` : ""}
         </div>
       </div>
-    `).join('');
+    `
+      )
+      .join("");
 
-    const dotsHtml = (slides || []).length > 1 ? `
+    const dotsHtml =
+      (slides || []).length > 1
+        ? `
       <button class="${uid}-nav prev" onclick="${uid}_move(-1)" aria-label="Previous Slide">
         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
       </button>
@@ -102,9 +128,10 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
         <svg width="24" height="24" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
       </button>
       <div class="${uid}-dots">
-        ${(slides || []).map((_: any, i: number) => `<button class="${uid}-dot${i===0?' active':''}" onclick="${uid}_set(${i})" aria-label="Slide ${i+1}"></button>`).join('')}
+        ${(slides || []).map((_: any, i: number) => `<button class="${uid}-dot${i === 0 ? " active" : ""}" onclick="${uid}_set(${i})" aria-label="Slide ${i + 1}"></button>`).join("")}
       </div>
-    ` : '';
+    `
+        : "";
 
     const html = `
 <style>
@@ -154,5 +181,5 @@ export const HeroSlider: ComponentConfig<Props["HeroSlider"]> = {
 <\\/script>`;
 
     return <div dangerouslySetInnerHTML={{ __html: html }} />;
-  }
+  },
 };

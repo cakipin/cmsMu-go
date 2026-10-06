@@ -1,126 +1,181 @@
-import type { ThemeContext } from '../types';
-import { css } from './style';
-import { escapeHtml } from './utils';
-import { renderGlobalHeaderHtml } from '../../modules/theme-builder';
-import { translateMenuLabel as translateI18nLabel } from './i18n';
+import type { ThemeContext } from "../types";
+import { css } from "./style";
+import { escapeHtml } from "./utils";
+import { renderGlobalHeaderHtml } from "../../modules/theme-builder";
+import { translateMenuLabel as translateI18nLabel } from "./i18n";
 
+export function _layout(
+  this: any,
+  content: string,
+  title: string,
+  ctx: ThemeContext,
+  pageType: string = ""
+) {
+  const globalHeader = renderGlobalHeaderHtml(ctx.site, ctx.menus);
+  const siteTitle = escapeHtml(
+    ctx.site.site_title || ctx.site.title || "Suara 'Aisyiyah"
+  );
+  const c = ctx as any;
+  const siteDesc = escapeHtml(
+    ctx.site.description || "Inspirasi perempuan berkemajuan"
+  );
+  const canonical = c.canonical || "https://suaraaisyiyah.id/";
+  const isHome = title === "Beranda" || pageType === "home";
+  const pageTitle = isHome
+    ? "Suara 'Aisyiyah | Inspirasi Perempuan Berkemajuan"
+    : `${escapeHtml(title)} — ${siteTitle}`;
+  const defaultHomeDesc =
+    "Suara 'Aisyiyah adalah majalah perempuan muslim tertua di Indonesia sejak 1926. Menyajikan inspirasi perempuan berkemajuan, berita, kajian, dan literasi peradaban.";
+  const metaDesc = escapeHtml(
+    c.metaDesc ||
+      (isHome
+        ? defaultHomeDesc
+        : ctx.site.description || "Inspirasi perempuan berkemajuan")
+  );
+  const ogImg = escapeHtml(
+    c.ogImage || "https://suaraaisyiyah.id/default-og.jpg"
+  );
 
-export function _layout(this: any, content: string, title: string, ctx: ThemeContext, pageType: string = '') {
-    const globalHeader = renderGlobalHeaderHtml(ctx.site, ctx.menus);
-    const siteTitle = escapeHtml(ctx.site.site_title || ctx.site.title || "Suara 'Aisyiyah");
-    const c = ctx as any;
-    const siteDesc = escapeHtml(ctx.site.description || "Inspirasi perempuan berkemajuan");
-    const canonical = c.canonical || 'https://suaraaisyiyah.id/';
-    const isHome = title === 'Beranda' || pageType === 'home';
-    const pageTitle = isHome ? "Suara 'Aisyiyah | Inspirasi Perempuan Berkemajuan" : `${escapeHtml(title)} — ${siteTitle}`;
-    const defaultHomeDesc = "Suara 'Aisyiyah adalah majalah perempuan muslim tertua di Indonesia sejak 1926. Menyajikan inspirasi perempuan berkemajuan, berita, kajian, dan literasi peradaban.";
-    const metaDesc = escapeHtml(c.metaDesc || (isHome ? defaultHomeDesc : (ctx.site.description || "Inspirasi perempuan berkemajuan")));
-    const ogImg = escapeHtml(c.ogImage || 'https://suaraaisyiyah.id/default-og.jpg');
-    
-    // Top Banner Logic
-    let topBannerHtml = '';
-    const showOnHome = ctx.site.sa_top_banner_enable_home === 'true';
-    const showOnPost = ctx.site.sa_top_banner_enable_post === 'true';
-    const showOnPage = ctx.site.sa_top_banner_enable_page === 'true';
+  // Top Banner Logic
+  let topBannerHtml = "";
+  const showOnHome = ctx.site.sa_top_banner_enable_home === "true";
+  const showOnPost = ctx.site.sa_top_banner_enable_post === "true";
+  const showOnPage = ctx.site.sa_top_banner_enable_page === "true";
 
-    let showBanner = false;
-    if (pageType === 'home' && showOnHome) showBanner = true;
-    if (pageType === 'post' && showOnPost) showBanner = true;
-    if (pageType === 'page' && showOnPage) showBanner = true;
-    if (pageType === '' && isHome && showOnHome) showBanner = true;
-    
-    if (showBanner && (ctx.site.sa_top_banner_image || ctx.site.sa_top_banner_html)) {
-      if (ctx.site.sa_top_banner_html) {
-         topBannerHtml = `<div class="top-banner-wrapper container sa-style-1" >${ctx.site.sa_top_banner_html}</div>`;
-      } else {
-         const linkStr = ctx.site.sa_top_banner_link ? `href="${ctx.site.sa_top_banner_link}" target="_blank"` : '';
-         const tagStr = ctx.site.sa_top_banner_link ? 'a' : 'div';
-         topBannerHtml = `<div class="top-banner-wrapper container sa-style-2" >
+  let showBanner = false;
+  if (pageType === "home" && showOnHome) showBanner = true;
+  if (pageType === "post" && showOnPost) showBanner = true;
+  if (pageType === "page" && showOnPage) showBanner = true;
+  if (pageType === "" && isHome && showOnHome) showBanner = true;
+
+  if (
+    showBanner &&
+    (ctx.site.sa_top_banner_image || ctx.site.sa_top_banner_html)
+  ) {
+    if (ctx.site.sa_top_banner_html) {
+      topBannerHtml = `<div class="top-banner-wrapper container sa-style-1" >${ctx.site.sa_top_banner_html}</div>`;
+    } else {
+      const linkStr = ctx.site.sa_top_banner_link
+        ? `href="${ctx.site.sa_top_banner_link}" target="_blank"`
+        : "";
+      const tagStr = ctx.site.sa_top_banner_link ? "a" : "div";
+      topBannerHtml = `<div class="top-banner-wrapper container sa-style-2" >
             <${tagStr} ${linkStr} class="sa-block-link">
               <img src="${ctx.site.sa_top_banner_image}" alt="Banner" class="sa-style-3">
             </${tagStr}>
          </div>`;
-      }
     }
-    
-    // JSON-LD WebSite (for all pages)
-    const jsonLdWebsite = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "Suara 'Aisyiyah",
-      "url": "https://suaraaisyiyah.id",
-      "description": isHome ? defaultHomeDesc : (ctx.site.description || "Inspirasi perempuan berkemajuan"),
-      "potentialAction": { "@type": "SearchAction", "target": "https://suaraaisyiyah.id/search?q={search_term_string}", "query-input": "required name=search_term_string" }
-    });
+  }
 
-    const currentLang = (ctx as any).lang || 'id';
-    const langPrefix = currentLang && currentLang !== 'id' ? `/${currentLang}` : '';
+  // JSON-LD WebSite (for all pages)
+  const jsonLdWebsite = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "Suara 'Aisyiyah",
+    url: "https://suaraaisyiyah.id",
+    description: isHome
+      ? defaultHomeDesc
+      : ctx.site.description || "Inspirasi perempuan berkemajuan",
+    potentialAction: {
+      "@type": "SearchAction",
+      target: "https://suaraaisyiyah.id/search?q={search_term_string}",
+      "query-input": "required name=search_term_string",
+    },
+  });
 
-    const translateMenuLabel = (label: string) => translateI18nLabel(label, currentLang);
+  const currentLang = (ctx as any).lang || "id";
+  const langPrefix =
+    currentLang && currentLang !== "id" ? `/${currentLang}` : "";
 
-    const formatMenuUrl = (url: string) => {
-      if (!url) return langPrefix || '/';
-      if (url.startsWith('http://') || url.startsWith('https://')) return url;
-      if (!langPrefix) return url;
-      const clean = url.startsWith('/') ? url : `/${url}`;
-      if (clean === '/') return langPrefix;
-      return `${langPrefix}${clean}`;
-    };
+  const translateMenuLabel = (label: string) =>
+    translateI18nLabel(label, currentLang);
 
-    // Group menus for footer
-    const menuItems = ctx.menus?.length ? ctx.menus : [
-      {label:'Home',url:'/'},{label:'Berita',url:'/berita'},{label:'Kajian',url:'/kajian'},
-      {label:'Keluarga Sakinah',url:'/keluarga-sakinah'},{label:'Wawasan',url:'/wawasan'},{label:'Gaya Hidup',url:'/gaya-hidup'},{label:'Inspirasi',url:'/inspirasi'},{label:'Muda',url:'/muda'},{label:'E-Majalah',url:'/majalah'}
-    ];
+  const formatMenuUrl = (url: string) => {
+    if (!url) return langPrefix || "/";
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
+    if (!langPrefix) return url;
+    const clean = url.startsWith("/") ? url : `/${url}`;
+    if (clean === "/") return langPrefix;
+    return `${langPrefix}${clean}`;
+  };
 
-    // Build tree
-    const rootMenus = menuItems.filter((m:any) => {
+  // Group menus for footer
+  const menuItems = ctx.menus?.length
+    ? ctx.menus
+    : [
+        { label: "Home", url: "/" },
+        { label: "Berita", url: "/berita" },
+        { label: "Kajian", url: "/kajian" },
+        { label: "Keluarga Sakinah", url: "/keluarga-sakinah" },
+        { label: "Wawasan", url: "/wawasan" },
+        { label: "Gaya Hidup", url: "/gaya-hidup" },
+        { label: "Inspirasi", url: "/inspirasi" },
+        { label: "Muda", url: "/muda" },
+        { label: "E-Majalah", url: "/majalah" },
+      ];
+
+  // Build tree
+  const rootMenus = menuItems.filter((m: any) => {
+    const pid = m.parent_id ?? m.parentId;
+    return !pid || pid === 0 || pid === "0" || pid === "null";
+  });
+  rootMenus.forEach((r: any) => {
+    r.children = menuItems.filter((m: any) => {
       const pid = m.parent_id ?? m.parentId;
-      return !pid || pid === 0 || pid === '0' || pid === 'null';
+      return pid && String(pid) === String(r.id);
     });
-    rootMenus.forEach((r:any) => {
-       r.children = menuItems.filter((m:any) => {
-         const pid = m.parent_id ?? m.parentId;
-         return pid && String(pid) === String(r.id);
-       });
-    });
+  });
 
-    const items = rootMenus.map((m:any) => {
+  const items = rootMenus
+    .map((m: any) => {
       const mLabel = translateMenuLabel(m.label);
       const mUrl = formatMenuUrl(m.url);
       if (m.children && m.children.length > 0) {
-           const allLabel = currentLang === 'en' 
-             ? `All ${mLabel} &rarr;` 
-             : (currentLang === 'ar' ? `&larr; كل ${mLabel}` : `Semua ${mLabel} &rarr;`);
-           return `<div class="dropdown">
+        const allLabel =
+          currentLang === "en"
+            ? `All ${mLabel} &rarr;`
+            : currentLang === "ar"
+              ? `&larr; كل ${mLabel}`
+              : `Semua ${mLabel} &rarr;`;
+        return `<div class="dropdown">
               <button type="button" class="dropdown-trigger" onclick="toggleMenuDropdown(event, this)">
                 ${escapeHtml(mLabel)} <span class="dropdown-chevron">&#9662;</span>
               </button>
               <div class="dropdown-content">
                   <a href="${escapeHtml(mUrl)}" class="dropdown-parent-link"><strong>${allLabel}</strong></a>
-                  ${m.children.map((c:any) => `<a href="${escapeHtml(formatMenuUrl(c.url))}">${escapeHtml(translateMenuLabel(c.label))}</a>`).join('')}
+                  ${m.children.map((c: any) => `<a href="${escapeHtml(formatMenuUrl(c.url))}">${escapeHtml(translateMenuLabel(c.label))}</a>`).join("")}
               </div>
            </div>`;
       }
-      if (m.label.toLowerCase() === 'home' || m.label.toLowerCase() === 'beranda') {
+      if (
+        m.label.toLowerCase() === "home" ||
+        m.label.toLowerCase() === "beranda"
+      ) {
         return `<a href="${escapeHtml(mUrl)}" aria-label="Home" class="sa-style-4"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>`;
       }
-      if (m.url === '/majalah' || m.label.toLowerCase().includes('majalah')) {
+      if (m.url === "/majalah" || m.label.toLowerCase().includes("majalah")) {
         return `<a href="${escapeHtml(mUrl)}" class="nav-emajalah-btn" title="E-Majalah Suara 'Aisyiyah"><i class="fas fa-book-open"></i> <span>${escapeHtml(mLabel)}</span></a>`;
       }
-      return `<a href="${escapeHtml(mUrl)}">${escapeHtml(mLabel)}${m.new?'<sup>New</sup>':''}</a>`;
-    }).join('');
+      return `<a href="${escapeHtml(mUrl)}">${escapeHtml(mLabel)}${m.new ? "<sup>New</sup>" : ""}</a>`;
+    })
+    .join("");
 
-
-    const popupHtml = ctx.site.sa_popup_enable === 'true' && (ctx.site.sa_popup_html || ctx.site.sa_popup_image) ? `
+  const popupHtml =
+    ctx.site.sa_popup_enable === "true" &&
+    (ctx.site.sa_popup_html || ctx.site.sa_popup_image)
+      ? `
       <div id="sa-popup-overlay" class="sa-style-5">
         <div class="sa-popup-content sa-style-6" >
           <button id="sa-popup-close" class="sa-style-7">&times;</button>
-          ${ctx.site.sa_popup_html ? ctx.site.sa_popup_html : `
-            <a href="${ctx.site.sa_popup_link || '#'}" ${ctx.site.sa_popup_link ? 'target="_blank"' : ''} class="sa-style-8">
+          ${
+            ctx.site.sa_popup_html
+              ? ctx.site.sa_popup_html
+              : `
+            <a href="${ctx.site.sa_popup_link || "#"}" ${ctx.site.sa_popup_link ? 'target="_blank"' : ""} class="sa-style-8">
               <img src="${ctx.site.sa_popup_image}" alt="Popup Banner" class="sa-style-9">
             </a>
-          `}
+          `
+          }
         </div>
       </div>
       <script>
@@ -153,9 +208,10 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
           }
         });
       </script>
-    ` : '';
-    
-    return `<!doctype html><html lang="${escapeHtml(currentLang)}" ${currentLang === 'ar' ? 'dir="rtl"' : ''}>
+    `
+      : "";
+
+  return `<!doctype html><html lang="${escapeHtml(currentLang)}" ${currentLang === "ar" ? 'dir="rtl"' : ""}>
     <head>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
       <meta charset="utf-8">
@@ -165,8 +221,8 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       <link rel="icon" href="/favicon.svg" type="image/svg+xml">
       <link rel="alternate icon" href="/favicon.ico">
       <!-- Open Graph -->
-      <meta property="og:type" content="${isHome ? 'website' : 'article'}">
-      <meta property="og:site_name" content="${escapeHtml(siteTitle || 'CMSMu')}">
+      <meta property="og:type" content="${isHome ? "website" : "article"}">
+      <meta property="og:site_name" content="${escapeHtml(siteTitle || "CMSMu")}">
       <meta property="og:title" content="${pageTitle}">
       <meta property="og:description" content="${metaDesc}">
       <meta property="og:url" content="${canonical}">
@@ -174,7 +230,7 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       <meta property="og:image:width" content="1200">
       <meta property="og:image:height" content="630">
       <meta property="og:image:alt" content="${escapeHtml(siteTitle)} — ${escapeHtml(siteDesc)}">
-      <meta property="og:locale" content="${currentLang === 'en' ? 'en_US' : (currentLang === 'ar' ? 'ar_AR' : 'id_ID')}">
+      <meta property="og:locale" content="${currentLang === "en" ? "en_US" : currentLang === "ar" ? "ar_AR" : "id_ID"}">
       <!-- Twitter Card -->
       <meta name="twitter:card" content="summary_large_image">
       <meta name="twitter:title" content="${pageTitle}">
@@ -183,7 +239,9 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       <meta name="twitter:site" content="@suaraaisyiyah">
       <!-- JSON-LD WebSite -->
       <script type="application/ld+json">${jsonLdWebsite}</script>
-      ${globalHeader ? `
+      ${
+        globalHeader
+          ? `
       <!-- Google Fonts & Tailwind CDN for Global Theme Header -->
       <link rel="preconnect" href="https://fonts.googleapis.com">
       <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,15 +261,20 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
           }
         }
       </script>
-      ` : ''}
+      `
+          : ""
+      }
       <style>${css}</style>
 </head>
 <body>
     <div class="site-wrapper">
-      ${globalHeader ? `
+      ${
+        globalHeader
+          ? `
         ${globalHeader.html}
-        ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ''}
-      ` : `
+        ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ""}
+      `
+          : `
       <div class="topbar">
         <div class="container">
           <ul class="topbar-links">
@@ -220,11 +283,11 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
           <ul class="topbar-right">
             <li>
               <div class="lang-switcher" style="display:inline-flex; align-items:center; gap:4px; font-size:12px; font-weight:700;">
-                <button type="button" onclick="switchLanguage('id')" id="lang-btn-id" title="Bahasa Indonesia" style="background:${currentLang === 'id' ? 'rgba(255,255,255,0.25)' : 'none'}; border:none; border-radius:4px; color:#ffffff; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇮🇩 ID</button>
+                <button type="button" onclick="switchLanguage('id')" id="lang-btn-id" title="Bahasa Indonesia" style="background:${currentLang === "id" ? "rgba(255,255,255,0.25)" : "none"}; border:none; border-radius:4px; color:#ffffff; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇮🇩 ID</button>
                 <span style="opacity:0.5; color:#ffffff;">|</span>
-                <button type="button" onclick="switchLanguage('en')" id="lang-btn-en" title="English" style="background:${currentLang === 'en' ? 'rgba(255,255,255,0.25)' : 'none'}; border:none; border-radius:4px; color:#ffffff; opacity:${currentLang === 'en' ? '1' : '0.85'}; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇬🇧 EN</button>
+                <button type="button" onclick="switchLanguage('en')" id="lang-btn-en" title="English" style="background:${currentLang === "en" ? "rgba(255,255,255,0.25)" : "none"}; border:none; border-radius:4px; color:#ffffff; opacity:${currentLang === "en" ? "1" : "0.85"}; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇬🇧 EN</button>
                 <span style="opacity:0.5; color:#ffffff;">|</span>
-                <button type="button" onclick="switchLanguage('ar')" id="lang-btn-ar" title="العربية" style="background:${currentLang === 'ar' ? 'rgba(255,255,255,0.25)' : 'none'}; border:none; border-radius:4px; color:#ffffff; opacity:${currentLang === 'ar' ? '1' : '0.85'}; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇸🇦 AR</button>
+                <button type="button" onclick="switchLanguage('ar')" id="lang-btn-ar" title="العربية" style="background:${currentLang === "ar" ? "rgba(255,255,255,0.25)" : "none"}; border:none; border-radius:4px; color:#ffffff; opacity:${currentLang === "ar" ? "1" : "0.85"}; cursor:pointer; padding:2px 5px; font-size:12px; font-weight:700;">🇸🇦 AR</button>
               </div>
             </li>
           </ul>
@@ -235,10 +298,10 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       <header class="header sa-style-12" >
         <div class="container sa-style-13" >
           <div class="header-logo-section sa-style-14" >
-            <a href="${formatMenuUrl('/')}" aria-label="${escapeHtml(siteTitle || 'CMSMu')}" class="sa-style-15">
-              <img src="${(ctx && (ctx.site_logo || ctx.logo)) ? (ctx.site_logo || ctx.logo) : '/logo-cmsmu.webp'}" alt="${escapeHtml(siteTitle || 'CMSMu')}" class="logo-img sa-style-16" style="max-height:46px;width:auto;object-fit:contain;" onerror="this.outerHTML='<h1 style=\\'font-weight:900;color:#0d9488;font-size:24px;margin:0;\\'>CMSMu</h1>'" />
+            <a href="${formatMenuUrl("/")}" aria-label="${escapeHtml(siteTitle || "CMSMu")}" class="sa-style-15">
+              <img src="${ctx && (ctx.site_logo || ctx.logo) ? ctx.site_logo || ctx.logo : "/logo-cmsmu.webp"}" alt="${escapeHtml(siteTitle || "CMSMu")}" class="logo-img sa-style-16" style="max-height:46px;width:auto;object-fit:contain;" onerror="this.outerHTML='<h1 style=\\'font-weight:900;color:#0d9488;font-size:24px;margin:0;\\'>CMSMu</h1>'" />
             </a>
-            <span class="hide-mobile sa-style-17">${translateMenuLabel(siteDesc || 'Portal Berita & Publikasi Modern')}</span>
+            <span class="hide-mobile sa-style-17">${translateMenuLabel(siteDesc || "Portal Berita & Publikasi Modern")}</span>
           </div>
           <div class="header-actions-section sa-style-14" >
             <div class="header-socials hide-mobile sa-style-18" >
@@ -247,14 +310,14 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
               <a href="https://twitter.com/suaraaisyiyah" target="_blank" class="sa-style-19" title="X"><i class="fab fa-x-twitter"></i></a>
               <a href="https://www.tiktok.com/@suaraaisyiyah" target="_blank" class="sa-style-19" title="TikTok"><i class="fab fa-tiktok"></i></a>
             </div>
-            <a href="${formatMenuUrl('/kirim-tulisan')}" class="kirim-btn sa-style-20"  title="${translateMenuLabel('Kirim Tulisan')}"><span class="sa-style-21">✍️</span> <span class="kirim-text">${translateMenuLabel('Kirim Tulisan')}</span></a>
-            <a href="${formatMenuUrl('/berlangganan')}" class="berlangganan-btn sa-style-22" >${translateMenuLabel('Berlangganan')}</a>
+            <a href="${formatMenuUrl("/kirim-tulisan")}" class="kirim-btn sa-style-20"  title="${translateMenuLabel("Kirim Tulisan")}"><span class="sa-style-21">✍️</span> <span class="kirim-text">${translateMenuLabel("Kirim Tulisan")}</span></a>
+            <a href="${formatMenuUrl("/berlangganan")}" class="berlangganan-btn sa-style-22" >${translateMenuLabel("Berlangganan")}</a>
             <!-- Auth Section: Login Button / Avatar Dropdown -->
             <div id="header-auth-box" class="header-auth-box">
               <!-- Tombol Login (Tamu) -->
-              <a href="/admin/login" id="header-login-btn" class="header-login-btn" title="${translateMenuLabel('Masuk')}">
+              <a href="/admin/login" id="header-login-btn" class="header-login-btn" title="${translateMenuLabel("Masuk")}">
                 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
-                <span>${translateMenuLabel('Masuk')}</span>
+                <span>${translateMenuLabel("Masuk")}</span>
               </a>
 
               <!-- Avatar Pengguna (Setelah Login, tanpa teks) + Dropdown -->
@@ -571,7 +634,8 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         <nav class="container nav" aria-label="Navigasi utama">${items}</nav>
       </div>
     </div>
-    `}
+    `
+      }
       
       ${topBannerHtml}
 
@@ -591,10 +655,11 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         <div class="container">
           <div class="footer-grid">
             <div class="footer-col sa-style-25" >
-              <h4>${currentLang === 'en' ? `About ${escapeHtml(siteTitle || 'CMSMu')}` : `Tentang ${escapeHtml(siteTitle || 'CMSMu')}`}</h4>
-              <p class="footer-desc">${currentLang === 'en' 
-                ? `${escapeHtml(siteDesc || 'CMSMu is a modern, high-performance, cloud-native headless and decoupled CMS built for the serverless era.')} <span style="white-space: nowrap;"><a href="${formatMenuUrl('/tentang')}" style="display: inline !important; text-decoration: underline; color: #38bdf8; font-weight: 500;">Read More &raquo;</a></span>`
-                : `${escapeHtml(siteDesc || 'CMSMu adalah platform sistem manajemen konten (CMS) modern, tangguh, dan terdistribusi berbasis serverless Cloudflare.')} <span style="white-space: nowrap;"><a href="${formatMenuUrl('/tentang')}" style="display: inline !important; text-decoration: underline; color: #38bdf8; font-weight: 500;">Selengkapnya &raquo;</a></span>`
+              <h4>${currentLang === "en" ? `About ${escapeHtml(siteTitle || "CMSMu")}` : `Tentang ${escapeHtml(siteTitle || "CMSMu")}`}</h4>
+              <p class="footer-desc">${
+                currentLang === "en"
+                  ? `${escapeHtml(siteDesc || "CMSMu is a modern, high-performance, cloud-native headless and decoupled CMS built for the serverless era.")} <span style="white-space: nowrap;"><a href="${formatMenuUrl("/tentang")}" style="display: inline !important; text-decoration: underline; color: #38bdf8; font-weight: 500;">Read More &raquo;</a></span>`
+                  : `${escapeHtml(siteDesc || "CMSMu adalah platform sistem manajemen konten (CMS) modern, tangguh, dan terdistribusi berbasis serverless Cloudflare.")} <span style="white-space: nowrap;"><a href="${formatMenuUrl("/tentang")}" style="display: inline !important; text-decoration: underline; color: #38bdf8; font-weight: 500;">Selengkapnya &raquo;</a></span>`
               }</p>
               <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-top: 15px;">
                 <div style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
@@ -612,49 +677,49 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
             </div>
             
             <div class="footer-col">
-              <h4>${translateMenuLabel('Informasi')}</h4>
+              <h4>${translateMenuLabel("Informasi")}</h4>
               <ul>
-                <li><a href="${formatMenuUrl('/tentang')}">${translateMenuLabel('Tentang')}</a></li>
-                <li><a href="${formatMenuUrl('/redaksi')}">${translateMenuLabel("Redaksi Suara 'Aisyiyah")}</a></li>
-                <li><a href="${formatMenuUrl('/kirim-tulisan')}">${translateMenuLabel('Kirim Tulisan')}</a></li>
-                <li><a href="${formatMenuUrl('/konsultasi')}">${translateMenuLabel('Konsultasi')}</a></li>
-                <li><a href="${formatMenuUrl('/sanggahan')}">${translateMenuLabel('Sanggahan')}</a></li>
-                <li><a href="${formatMenuUrl('/kontak')}">${translateMenuLabel('Kontak Kami')}</a></li>
+                <li><a href="${formatMenuUrl("/tentang")}">${translateMenuLabel("Tentang")}</a></li>
+                <li><a href="${formatMenuUrl("/redaksi")}">${translateMenuLabel("Redaksi Suara 'Aisyiyah")}</a></li>
+                <li><a href="${formatMenuUrl("/kirim-tulisan")}">${translateMenuLabel("Kirim Tulisan")}</a></li>
+                <li><a href="${formatMenuUrl("/konsultasi")}">${translateMenuLabel("Konsultasi")}</a></li>
+                <li><a href="${formatMenuUrl("/sanggahan")}">${translateMenuLabel("Sanggahan")}</a></li>
+                <li><a href="${formatMenuUrl("/kontak")}">${translateMenuLabel("Kontak Kami")}</a></li>
               </ul>
             </div>
             
             <div class="footer-col">
-              <h4 class="sa-style-30">${translateMenuLabel('Layanan')}</h4>
+              <h4 class="sa-style-30">${translateMenuLabel("Layanan")}</h4>
               <ul>
-                <li><a href="${formatMenuUrl('/berlangganan')}">${translateMenuLabel('Info Berlangganan')}</a></li>
-                <li><a href="${formatMenuUrl('/digital')}">${translateMenuLabel("Suara 'Aisyiyah Digital")}</a></li>
-                <li><a href="${formatMenuUrl('/institute')}">${translateMenuLabel("Suara 'Aisyiyah Institute")}</a></li>
-                <li><a href="${formatMenuUrl('/pusat-data')}">${translateMenuLabel('Pusat Data & Pustaka SA')}</a></li>
-                <li><a href="${formatMenuUrl('/info-iklan')}">${translateMenuLabel('Info Iklan & Advertorial')}</a></li>
-                <li><a href="${formatMenuUrl('/agen')}">${translateMenuLabel('Agen')}</a></li>
+                <li><a href="${formatMenuUrl("/berlangganan")}">${translateMenuLabel("Info Berlangganan")}</a></li>
+                <li><a href="${formatMenuUrl("/digital")}">${translateMenuLabel("Suara 'Aisyiyah Digital")}</a></li>
+                <li><a href="${formatMenuUrl("/institute")}">${translateMenuLabel("Suara 'Aisyiyah Institute")}</a></li>
+                <li><a href="${formatMenuUrl("/pusat-data")}">${translateMenuLabel("Pusat Data & Pustaka SA")}</a></li>
+                <li><a href="${formatMenuUrl("/info-iklan")}">${translateMenuLabel("Info Iklan & Advertorial")}</a></li>
+                <li><a href="${formatMenuUrl("/agen")}">${translateMenuLabel("Agen")}</a></li>
               </ul>
             </div>
             
             <div class="footer-col contact-col sa-style-25" >
-              <h4>${translateMenuLabel('Kontak Kami')}</h4>
+              <h4>${translateMenuLabel("Kontak Kami")}</h4>
               <ul>
                 <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Kauman Gm I/17A Yogyakarta 55122</li>
                 <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg> <a href="mailto:suaraaisyiyah@aisyiyah.or.id">suaraaisyiyah@aisyiyah.or.id</a></li>
                 <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6.62 10.79c1.44 2.83 3.76 5.14 6.59 6.59l2.2-2.2c.27-.27.67-.36 1.02-.24 1.12.37 2.33.57 3.57.57.55 0 1 .45 1 1V20c0 .55-.45 1-1 1-9.39 0-17-7.61-17-17 0-.55.45-1 1-1h3.5c.55 0 1 .45 1 1 0 1.25.2 2.45.57 3.57.11.35.03.74-.25 1.02l-2.2 2.2z"/></svg> (0274) 373263</li>
                 <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.45.79 3.08 1.21 4.79 1.21 5.46 0 9.91-4.45 9.91-9.91s-4.45-9.91-9.91-9.91zm5.32 14.19c-.22.61-1.28 1.15-1.78 1.21-.46.06-1.04.14-3.32-.81-2.73-1.14-4.52-3.95-4.66-4.14-.14-.19-1.11-1.48-1.11-2.82 0-1.34.7-2.02.94-2.29.25-.27.53-.33.71-.33.18 0 .36 0 .52.01.18 0 .41-.07.64.48.24.57.77 1.88.84 2.02.07.14.12.3.02.48-.1.19-.15.31-.29.47-.14.16-.31.35-.43.48-.14.14-.29.29-.12.58.16.29.73 1.21 1.57 1.95 1.08.96 2.01 1.26 2.29 1.4.29.14.45.12.63-.08.18-.21.78-.91 1-1.22.21-.31.43-.26.7-.16.27.1 1.73.81 2.03.96.3.15.5.22.57.34.07.13.07.72-.15 1.33z"/></svg> <a href="https://wa.me/62817270787" target="_blank" rel="noopener">0817 270 787</a></li>
-                <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> <a href="https://g.page/suara-aisyiyah?share" target="_blank" rel="noopener">${currentLang === 'en' ? 'Google Maps' : (currentLang === 'ar' ? 'خرائط جوجل' : 'Peta Google')}</a></li>
+                <li><svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/></svg> <a href="https://g.page/suara-aisyiyah?share" target="_blank" rel="noopener">${currentLang === "en" ? "Google Maps" : currentLang === "ar" ? "خرائط جوجل" : "Peta Google"}</a></li>
               </ul>
             </div>
           </div>
           <div class="copyright">
             <div class="copy-text sa-style-31" >
-              <span>© ${new Date().getFullYear()} Suara 'Aisyiyah. ${currentLang === 'en' ? 'All rights reserved.' : (currentLang === 'ar' ? 'جميع الحقوق محفوظة.' : 'Hak cipta dilindungi undang-undang.')}</span>
+              <span>© ${new Date().getFullYear()} Suara 'Aisyiyah. ${currentLang === "en" ? "All rights reserved." : currentLang === "ar" ? "جميع الحقوق محفوظة." : "Hak cipta dilindungi undang-undang."}</span>
               <span class="sa-style-32">|</span>
-              <a href="${formatMenuUrl('/privacy-policy')}" class="sa-style-33">Privacy Policy</a>
+              <a href="${formatMenuUrl("/privacy-policy")}" class="sa-style-33">Privacy Policy</a>
               <span class="sa-style-32">|</span>
-              <a href="${formatMenuUrl('/terms-of-service')}" class="sa-style-33">Terms of Service</a>
+              <a href="${formatMenuUrl("/terms-of-service")}" class="sa-style-33">Terms of Service</a>
               <span class="sa-style-32">|</span>
-              <a href="${formatMenuUrl('/pedoman-media-siber')}" class="sa-style-33">${translateMenuLabel('Pedoman Media Siber')}</a>
+              <a href="${formatMenuUrl("/pedoman-media-siber")}" class="sa-style-33">${translateMenuLabel("Pedoman Media Siber")}</a>
             </div>
           </div>
         </div>
@@ -795,18 +860,18 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
 
   ${popupHtml}
 
-    ${ctx.site.seo_histats || ''}
-    ${ctx.site.custom_body_end || ''}
+    ${ctx.site.seo_histats || ""}
+    ${ctx.site.custom_body_end || ""}
 
     <!-- PWA MOBILE BOTTOM NAV BAR -->
     <nav class="mobile-bottom-nav" id="mobile-bottom-nav" aria-label="Navigasi Bawah">
       <!-- Beranda -->
-      <a href="${formatMenuUrl('/')}" class="mbn-item" id="mbn-home">
+      <a href="${formatMenuUrl("/")}" class="mbn-item" id="mbn-home">
         <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
           <path d="M3 9.5L12 3l9 6.5V20a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9.5z"/>
           <path d="M9 21V12h6v9"/>
         </svg>
-        <span class="mbn-label">${translateMenuLabel('Beranda')}</span>
+        <span class="mbn-label">${translateMenuLabel("Beranda")}</span>
       </a>
       <!-- Berita -->
       <a href="/berita" class="mbn-item" id="mbn-berita">

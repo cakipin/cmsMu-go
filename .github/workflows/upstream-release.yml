@@ -1,0 +1,82 @@
+name: Upstream Release Sync
+
+permissions:
+  contents: write
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Simulasi rilis tanpa push ke remote public-release"
+        required: false
+        default: "false"
+        type: boolean
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate-and-release:
+    name: 🚀 Validate & Release Upstream
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: "☁️ Checkout repository"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: "📦 Install pnpm"
+        uses: pnpm/action-setup@v4
+        with:
+          version: "11.10.0"
+
+      - name: "⚙️ Use Node.js"
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: "📦 Install dependencies"
+        run: pnpm install --frozen-lockfile
+
+      - name: "🛡️ Validate Monorepo & Engine"
+        run: |
+          pnpm run lint
+          pnpm run format:check
+          pnpm run check:types
+          pnpm run build:all
+          pnpm run build
+
+      - name: "📋 Audit OTA Manifest Parity"
+        run: |
+          node -e "
+            const pkg = JSON.parse(require('fs').readFileSync('package.json', 'utf-8'));
+            const ota = JSON.parse(require('fs').readFileSync('ota-manifest.json', 'utf-8'));
+            console.log('Package Version:', pkg.version);
+            console.log('OTA Manifest Version:', ota.version);
+            if (pkg.version !== ota.version) {
+              console.warn('⚠️ Warning: Versi package.json (' + pkg.version + ') berbeda dengan ota-manifest.json (' + ota.version + ')');
+            } else {
+              console.log('✅ Version Parity Verified.');
+            }
+          "
+
+      - name: "🚀 Sync to Upstream cmsMu-go (if configured)"
+        if: ${{ github.event.inputs.dry_run != 'true' }}
+        env:
+          UPSTREAM_PAT: ${{ secrets.UPSTREAM_RELEASE_PAT }}
+        run: |
+          if [ -n "$UPSTREAM_PAT" ]; then
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+            git remote add public-release https://x-access-token:${UPSTREAM_PAT}@github.com/cakipin/cmsMu-go.git || true
+            node scripts/push-to-git-upstream.mjs
+          else
+            echo "ℹ️ UPSTREAM_RELEASE_PAT tidak diset. Melewati push remote public-release otomatis."
+          fi

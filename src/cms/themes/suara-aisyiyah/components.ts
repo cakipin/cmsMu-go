@@ -1,11 +1,11 @@
-import type { ThemeContext } from '../types';
-import { escapeHtml, renderNumberedPagination } from './utils';
+import type { ThemeContext } from "../types";
+import { escapeHtml, renderNumberedPagination } from "./utils";
 export function renderAgen(this: any, ctx: any) {
-    const title = "Daftar Agen & Perwakilan Suara 'Aisyiyah";
-    const agens = ctx.data || [];
-    const search = ctx.search || '';
-    
-    let content = `
+  const title = "Daftar Agen & Perwakilan Suara 'Aisyiyah";
+  const agens = ctx.data || [];
+  const search = ctx.search || "";
+
+  let content = `
       <main class="container sa-style-163" role="main" >
         <div class="sa-style-164">
           <h1 class="sa-style-165">Daftar Agen & Perwakilan Suara 'Aisyiyah</h1>
@@ -20,36 +20,36 @@ export function renderAgen(this: any, ctx: any) {
             </form>
         </div>`;
 
-    if (!agens.length) {
-        content += `
+  if (!agens.length) {
+    content += `
         <div class="sa-style-171">
             <h3 class="sa-style-172">Tidak ada agen ditemukan.</h3>
         </div>`;
-    } else {
-        content += `<div class="sa-style-173">`;
-        
-        agens.forEach((a:any) => {
-            let buttons = '';
-            const phoneSource = a.whatsapp || a.phone;
-            if (phoneSource) {
-                const rawPhones = String(phoneSource).split(/[,\/\n]/);
-                for (let p of rawPhones) {
-                    p = p.trim();
-                    if (!p) continue;
-                    const cleanNum = p.replace(/\D/g, '');
-                    if (cleanNum.length >= 9) {
-                        let waNum = cleanNum;
-                        if (waNum.startsWith('0')) waNum = '62' + waNum.substring(1);
-                        buttons += `
+  } else {
+    content += `<div class="sa-style-173">`;
+
+    agens.forEach((a: any) => {
+      let buttons = "";
+      const phoneSource = a.whatsapp || a.phone;
+      if (phoneSource) {
+        const rawPhones = String(phoneSource).split(/[,\/\n]/);
+        for (let p of rawPhones) {
+          p = p.trim();
+          if (!p) continue;
+          const cleanNum = p.replace(/\D/g, "");
+          if (cleanNum.length >= 9) {
+            let waNum = cleanNum;
+            if (waNum.startsWith("0")) waNum = "62" + waNum.substring(1);
+            buttons += `
                         <a href="https://wa.me/${waNum}" target="_blank" rel="noopener" class="sa-style-174">
                             <i class="fab fa-whatsapp sa-style-175" ></i> Hubungi Agen
                         </a>`;
-                        break;
-                    }
-                }
-            }
-            
-            content += `
+            break;
+          }
+        }
+      }
+
+      content += `
             <div class="sa-style-176">
                 <div>
                     <div class="sa-style-177">
@@ -58,50 +58,75 @@ export function renderAgen(this: any, ctx: any) {
                         </div>
                         <div>
                             <h3 class="sa-style-179">${escapeHtml(a.name)}</h3>
-                            ${a.area ? `<span class="sa-style-180">
+                            ${
+                              a.area
+                                ? `<span class="sa-style-180">
                                 <i class="fas fa-map text-sm sa-style-115" ></i> ${escapeHtml(a.area)}
-                            </span>` : ''}
+                            </span>`
+                                : ""
+                            }
                         </div>
                     </div>
                     
                     <div class="sa-style-181">
-                        ${a.phone ? `<p class="sa-style-182">
+                        ${
+                          a.phone
+                            ? `<p class="sa-style-182">
                             <i class="fas fa-phone-alt w-5 text-center text-slate-400 mr-2"></i> ${escapeHtml(a.phone)}
-                        </p>` : ''}
-                        ${a.whatsapp ? `<p class="sa-style-182">
+                        </p>`
+                            : ""
+                        }
+                        ${
+                          a.whatsapp
+                            ? `<p class="sa-style-182">
                             <i class="fab fa-whatsapp w-5 text-center text-slate-400 mr-2"></i> ${escapeHtml(a.whatsapp)}
-                        </p>` : ''}
-                        ${a.address ? `<p class="sa-style-183">
+                        </p>`
+                            : ""
+                        }
+                        ${
+                          a.address
+                            ? `<p class="sa-style-183">
                             <i class="fas fa-home w-5 text-center text-slate-400 mr-2 mt-1 flex-shrink-0"></i> <span>${escapeHtml(a.address)}</span>
-                        </p>` : ''}
+                        </p>`
+                            : ""
+                        }
                     </div>
                 </div>
                 
-                ${buttons || a.map_link ? `<div class="sa-style-184">
-                    ${a.map_link ? `<a href="${escapeHtml(a.map_link)}" target="_blank" class="sa-style-185">
+                ${
+                  buttons || a.map_link
+                    ? `<div class="sa-style-184">
+                    ${
+                      a.map_link
+                        ? `<a href="${escapeHtml(a.map_link)}" target="_blank" class="sa-style-185">
                         <i class="fas fa-map-marked-alt sa-style-175" ></i> Buka Peta
-                    </a>` : ''}
+                    </a>`
+                        : ""
+                    }
                     ${buttons}
-                </div>` : ''}
+                </div>`
+                    : ""
+                }
             </div>`;
-        });
-        
-        content += `</div>`;
-    }
+    });
 
-    if (ctx.pagination && ctx.pagination.totalPages > 1) {
-        content += renderNumberedPagination(ctx.pagination);
-    }
+    content += `</div>`;
+  }
 
-    content += `</main>`;
-    return this._layout(content, title, ctx);
+  if (ctx.pagination && ctx.pagination.totalPages > 1) {
+    content += renderNumberedPagination(ctx.pagination);
+  }
+
+  content += `</main>`;
+  return this._layout(content, title, ctx);
 }
 
 export function renderKonsultasi(this: any, ctx: any) {
-    const title = "Layanan Konsultasi Agama & Keluarga — Suara 'Aisyiyah";
-    const selectedCat = ctx.selectedCategory === 'keluarga' ? 'keluarga' : 'agama';
+  const title = "Layanan Konsultasi Agama & Keluarga — Suara 'Aisyiyah";
+  const selectedCat =
+    ctx.selectedCategory === "keluarga" ? "keluarga" : "agama";
 
-    const content = `
+  const content = `
     <main class="container konsultasi-wrapper" role="main" style="max-width: 760px; margin: 40px auto; padding: 0 20px;">
         <div class="konsultasi-card" style="background: #ffffff; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.06); border: 1px solid #e2e8f0; overflow: hidden;">
             <!-- Header Banner -->
@@ -127,15 +152,15 @@ export function renderKonsultasi(this: any, ctx: any) {
                             Pilih Jenis Konsultasi <span style="color: #dc2626;">*</span>
                         </label>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-                            <label class="konsultasi-cat-label" style="display: flex; align-items: center; gap: 10px; padding: 14px; border: 2px solid ${selectedCat === 'agama' ? '#059669' : '#e2e8f0'}; background: ${selectedCat === 'agama' ? '#f0fdf4' : '#ffffff'}; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                                <input type="radio" name="category" value="agama" ${selectedCat === 'agama' ? 'checked' : ''} onchange="updateKonsultasiCategory(this)" style="accent-color: #059669; width: 18px; height: 18px;">
+                            <label class="konsultasi-cat-label" style="display: flex; align-items: center; gap: 10px; padding: 14px; border: 2px solid ${selectedCat === "agama" ? "#059669" : "#e2e8f0"}; background: ${selectedCat === "agama" ? "#f0fdf4" : "#ffffff"}; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="category" value="agama" ${selectedCat === "agama" ? "checked" : ""} onchange="updateKonsultasiCategory(this)" style="accent-color: #059669; width: 18px; height: 18px;">
                                 <div>
                                     <div style="font-weight: 700; font-size: 14px; color: #1e293b;" class="konsultasi-cat-title">📖 Konsultasi Agama</div>
                                     <div style="font-size: 12px; color: #64748b;" class="konsultasi-cat-desc">Fikih, ibadah, akidah & muamalah</div>
                                 </div>
                             </label>
-                            <label class="konsultasi-cat-label" style="display: flex; align-items: center; gap: 10px; padding: 14px; border: 2px solid ${selectedCat === 'keluarga' ? '#059669' : '#e2e8f0'}; background: ${selectedCat === 'keluarga' ? '#f0fdf4' : '#ffffff'}; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
-                                <input type="radio" name="category" value="keluarga" ${selectedCat === 'keluarga' ? 'checked' : ''} onchange="updateKonsultasiCategory(this)" style="accent-color: #059669; width: 18px; height: 18px;">
+                            <label class="konsultasi-cat-label" style="display: flex; align-items: center; gap: 10px; padding: 14px; border: 2px solid ${selectedCat === "keluarga" ? "#059669" : "#e2e8f0"}; background: ${selectedCat === "keluarga" ? "#f0fdf4" : "#ffffff"}; border-radius: 10px; cursor: pointer; transition: all 0.2s;">
+                                <input type="radio" name="category" value="keluarga" ${selectedCat === "keluarga" ? "checked" : ""} onchange="updateKonsultasiCategory(this)" style="accent-color: #059669; width: 18px; height: 18px;">
                                 <div>
                                     <div style="font-weight: 700; font-size: 14px; color: #1e293b;" class="konsultasi-cat-title">👨‍👩‍👧 Konsultasi Keluarga</div>
                                     <div style="font-size: 12px; color: #64748b;" class="konsultasi-cat-desc">Pernikahan, parenting & relasi keluarga</div>
@@ -250,27 +275,68 @@ export function renderKonsultasi(this: any, ctx: any) {
     </script>
     `;
 
-    return this._layout(content, title, ctx);
+  return this._layout(content, title, ctx);
 }
 export function renderBerlangganan(this: any, ctx: ThemeContext) {
-    const cx = ctx as any;
-    const cfg = cx.data?.plansConfig || {};
-    const rawPlans = (cfg.plans && Array.isArray(cfg.plans)) ? cfg.plans : [
-        { id: '1_bulan', name: '1 Bulan', months: 1, price: 50000, badge: '', desc: 'Akses Penuh 30 Hari', active: true },
-        { id: '3_bulan', name: '3 Bulan', months: 3, price: 135000, badge: 'HEMAT 10%', desc: 'Rp 45.000 / bln', active: true },
-        { id: '6_bulan', name: '6 Bulan', months: 6, price: 255000, badge: 'HEMAT 15%', desc: 'Rp 42.500 / bln', active: true },
-        { id: '1_tahun', name: '1 Tahun', months: 12, price: 480000, badge: '⭐ PALING HEMAT', desc: 'Rp 40.000 / bln (20% Off)', active: true }
-    ];
-    const plans = rawPlans.filter((p: any) => p.active !== false);
-    const bank1 = cfg.bank1 || { name: 'Bank Syariah Indonesia (BSI)', account: '8877665544', holder: "Suara 'Aisyiyah" };
-    const bank2 = cfg.bank2 || { name: '', account: '', holder: '' };
-    const rawWhatsapp = cfg.whatsapp || '081234567890';
-    let cleanWa = rawWhatsapp.replace(/\D/g, '');
-    if (cleanWa.startsWith('0')) cleanWa = '62' + cleanWa.slice(1);
-    const whatsapp = cleanWa;
-    const instructions = cfg.instructions || 'Transfer sesuai nominal paket ke rekening resmi di atas, kemudian lakukan konfirmasi via WhatsApp atau kirim bukti transfer melalui formulir di bawah ini.';
+  const cx = ctx as any;
+  const cfg = cx.data?.plansConfig || {};
+  const rawPlans =
+    cfg.plans && Array.isArray(cfg.plans)
+      ? cfg.plans
+      : [
+          {
+            id: "1_bulan",
+            name: "1 Bulan",
+            months: 1,
+            price: 50000,
+            badge: "",
+            desc: "Akses Penuh 30 Hari",
+            active: true,
+          },
+          {
+            id: "3_bulan",
+            name: "3 Bulan",
+            months: 3,
+            price: 135000,
+            badge: "HEMAT 10%",
+            desc: "Rp 45.000 / bln",
+            active: true,
+          },
+          {
+            id: "6_bulan",
+            name: "6 Bulan",
+            months: 6,
+            price: 255000,
+            badge: "HEMAT 15%",
+            desc: "Rp 42.500 / bln",
+            active: true,
+          },
+          {
+            id: "1_tahun",
+            name: "1 Tahun",
+            months: 12,
+            price: 480000,
+            badge: "⭐ PALING HEMAT",
+            desc: "Rp 40.000 / bln (20% Off)",
+            active: true,
+          },
+        ];
+  const plans = rawPlans.filter((p: any) => p.active !== false);
+  const bank1 = cfg.bank1 || {
+    name: "Bank Syariah Indonesia (BSI)",
+    account: "8877665544",
+    holder: "Suara 'Aisyiyah",
+  };
+  const bank2 = cfg.bank2 || { name: "", account: "", holder: "" };
+  const rawWhatsapp = cfg.whatsapp || "081234567890";
+  let cleanWa = rawWhatsapp.replace(/\D/g, "");
+  if (cleanWa.startsWith("0")) cleanWa = "62" + cleanWa.slice(1);
+  const whatsapp = cleanWa;
+  const instructions =
+    cfg.instructions ||
+    "Transfer sesuai nominal paket ke rekening resmi di atas, kemudian lakukan konfirmasi via WhatsApp atau kirim bukti transfer melalui formulir di bawah ini.";
 
-    const content = `
+  const content = `
       <main class="container sa-style-189" role="main" style="max-width:860px; margin:40px auto; padding:0 20px;">
         <div style="background:#ffffff; border-radius:16px; box-shadow:0 10px 30px rgba(0,0,0,0.06); border:1px solid #e2e8f0; overflow:hidden;">
             <!-- Header -->
@@ -293,15 +359,19 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
                         1. Pilih Paket Kuota Berlangganan:
                     </label>
                     <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:14px;">
-                        ${plans.map((p: any, idx: number) => `
+                        ${plans
+                          .map(
+                            (p: any, idx: number) => `
                         <div class="plan-card" onclick="selectPlan('${p.id}', ${p.price}, '${p.name}')" id="card-${p.id}"
-                            style="border:2px solid ${idx === 0 ? '#059669' : '#e2e8f0'}; background:${idx === 0 ? '#f0fdf4' : '#ffffff'}; border-radius:12px; padding:18px 14px; text-align:center; cursor:pointer; transition:all 0.2s;">
-                            ${p.badge ? `<span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px;">${p.badge}</span>` : ''}
-                            <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px;">${(p.name || '').toUpperCase()}</div>
-                            <div style="font-size:22px; font-weight:800; color:${idx === 0 ? '#059669' : '#0f172a'};">Rp ${Number(p.price).toLocaleString('id-ID')}</div>
-                            <div style="font-size:11px; color:#64748b; margin-top:4px;">${p.desc || ''}</div>
+                            style="border:2px solid ${idx === 0 ? "#059669" : "#e2e8f0"}; background:${idx === 0 ? "#f0fdf4" : "#ffffff"}; border-radius:12px; padding:18px 14px; text-align:center; cursor:pointer; transition:all 0.2s;">
+                            ${p.badge ? `<span style="background:#e0f2fe; color:#0369a1; font-size:10px; font-weight:700; padding:2px 8px; border-radius:10px; display:inline-block; margin-bottom:4px;">${p.badge}</span>` : ""}
+                            <div style="font-size:14px; font-weight:700; color:#1e293b; margin-bottom:6px;">${(p.name || "").toUpperCase()}</div>
+                            <div style="font-size:22px; font-weight:800; color:${idx === 0 ? "#059669" : "#0f172a"};">Rp ${Number(p.price).toLocaleString("id-ID")}</div>
+                            <div style="font-size:11px; color:#64748b; margin-top:4px;">${p.desc || ""}</div>
                         </div>
-                        `).join('')}
+                        `
+                          )
+                          .join("")}
                     </div>
                 </div>
 
@@ -367,13 +437,13 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
                         <div style="background:#f8fafc; border:2px solid #059669; border-radius:14px; padding:20px; position:relative; box-shadow:0 4px 12px rgba(5,150,105,0.06);">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                                 <div style="font-size:13px; font-weight:800; color:#059669; text-transform:uppercase; letter-spacing:0.5px;">
-                                    <i class="fas fa-university"></i> ${bank1.name || 'Bank Syariah Indonesia (BSI)'}
+                                    <i class="fas fa-university"></i> ${bank1.name || "Bank Syariah Indonesia (BSI)"}
                                 </div>
                                 <span style="background:#dcfce7; color:#166534; font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px;">UTAMA</span>
                             </div>
                             <div style="display:flex; justify-content:space-between; align-items:center; background:#ffffff; border:1px solid #cbd5e1; border-radius:10px; padding:10px 14px; margin-bottom:10px;">
-                                <span style="font-family:monospace; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:1px;" id="bank1-acc">${bank1.account || '8877665544'}</span>
-                                <button type="button" onclick="copyAccount('${bank1.account || '8877665544'}', this)" style="background:#059669; color:#ffffff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+                                <span style="font-family:monospace; font-size:20px; font-weight:800; color:#0f172a; letter-spacing:1px;" id="bank1-acc">${bank1.account || "8877665544"}</span>
+                                <button type="button" onclick="copyAccount('${bank1.account || "8877665544"}', this)" style="background:#059669; color:#ffffff; border:none; padding:6px 12px; border-radius:6px; font-size:12px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
                                     <i class="fas fa-copy"></i> Salin
                                 </button>
                             </div>
@@ -382,7 +452,9 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
                             </div>
                         </div>
 
-                        ${bank2 && bank2.name && bank2.account ? `
+                        ${
+                          bank2 && bank2.name && bank2.account
+                            ? `
                         <!-- Bank 2 -->
                         <div style="background:#f8fafc; border:1px solid #cbd5e1; border-radius:14px; padding:20px; position:relative;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
@@ -400,18 +472,20 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
                                 Atas Nama: <strong style="color:#1e293b;">${bank2.holder || "Suara 'Aisyiyah"}</strong>
                             </div>
                         </div>
-                        ` : ''}
+                        `
+                            : ""
+                        }
                     </div>
 
                     <!-- Ringkasan Nominal Transfer -->
                     <div style="background:#f0fdf4; border:1px solid #86efac; border-radius:12px; padding:16px 20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
                         <div>
                             <div style="font-size:13px; color:#166534; font-weight:600;">Paket Terpilih:</div>
-                            <div style="font-size:17px; font-weight:800; color:#0f172a;" id="summary-plan-label">${plans[0]?.name || '1 Bulan'}</div>
+                            <div style="font-size:17px; font-weight:800; color:#0f172a;" id="summary-plan-label">${plans[0]?.name || "1 Bulan"}</div>
                         </div>
                         <div style="text-align:right;">
                             <div style="font-size:13px; color:#166534; font-weight:600;">Total Nominal Transfer:</div>
-                            <div style="font-size:24px; font-weight:900; color:#059669;" id="summary-plan-amount">Rp ${Number(plans[0]?.price || 50000).toLocaleString('id-ID')}</div>
+                            <div style="font-size:24px; font-weight:900; color:#059669;" id="summary-plan-amount">Rp ${Number(plans[0]?.price || 50000).toLocaleString("id-ID")}</div>
                         </div>
                     </div>
                 </div>
@@ -487,8 +561,8 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
                             <div style="margin-bottom:18px;">
                                 <label style="font-size:13px; font-weight:600; color:#475569; display:block; margin-bottom:5px;">Bank Tujuan Transfer *</label>
                                 <select id="mf-target-bank" style="width:100%; height:42px; padding:8px 12px; border:1px solid #cbd5e1; border-radius:8px; font-size:14px; box-sizing:border-box; background:#fff;">
-                                    <option value="${bank1.name || 'BSI'}">${bank1.name || 'Bank Syariah Indonesia (BSI)'} - ${bank1.account || '8877665544'}</option>
-                                    ${bank2 && bank2.name ? `<option value="${bank2.name}">${bank2.name} - ${bank2.account}</option>` : ''}
+                                    <option value="${bank1.name || "BSI"}">${bank1.name || "Bank Syariah Indonesia (BSI)"} - ${bank1.account || "8877665544"}</option>
+                                    ${bank2 && bank2.name ? `<option value="${bank2.name}">${bank2.name} - ${bank2.account}</option>` : ""}
                                 </select>
                             </div>
 
@@ -512,9 +586,9 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
         </div>
 
         <script>
-            let selectedPlan = '${plans[0]?.id || '1_bulan'}';
+            let selectedPlan = '${plans[0]?.id || "1_bulan"}';
             let selectedAmount = ${plans[0]?.price || 50000};
-            let selectedLabel = '${plans[0]?.name || '1 Bulan'}';
+            let selectedLabel = '${plans[0]?.name || "1 Bulan"}';
             let whatsappTarget = '${whatsapp}';
             let currentUser = null;
 
@@ -593,7 +667,7 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
 
                 const userName = currentUser ? (currentUser.n || currentUser.username || 'Pelanggan') : (document.getElementById('mf-name')?.value || 'Pelanggan');
                 const userEmail = currentUser ? (currentUser.email || currentUser.username || '-') : (document.getElementById('mf-email')?.value || '-');
-                const targetBank = document.getElementById('mf-target-bank')?.value || '${bank1.name || 'BSI'}';
+                const targetBank = document.getElementById('mf-target-bank')?.value || '${bank1.name || "BSI"}';
 
                 const text = "Assalamu'alaikum Admin Suara 'Aisyiyah,%0A%0ASaya ingin konfirmasi pembayaran langganan Pelanggan Pro:%0A" +
                     "- Nama: " + encodeURIComponent(userName) + "%0A" +
@@ -798,5 +872,5 @@ export function renderBerlangganan(this: any, ctx: ThemeContext) {
         </script>
       </main>
     `;
-    return this._layout(content, 'Berlangganan', ctx);
+  return this._layout(content, "Berlangganan", ctx);
 }

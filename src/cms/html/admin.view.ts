@@ -1,4 +1,4 @@
-import { cmsLogic } from '../cms.logic';
+import { cmsLogic } from "../cms.logic";
 
 /**
  * 🖥️ ADMIN VIEW MODULE

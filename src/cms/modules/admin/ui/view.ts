@@ -1,46 +1,51 @@
-import { pluginMenus, renderPluginViews, renderPluginScripts } from '../../../registry/admin-menu';
+import {
+  pluginMenus,
+  renderPluginViews,
+  renderPluginScripts,
+} from "../../../registry/admin-menu";
 
 // ... (Import blocks lainnya tetap sama) ...
-import { adminStyles } from './blocks/styles';
-import { sidebarBlock } from './blocks/sidebar';
-import { dashboardPage } from './blocks/dashboard.page';
-import { pagesBlock } from './blocks/pages';
-import { menusPage } from './blocks/menus.page';
-import { themesPage } from './blocks/themes.page';
-import { pluginsPage } from './blocks/plugins.page';
-import { globalModals } from './blocks/modals';
-import { cmsLogic } from './blocks/cms.logic';
-import { ssoPage } from './blocks/sso.page';
-import { loginPage } from './pages/login.page';
-import { commentsPage } from './blocks/comments.page';
-import { profilePage } from './blocks/profile.page';
+import { adminStyles } from "./blocks/styles";
+import { sidebarBlock } from "./blocks/sidebar";
+import { dashboardPage } from "./blocks/dashboard.page";
+import { pagesBlock } from "./blocks/pages";
+import { menusPage } from "./blocks/menus.page";
+import { themesPage } from "./blocks/themes.page";
+import { pluginsPage } from "./blocks/plugins.page";
+import { globalModals } from "./blocks/modals";
+import { cmsLogic } from "./blocks/cms.logic";
+import { ssoPage } from "./blocks/sso.page";
+import { loginPage } from "./pages/login.page";
+import { commentsPage } from "./blocks/comments.page";
+import { profilePage } from "./blocks/profile.page";
 
-import { subscribersPage } from './blocks/subscribers.page';
-import { subscribersLogic } from './blocks/subscribers.logic';
-import { emagazinePage } from './blocks/emagazine.page';
-import { seoPage } from './blocks/seo.page';
-import { CORE_VERSION } from '../../../addons/ota/services/ota.service';
-
+import { subscribersPage } from "./blocks/subscribers.page";
+import { subscribersLogic } from "./blocks/subscribers.logic";
+import { emagazinePage } from "./blocks/emagazine.page";
+import { seoPage } from "./blocks/seo.page";
+import { CORE_VERSION } from "../../../addons/ota/services/ota.service";
 
 export function renderAdmin(data: any): string {
-    const isLoginView = data.view === 'login';
-    const renderedPluginViews = renderPluginViews();
+  const isLoginView = data.view === "login";
+  const renderedPluginViews = renderPluginViews();
 
-    const injectedPlugins = pluginMenus.map(p => {
-        return `{
+  const injectedPlugins = pluginMenus
+    .map(p => {
+      return `{
             group: "${p.group}",
             title: "${p.title}",
             icon: "${p.icon}",
-            ${p.pluginId ? `pluginId: "${p.pluginId}",` : ''}
-            ${p.view ? `view: "${p.view}",` : ''}
-            ${p.href ? `href: "${p.href}",` : ''}
-            ${p.role ? `role: ${JSON.stringify(p.role)},` : ''}
-            ${p.actionCode ? `action: function() { ${p.actionCode} }` : ''}
+            ${p.pluginId ? `pluginId: "${p.pluginId}",` : ""}
+            ${p.view ? `view: "${p.view}",` : ""}
+            ${p.href ? `href: "${p.href}",` : ""}
+            ${p.role ? `role: ${JSON.stringify(p.role)},` : ""}
+            ${p.actionCode ? `action: function() { ${p.actionCode} }` : ""}
         }`;
-    }).join(',');
+    })
+    .join(",");
 
-    try {
-        return `
+  try {
+    return `
         <!DOCTYPE html>
         <html lang="id">
         <head>
@@ -641,7 +646,7 @@ export function renderAdmin(data: any): string {
             </template>
         </body>
         </html>`;
-    } catch (err: any) {
-        return `<h1>Render Error: ${err.message}</h1>`;
-    }
+  } catch (err: any) {
+    return `<h1>Render Error: ${err.message}</h1>`;
+  }
 }

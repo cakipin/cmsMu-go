@@ -506,4 +506,3 @@ export const newsroomView = `
 
 </div>
 `;
-

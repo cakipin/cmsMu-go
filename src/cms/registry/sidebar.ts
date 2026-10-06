@@ -4,7 +4,7 @@ export interface SidebarItem {
   label: string;
   url: string;
   icon: string;
-  category: 'Navigasi' | 'Kajian' | 'Majelis' | 'Admin';
+  category: "Navigasi" | "Kajian" | "Majelis" | "Admin";
 }
 
 // Array pusat untuk menyimpan menu

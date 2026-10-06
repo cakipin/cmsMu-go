@@ -1,131 +1,155 @@
-import type { ThemeContext } from '../types';
-import { escapeHtml, date, category, image } from './utils';
+import type { ThemeContext } from "../types";
+import { escapeHtml, date, category, image } from "./utils";
 
 export function parseVideoEmbed(url: string) {
-    if (!url) return { type: 'none', embedUrl: '', rawUrl: '', videoId: '' };
-    const str = url.trim();
+  if (!url) return { type: "none", embedUrl: "", rawUrl: "", videoId: "" };
+  const str = url.trim();
 
-    // YouTube (watch, embed, youtu.be, shorts)
-    if (str.includes('youtube.com') || str.includes('youtu.be')) {
-        let videoId = '';
-        if (str.includes('youtu.be/')) {
-            videoId = str.split('youtu.be/')[1].split('?')[0].split('/')[0];
-        } else if (str.includes('shorts/')) {
-            videoId = str.split('shorts/')[1].split('?')[0].split('/')[0];
-        } else if (str.includes('embed/')) {
-            videoId = str.split('embed/')[1].split('?')[0].split('/')[0];
-        } else {
-            const m = str.match(/[?&]v=([a-zA-Z0-9_-]+)/);
-            if (m && m[1]) videoId = m[1];
-        }
-
-        if (videoId) {
-            return {
-                type: 'youtube',
-                videoId: videoId,
-                embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`,
-                rawUrl: str
-            };
-        }
+  // YouTube (watch, embed, youtu.be, shorts)
+  if (str.includes("youtube.com") || str.includes("youtu.be")) {
+    let videoId = "";
+    if (str.includes("youtu.be/")) {
+      videoId = str.split("youtu.be/")[1].split("?")[0].split("/")[0];
+    } else if (str.includes("shorts/")) {
+      videoId = str.split("shorts/")[1].split("?")[0].split("/")[0];
+    } else if (str.includes("embed/")) {
+      videoId = str.split("embed/")[1].split("?")[0].split("/")[0];
+    } else {
+      const m = str.match(/[?&]v=([a-zA-Z0-9_-]+)/);
+      if (m && m[1]) videoId = m[1];
     }
 
-    // Vimeo
-    if (str.includes('vimeo.com/')) {
-        const vimeoId = str.split('vimeo.com/')[1].split('?')[0].split('/')[0];
-        if (vimeoId) {
-            return {
-                type: 'vimeo',
-                videoId: vimeoId,
-                embedUrl: `https://player.vimeo.com/video/${vimeoId}`,
-                rawUrl: str
-            };
-        }
+    if (videoId) {
+      return {
+        type: "youtube",
+        videoId: videoId,
+        embedUrl: `https://www.youtube-nocookie.com/embed/${videoId}?autoplay=0&rel=0&modestbranding=1`,
+        rawUrl: str,
+      };
     }
+  }
 
-    // Direct MP4 / WebM
-    if (/\.(mp4|webm|ogg)($|\?)/i.test(str)) {
-        return {
-            type: 'html5',
-            videoId: '',
-            embedUrl: str,
-            rawUrl: str
-        };
+  // Vimeo
+  if (str.includes("vimeo.com/")) {
+    const vimeoId = str.split("vimeo.com/")[1].split("?")[0].split("/")[0];
+    if (vimeoId) {
+      return {
+        type: "vimeo",
+        videoId: vimeoId,
+        embedUrl: `https://player.vimeo.com/video/${vimeoId}`,
+        rawUrl: str,
+      };
     }
+  }
 
+  // Direct MP4 / WebM
+  if (/\.(mp4|webm|ogg)($|\?)/i.test(str)) {
     return {
-        type: 'custom',
-        videoId: '',
-        embedUrl: str,
-        rawUrl: str
+      type: "html5",
+      videoId: "",
+      embedUrl: str,
+      rawUrl: str,
     };
+  }
+
+  return {
+    type: "custom",
+    videoId: "",
+    embedUrl: str,
+    rawUrl: str,
+  };
 }
 
 export function renderSingleVideo(this: any, ctx: ThemeContext): string {
-    const p = ctx.data;
-    if (!p) return this.render404(ctx);
-    const cx = ctx as any;
-    const canonical = cx.canonical || `https://suaraaisyiyah.id/${p.slug}`;
-    const pubDate = p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString();
-    const modDate = p.updated_at ? new Date(p.updated_at).toISOString() : pubDate;
-    const pubDateShort = pubDate.split('T')[0];
-    const catSlug = category(p).toLowerCase().replace(/\s+/g, '-');
-    const catName = category(p);
-    const ogImg = cx.ogImage || (p.featured_image ? image(p) : 'https://suaraaisyiyah.id/default-og.jpg');
+  const p = ctx.data;
+  if (!p) return this.render404(ctx);
+  const cx = ctx as any;
+  const canonical = cx.canonical || `https://suaraaisyiyah.id/${p.slug}`;
+  const pubDate = p.created_at
+    ? new Date(p.created_at).toISOString()
+    : new Date().toISOString();
+  const modDate = p.updated_at ? new Date(p.updated_at).toISOString() : pubDate;
+  const pubDateShort = pubDate.split("T")[0];
+  const catSlug = category(p).toLowerCase().replace(/\s+/g, "-");
+  const catName = category(p);
+  const ogImg =
+    cx.ogImage ||
+    (p.featured_image ? image(p) : "https://suaraaisyiyah.id/default-og.jpg");
 
-    const videoUrl = p.video_url || p.videoUrl || '';
-    const videoInfo = parseVideoEmbed(videoUrl);
+  const videoUrl = p.video_url || p.videoUrl || "";
+  const videoInfo = parseVideoEmbed(videoUrl);
 
-    // JSON-LD Article
-    const jsonLdArticle = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": p.title,
-      "description": cx.metaDesc || '',
-      "image": ogImg,
-      "datePublished": pubDate,
-      "dateModified": modDate,
-      "url": canonical,
-      "author": { "@type": "Organization", "name": "Suara 'Aisyiyah", "url": "https://suaraaisyiyah.id" },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Suara 'Aisyiyah",
-        "logo": { "@type": "ImageObject", "url": "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png" }
+  // JSON-LD Article
+  const jsonLdArticle = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: p.title,
+    description: cx.metaDesc || "",
+    image: ogImg,
+    datePublished: pubDate,
+    dateModified: modDate,
+    url: canonical,
+    author: {
+      "@type": "Organization",
+      name: "Suara 'Aisyiyah",
+      url: "https://suaraaisyiyah.id",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Suara 'Aisyiyah",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png",
       },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
-    });
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+  });
 
-    // JSON-LD VideoObject for Rich Snippets
-    const jsonLdVideo = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "VideoObject",
-      "name": p.title,
-      "description": cx.metaDesc || p.excerpt || p.title,
-      "thumbnailUrl": [ogImg],
-      "uploadDate": pubDate,
-      "embedUrl": videoInfo.embedUrl || canonical,
-      "contentUrl": videoInfo.rawUrl || canonical,
-      "publisher": {
-        "@type": "Organization",
-        "name": "Suara 'Aisyiyah",
-        "logo": { "@type": "ImageObject", "url": "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png" }
-      }
-    });
+  // JSON-LD VideoObject for Rich Snippets
+  const jsonLdVideo = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "VideoObject",
+    name: p.title,
+    description: cx.metaDesc || p.excerpt || p.title,
+    thumbnailUrl: [ogImg],
+    uploadDate: pubDate,
+    embedUrl: videoInfo.embedUrl || canonical,
+    contentUrl: videoInfo.rawUrl || canonical,
+    publisher: {
+      "@type": "Organization",
+      name: "Suara 'Aisyiyah",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png",
+      },
+    },
+  });
 
-    // Breadcrumb JSON-LD
-    const jsonLdBreadcrumb = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Beranda", "item": "https://suaraaisyiyah.id/" },
-        { "@type": "ListItem", "position": 2, "name": catName, "item": `https://suaraaisyiyah.id/${catSlug}` },
-        { "@type": "ListItem", "position": 3, "name": p.title }
-      ]
-    });
+  // Breadcrumb JSON-LD
+  const jsonLdBreadcrumb = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Beranda",
+        item: "https://suaraaisyiyah.id/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: catName,
+        item: `https://suaraaisyiyah.id/${catSlug}`,
+      },
+      { "@type": "ListItem", position: 3, name: p.title },
+    ],
+  });
 
-    let bodyHtml = p.body || p.content || '';
+  let bodyHtml = p.body || p.content || "";
 
-    // Tools Jurnalistik & Audio (ICON-ONLY SATU BARIS)
-    const toolsJurnalistik = `
+  // Tools Jurnalistik & Audio (ICON-ONLY SATU BARIS)
+  const toolsJurnalistik = `
     <div class="article-toolbar">
         <button type="button" onclick="copyFullArticle()" class="article-action-btn" title="Salin Narasi" aria-label="Salin Narasi">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -223,10 +247,14 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
     </script>
     `;
 
-    // Render Theater Player Embed
-    let playerHtml = '';
-    if (videoInfo.type === 'youtube' || videoInfo.type === 'vimeo' || (videoInfo.type === 'custom' && videoInfo.embedUrl.includes('embed'))) {
-        playerHtml = `
+  // Render Theater Player Embed
+  let playerHtml = "";
+  if (
+    videoInfo.type === "youtube" ||
+    videoInfo.type === "vimeo" ||
+    (videoInfo.type === "custom" && videoInfo.embedUrl.includes("embed"))
+  ) {
+    playerHtml = `
         <div class="video-player-container" style="position:relative; width:100%; padding-bottom:56.25%; height:0; background:#000; border-radius:12px; overflow:hidden; box-shadow:0 12px 30px rgba(0,0,0,0.25);">
             <iframe src="${videoInfo.embedUrl}" 
                     style="position:absolute; top:0; left:0; width:100%; height:100%; border:0;" 
@@ -235,14 +263,14 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
             </iframe>
         </div>
         `;
-    } else if (videoInfo.type === 'html5') {
-        playerHtml = `
+  } else if (videoInfo.type === "html5") {
+    playerHtml = `
         <div class="video-player-container" style="position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000; box-shadow:0 12px 30px rgba(0,0,0,0.25);">
             <video src="${videoInfo.embedUrl}" controls preload="metadata" poster="${ogImg}" style="width:100%; max-height:650px; display:block;"></video>
         </div>
         `;
-    } else if (p.featured_image) {
-        playerHtml = `
+  } else if (p.featured_image) {
+    playerHtml = `
         <div class="video-player-container" style="position:relative; width:100%; border-radius:12px; overflow:hidden; background:#000; box-shadow:0 12px 30px rgba(0,0,0,0.25);">
             <img src="${image(p)}" alt="${escapeHtml(p.title)}" style="width:100%; height:auto; display:block; opacity:0.85;">
             <div style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,0.4);">
@@ -252,9 +280,10 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
             </div>
         </div>
         `;
-    }
+  }
 
-    return this._layout(`
+  return this._layout(
+    `
       <script type="application/ld+json">${jsonLdArticle}</script>
       <script type="application/ld+json">${jsonLdVideo}</script>
       <script type="application/ld+json">${jsonLdBreadcrumb}</script>
@@ -274,19 +303,23 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
           <!-- Header -->
           <header class="article-header" style="margin-bottom:20px;">
             <div class="sa-style-112" style="display:flex; align-items:center; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
-              ${catName.toLowerCase() === 'video' ? `
+              ${
+                catName.toLowerCase() === "video"
+                  ? `
                 <a href="/video" class="cat-tag sa-style-113" style="display:inline-flex; align-items:center; gap:6px;">
                   <i class="fas fa-play-circle"></i> VIDEO
                 </a>
-              ` : `
+              `
+                  : `
                 <a href="/${catSlug}" class="cat-tag sa-style-113" style="display:inline-flex; align-items:center; gap:6px;">
                   ${catName}
                 </a>
                 <span class="cat-tag sa-style-113" style="display:inline-flex; align-items:center; gap:6px; background:#065f46;">
                   <i class="fas fa-play-circle"></i> VIDEO
                 </span>
-              `}
-              ${p.is_premium === 1 ? '<span class="premium-badge sa-style-114"><i class="fas fa-crown sa-style-115"></i> Premium</span>' : ''}
+              `
+              }
+              ${p.is_premium === 1 ? '<span class="premium-badge sa-style-114"><i class="fas fa-crown sa-style-115"></i> Premium</span>' : ""}
             </div>
 
             <h1 itemprop="headline" style="font-size:28px; line-height:1.3; font-weight:800; color:#0f172a; margin:0 0 15px 0;">
@@ -303,7 +336,7 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
                 <i class="far fa-calendar-alt" style="margin-right:4px;"></i>${date(p.created_at)}
               </time>
               <meta itemprop="dateModified" content="${modDate}">
-              ${p.views ? `<span class="meta-sep">&bull;</span><span><i class="far fa-eye" style="margin-right:4px;"></i>${p.views} views</span>` : ''}
+              ${p.views ? `<span class="meta-sep">&bull;</span><span><i class="far fa-eye" style="margin-right:4px;"></i>${p.views} views</span>` : ""}
             </div>
           </header>
 
@@ -324,9 +357,9 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
 
           <!-- Share Block -->
           <div class="share-block">
-            <h4>${cx.lang === 'en' ? 'Share this video:' : (cx.lang === 'ar' ? 'شارك هذا الفيديو:' : 'Bagikan video ini:')}</h4>
+            <h4>${cx.lang === "en" ? "Share this video:" : cx.lang === "ar" ? "شارك هذا الفيديو:" : "Bagikan video ini:"}</h4>
             <div class="share-buttons">
-              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + ' ' + canonical)}" target="_blank" rel="noopener" class="share-btn share-wa" aria-label="Share on WhatsApp">
+              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + " " + canonical)}" target="_blank" rel="noopener" class="share-btn share-wa" aria-label="Share on WhatsApp">
                 <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 <span class="share-label-full">WhatsApp</span><span class="share-label-short">WA</span>
               </a>
@@ -352,20 +385,29 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
           </div>
 
           <!-- Tags -->
-          ${p.tags ? `
+          ${
+            p.tags
+              ? `
           <footer class="article-footer" style="margin-top:20px;">
             <div class="article-tags" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
               <span class="tag-label" style="font-size:13px; font-weight:600; color:#64748b;">Tagar:</span>
-              ${p.tags.split(',').map((t: string) => {
-                const cleanT = t.trim().replace(/^#/, '');
-                const tagSlug = cleanT.toLowerCase().replace(/\s+/g, '-');
-                return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="post-tag" style="background:#f1f5f9; color:#334155; padding:3px 10px; border-radius:15px; font-size:12px; text-decoration:none; border:1px solid #e2e8f0;">#${escapeHtml(cleanT)}</a>`;
-              }).join('')}
+              ${p.tags
+                .split(",")
+                .map((t: string) => {
+                  const cleanT = t.trim().replace(/^#/, "");
+                  const tagSlug = cleanT.toLowerCase().replace(/\s+/g, "-");
+                  return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="post-tag" style="background:#f1f5f9; color:#334155; padding:3px 10px; border-radius:15px; font-size:12px; text-decoration:none; border:1px solid #e2e8f0;">#${escapeHtml(cleanT)}</a>`;
+                })
+                .join("")}
             </div>
-          </footer>` : ''}
+          </footer>`
+              : ""
+          }
 
           <!-- Comments Section -->
-          ${p.allow_comments !== 0 ? `
+          ${
+            p.allow_comments !== 0
+              ? `
           <div class="comments-section" style="margin-top:40px; padding-top:25px; border-top:2px solid #f1f5f9;">
             <div id="comments-loading" style="text-align:center; padding:15px; color:#64748b;">Memuat sistem komentar...</div>
             
@@ -501,14 +543,20 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
               }
           });
           </script>
-          ` : ''}
+          `
+              : ""
+          }
 
           <!-- Related Posts -->
-          ${cx.relatedPosts && cx.relatedPosts.length ? `
+          ${
+            cx.relatedPosts && cx.relatedPosts.length
+              ? `
           <div class="related-posts" style="margin-top:40px; padding-top:25px; border-top:1px solid #e2e8f0;">
             <h3 style="font-size:18px; font-weight:700; color:#1e293b; margin-bottom:18px;">Video & Konten Terkait di ${catName}</h3>
             <div class="card-grid related-grid">
-              ${cx.relatedPosts.map((rp:any, i:number) => `
+              ${cx.relatedPosts
+                .map(
+                  (rp: any, i: number) => `
                 <div class="grid-post">
                   <a href="/${escapeHtml(rp.slug)}" class="post-img-wrap">
                     <img src="${image(rp, i)}" alt="${escapeHtml(rp.title)}" loading="lazy">
@@ -518,12 +566,20 @@ export function renderSingleVideo(this: any, ctx: ThemeContext): string {
                     <div class="post-meta"><span>${date(rp.created_at)}</span></div>
                   </div>
                 </div>
-              `).join('')}
+              `
+                )
+                .join("")}
             </div>
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
         </article>
       </main>
-    `, p.title, ctx, 'post');
+    `,
+    p.title,
+    ctx,
+    "post"
+  );
 }

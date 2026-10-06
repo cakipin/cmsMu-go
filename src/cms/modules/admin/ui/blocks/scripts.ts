@@ -1,5 +1,5 @@
-import { coreLogic } from './logic/core.logic';
-import { mediaLogic } from './logic/media.logic';
+import { coreLogic } from "./logic/core.logic";
+import { mediaLogic } from "./logic/media.logic";
 
 /**
  * 🏗️ CMS MAIN MANAGER (FULL BACKUP VERSION)
@@ -8,13 +8,13 @@ import { mediaLogic } from './logic/media.logic';
 
 // 1. HELPER PEMBERSIH KOMA & KURUNG (Sangat Aman)
 const clean = (s: string) => {
-    if (!s || typeof s !== 'string') return '';
-    let code = s.trim();
-    // Buang wrapper object { ... } jika ada
-    if (code.startsWith('{')) code = code.substring(1);
-    if (code.endsWith('}')) code = code.substring(0, code.length - 1);
-    // Buang koma di awal dan akhir string
-    return code.replace(/^,+|,+$/g, '').trim();
+  if (!s || typeof s !== "string") return "";
+  let code = s.trim();
+  // Buang wrapper object { ... } jika ada
+  if (code.startsWith("{")) code = code.substring(1);
+  if (code.endsWith("}")) code = code.substring(0, code.length - 1);
+  // Buang koma di awal dan akhir string
+  return code.replace(/^,+|,+$/g, "").trim();
 };
 
 // 2. BASE LOGIC - BERISI SEMUA VARIABEL & FUNGSI INTI (Posts, Pages, Media)
@@ -146,10 +146,12 @@ const mainLogic = `
 // Kita gabungkan baseLogic dengan import luar.
 // Filter(Boolean) membuang string kosong. Join(',') memastikan pemisah benar.
 const logicBody = [
-    clean(mainLogic),  // Logic Utama (Pasti Jalan)
-    clean(coreLogic),  // Logic User/Menu (Dari Om)
-    clean(mediaLogic)  // Logic Media (Dari Om)
-].filter(Boolean).join(',\n\n');
+  clean(mainLogic), // Logic Utama (Pasti Jalan)
+  clean(coreLogic), // Logic User/Menu (Dari Om)
+  clean(mediaLogic), // Logic Media (Dari Om)
+]
+  .filter(Boolean)
+  .join(",\n\n");
 
 // 4. TEMPLATE UTAMA
 const finalJs = `

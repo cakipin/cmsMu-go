@@ -1,14 +1,14 @@
-import { agensLogic } from './agens.logic';
-import { subscribersLogic } from './subscribers.logic';
-import { emagazineLogic } from './emagazine.logic';
+import { agensLogic } from "./agens.logic";
+import { subscribersLogic } from "./subscribers.logic";
+import { emagazineLogic } from "./emagazine.logic";
 // FIX: Tambahkan ekstensi .ts pada SEMUA import agar konsisten dan terbaca loader
-import { coreLogic } from './logic/core.logic.ts';
-import { mediaLogic } from './logic/media.logic.ts';
-import { postLogic } from './logic/post.logic.ts';
-import { settingsLogic } from './logic/settings.logic.ts';
-import { globalModals } from './modals.ts'; 
-import { customEditorLogicScript } from './custom-editor.ts';
-import { CORE_VERSION } from '../../../../addons/ota/services/ota.service';
+import { coreLogic } from "./logic/core.logic.ts";
+import { mediaLogic } from "./logic/media.logic.ts";
+import { postLogic } from "./logic/post.logic.ts";
+import { settingsLogic } from "./logic/settings.logic.ts";
+import { globalModals } from "./modals.ts";
+import { customEditorLogicScript } from "./custom-editor.ts";
+import { CORE_VERSION } from "../../../../addons/ota/services/ota.service";
 
 /**
  * 🧱 CMS MAIN MANAGER (THE MASTER KEY - LOCKED VERSION)
@@ -17,32 +17,31 @@ import { CORE_VERSION } from '../../../../addons/ota/services/ota.service';
 
 // --- 1. ROBUST SERIALIZER ---
 const serializeToScript = (obj: any) => {
-    let props = [];
-    for (let key in obj) {
-        let val = obj[key];
-        if (typeof val === 'function') {
-            let fnStr = val.toString().trim();
-            if (fnStr.startsWith('async')) {
-                fnStr = fnStr.replace(/^async\s+[a-zA-Z0-9_$]+\s*/, 'async function ');
-                if (fnStr.startsWith('async(') || fnStr.startsWith('async (')) {
-                     fnStr = fnStr.replace('async', 'async function');
-                }
-            } 
-            else if (!fnStr.startsWith('function') && !fnStr.startsWith('(')) {
-                fnStr = fnStr.replace(/^[a-zA-Z0-9_$]+\s*/, 'function ');
-            }
-            props.push(`${key}: ${fnStr}`);
-        } else {
-            props.push(`${key}: ${JSON.stringify(val)}`);
+  let props = [];
+  for (let key in obj) {
+    let val = obj[key];
+    if (typeof val === "function") {
+      let fnStr = val.toString().trim();
+      if (fnStr.startsWith("async")) {
+        fnStr = fnStr.replace(/^async\s+[a-zA-Z0-9_$]+\s*/, "async function ");
+        if (fnStr.startsWith("async(") || fnStr.startsWith("async (")) {
+          fnStr = fnStr.replace("async", "async function");
         }
+      } else if (!fnStr.startsWith("function") && !fnStr.startsWith("(")) {
+        fnStr = fnStr.replace(/^[a-zA-Z0-9_$]+\s*/, "function ");
+      }
+      props.push(`${key}: ${fnStr}`);
+    } else {
+      props.push(`${key}: ${JSON.stringify(val)}`);
     }
-    return `{ \n${props.join(',\n')} \n}`;
+  }
+  return `{ \n${props.join(",\n")} \n}`;
 };
 
 // Proses Inject ke Variabel Global
 const coreScript = serializeToScript(coreLogic);
 const mediaScript = serializeToScript(mediaLogic);
-const postScript = serializeToScript(postLogic); 
+const postScript = serializeToScript(postLogic);
 const modalsScript = serializeToScript(globalModals); // FIX: Gunakan serializeToScript untuk modals
 
 export const cmsLogic = `

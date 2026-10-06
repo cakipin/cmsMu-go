@@ -11,7 +11,11 @@ export async function getD1Pages(Astro: any): Promise<any[]> {
 
   try {
     const db = getDb(d1);
-    const results = await db.select().from(pages).where(eq(pages.status, 'publish')).orderBy(desc(pages.createdAt));
+    const results = await db
+      .select()
+      .from(pages)
+      .where(eq(pages.status, "publish"))
+      .orderBy(desc(pages.createdAt));
     if (!results) return [];
 
     return results.map((row: any) => {
@@ -21,12 +25,14 @@ export async function getD1Pages(Astro: any): Promise<any[]> {
         body: row.body || "",
         data: {
           title: row.title || "Untitled",
-          description: (row.body || "").replace(/<[^>]*>?/gm, '').substring(0, 150) + "...",
+          description:
+            (row.body || "").replace(/<[^>]*>?/gm, "").substring(0, 150) +
+            "...",
           pubDatetime: new Date(row.createdAt || row.created_at),
           modDatetime: null,
           ogImage: row.featuredImage || row.featured_image || undefined,
           author: row.author,
-        }
+        },
       };
     });
   } catch (error) {
