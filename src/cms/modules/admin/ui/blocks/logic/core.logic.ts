@@ -33,6 +33,39 @@ export const coreLogic = {
         return res;
     },
 
+    isPurgingCache: false,
+    async purgeCacheGlobal() {
+        const confirmed = (typeof window !== 'undefined' && (window as any).showConfirmDialog)
+            ? await (window as any).showConfirmDialog({
+                title: 'Bersihkan Seluruh Cache',
+                message: 'Apakah Anda yakin ingin membersihkan seluruh cache sistem (KV & Cloudflare)?',
+                type: 'warning',
+                confirmText: 'Ya, Bersihkan'
+            })
+            : confirm('Apakah Anda yakin ingin membersihkan seluruh cache sistem (KV & Cloudflare)?');
+        if (!confirmed) return;
+        this.isPurgingCache = true;
+        try {
+            // @ts-ignore
+            const res = await this._fetch('/api/settings/purge-cache', { method: 'POST' });
+            const json = await res.json().catch(() => ({}));
+            if (res.ok && json.success) {
+                if ((window as any).showToast) (window as any).showToast(json.message || 'Cache berhasil dibersihkan!', 'success');
+                else alert('✅ ' + (json.message || 'Cache berhasil dibersihkan!'));
+            } else {
+                const errMsg = json.error || 'Gagal membersihkan cache.';
+                if ((window as any).showToast) (window as any).showToast(errMsg, 'error');
+                else alert('❌ ' + errMsg);
+            }
+        } catch(e: any) {
+            if ((window as any).showToast) (window as any).showToast('Gagal: ' + e.message, 'error');
+            else alert('Gagal: ' + e.message);
+        } finally {
+            // @ts-ignore
+            this.isPurgingCache = false;
+        }
+    },
+
     // =========================================
     // 1. SETTINGS & THEMES
     // =========================================

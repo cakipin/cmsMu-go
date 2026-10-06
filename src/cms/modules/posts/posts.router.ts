@@ -37,6 +37,18 @@ postsRouter.get('/', async (c) => {
     }
 });
 
+// 1b. GET CATEGORIES LIST (Real DB Categories)
+postsRouter.get('/categories/list', async (c) => {
+    try {
+        const db = c.env.DB;
+        const rows = await db.prepare("SELECT DISTINCT category FROM posts WHERE status = 'publish' AND category IS NOT NULL AND TRIM(category) != '' ORDER BY category ASC").all();
+        const cats = (rows.results || []).map((r: any) => r.category.trim()).filter(Boolean);
+        return c.json(cats);
+    } catch (e: any) {
+        return c.json([]);
+    }
+});
+
 // 2. GET SINGLE POST
 postsRouter.get('/:id', async (c) => {
     const id = parseInt(c.req.param('id'), 10);
@@ -121,7 +133,7 @@ postsRouter.post('/', async (c) => {
 
         const db = getDb(c.env.DB);
         
-        await db.insert(posts).values({
+        const result = await db.insert(posts).values({
             title: finalTitle,
             slug: body.slug,
             body: body.body || '',
@@ -140,9 +152,9 @@ postsRouter.post('/', async (c) => {
             videoUrl: body.video_url || '',
             createdAt: body.created_at || now,
             updatedAt: now
-        }).run();
+        }).returning({ id: posts.id });
 
-        return c.json({ success: true, message: 'Post Created' });
+        return c.json({ success: true, message: 'Post Created', id: result[0].id });
     } catch (e: any) {
         if (e.message.includes('UNIQUE constraint failed')) {
             return c.json({ error: 'Slug sudah digunakan, ganti judul atau slug.' }, 409);

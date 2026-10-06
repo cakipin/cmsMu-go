@@ -105,10 +105,11 @@ mediaRouter.post('/', async (c) => {
         const r2 = getBucket(c);
         if (!r2) return c.json({ error: 'R2 Putus (Cek MY_BUCKET)' }, 500);
 
+        const sourceFolder = (body['source'] ? String(body['source']).toLowerCase().replace(/[^a-z0-9_-]/g, '') : 'uploads') || 'uploads';
         const date = new Date();
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
-        const folder = `uploads/${year}/${month}`;
+        const folder = `${sourceFolder}/${year}/${month}`;
 
         let fileBuffer = Buffer.from(await file.arrayBuffer());
         let mimeType = file.type;

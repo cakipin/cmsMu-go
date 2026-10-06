@@ -84,4 +84,35 @@ settings.post('/', authMiddleware, async (c) => {
   }
 });
 
+// PURGE CACHE (Admin Only)
+settings.post('/purge-cache', authMiddleware, async (c) => {
+  try {
+    let clearedCount = 0;
+    const env = c.env as any;
+    
+    // 1. Purge Cloudflare KV Cache (sa_cache / cache / CACHE)
+    const kv = env.sa_cache || env.cache || env.CACHE;
+    if (kv && typeof kv.list === 'function') {
+      let cursor: string | undefined = undefined;
+      do {
+        const listResult = await kv.list({ cursor });
+        cursor = listResult.list_complete ? undefined : listResult.cursor;
+        for (const key of listResult.keys) {
+          await kv.delete(key.name);
+          clearedCount++;
+        }
+      } while (cursor);
+    }
+
+    return c.json({
+      success: true,
+      message: `Cache berhasil dibersihkan (${clearedCount} entri KV dihapus).`,
+      cleared: clearedCount
+    });
+  } catch (e: any) {
+    console.error("Purge Cache Error:", e);
+    return c.json({ success: false, error: e.message }, 500);
+  }
+});
+
 export default settings;

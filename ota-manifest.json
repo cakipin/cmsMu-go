@@ -1,8 +1,8 @@
 {
   "name": "CMSMu Core Framework",
-  "version": "0.1.4",
-  "buildDate": "2026-10-05",
-  "changelog": "Rilis pembaruan Core CMSMu v0.1.4 (Standardisasi Rute Upload Media /uploads/ & Penghapusan Rute Usang)",
+  "version": "0.1.5",
+  "buildDate": "2026-10-06",
+  "changelog": "Rilis pembaruan Core CMSMu v0.1.5 (Optimasi On-Demand Post Fetching, Multi-Adapter R2, Purge Cache & Decoupled Routers)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
   "capabilities": [
@@ -10,7 +10,9 @@
     "puck-visual-editor",
     "auto-db-migration",
     "sso-muhammadiyah-auth",
-    "ota-client-runtime"
+    "ota-client-runtime",
+    "on-demand-post-fetching",
+    "r2-multi-adapter"
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",
@@ -19,19 +21,42 @@
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",
-  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.4.zip",
+  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.5.zip",
   "updatedComponents": [
     {
-      "name": "Standardisasi Rute Upload Media (/uploads/)",
+      "name": "Optimasi On-Demand Fetching & Taxonomy Management",
       "type": "core",
       "paths": [
-        "src/cms/modules/media/media.router.ts",
-        "src/cms/modules/admin/ui/blocks/logic/settings.logic.ts",
-        "src/cms/index.ts",
-        "src/cms/modules/public/uploads.router.ts"
+        "src/cms/modules/posts/posts.router.ts",
+        "src/cms/modules/posts/posts.service.ts"
       ],
-      "description": "Standardisasi folder simpan R2 mutlak ke uploads/YYYY/MM/, URL publik langsung /uploads/..., dan pembersihan rute usang /api/media/file/.",
-      "updatedAt": "2026-10-05T01:58:00.000Z"
+      "description": "Pemisahan posts.body dari query daftar artikel untuk pencegahan memory leak ribuan artikel, taxonomy batch rename/delete, dan auto-tags.",
+      "updatedAt": "2026-10-06T18:00:00.000Z"
+    },
+    {
+      "name": "Storage Multi-Adapter R2 & Media Legacy Proxy",
+      "type": "core",
+      "paths": [
+        "src/cms/storage/r2-adapter.ts",
+        "src/cms/modules/public/uploads.router.ts",
+        "src/cms/modules/media/media.router.ts"
+      ],
+      "description": "Multi-adapter R2 native binding dengan fallback S3 REST API (aws4fetch), dan proxy rute warisan WordPress uploads anti-404.",
+      "updatedAt": "2026-10-06T18:00:00.000Z"
+    },
+    {
+      "name": "Admin UI Purge Cache & Clean Core Engine",
+      "type": "core",
+      "paths": [
+        "src/cms/index.ts",
+        "src/cms/modules/settings/settings.router.ts",
+        "src/cms/modules/admin/ui/view.ts",
+        "src/cms/modules/admin/ui/blocks/settings.page.ts",
+        "src/cms/modules/admin/ui/blocks/logic/core.logic.ts",
+        "src/cms/modules/admin/ui/blocks/logic/settings.logic.ts"
+      ],
+      "description": "Pembersihan rute khusus klien dari core, penyediaan tombol instan Purge Cache di navbar dan menu pengaturan.",
+      "updatedAt": "2026-10-06T18:00:00.000Z"
     }
   ]
 }

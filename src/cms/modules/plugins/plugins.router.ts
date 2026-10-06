@@ -31,14 +31,6 @@ const defaultPlugins = [
     active: 1
   },
   {
-    id: 'emagazine',
-    name: 'e-Magazine Digital Reader',
-    description: 'Modul publikasi dan pembaca majalah/dokumen PDF interaktif berbasis flipbook digital dengan proteksi konten subscriber.',
-    author: 'CMSMu Core Team',
-    version: '1.5.0',
-    active: 1
-  },
-  {
     id: 'ota',
     name: 'Over-The-Air Update Engine (OTA)',
     description: 'Modul distribusi pembaruan sistem, manifest rilis, dan push update ke seluruh instance pengguna CMSMu tanpa downtime.',

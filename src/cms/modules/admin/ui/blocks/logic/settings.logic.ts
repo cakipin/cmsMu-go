@@ -8,6 +8,7 @@ if (typeof window !== 'undefined') {
         return {
             isLoading: false,
             isSaving: false,
+            isPurgingCache: false,
             settings: { 
                 site_title: '', 
                 site_desc: '',
@@ -121,6 +122,43 @@ if (typeof window !== 'undefined') {
                     }
                 }
                 finally { this.isSaving = false; }
+            },
+
+            async purgeCacheAction() {
+                const confirmed = (typeof window !== 'undefined' && window.showConfirmDialog)
+                    ? await window.showConfirmDialog({
+                        title: 'Bersihkan Semua Cache',
+                        message: 'Apakah Anda yakin ingin membersihkan semua cache sistem (KV & Cloudflare)?',
+                        type: 'warning',
+                        confirmText: 'Ya, Bersihkan'
+                    })
+                    : confirm('Apakah Anda yakin ingin membersihkan semua cache sistem (KV & Cloudflare)?');
+                if (!confirmed) return;
+                this.isPurgingCache = true;
+                try {
+                    const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof localStorage !== 'undefined' ? (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '') : '');
+                    const res = await fetch('/api/settings/purge-cache', {
+                        method: 'POST',
+                        headers: { 
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + token 
+                        }
+                    });
+                    const json = await res.json().catch(function() { return {}; });
+                    if (res.ok && json.success) {
+                        if (window.showToast) window.showToast(json.message || 'Cache berhasil dibersihkan!', 'success');
+                        else alert('✅ ' + (json.message || 'Cache berhasil dibersihkan!'));
+                    } else {
+                        const errMsg = json.error || 'Gagal membersihkan cache.';
+                        if (window.showToast) window.showToast(errMsg, 'error');
+                        else alert('❌ ' + errMsg);
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Gagal: ' + e.message, 'error');
+                    else alert('Gagal: ' + e.message);
+                } finally {
+                    this.isPurgingCache = false;
+                }
             },
 
             async openMediaSelector(target) {

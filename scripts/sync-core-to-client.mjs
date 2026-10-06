@@ -89,8 +89,12 @@ const CORE_FILES = [
 // 5. DAFTAR WILAYAH TERPROTEKSI MUTLAK (SOP 19 & SOP 20 ZERO-TOUCH CLIENT)
 const PROTECTED_PREFIXES = [
   'src/cms/themes',
+  'src/themes',
+  'src/cms/addons/index.ts',
   'src/cms/addons/newsroom',
   'src/cms/addons/aggregator',
+  'src/cms/modules/theme-builder',
+  'src/cms/modules/public/public.router.ts',
   'wrangler.jsonc',
   'wrangler.toml',
   '.env',
@@ -311,12 +315,20 @@ ${menus.join('\n\n')}
 `;
 
 if (!isDryRun) {
-  if (fs.existsSync(path.dirname(targetAddonsIndex))) {
+  if (fs.existsSync(targetAddonsIndex)) {
+    const existingContent = fs.readFileSync(targetAddonsIndex, 'utf8');
+    if (existingContent.includes('theme-sa') || existingContent.includes('themeSa') || existingContent.includes('populer')) {
+      console.log(`  🛡️  MEMPERTAHANKAN REGISTRI ADDON KLIEN (TIDAK DITIMPA): src/cms/addons/index.ts`);
+    } else {
+      fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
+      console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
+    }
+  } else if (fs.existsSync(path.dirname(targetAddonsIndex))) {
     fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
     console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
   }
 } else {
-  console.log(`  [DRY-RUN] Will standardize src/cms/addons/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
+  console.log(`  [DRY-RUN] Will inspect src/cms/addons/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
 }
 
 const duration = Date.now() - startTime;

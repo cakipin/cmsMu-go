@@ -89,6 +89,21 @@ export const settingsPage = `
                 <input type="text" x-model="settings.site_favicon" placeholder="https://..." style="width:100%; margin-top:10px; padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; outline:none; box-sizing:border-box;">
             </div>
 
+            <div style="background:white; padding:20px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+                    <h4 style="margin:0; font-size:14px; font-weight:700; color:#1f2937;">Manajemen Cache</h4>
+                    <span style="font-size:10px; font-weight:700; padding:2px 8px; border-radius:6px; background:#fef3c7; color:#b45309;">KV & System</span>
+                </div>
+                <p style="font-size:12px; color:#6b7280; margin:0 0 14px 0; line-height:1.4;">
+                    Bersihkan seluruh cache Cloudflare KV dan data terkompilasi agar pembaruan konten langsung tampil.
+                </p>
+                <button type="button" @click="purgeCacheAction()" :disabled="isPurgingCache"
+                        class="w-full bg-amber-500 hover:bg-amber-600 disabled:opacity-50 active:scale-[0.98] text-white border-0 py-2.5 px-3 rounded-lg text-xs font-semibold cursor-pointer transition-all flex items-center justify-center gap-2 shadow-xs">
+                    <i class="fas" :class="isPurgingCache ? 'fa-spinner fa-spin' : 'fa-broom'"></i>
+                    <span x-text="isPurgingCache ? 'Membersihkan Cache...' : 'Purge All Cache'">Purge All Cache</span>
+                </button>
+            </div>
+
         </div>
     </div>
 

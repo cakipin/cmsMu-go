@@ -117,6 +117,13 @@ export const visitors = sqliteTable('visitors', {
   lastSeen: text('last_seen').default(String(Date.now())),
 });
 
+export const dailyStats = sqliteTable('daily_stats', {
+  date: text('date').primaryKey(),
+  views: integer('views').default(0),
+  visitors: integer('visitors').default(0),
+  updatedAt: text('updated_at').default(String(Date.now())),
+});
+
 export const subscriptions = sqliteTable('subscriptions', {
   id: integer('id').primaryKey({ autoIncrement: true }),
   userId: integer('user_id').references(() => users.id),

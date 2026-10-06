@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { getDb } from '../../db';
-import { visitors, posts, pages, mediaMeta, users } from '../../db/schema';
+import { visitors, posts, pages, mediaMeta, users, dailyStats } from '../../db/schema';
 import { sql, desc, eq } from 'drizzle-orm';
 
 type Bindings = {
@@ -23,11 +23,11 @@ statsRouter.get('/realtime', async (c) => {
     }
 });
 
-// 1.5 GET History (6 months visitors)
+// 1.5 GET History (6 months visitors & 30 days daily visitors & daily views)
 statsRouter.get('/history', async (c) => {
     try {
         const db = getDb(c.env.DB);
-        const results = await db.select({
+        const monthResults = await db.select({
             month: sql<string>`strftime('%Y-%m', ${visitors.lastSeen})`,
             count: sql<number>`COUNT(DISTINCT ${visitors.ip})`
         })
@@ -36,8 +36,31 @@ statsRouter.get('/history', async (c) => {
         .groupBy(sql`strftime('%Y-%m', ${visitors.lastSeen})`)
         .orderBy(sql`strftime('%Y-%m', ${visitors.lastSeen}) ASC`)
         .all();
+
+        const dayResults = await db.select({
+            day: sql<string>`strftime('%Y-%m-%d', ${visitors.lastSeen})`,
+            count: sql<number>`COUNT(DISTINCT ${visitors.ip})`
+        })
+        .from(visitors)
+        .where(sql`${visitors.lastSeen} >= date('now', '-30 days')`)
+        .groupBy(sql`strftime('%Y-%m-%d', ${visitors.lastSeen})`)
+        .orderBy(sql`strftime('%Y-%m-%d', ${visitors.lastSeen}) ASC`)
+        .all();
         
-        return c.json({ visitors: results || [] });
+        const dailyStatsResults = await db.select({
+            day: dailyStats.date,
+            views: dailyStats.views,
+            visitors: dailyStats.visitors
+        })
+        .from(dailyStats)
+        .where(sql`${dailyStats.date} >= date('now', '-30 days')`)
+        .orderBy(sql`${dailyStats.date} ASC`)
+        .all();
+        
+        return c.json({ 
+            visitors: [...(monthResults || []), ...(dayResults || [])],
+            dailyStats: dailyStatsResults || []
+        });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
     }
@@ -52,6 +75,7 @@ statsRouter.get('/dashboard', async (c) => {
         const pagesCount = await db.select({ c: sql<number>`COUNT(${pages.id})` }).from(pages).get();
         const mediaCount = await db.select({ c: sql<number>`COUNT(${mediaMeta.id})` }).from(mediaMeta).get();
         const usersCount = await db.select({ c: sql<number>`COUNT(${users.id})` }).from(users).get();
+        const viewsResult = await db.select({ total: sql<number>`COALESCE(SUM(${posts.views}), 0)` }).from(posts).get();
         
         let sourcesCount = 0;
         try {
@@ -64,6 +88,7 @@ statsRouter.get('/dashboard', async (c) => {
             pages: pagesCount?.c || 0,
             media: mediaCount?.c || 0,
             users: usersCount?.c || 0,
+            totalViews: viewsResult?.total || 0,
             sources: sourcesCount || 0
         });
     } catch(e: any) {
@@ -71,8 +96,8 @@ statsRouter.get('/dashboard', async (c) => {
     }
 });
 
-// 2. POST Ping (Track active user)
-statsRouter.post('/ping', async (c) => {
+// 2. Ping (Track active user - supports GET and POST)
+const handlePing = async (c: any) => {
     try {
         const ip = c.req.header('cf-connecting-ip') || c.req.header('x-forwarded-for') || 'unknown';
         if (ip !== 'unknown') {
@@ -81,12 +106,23 @@ statsRouter.post('/ping', async (c) => {
                 .values({ ip, lastSeen: sql`datetime('now')` })
                 .onConflictDoUpdate({ target: visitors.ip, set: { lastSeen: sql`datetime('now')` } })
                 .run();
+            try {
+                await c.env.DB.prepare(`
+                    INSERT INTO daily_stats (date, views, visitors, updated_at)
+                    VALUES (date('now', '+7 hours'), 0, 1, datetime('now'))
+                    ON CONFLICT(date) DO UPDATE SET 
+                        visitors = (SELECT COUNT(*) FROM visitors WHERE date(last_seen, '+7 hours') = date('now', '+7 hours')),
+                        updated_at = datetime('now')
+                `).run();
+            } catch(e) {}
         }
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
     }
-});
+};
+statsRouter.post('/ping', handlePing);
+statsRouter.get('/ping', handlePing);
 
 // 3. POST Track Post View
 statsRouter.post('/view/:id', async (c) => {
@@ -97,6 +133,13 @@ statsRouter.post('/view/:id', async (c) => {
             .set({ views: sql`${posts.views} + 1` })
             .where(eq(posts.id, id))
             .run();
+        try {
+            await c.env.DB.prepare(`
+                INSERT INTO daily_stats (date, views, visitors, updated_at)
+                VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
+                ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
+            `).run();
+        } catch(e) {}
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);

@@ -51,7 +51,7 @@ export const dashboardPage = `
   </div>
 
   <!-- METRIC CARDS -->
-  <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+  <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
       
       <!-- Card Item 1: Articles -->
       <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-teal-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='posts'; loadPosts()">
@@ -63,8 +63,19 @@ export const dashboardPage = `
             <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Artikel Terbit</span>
         </div>
       </div>
+
+      <!-- Card Item 2: Total Views (Real D1 Database SUM) -->
+      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:-translate-y-0.5 hover:shadow-md hover:border-rose-400 transition-all duration-200 group flex items-center gap-3.5">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+            <i class="fas fa-eye text-xs"></i>
+        </div>
+        <div class="min-w-0 flex-1">
+            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="(Number(dashboardStats?.totalViews) || 0).toLocaleString('id-ID')">0</h4>
+            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Total Tayangan</span>
+        </div>
+      </div>
       
-      <!-- Card Item 2: Pages -->
+      <!-- Card Item 3: Pages -->
       <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='pages'; loadPages()">
         <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
            <i class="fas fa-file-alt text-xs"></i>
@@ -103,7 +114,6 @@ export const dashboardPage = `
      
      <!-- Traffic Statistics Chart -->
      <div class="xl:col-span-2 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7"
-          x-data="{ chartPeriod: 'monthly' }"
           x-effect="
          const _period = chartPeriod;
          const _posts = posts;
@@ -117,6 +127,7 @@ export const dashboardPage = `
                          const resHist = await fetch('/api/stats/history', { headers: { 'Authorization': 'Bearer ' + token } });
                          const dataHist = await resHist.json();
                          $el._visitorData = dataHist.visitors || [];
+                         $el._dailyStats = dataHist.dailyStats || [];
                          $el._visitorDataLoaded = true;
                          const resAgg = await fetch('/api/stats/dashboard', { headers: { 'Authorization': 'Bearer ' + token } });
                          const statsAgg = await resAgg.json();
@@ -126,43 +137,48 @@ export const dashboardPage = `
                  }
                  
                  const visitorData = $el._visitorData || [];
+                 const dailyStatsData = $el._dailyStats || [];
                  const labels = [];
-                 const postCounts = [];
-                 const pageCounts = [];
                  const userCounts = [];
+                 const postCounts = [];
+                 const viewCounts = [];
                  
-                 if (_period === 'daily') {
+                 if (_period === '7d') {
+                     for (let i = 6; i >= 0; i--) {
+                         const d = new Date();
+                         d.setDate(d.getDate() - i);
+                         labels.push(d.toLocaleString('id-ID', { weekday: 'short', day: 'numeric' }));
+                         const yyyy_mm_dd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                         const uCount = visitorData.find(v => v.day === yyyy_mm_dd)?.count || 0;
+                         userCounts.push(uCount);
+                         const dayPosts = (_posts || []).filter(p => (p.created_at || '').startsWith(yyyy_mm_dd));
+                         postCounts.push(dayPosts.length);
+                         const dStat = dailyStatsData.find(s => s.day === yyyy_mm_dd);
+                         viewCounts.push(dStat ? (Number(dStat.views) || 0) : dayPosts.reduce((sum, p) => sum + (Number(p.views) || 0), 0));
+                     }
+                 } else if (_period === 'daily') {
                      for (let i = 13; i >= 0; i--) {
                          const d = new Date();
                          d.setDate(d.getDate() - i);
                          labels.push(d.toLocaleString('id-ID', { weekday: 'short', day: 'numeric' }));
-                         const yyyy_mm_dd = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
-                         postCounts.push((_posts||[]).filter(p => (p.created_at||'').startsWith(yyyy_mm_dd)).length);
-                         pageCounts.push((_pages||[]).filter(p => (p.created_at||'').startsWith(yyyy_mm_dd)).length);
-                         userCounts.push(visitorData.find(v => v.day === yyyy_mm_dd)?.count || 0);
+                         const yyyy_mm_dd = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+                         const uCount = visitorData.find(v => v.day === yyyy_mm_dd)?.count || 0;
+                         userCounts.push(uCount);
+                         const dayPosts = (_posts || []).filter(p => (p.created_at || '').startsWith(yyyy_mm_dd));
+                         postCounts.push(dayPosts.length);
+                         const dStat = dailyStatsData.find(s => s.day === yyyy_mm_dd);
+                         viewCounts.push(dStat ? (Number(dStat.views) || 0) : dayPosts.reduce((sum, p) => sum + (Number(p.views) || 0), 0));
                      }
-                 } else if (_period === 'weekly') {
-                     for (let i = 11; i >= 0; i--) {
-                         const d = new Date();
-                         d.setDate(d.getDate() - (i * 7));
-                         const startOfWeek = new Date(d);
-                         startOfWeek.setDate(d.getDate() - d.getDay());
-                         const endOfWeek = new Date(startOfWeek);
-                         endOfWeek.setDate(startOfWeek.getDate() + 6);
-                         labels.push(String(startOfWeek.getDate()) + '/' + String(startOfWeek.getMonth()+1));
-                         postCounts.push((_posts||[]).filter(p => { const pd = new Date(p.created_at); return pd >= startOfWeek && pd <= endOfWeek; }).length);
-                         pageCounts.push((_pages||[]).filter(p => { const pd = new Date(p.created_at); return pd >= startOfWeek && pd <= endOfWeek; }).length);
-                         userCounts.push(0);
-                     }
-                 } else if (_period === 'yearly') {
+                 } else if (_period === 'yearly' || _period === 'all') {
                      for (let i = 4; i >= 0; i--) {
                          const yr = new Date().getFullYear() - i;
                          labels.push(String(yr));
-                         postCounts.push((_posts||[]).filter(p => new Date(p.created_at).getFullYear() === yr).length);
-                         pageCounts.push((_pages||[]).filter(p => new Date(p.created_at).getFullYear() === yr).length);
                          userCounts.push(0);
+                         const yrPosts = (_posts || []).filter(p => new Date(p.created_at).getFullYear() === yr);
+                         postCounts.push(yrPosts.length);
+                         viewCounts.push(yrPosts.reduce((sum, p) => sum + (Number(p.views) || 0), 0));
                      }
-                 } else {
+                 } else { // 'monthly'
                      for (let i = 5; i >= 0; i--) {
                          const d = new Date();
                          d.setMonth(d.getMonth() - i);
@@ -170,29 +186,46 @@ export const dashboardPage = `
                          const monthNum = d.getMonth();
                          const yearNum = d.getFullYear();
                          const yyyy_mm = yearNum + '-' + String(monthNum + 1).padStart(2, '0');
-                         postCounts.push((_posts||[]).filter(p => { const pd = new Date(p.created_at); return pd.getMonth() === monthNum && pd.getFullYear() === yearNum; }).length);
-                         pageCounts.push((_pages||[]).filter(p => { const pd = new Date(p.created_at); return pd.getMonth() === monthNum && pd.getFullYear() === yearNum; }).length);
-                         userCounts.push(visitorData.find(v => v.month === yyyy_mm)?.count || 0);
+                         const uCount = visitorData.find(v => v.month === yyyy_mm)?.count || 0;
+                         userCounts.push(uCount);
+                         const mPosts = (_posts || []).filter(p => { const pd = new Date(p.created_at); return pd.getMonth() === monthNum && pd.getFullYear() === yearNum; });
+                         postCounts.push(mPosts.length);
+                         const mDStats = dailyStatsData.filter(s => (s.day || '').startsWith(yyyy_mm));
+                         const recMViews = mDStats.reduce((sum, s) => sum + (Number(s.views) || 0), 0);
+                         viewCounts.push(recMViews > 0 ? recMViews : mPosts.reduce((sum, p) => sum + (Number(p.views) || 0), 0));
                      }
                  }
                  
                  if (window._trafficChart) { window._trafficChart.destroy(); window._trafficChart = null; }
                  const options = {
                      series: [
-                         { name: 'Artikel', data: postCounts },
-                         { name: 'Halaman', data: pageCounts },
-                         { name: 'Real User', data: userCounts }
+                         { name: 'Total View', data: viewCounts },
+                         { name: 'Real User', data: userCounts },
+                         { name: 'Artikel Terbit', data: postCounts }
                      ],
                      chart: { type: 'area', height: 320, toolbar: { show: false }, fontFamily: 'inherit', animations: { enabled: true, speed: 400 } },
-                     colors: ['#0d9488', '#6366f1', '#f59e0b'],
-                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.4, opacityTo: 0.05, stops: [0, 90, 100] } },
+                     colors: ['#6366f1', '#0d9488', '#f59e0b'],
+                     fill: { type: 'gradient', gradient: { shadeIntensity: 1, opacityFrom: 0.35, opacityTo: 0.05, stops: [0, 90, 100] } },
                      dataLabels: { enabled: false },
                      stroke: { curve: 'smooth', width: 2 },
                      xaxis: { categories: labels, axisBorder: { show: false }, axisTicks: { show: false }, labels: { style: { fontSize: '11px' } } },
-                     yaxis: { show: true, min: 0, forceNiceScale: true },
+                     yaxis: { 
+                         show: true, 
+                         min: 0, 
+                         forceNiceScale: true,
+                         labels: { 
+                             formatter: (val) => val >= 1000 ? (val / 1000).toFixed(1) + 'k' : Math.round(val) 
+                         } 
+                     },
                      grid: { borderColor: '#f8fafc', strokeDashArray: 4, yaxis: { lines: { show: true } } },
                      legend: { position: 'top', horizontalAlign: 'right' },
-                     tooltip: { x: { show: true } }
+                     tooltip: { 
+                         shared: true, 
+                         intersect: false, 
+                         y: { 
+                             formatter: (val) => (Number(val) || 0).toLocaleString('id-ID') 
+                         } 
+                     }
                  };
                  const chartEl = $el.querySelector('#trafficChart');
                  if (chartEl) {
@@ -210,10 +243,11 @@ export const dashboardPage = `
             </h4>
             <div class="flex flex-wrap items-center gap-2">
                 <select x-model="chartPeriod" class="text-xs font-bold text-slate-600 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 outline-none cursor-pointer hover:bg-slate-100 transition-colors">
+                    <option value="7d">7 Hari Terakhir</option>
                     <option value="daily">Harian (14 Hari)</option>
-                    <option value="weekly">Mingguan (12 Minggu)</option>
                     <option value="monthly">Bulanan (6 Bulan)</option>
                     <option value="yearly">Tahunan (5 Tahun)</option>
+                    <option value="all">Sepanjang Masa</option>
                 </select>
                 <button class="bg-indigo-50 text-indigo-600 border border-indigo-100 hover:bg-indigo-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors" @click="view='seo'">
                     <i class="fas fa-external-link-alt mr-1"></i> Full Stats
@@ -340,20 +374,62 @@ export const dashboardPage = `
      </div>
   </div>
 
-  <!-- ANALYTICS ROW 2: ARTIKEL TERBARU (FULL WIDTH) -->
+  <!-- ANALYTICS ROW 2: ARTIKEL TERBARU & POPULER (FULL WIDTH) -->
   <div class="mt-6">
       
-      <!-- Top 10 Popular Posts -->
+      <!-- Top 10 Popular / Latest Posts -->
       <div class="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 sm:p-7">
-         <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
-             <h4 class="text-lg font-black text-slate-800 flex items-center gap-3">
-                 <span class="bg-rose-50 text-rose-500 p-2 rounded-lg flex items-center justify-center"><i class="fas fa-file-alt"></i></span>
-                 Artikel Terbaru
-             </h4>
-             <button @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1">
-                 <span>Lihat Semua Artikel</span>
-                 <i class="fas fa-arrow-right text-[10px]"></i>
-             </button>
+         <!-- Header dengan Tab Switcher & Sinkronisasi Filter Periode -->
+         <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-slate-100 pb-4">
+             <div class="flex items-center gap-2">
+                 <!-- Tab 1: Artikel Populer (Default) -->
+                 <button 
+                     type="button"
+                     @click="dashboardTab = 'popular'"
+                     :class="dashboardTab === 'popular' 
+                         ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-xs font-bold' 
+                         : 'bg-transparent text-slate-500 hover:text-slate-800 border-transparent font-medium'"
+                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm border flex items-center gap-2 transition-all cursor-pointer">
+                     <span :class="dashboardTab === 'popular' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors">
+                         <i class="fas fa-fire"></i>
+                     </span>
+                     <span x-text="dashboardTab === 'popular' ? ('Artikel Populer (' + (chartPeriod === '7d' ? '7 Hari' : (chartPeriod === 'daily' ? '14 Hari' : (chartPeriod === 'monthly' ? '6 Bulan' : (chartPeriod === 'yearly' ? '5 Tahun' : 'Sepanjang Masa')))) + ')') : 'Artikel Populer'">Artikel Populer</span>
+                 </button>
+
+                 <!-- Tab 2: Artikel Terbaru -->
+                 <button 
+                     type="button"
+                     @click="dashboardTab = 'latest'"
+                     :class="dashboardTab === 'latest' 
+                         ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-xs font-bold' 
+                         : 'bg-transparent text-slate-500 hover:text-slate-800 border-transparent font-medium'"
+                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm border flex items-center gap-2 transition-all cursor-pointer">
+                     <span :class="dashboardTab === 'latest' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors">
+                         <i class="fas fa-clock"></i>
+                     </span>
+                     <span>Artikel Terbaru</span>
+                 </button>
+             </div>
+
+             <!-- Kontrol Kanan: Sinkronisasi Periode & Lihat Semua -->
+             <div class="flex items-center gap-3">
+                 <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1" x-show="dashboardTab === 'popular'">
+                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Periode:</span>
+                     <select x-model="chartPeriod" class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
+                         <option value="7d">7 Hari Terakhir</option>
+                         <option value="daily">Harian (14 Hari)</option>
+                         <option value="monthly">Bulanan (6 Bulan)</option>
+                         <option value="yearly">Tahunan (5 Tahun)</option>
+                         <option value="all">Sepanjang Masa</option>
+                     </select>
+                 </div>
+
+                 <!-- Link Lihat Semua -->
+                 <button type="button" @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1 cursor-pointer">
+                     <span>Lihat Semua Artikel</span>
+                     <i class="fas fa-arrow-right text-[10px]"></i>
+                 </button>
+             </div>
          </div>
          <div class="overflow-x-auto no-scrollbar">
              <table class="w-full text-sm text-slate-600 text-left">
@@ -367,27 +443,44 @@ export const dashboardPage = `
                    </tr>
                  </thead>
                  <tbody>
-                    <template x-for="post in (posts || []).slice(0, 10)" :key="post.id">
+                    <template x-for="(post, idx) in (dashboardTab === 'popular' ? popularPosts : latestPosts)" :key="post.id">
                         <tr class="border-b border-slate-100 last:border-0 hover:bg-slate-50 transition-colors">
                             <td class="py-3 px-5 font-semibold text-slate-800">
-                                <a :href="'/' + post.slug" target="_blank" class="hover:text-primary transition-colors flex items-center gap-2 group" title="Lihat Artikel">
-                                    <span x-text="post.title"></span>
-                                    <i class="fas fa-external-link-alt text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
-                                </a>
+                                <div class="flex items-center gap-2.5">
+                                    <!-- Badge Peringkat untuk Tab Populer -->
+                                    <template x-if="dashboardTab === 'popular'">
+                                        <span :class="idx === 0 ? 'bg-amber-100 text-amber-700 font-black' : (idx === 1 ? 'bg-slate-200 text-slate-700 font-bold' : (idx === 2 ? 'bg-orange-100 text-orange-700 font-bold' : 'bg-slate-100 text-slate-500 font-medium'))" 
+                                              class="w-5 h-5 rounded-md text-[10px] flex items-center justify-center shrink-0" 
+                                              x-text="idx + 1">
+                                        </span>
+                                    </template>
+                                    <a :href="'/' + post.slug" target="_blank" class="hover:text-teal-600 transition-colors flex items-center gap-2 group line-clamp-1" title="Lihat Artikel">
+                                        <span x-text="cleanTitle(post.title)"></span>
+                                        <i class="fas fa-external-link-alt text-[10px] text-slate-400 opacity-0 group-hover:opacity-100 transition-opacity"></i>
+                                    </a>
+                                </div>
                             </td>
                             <td class="py-3 px-5">
                                 <span class="bg-slate-100 text-slate-600 px-2 py-1 rounded text-xs font-semibold whitespace-nowrap" x-text="post.category || 'Uncategorized'"></span>
                             </td>
                             <td class="py-3 px-5 text-center">
-                                <span class="font-bold text-slate-700" x-text="post.views || 0"></span>
+                                <span :class="dashboardTab === 'popular' ? 'bg-teal-50 text-teal-700 font-bold px-2.5 py-1 rounded-md' : 'text-slate-700 font-semibold'" class="text-xs inline-flex items-center gap-1">
+                                    <template x-if="dashboardTab === 'popular'"><i class="fas fa-eye text-[10px] text-teal-600"></i></template>
+                                    <span x-text="(Number(post.views) || 0).toLocaleString('id-ID')"></span>
+                                </span>
                             </td>
                             <td class="py-3 px-5">
                                 <span :class="post.status === 'publish' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'" class="px-2 py-1 rounded text-[11px] font-bold uppercase tracking-wider whitespace-nowrap" x-text="post.status"></span>
                             </td>
-                            <td class="py-3 px-5 text-right font-medium text-slate-500 text-sm" x-text="formatDate(post.created_at)"></td>
+                            <td class="py-3 px-5 text-right font-medium text-slate-500 text-sm whitespace-nowrap" x-text="formatDate(post.created_at)"></td>
                         </tr>
                     </template>
-                </tbody>
+                    <template x-if="(dashboardTab === 'popular' ? popularPosts : latestPosts).length === 0">
+                        <tr>
+                            <td colspan="5" class="py-8 text-center text-slate-400 text-xs">Belum ada artikel yang terbit pada periode ini</td>
+                        </tr>
+                    </template>
+                 </tbody>
              </table>
          </div>
       </div>

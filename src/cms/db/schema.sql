@@ -98,3 +98,10 @@ CREATE INDEX idx_posts_type ON posts(type);
 CREATE INDEX idx_posts_slug ON posts(slug);
 CREATE INDEX idx_posts_status ON posts(status);
 CREATE INDEX idx_pages_slug ON pages(slug);
+
+CREATE TABLE IF NOT EXISTS daily_stats (
+    date TEXT PRIMARY KEY,
+    views INTEGER DEFAULT 0,
+    visitors INTEGER DEFAULT 0,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);

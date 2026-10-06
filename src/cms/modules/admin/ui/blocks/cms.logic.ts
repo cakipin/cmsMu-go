@@ -90,7 +90,9 @@ if (typeof window !== 'undefined') {
             // Data Buckets
             posts: [], pages: [], mediaList: [], usersList: [], 
             menuList: [], availableThemes: [], selectedItems: [],
-            dashboardStats: { posts: 0, pages: 0, media: 0, users: 0, sources: 0 },
+            dashboardStats: { posts: 0, pages: 0, media: 0, users: 0, sources: 0, totalViews: 0 },
+            chartPeriod: '7d',
+            dashboardTab: 'popular',
             
             // UI Flags
             isLoadingPosts: false, isLoadingPages: false, isLoadingUsers: false, isLoadingThemes: false,
@@ -369,8 +371,49 @@ if (typeof window !== 'undefined') {
                     pages: apiStats.pages !== undefined ? apiStats.pages : (this.pages || []).length,
                     media: apiStats.media !== undefined ? apiStats.media : (this.mediaList || []).length,
                     users: apiStats.users !== undefined ? apiStats.users : (this.usersList || []).length,
+                    totalViews: apiStats.totalViews !== undefined ? apiStats.totalViews : (this.posts || []).reduce((acc, p) => acc + (Number(p.views) || 0), 0),
                     sources: apiStats.sources !== undefined ? apiStats.sources : 0
                 };
+            },
+            get popularPosts() {
+                const list = Array.isArray(this.posts) ? this.posts : [];
+                if (this.chartPeriod === 'all') {
+                    return [...list].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 10);
+                }
+                let days = 7;
+                if (this.chartPeriod === 'daily') days = 14;
+                else if (this.chartPeriod === 'monthly') days = 180;
+                else if (this.chartPeriod === 'yearly') days = 1825;
+                
+                const cutoff = Date.now() - (days * 86400000);
+                const filtered = list.filter(p => {
+                    const raw = p.created_at || p.createdAt;
+                    const ts = raw ? new Date(typeof raw === 'string' ? raw.replace(' ', 'T') : raw).getTime() : 0;
+                    return ts >= cutoff;
+                });
+                return [...filtered].sort((a, b) => (Number(b.views) || 0) - (Number(a.views) || 0)).slice(0, 10);
+            },
+            get latestPosts() {
+                const list = Array.isArray(this.posts) ? this.posts : [];
+                return [...list].sort((a, b) => {
+                    const rawA = a.created_at || a.createdAt;
+                    const rawB = b.created_at || b.createdAt;
+                    const ta = rawA ? new Date(typeof rawA === 'string' ? rawA.replace(' ', 'T') : rawA).getTime() : 0;
+                    const tb = rawB ? new Date(typeof rawB === 'string' ? rawB.replace(' ', 'T') : rawB).getTime() : 0;
+                    return tb - ta;
+                }).slice(0, 10);
+            },
+            cleanTitle(str) {
+                if (!str) return '';
+                return str
+                    .replace(/&#8216;/g, '‘')
+                    .replace(/&#8217;/g, '’')
+                    .replace(/&#8220;/g, '“')
+                    .replace(/&#8221;/g, '”')
+                    .replace(/&#038;/g, '&')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&quot;/g, '"')
+                    .replace(/&#039;/g, "'");
             }
         };
     };

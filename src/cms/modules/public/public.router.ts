@@ -11,7 +11,6 @@ import { isPuckJson, renderPuckHtml } from '../theme-builder';
 import seoRouter from './routes/seo.router';
 import profileRouter, { handleUserProfile } from './routes/profile.router';
 import sourcesRouter from './routes/sources.router';
-import emagazinePublicRouter from './routes/emagazine.router';
 
 const publicRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -19,7 +18,6 @@ const publicRouter = new Hono<{ Bindings: Bindings }>();
 publicRouter.route('/', seoRouter);
 publicRouter.route('/', profileRouter);
 publicRouter.route('/', sourcesRouter);
-publicRouter.route('/', emagazinePublicRouter);
 
 // ============================================================
 // 1. ROUTE HOMEPAGE (Multi-Language & Pagination)
@@ -536,6 +534,30 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: 'en' | 'ar') {
       if (type === 'post') {
         try {
           await orm.update(postsTable).set({ views: sql`views + 1` }).where(eq(postsTable.id, content.id)).run();
+          if (c.env?.DB) {
+            const p = c.env.DB.prepare(`
+              INSERT INTO daily_stats (date, views, visitors, updated_at)
+              VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
+              ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
+            `).run();
+            if (c.executionCtx && typeof (c.executionCtx as any).waitUntil === 'function') {
+              (c.executionCtx as any).waitUntil(p);
+            }
+          }
+        } catch (err) {}
+      } else if (type === 'page') {
+        try {
+          await orm.update(pagesTable).set({ views: sql`views + 1` }).where(eq(pagesTable.id, content.id)).run();
+          if (c.env?.DB) {
+            const p = c.env.DB.prepare(`
+              INSERT INTO daily_stats (date, views, visitors, updated_at)
+              VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
+              ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
+            `).run();
+            if (c.executionCtx && typeof (c.executionCtx as any).waitUntil === 'function') {
+              (c.executionCtx as any).waitUntil(p);
+            }
+          }
         } catch (err) {}
       }
 

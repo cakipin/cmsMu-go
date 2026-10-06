@@ -11,7 +11,6 @@ import uploadsRouter from './modules/public/uploads.router'
 import settingsRouter from './modules/settings/settings.router'
 import mediaRouter from './modules/media/media.router'
 import usersRouter from './modules/users/users.router';
-import agensRouter from './modules/agens/agens.router';
 import migrationRouter from './migration'
 import themeRouter from './modules/theme/theme.router'
 import pluginsRouter from './modules/plugins/plugins.router'
@@ -24,9 +23,6 @@ import themeEditorRouter from './modules/theme-editor/editor.router'; // Route P
 import statsRouter from './modules/stats/stats.router'; // Stats Tracker
 import notificationsRouter from './modules/users/notifications.router'; // Notifications
 import { commentsRouter } from './modules/comments/comments.router';
-
-import { subscribersRouter, publicSubscribersRouter } from './modules/subscribers/subscribers.router';
-import { emagazineRouter, publicEmagazineRouter } from './modules/emagazine/emagazine.router';
 import { otaRouter } from './addons/ota/router';
 
 // ADDONS
@@ -71,7 +67,7 @@ app.onError((err, c) => {
 app.use('/api/*', async (c, next) => {
   const path = c.req.path;
   const method = c.req.method;
-  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/public/subscribers') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) || path.startsWith('/api/addons/ota/clients/report-status') || path.startsWith('/api/addons/ota/clients/register') || path.startsWith('/api/addons/ota/clients/heartbeat') || path.startsWith('/api/addons/ota/git-push') || path === '/api/health' ||
+  const isWhitelisted = path.includes('/login') || path.startsWith('/api/public') || path.startsWith('/api/setup') || path.startsWith('/api/users/sso') || path.startsWith('/api/ota') || (method === 'GET' && path.startsWith('/api/addons/ota')) || path.startsWith('/api/addons/ota/clients/report-status') || path.startsWith('/api/addons/ota/clients/register') || path.startsWith('/api/addons/ota/clients/heartbeat') || path.startsWith('/api/addons/ota/git-push') || path === '/api/health' ||
     ((method === 'GET' || method === 'HEAD') && (path.startsWith('/api/media') || path.startsWith('/api/posts') || path.startsWith('/api/pages') || path.startsWith('/api/contents') || path.startsWith('/api/comments') || path === '/api/settings'));
 
   if (isWhitelisted) return await next();
@@ -114,17 +110,11 @@ app.route('/api/settings', settingsRouter);
 app.route('/api/media', mediaRouter); 
 app.route('/api/theme', themeRouter);
 app.route('/api/users', usersRouter);
-app.route('/api/agens', agensRouter);
 app.route('/api/menus', menusRouter);
 app.route('/api/plugins', pluginsRouter);
 app.route('/api/stats', statsRouter);
 app.route('/api/notifications', notificationsRouter);
-
 app.route('/api/comments', commentsRouter);
-app.route('/api/subscribers', subscribersRouter);
-app.route('/api/public/subscribers', publicSubscribersRouter);
-app.route('/api/emagazine', emagazineRouter);
-app.route('/api/public/emagazine', publicEmagazineRouter);
 
 app.route('/api/posts', postsRouter);
 app.route('/api/pages', pagesRouter); // Route API Pages

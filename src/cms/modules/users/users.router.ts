@@ -213,6 +213,92 @@ usersRouter.post('/login', async (c) => {
 });
 
 // ---------------------------------------------------------------------
+// 5B. PUBLIC REGISTRATION (POST /register)
+// ---------------------------------------------------------------------
+usersRouter.post('/register', async (c) => {
+  try {
+    const body = await c.req.json().catch(() => null);
+    if (!body) return c.json({ success: false, error: 'Data pendaftaran tidak valid' }, 400);
+
+    const name = String(body.name || '').trim();
+    const rawUsername = String(body.username || '').trim().toLowerCase();
+    const username = rawUsername.replace(/[^a-z0-9_.-]/g, '');
+    const email = String(body.email || '').trim().toLowerCase();
+    const password = String(body.password || '');
+
+    if (!name) return c.json({ success: false, error: 'Nama Lengkap wajib diisi' }, 400);
+    if (!username || username.length < 3) return c.json({ success: false, error: 'Username minimal 3 karakter' }, 400);
+    if (!email || !email.includes('@')) return c.json({ success: false, error: 'Format email tidak valid' }, 400);
+    if (!password || password.length < 6) return c.json({ success: false, error: 'Password minimal 6 karakter' }, 400);
+
+    if (!c.env.DB) return c.json({ success: false, error: 'Database tidak terhubung' }, 500);
+    const db = getDb(c.env.DB);
+
+    // Cek apakah username atau email sudah ada
+    const existing = await db.select({ id: usersTable.id, username: usersTable.username, email: usersTable.email })
+      .from(usersTable)
+      .where(or(
+        eq(sql`lower(${usersTable.username})`, username),
+        eq(sql`lower(${usersTable.email})`, email)
+      ))
+      .get();
+
+    if (existing) {
+      if (existing.username.toLowerCase() === username) {
+        return c.json({ success: false, error: 'Username sudah digunakan. Silakan pilih username lain.' }, 400);
+      }
+      return c.json({ success: false, error: 'Alamat email sudah terdaftar. Silakan masuk ke akun Anda.' }, 400);
+    }
+
+    // Hash password menggunakan sha256 agar sesuai format auth
+    const hashedPassword = await sha256(password);
+
+    const res = await db.insert(usersTable).values({
+      name,
+      username,
+      email,
+      password: hashedPassword,
+      role: 'subscriber',
+      createdAt: new Date().toISOString()
+    }).run();
+
+    if (!res.success) {
+      return c.json({ success: false, error: 'Gagal membuat akun' }, 500);
+    }
+
+    const createdUser = await db.select({
+      id: usersTable.id,
+      username: usersTable.username,
+      name: usersTable.name,
+      role: usersTable.role,
+      avatar: usersTable.avatar
+    }).from(usersTable).where(eq(usersTable.username, username)).get();
+
+    if (!createdUser) {
+      return c.json({ success: false, error: 'Gagal memuat data akun baru' }, 500);
+    }
+
+    const token = generateUserToken(createdUser);
+
+    return c.json({
+      success: true,
+      message: 'Pendaftaran berhasil',
+      token,
+      user: {
+        id: createdUser.id,
+        username: createdUser.username,
+        name: createdUser.name,
+        role: createdUser.role,
+        avatar: createdUser.avatar || ''
+      }
+    });
+
+  } catch (e: any) {
+    return c.json({ success: false, error: 'Terjadi kesalahan sistem: ' + e.message }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------
 // 6. SSO LOGIN (POST /sso)
 // ---------------------------------------------------------------------
 usersRouter.post('/sso', async (c) => {

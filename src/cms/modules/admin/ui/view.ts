@@ -529,6 +529,12 @@ export function renderAdmin(data: any): string {
                                         </div>
                                     </div>
 
+                                    <!-- Quick Purge Cache Button -->
+                                    <button @click="purgeCacheGlobal()" :disabled="isPurgingCache" class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200/80 rounded-xl transition-all shadow-2xs active:scale-95 cursor-pointer disabled:opacity-50" title="Bersihkan Seluruh Cache Sistem (KV & Cloudflare)">
+                                        <i class="fas" :class="isPurgingCache ? 'fa-spinner fa-spin' : 'fa-broom'"></i>
+                                        <span x-text="isPurgingCache ? 'Purging...' : 'Purge Cache'">Purge Cache</span>
+                                    </button>
+
                                     <!-- User Avatar & Dropdown -->
                                     <div class="relative">
                                         <button @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false" class="flex items-center gap-2 focus:outline-none">
