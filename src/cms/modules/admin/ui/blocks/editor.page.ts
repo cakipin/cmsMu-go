@@ -4,7 +4,7 @@ import { editorTaxonomyModal } from './editor/editor-taxonomy-modal.ts';
 
 export const editorPage = `
 <div x-show="view === 'add' || view === 'edit'" class="animate-fade"
-     @open-editor-media.window="openMediaForEditor()"
+     @open-editor-media.window="openMediaForEditor($event)"
      style="padding-bottom:80px; position:relative;"
      x-data="{
          // ===============================================
@@ -18,7 +18,7 @@ export const editorPage = `
          saveError: '',      
          
          mediaList: [],
-         uniqueCategories: ['Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'], 
+         uniqueCategories: ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'], 
          uniqueTags: [],        
          managerItems: [],
          allPosts: [],          
@@ -32,6 +32,14 @@ export const editorPage = `
          
          // Form Metadata
          mediaForm: { title: '', alt: '', caption: '', description: '' },
+
+         // State SEO & AI
+         isGeneratingSeo: false,
+         isOptimizingFull: false,
+         isGeneratingMetaTitle: false,
+         isGeneratingMetaDesc: false,
+         isGeneratingExcerpt: false,
+         showSeoDetails: false,
 
          getToken() {
              return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
@@ -57,7 +65,7 @@ export const editorPage = `
                      const dbCategories = Object.keys(catCounts).sort((a,b) => catCounts[b] - catCounts[a]);
 
                      // Pastikan kategori default selalu tersedia di dropdown
-                     const defaultCategories = ['Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'];
+                     const defaultCategories = ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'];
                      const merged = [...dbCategories];
                      defaultCategories.forEach(dc => { if (!merged.includes(dc)) merged.push(dc); });
 
@@ -125,7 +133,7 @@ export const editorPage = `
 
          confirmMediaSelection() {
              if (!this.selectedMedia || !this.selectedMedia.url) {
-                 alert('Pilih gambar dulu!');
+                 if(window.showToast) window.showToast('Pilih gambar dulu!', 'warning');
                  return;
              }
              
@@ -155,7 +163,7 @@ export const editorPage = `
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ key: this.selectedMedia.key, ...this.mediaForm })
                  });
-                 alert('Info tersimpan!');
+                 if(window.showToast) window.showToast('Info tersimpan!', 'success');
              } catch(e) { console.log('Saved locally'); }
          },
 
@@ -166,14 +174,65 @@ export const editorPage = `
              this.uploadPreview = URL.createObjectURL(file);
              this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' '); 
          },
+         compressImage(file, quality = 0.7, maxWidth = 1600, seoTitle = '') {
+             return new Promise((resolve, reject) => {
+                 const reader = new FileReader();
+                 reader.readAsDataURL(file);
+                 reader.onload = (event) => {
+                     const img = new Image();
+                     img.src = event.target.result;
+                     img.onload = () => {
+                         const canvas = document.createElement('canvas');
+                         let width = img.width;
+                         let height = img.height;
+                         if (width > maxWidth) {
+                             height = Math.round((height * maxWidth) / width);
+                             width = maxWidth;
+                         }
+                         canvas.width = width;
+                         canvas.height = height;
+                         const ctx = canvas.getContext('2d');
+                         ctx.drawImage(img, 0, 0, width, height);
+                         
+                         let newName = 'image';
+                         if (seoTitle) {
+                             newName = seoTitle.toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
+                         } else {
+                             newName = file.name.replace(/\\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40) || 'image';
+                         }
+                         
+                         canvas.toBlob((blob) => {
+                             if (!blob) return reject(new Error('Kompresi gagal'));
+                             const newFile = new File([blob], newName + '.webp', {
+                                 type: 'image/webp',
+                                 lastModified: Date.now()
+                             });
+                             resolve(newFile);
+                         }, 'image/webp', quality);
+                     };
+                     img.onerror = (e) => reject(e);
+                 };
+                 reader.onerror = (e) => reject(e);
+             });
+         },
 
          async uploadMediaAction() {
-             if (!this.uploadFile) return alert('Pilih file dulu');
+             if (!this.uploadFile) { if(window.showToast) window.showToast('Pilih file dulu', 'warning'); return; }
              
+             let finalFile = this.uploadFile;
+             if (finalFile.type.startsWith('image/')) {
+                 try {
+                     const seoTitle = this.form.title || this.mediaForm.title || '';
+                     finalFile = await this.compressImage(finalFile, 0.7, 1600, seoTitle);
+                 } catch (err) {
+                     console.warn('Gagal kompres', err);
+                 }
+             }
+
              const fd = new FormData();
-             fd.append('file', this.uploadFile);
-             fd.append('title', this.mediaForm.title);
-             fd.append('alt', this.mediaForm.alt);
+             fd.append('file', finalFile);
+             fd.append('title', this.mediaForm.title || (this.form.title ? this.form.title : ''));
+             fd.append('alt', this.mediaForm.alt || (this.form.title ? this.form.title : ''));
              fd.append('caption', this.mediaForm.caption);
              fd.append('description', this.mediaForm.description);
 
@@ -192,8 +251,8 @@ export const editorPage = `
                      const newImg = this.mediaList.find(m => m.url === newUrl);
                      if (newImg) this.selectMediaItem(newImg);
                      this.uploadFile = null; this.uploadPreview = null;
-                 } else { alert('Gagal upload.'); }
-             } catch(e) { alert('Error upload'); }
+                 } else { if(window.showToast) window.showToast('Gagal upload.', 'error'); }
+             } catch(e) { if(window.showToast) window.showToast('Error upload', 'error'); }
          },
 
           // Modal Tambah Kategori Baru
@@ -221,7 +280,7 @@ export const editorPage = `
           submitNewCategory() {
               const name = (this.newCategoryInput || '').trim();
               if (!name) {
-                  alert('Nama kategori tidak boleh kosong!');
+                  if(window.showToast) window.showToast('Nama kategori tidak boleh kosong!', 'warning');
                   return;
               }
               if (!this.uniqueCategories.includes(name)) {
@@ -250,7 +309,7 @@ export const editorPage = `
               const newVal = (this.renameNewValue || '').trim();
 
               if (!newVal) {
-                  alert('Nama baru tidak boleh kosong!');
+                  if(window.showToast) window.showToast('Nama baru tidak boleh kosong!', 'warning');
                   return;
               }
               if (oldVal.toLowerCase() === newVal.toLowerCase()) {
@@ -287,13 +346,13 @@ export const editorPage = `
                           this.managerItems = this.uniqueTags;
                       }
                       this.showRenameModal = false;
-                      alert('Berhasil mengubah nama ' + (this.renameTargetType === 'category' ? 'kategori' : 'tag') + '!');
+                      if(window.showToast) window.showToast('Berhasil mengubah nama!', 'success');
                   } else {
                       const r = await res.json();
-                      alert('Gagal: ' + (r.error || 'Terjadi kesalahan sistem'));
+                      if(window.showToast) window.showToast('Gagal: ' + (r.error || 'Terjadi kesalahan sistem'), 'error');
                   }
               } catch(e) {
-                  alert('Error koneksi saat rename taxonomy.');
+                  if(window.showToast) window.showToast('Error koneksi saat rename taxonomy.', 'error');
               } finally {
                   this.isRenamingTaxonomy = false;
               }
@@ -325,7 +384,7 @@ export const editorPage = `
                   if (res.ok) {
                       if (this.deleteTargetType === 'category') {
                           this.uniqueCategories = this.uniqueCategories.filter(c => c !== item);
-                          if (this.form.category === item) this.form.category = 'Uncategorized';
+                          if (this.form.category === item) this.form.category = 'Berita';
                           this.managerItems = this.uniqueCategories.filter(c => c !== 'Uncategorized');
                       } else {
                           this.uniqueTags = this.uniqueTags.filter(t => t !== item);
@@ -336,23 +395,23 @@ export const editorPage = `
                           this.managerItems = this.uniqueTags;
                       }
                       this.showDeleteModal = false;
-                      alert('Berhasil menghapus ' + (this.deleteTargetType === 'category' ? 'kategori' : 'tag') + '!');
+                      if(window.showToast) window.showToast('Berhasil menghapus!', 'success');
                   } else {
                       const r = await res.json();
-                      alert('Gagal: ' + (r.error || 'Terjadi kesalahan sistem'));
+                      if(window.showToast) window.showToast('Gagal: ' + (r.error || 'Terjadi kesalahan sistem'), 'error');
                   }
               } catch(e) {
-                  alert('Error koneksi saat menghapus taxonomy.');
+                  if(window.showToast) window.showToast('Error koneksi saat menghapus taxonomy.', 'error');
               } finally {
                   this.isDeletingTaxonomy = false;
               }
           },
 
-          openMediaForEditor() {
+          openMediaForEditor(e) {
               const v = (typeof this.view !== 'undefined' ? this.view : (typeof view !== 'undefined' ? view : ''));
               if (v !== 'add' && v !== 'edit') return;
+              this.mediaSelectorTarget = (e && e.detail && e.detail.target) ? e.detail.target : 'custom-editor';
               this.openMediaSelector();
-              this.mediaSelectorTarget = 'custom-editor';
           },
 
           initEditor() {
@@ -361,17 +420,19 @@ export const editorPage = `
 
           async save() {
               const currentContent = this.form.body || '';
+              this.form.slug = this.form.slug || this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              
               const payload = JSON.parse(JSON.stringify({
                   id: this.editingId || undefined,
                   title: this.form.title || '',
-                  slug: this.form.slug || this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
+                  slug: this.form.slug,
                   body: currentContent,
                   excerpt: this.form.excerpt || '',
                   meta_title: this.form.meta_title || '',
                   meta_description: this.form.meta_description || '',
                   og_image: this.form.og_image || '',
                   status: this.form.status || 'publish',
-                  category: this.form.category || 'Uncategorized',
+                  category: this.form.category || 'Berita',
                   tags: this.form.tags || '',
                   featured_image: this.form.featured_image || '',
                   featured_image_caption: this.form.featured_image_caption || '',
@@ -400,32 +461,37 @@ export const editorPage = `
                    });
                    this.isSaving = false;
                    if(res.ok) { 
+                       const r = await res.json();
                        this.saveSuccess = true; 
-                       try {
-                           const curatingQueueId = sessionStorage.getItem('curating_newsroom_queue_id');
-                           if (curatingQueueId) {
-                               fetch('/api/addons/newsroom/queue/' + curatingQueueId + '/resolve', {
-                                   method: 'POST',
-                                   headers: { 'Authorization': 'Bearer ' + token }
-                               }).catch(e => console.error('Error resolving curation queue:', e));
-                               sessionStorage.removeItem('curating_newsroom_queue_id');
-                           }
-                       } catch(e) {}
                        
-                       setTimeout(() => { 
-                           window.location.href = '/admin#posts'; 
-                           window.location.reload(); 
-                       }, 700); 
+                       const newId = r.id || this.editingId;
+                       if (newId) {
+                           this.editingId = newId;
+                           if (typeof window !== 'undefined') {
+                               window.editingId = newId;
+                               if (window.history && window.history.replaceState) {
+                                   window.history.replaceState(null, '', '#edit-' + newId);
+                               }
+                           }
+                       }
+                       
+                       if (typeof window !== 'undefined' && window.showToast) {
+                           window.showToast('Artikel berhasil disimpan!', 'success', 4000);
+                       }
                    } 
                    else { 
-                       const r = await res.json(); 
+                       const r = await res.json().catch(() => ({})); 
                        this.saveError = r.error || 'Gagal menyimpan.';
-                       alert('Gagal: ' + this.saveError); 
+                       if (typeof window !== 'undefined' && window.showToast) {
+                           window.showToast('Gagal: ' + this.saveError, 'error', 5000);
+                       }
                    }
               } catch(err) { 
                    this.isSaving = false;
-                   this.saveError = 'Error koneksi.';
-                   alert('Error koneksi.'); 
+                   this.saveError = err?.message || 'Error koneksi.';
+                   if (typeof window !== 'undefined' && window.showToast) {
+                       window.showToast('Error: ' + this.saveError, 'error', 5000);
+                   }
               }
           },
 
@@ -492,11 +558,318 @@ export const editorPage = `
               }
               const temp = document.createElement('div');
               temp.innerHTML = this.form.body || '';
-              const plain = (temp.innerText || temp.textContent || '').replace(/\s+/g, ' ').trim();
+              const plain = (temp.innerText || temp.textContent || '').replace(/\\s+/g, ' ').trim();
               if (plain) {
-                  const snippet = plain.slice(0, 160);
+                  let snippet = plain.slice(0, 157);
+                  if (plain.length > 157) {
+                      const lastSpace = snippet.lastIndexOf(' ');
+                      if (lastSpace > 0) snippet = snippet.slice(0, lastSpace);
+                      snippet += '...';
+                  }
                   this.form.excerpt = snippet;
                   this.form.meta_description = snippet;
+              }
+          },
+
+          getSeoAnalysis() {
+              var score = 0;
+              var checks = [];
+
+              // 1. Judul Utama (15 pt)
+              var title = (this.form.title || '').trim();
+              var titleLen = title.length;
+              var titlePass = titleLen >= 20 && titleLen <= 100;
+              if (titlePass) score += 15;
+              checks.push({
+                  name: 'Judul Utama (Title)',
+                  desc: titleLen ? (titleLen + ' karakter (ideal: 20-100)') : 'Belum diisi',
+                  pass: titlePass,
+                  pts: 15
+              });
+
+              // 2. Meta Title Google (15 pt)
+              var metaTitle = (this.form.meta_title || '').trim();
+              var metaTitleLen = metaTitle.length;
+              var metaTitlePass = metaTitleLen >= 30 && metaTitleLen <= 65;
+              if (metaTitlePass) score += 15;
+              checks.push({
+                  name: 'Meta Title Google',
+                  desc: metaTitleLen ? (metaTitleLen + ' karakter (ideal: 30-65)') : 'Belum diisi',
+                  pass: metaTitlePass,
+                  pts: 15
+              });
+
+              // 3. Meta Description (15 pt)
+              var metaDesc = (this.form.meta_description || '').trim();
+              var metaDescLen = metaDesc.length;
+              var metaDescPass = metaDescLen >= 80 && metaDescLen <= 160;
+              if (metaDescPass) score += 15;
+              checks.push({
+                  name: 'Meta Description',
+                  desc: metaDescLen ? (metaDescLen + ' karakter (ideal: 80-160)') : 'Belum diisi',
+                  pass: metaDescPass,
+                  pts: 15
+              });
+
+              // 4. Excerpt Ringkasan (10 pt)
+              var excerpt = (this.form.excerpt || '').trim();
+              var excerptLen = excerpt.length;
+              var excerptPass = excerptLen >= 30 && excerptLen <= 220;
+              if (excerptPass) score += 10;
+              checks.push({
+                  name: 'Ringkasan (Excerpt)',
+                  desc: excerptLen ? (excerptLen + ' karakter (ideal: 30-220)') : 'Belum diisi',
+                  pass: excerptPass,
+                  pts: 10
+              });
+
+              // Konten Body
+              var bodyHtml = this.form.body || '';
+              var plain = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
+              var words = plain ? plain.split(/\\s+/).filter(Boolean) : [];
+              var wordCount = words.length;
+
+              // 5. Panjang Konten (15 pt)
+              var contentPass = wordCount >= 150;
+              if (contentPass) score += 15;
+              checks.push({
+                  name: 'Panjang Konten Artikel',
+                  desc: wordCount + ' kata (ideal: minimal 150 kata)',
+                  pass: contentPass,
+                  pts: 15
+              });
+
+              // 6. Sub-Heading H2/H3 (10 pt) - untuk artikel pendek < 250 kata tidak diwajibkan sub-heading
+              var hasHeading = /<h[23][^>]*>/i.test(bodyHtml);
+              var headingPass = wordCount < 250 || hasHeading;
+              if (headingPass) score += 10;
+              checks.push({
+                  name: 'Sub-Heading (H2/H3)',
+                  desc: hasHeading ? 'Sub-heading ditemukan' : (wordCount < 250 ? 'Artikel ringkas (<250 kata), sub-heading opsional' : 'Gunakan H2 untuk membagi topik (~1 per 300 kata)'),
+                  pass: headingPass,
+                  pts: 10
+              });
+
+              // 7. Kerapian Paragraf (10 pt)
+              var pMatches = bodyHtml.match(/<p[^>]*>[\\s\\S]*?<\\/p>/gi) || [];
+              var pCount = pMatches.length;
+              var avgWords = pCount > 0 ? (wordCount / pCount) : 0;
+              var pPass = pCount >= 1 && (avgWords <= 90 || wordCount < 100);
+              if (pPass) score += 10;
+              checks.push({
+                  name: 'Kerapian Paragraf (Readability)',
+                  desc: pCount + ' paragraf (rata-rata ' + Math.round(avgWords) + ' kata/paragraf, max 90)',
+                  pass: pPass,
+                  pts: 10
+              });
+
+              // 8. Featured Image (10 pt)
+              var imgPass = !!this.form.featured_image;
+              if (imgPass) score += 10;
+              checks.push({
+                  name: 'Gambar Utama (Featured Image)',
+                  desc: imgPass ? 'Gambar utama telah dipilih' : 'Belum memilih gambar utama',
+                  pass: imgPass,
+                  pts: 10
+              });
+
+              score = Math.min(100, Math.max(0, score));
+
+              // Warna & Kategori
+              var color = '#ef4444'; // Red < 50
+              var bg = '#fef2f2';
+              var border = '#fca5a5';
+              var statusText = 'SEO Kurang Optimal';
+              var badgeBg = '#fee2e2';
+
+              if (score === 100) {
+                  color = '#059669'; // Emerald Solid Sempurna
+                  bg = '#ecfdf5';
+                  border = '#34d399';
+                  statusText = 'SEO 100% Sempurna! Siap Terbit 🏆';
+                  badgeBg = '#d1fae5';
+              } else if (score >= 80) {
+                  color = '#10b981'; // Green
+                  bg = '#f0fdf4';
+                  border = '#86efac';
+                  statusText = 'SEO Sangat Baik';
+                  badgeBg = '#dcfce7';
+              } else if (score >= 50) {
+                  color = '#f59e0b'; // Orange
+                  bg = '#fffbeb';
+                  border = '#fde68a';
+                  statusText = 'SEO Cukup (Bisa Ditingkatkan)';
+                  badgeBg = '#fef3c7';
+              }
+
+              return {
+                  score: score,
+                  color: color,
+                  bg: bg,
+                  border: border,
+                  statusText: statusText,
+                  badgeBg: badgeBg,
+                  isPerfect: score === 100,
+                  checks: checks
+              };
+          },
+
+          getSeo() {
+              return this.getSeoAnalysis();
+          },
+
+          sanitizeTags(tagStr) {
+              if (!tagStr) return '';
+              var raw = tagStr.split(/[,;\\n]+/).map(function(t) {
+                  return t.trim().replace(/^[#\\s*_-]+|[#\\s*_-]+$/g, '');
+              }).filter(function(t) { return t && t.length >= 2; });
+              var limited = [];
+              for (var i = 0; i < raw.length; i++) {
+                  var words = raw[i].split(/\\s+/).filter(Boolean);
+                  var shortTag = words.slice(0, 3).join(' ');
+                  if (shortTag && !limited.includes(shortTag)) {
+                      limited.push(shortTag);
+                  }
+                  if (limited.length >= 3) break;
+              }
+              return limited.join(', ');
+          },
+
+          async generateSingleMeta(field) {
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
+              if (!title && !body) {
+                  if (window.showToast) window.showToast('Isi judul atau naskah artikel terlebih dahulu!', 'warning');
+                  
+                  return;
+              }
+
+              if (field === 'meta_title') this.isGeneratingMetaTitle = true;
+              else if (field === 'meta_description') this.isGeneratingMetaDesc = true;
+              else if (field === 'excerpt') this.isGeneratingExcerpt = true;
+
+              try {
+                  var res = await fetch('/api/ai/meta-field', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ field: field, title: title, content: body })
+                  });
+                  var json = await res.json();
+                  if (!res.ok || json.error) throw new Error(json.error || 'Gagal generate');
+
+                  if (field === 'meta_title' && json.value) {
+                      this.form.meta_title = json.value;
+                      if (window.showToast) window.showToast('✨ Meta Title berhasil digenerate!', 'success');
+                  } else if (field === 'meta_description' && json.value) {
+                      this.form.meta_description = json.value;
+                      if (window.showToast) window.showToast('✨ Meta Description berhasil digenerate!', 'success');
+                  } else if (field === 'excerpt' && json.value) {
+                      this.form.excerpt = json.value;
+                      if (window.showToast) window.showToast('✨ Excerpt ringkasan berhasil digenerate!', 'success');
+                  }
+              } catch (err) {
+                  console.error('[AI Meta Field Error]', err);
+                  if (window.showToast) window.showToast('Gagal generate: ' + (err.message || 'Error'), 'error');
+                  
+              } finally {
+                  if (field === 'meta_title') this.isGeneratingMetaTitle = false;
+                  else if (field === 'meta_description') this.isGeneratingMetaDesc = false;
+                  else if (field === 'excerpt') this.isGeneratingExcerpt = false;
+              }
+          },
+
+          async generateSeoWithAi() {
+              if (this.isGeneratingSeo) return;
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
+              if (!title && !body) {
+                  if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
+                  
+                  return;
+              }
+
+              this.isGeneratingSeo = true;
+              try {
+                  var res = await fetch('/api/ai/seo-metadata', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: title, content: body })
+                  });
+                  var json = await res.json();
+                  if (!res.ok || json.error) throw new Error(json.error || 'Gagal generate SEO');
+
+                  var d = json.data || {};
+                  if (d.meta_title) this.form.meta_title = d.meta_title;
+                  if (d.meta_description) this.form.meta_description = d.meta_description;
+                  if (d.excerpt) this.form.excerpt = d.excerpt;
+                  if (d.suggested_tags) {
+                      var combined = (this.form.tags ? this.form.tags + ', ' : '') + d.suggested_tags;
+                      this.form.tags = this.sanitizeTags(combined);
+                  }
+
+                  if (window.showToast) {
+                      window.showToast('✨ Metadata SEO berhasil dibuat optimal dengan AI!', 'success');
+                  }
+              } catch (err) {
+                  console.error('[AI SEO Error]', err);
+                  if (window.showToast) {
+                      window.showToast('Gagal generate SEO: ' + (err.message || 'Error'), 'error');
+                  } else {
+                      if(window.showToast) window.showToast('Gagal generate SEO: ' + (err.message || 'Error'), 'error');
+                  }
+              } finally {
+                  this.isGeneratingSeo = false;
+              }
+          },
+
+          async fullAiOptimize() {
+              if (this.isOptimizingFull) return;
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
+              if (!title && !body) {
+                  if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
+                  
+                  return;
+              }
+
+              this.isOptimizingFull = true;
+              try {
+                  var res = await fetch('/api/ai/optimize', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ title: title, content: body })
+                  });
+                  var json = await res.json();
+                  if (!res.ok || json.error) throw new Error(json.error || 'Gagal optimasi');
+
+                  var d = json.data || {};
+                  if (d.content) {
+                      this.form.body = d.content;
+                      var editorEl = document.querySelector('[x-ref=\\'editor\\']');
+                      if (editorEl) editorEl.innerHTML = d.content;
+                      var htmlEl = document.querySelector('[x-ref=\\'htmlSource\\']');
+                      if (htmlEl) htmlEl.value = d.content;
+                  }
+                  if (d.meta_title) this.form.meta_title = d.meta_title;
+                  if (d.meta_description) this.form.meta_description = d.meta_description;
+                  if (d.excerpt) this.form.excerpt = d.excerpt;
+                  if (d.suggested_tags) {
+                      var combined = (this.form.tags ? this.form.tags + ', ' : '') + d.suggested_tags;
+                      this.form.tags = this.sanitizeTags(combined);
+                  }
+
+                  if (window.showToast) {
+                      window.showToast('🚀 Optimasi SEO Komplit Selesai! Skor SEO Anda kini maksimal.', 'success');
+                  }
+              } catch (err) {
+                  console.error('[AI Full Optimize Error]', err);
+                  if (window.showToast) {
+                      window.showToast('Gagal optimasi SEO: ' + (err.message || 'Error'), 'error');
+                  } else {
+                      if(window.showToast) window.showToast('Gagal optimasi SEO: ' + (err.message || 'Error'), 'error');
+                  }
+              } finally {
+                  this.isOptimizingFull = false;
               }
           },
           addTag(t) {

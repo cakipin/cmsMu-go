@@ -405,7 +405,8 @@ if (typeof window !== 'undefined') {
             },
             cleanTitle(str) {
                 if (!str) return '';
-                return str
+                return String(str)
+                    .replace(/<[^>]+>/g, '')
                     .replace(/&#8216;/g, '‘')
                     .replace(/&#8217;/g, '’')
                     .replace(/&#8220;/g, '“')
@@ -413,7 +414,8 @@ if (typeof window !== 'undefined') {
                     .replace(/&#038;/g, '&')
                     .replace(/&amp;/g, '&')
                     .replace(/&quot;/g, '"')
-                    .replace(/&#039;/g, "'");
+                    .replace(/&#039;/g, "'")
+                    .trim();
             }
         };
     };
