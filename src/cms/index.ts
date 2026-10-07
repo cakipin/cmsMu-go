@@ -24,6 +24,7 @@ import statsRouter from './modules/stats/stats.router'; // Stats Tracker
 import notificationsRouter from './modules/users/notifications.router'; // Notifications
 import { commentsRouter } from './modules/comments/comments.router';
 import { otaRouter } from './addons/ota/router';
+import { aiRouter } from './modules/ai/ai.router';
 
 // ADDONS
 // (All addons have been removed)
@@ -122,6 +123,7 @@ app.route('/api/comments', commentsRouter);
 app.route('/api/posts', postsRouter);
 app.route('/api/pages', pagesRouter); // Route API Pages
 app.route('/api/theme-editor', themeEditorRouter); // Endpoint Editor Puck
+app.route('/api/ai', aiRouter);
 
 // Catch-all admin view (setelah spesifik routes)
 app.get('/admin/:view', (c) => c.html(renderAdmin({ view: c.req.param('view') })));
