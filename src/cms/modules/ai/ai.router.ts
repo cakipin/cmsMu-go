@@ -95,7 +95,25 @@ function heuristicTidyContent(rawHtml: string): string {
         }
     }
 
-    return cleanedBlocks.join('\n\n') || '<p><br></p>';
+    let finalHtml = cleanedBlocks.join('\n\n') || '<p><br></p>';
+
+    // Fallback cerdas: Jika artikel cukup panjang (>= 250 kata) dan belum memiliki <h2> atau <h3>,
+    // sisipkan sub-heading <h2> kontekstual di sekitar pertengahan artikel agar memenuhi standar SEO
+    if (totalWords >= 250 && !/<h[23][^>]*>/i.test(finalHtml)) {
+        const pTags = finalHtml.match(/<p>[\s\S]*?<\/p>/gi) || [];
+        if (pTags.length >= 3) {
+            const midpoint = Math.floor(pTags.length / 2);
+            let headingText = 'Sorotan & Poin Utama';
+            if (rawHtml.toLowerCase().includes('lansia') || rawHtml.toLowerCase().includes('kegiatan')) headingText = 'Aktivitas & Peran Penting';
+            else if (rawHtml.toLowerCase().includes('program') || rawHtml.toLowerCase().includes('tujuan')) headingText = 'Tujuan & Dampak Program';
+            else if (rawHtml.toLowerCase().includes('harapan') || rawHtml.toLowerCase().includes('pesan')) headingText = 'Pesan & Harapan ke Depan';
+
+            pTags.splice(midpoint, 0, `<h2>${headingText}</h2>`);
+            finalHtml = pTags.join('\n\n');
+        }
+    }
+
+    return finalHtml;
 }
 
 /**

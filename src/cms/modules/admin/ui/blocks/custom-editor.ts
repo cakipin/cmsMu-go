@@ -826,9 +826,13 @@ function customEditorLogic() {
             this.isAiTidying = true;
             try {
                 var title = (this.form && this.form.title) ? this.form.title : '';
+                var token = (typeof window !== 'undefined' && window.getCmsToken) ? window.getCmsToken() : '';
                 var res = await fetch('/api/ai/tidy-content', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer ' + token
+                    },
                     body: JSON.stringify({ content: raw, title: title })
                 });
 

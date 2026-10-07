@@ -749,9 +749,13 @@ export const editorPage = `
               else if (field === 'excerpt') this.isGeneratingExcerpt = true;
 
               try {
+                  var token = this.getToken();
                   var res = await fetch('/api/ai/meta-field', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ' + token
+                      },
                       body: JSON.stringify({ field: field, title: title, content: body })
                   });
                   var json = await res.json();
@@ -790,9 +794,13 @@ export const editorPage = `
 
               this.isGeneratingSeo = true;
               try {
+                  var token = this.getToken();
                   var res = await fetch('/api/ai/seo-metadata', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ' + token
+                      },
                       body: JSON.stringify({ title: title, content: body })
                   });
                   var json = await res.json();
@@ -834,9 +842,13 @@ export const editorPage = `
 
               this.isOptimizingFull = true;
               try {
+                  var token = this.getToken();
                   var res = await fetch('/api/ai/optimize', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                          'Content-Type': 'application/json',
+                          'Authorization': 'Bearer ' + token
+                      },
                       body: JSON.stringify({ title: title, content: body })
                   });
                   var json = await res.json();
@@ -845,10 +857,16 @@ export const editorPage = `
                   var d = json.data || {};
                   if (d.content) {
                       this.form.body = d.content;
-                      var editorEl = document.querySelector('[x-ref=\\'editor\\']');
-                      if (editorEl) editorEl.innerHTML = d.content;
-                      var htmlEl = document.querySelector('[x-ref=\\'htmlSource\\']');
-                      if (htmlEl) htmlEl.value = d.content;
+                      var editorEls = document.querySelectorAll('.modern-editor-content');
+                      for (var ei = 0; ei < editorEls.length; ei++) {
+                          editorEls[ei].innerHTML = d.content;
+                          editorEls[ei].dispatchEvent(new Event('input', { bubbles: true }));
+                      }
+                      var htmlEls = document.querySelectorAll('textarea[x-ref="htmlSource"]');
+                      for (var hi = 0; hi < htmlEls.length; hi++) {
+                          htmlEls[hi].value = d.content;
+                          htmlEls[hi].dispatchEvent(new Event('input', { bubbles: true }));
+                      }
                   }
                   if (d.meta_title) this.form.meta_title = d.meta_title;
                   if (d.meta_description) this.form.meta_description = d.meta_description;
