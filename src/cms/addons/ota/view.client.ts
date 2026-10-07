@@ -12,6 +12,13 @@ if (typeof window !== 'undefined') {
             showManualModal: false,
             autoUpdateEnabled: true,
             isTogglingAutoUpdate: false,
+            hasDeployHook: false,
+            deployHookMasked: '',
+            deployHookInput: '',
+            isSavingDeployHook: false,
+            isTriggeringDeploy: false,
+            showDeployHookGuide: false,
+            showDeployHookInput: false,
             isHub: false,
             hasUpdate: false,
             updateInfo: null,
@@ -189,6 +196,7 @@ if (typeof window !== 'undefined') {
             async init() {
                 await this.detectMode();
                 await this.loadConfig();
+                await this.loadDeployHook();
                 await this.loadStatus(false);
                 if (this.isHub) {
                     await this.loadReleases();
@@ -247,6 +255,9 @@ if (typeof window !== 'undefined') {
                         const json = await res.json();
                         this.updateInfo = json.data;
                         this.hasUpdate = !!json.data?.hasCoreUpdate;
+                        if (json.data?.hasDeployHook !== undefined) {
+                            this.hasDeployHook = !!json.data.hasDeployHook;
+                        }
 
                         // Kirim heartbeat / pendaftaran klien ke Hub secara non-blocking
                         if (!this.isHub) {
@@ -342,16 +353,25 @@ if (typeof window !== 'undefined') {
                         const json = await res.json();
                         this.showApplyModal = false;
                         this.hasUpdate = false;
+                        const isDeployTriggered = !!json.deployTriggered || !!(json.data && json.data.deployTriggered);
                         this.updateReport = {
                             version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || '0.1.3',
                             schemaVersion: (json.data && json.data.schemaVersion) || '0.1.0',
                             appliedCount: json.data?.appliedCount ?? 0,
                             history: json.data?.history || [],
-                            components: json.data?.updatedComponents || this.defaultUpdatedComponents
+                            components: json.data?.updatedComponents || this.defaultUpdatedComponents,
+                            deployTriggered: isDeployTriggered,
+                            hasDeployHook: !!json.hasDeployHook || !!(json.data && json.data.hasDeployHook) || this.hasDeployHook,
+                            message: json.message || '',
+                            warning: json.warning || ''
                         };
                         this.showReportModal = true;
                         if (window.showToast) {
-                            window.showToast(json.message || 'Pembaruan sistem berhasil diterapkan!', 'success');
+                            if (json.warning) {
+                                window.showToast((json.message || 'Pembaruan skema berhasil.') + ' ' + json.warning, 'warning');
+                            } else {
+                                window.showToast(json.message || 'Pembaruan sistem berhasil diterapkan!', 'success');
+                            }
                         }
 
                         // Laporkan keberhasilan update ke Hub
@@ -590,6 +610,115 @@ if (typeof window !== 'undefined') {
                         }
                     }
                 } catch(e) {}
+                await this.loadDeployHook();
+            },
+
+            async loadDeployHook() {
+                try {
+                    const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+                    const res = await fetch('/api/addons/ota/deploy-hook', {
+                        headers: { 'Authorization': 'Bearer ' + token }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.hasDeployHook = !!json.data?.configured;
+                        this.deployHookMasked = json.data?.masked || '';
+                    }
+                } catch(e) {
+                    console.error('Gagal memuat status deploy hook:', e);
+                }
+            },
+
+            async saveDeployHook() {
+                if (!this.deployHookInput && !this.deployHookMasked) {
+                    if (window.showToast) window.showToast('Masukkan URL Deploy Hook Cloudflare Pages terlebih dahulu!', 'warning');
+                    return;
+                }
+                this.isSavingDeployHook = true;
+                try {
+                    const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+                    const res = await fetch('/api/addons/ota/deploy-hook', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ deploy_hook_url: this.deployHookInput })
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        this.deployHookInput = '';
+                        await this.loadDeployHook();
+                        if (window.showToast) {
+                            window.showToast(json.message || 'Deploy Hook berhasil disimpan!', 'success');
+                        }
+                    } else {
+                        const err = await res.json().catch(function() { return {}; });
+                        if (window.showToast) {
+                            window.showToast(err.error || 'Gagal menyimpan Deploy Hook.', 'error');
+                        }
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                } finally {
+                    this.isSavingDeployHook = false;
+                }
+            },
+
+            async removeDeployHook() {
+                this.isSavingDeployHook = true;
+                try {
+                    const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+                    const res = await fetch('/api/addons/ota/deploy-hook', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ deploy_hook_url: '' })
+                    });
+                    if (res.ok) {
+                        this.deployHookInput = '';
+                        this.deployHookMasked = '';
+                        this.hasDeployHook = false;
+                        if (window.showToast) {
+                            window.showToast('Deploy Hook berhasil dihapus.', 'info');
+                        }
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                } finally {
+                    this.isSavingDeployHook = false;
+                }
+            },
+
+            async triggerDeployTest() {
+                this.isTriggeringDeploy = true;
+                try {
+                    const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
+                    const res = await fetch('/api/addons/ota/trigger-deploy', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': 'Bearer ' + token,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (window.showToast) {
+                            window.showToast(json.message || 'Sinyal Deploy Hook berhasil dikirim!', 'success');
+                        }
+                    } else {
+                        const err = await res.json().catch(function() { return {}; });
+                        if (window.showToast) {
+                            window.showToast(err.error || 'Gagal memicu build Cloudflare Pages.', 'error');
+                        }
+                    }
+                } catch(e) {
+                    if (window.showToast) window.showToast('Error: ' + e.message, 'error');
+                } finally {
+                    this.isTriggeringDeploy = false;
+                }
             },
 
             async toggleAutoUpdate() {
@@ -640,8 +769,25 @@ if (typeof window !== 'undefined') {
                     if (res.ok) {
                         const json = await res.json();
                         this.showManualModal = false;
+                        const isDeployTriggered = !!json.deployTriggered || !!(json.data && json.data.deployTriggered);
+                        this.updateReport = {
+                            version: (json.data && json.data.coreVersion) || this.statusData?.activeManifestVersion || '0.1.3',
+                            schemaVersion: (json.data && json.data.schemaVersion) || '0.1.0',
+                            appliedCount: json.data?.appliedCount ?? 0,
+                            history: json.data?.history || [],
+                            components: json.data?.updatedComponents || this.defaultUpdatedComponents,
+                            deployTriggered: isDeployTriggered,
+                            hasDeployHook: !!json.hasDeployHook || !!(json.data && json.data.hasDeployHook) || this.hasDeployHook,
+                            message: json.message || '',
+                            warning: json.warning || ''
+                        };
+                        this.showReportModal = true;
                         if (window.showToast) {
-                            window.showToast(json.message || 'Pembaruan manual berhasil diterapkan!', 'success');
+                            if (json.warning) {
+                                window.showToast((json.message || 'Pembaruan manual selesai.') + ' ' + json.warning, 'warning');
+                            } else {
+                                window.showToast(json.message || 'Pembaruan manual berhasil diterapkan!', 'success');
+                            }
                         }
                         await this.loadStatus(false);
                         await this.checkUpdates(false);

@@ -696,22 +696,43 @@ otaRouter.post("/apply-update", async c => {
       } catch (_) {}
     }
 
-    // 3. Laporkan status updated ke Upstream Hub secara non-blocking
+    // 3. Periksa dan picu Cloudflare Deploy Hook jika terkonfigurasi
+    const deployHookInfo = await otaAddonService.getDeployHook(db);
+    let deployTriggered = false;
+
+    if (deployHookInfo.configured && deployHookInfo.hookUrl) {
+      const deployRes = await otaAddonService.triggerDeployHook(
+        deployHookInfo.hookUrl,
+        (c as any).executionCtx
+      );
+      deployTriggered = deployRes.success;
+    }
+
+    // 4. Laporkan status updated ke Upstream Hub secara non-blocking
     if (!isHubMode(url.host)) {
       try {
+        const rolloutStatus = "updated";
+        const errorReason = deployTriggered
+          ? null
+          : !deployHookInfo.configured
+            ? "Migrasi D1 selesai, Deploy Hook belum dipasang"
+            : null;
+
+        const payload = otaAddonService.createRolloutPayload(
+          baseUrl,
+          siteName,
+          targetVersion,
+          targetVersion,
+          rolloutStatus,
+          errorReason
+        );
+
         const reportPromise = fetch(
           `${DEFAULT_UPSTREAM_URL}/api/addons/ota/clients/report-status`,
           {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              client_url: baseUrl,
-              site_name: siteName,
-              installed_version: targetVersion,
-              target_version: targetVersion,
-              rollout_status: "updated",
-              error_reason: null,
-            }),
+            body: JSON.stringify(payload),
           }
         ).catch(() => {});
 
@@ -727,21 +748,38 @@ otaRouter.post("/apply-update", async c => {
     }
 
     let msg = "";
-    if (migrationResult.appliedCount > 0) {
-      msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1 dan memperbarui core ke v${targetVersion}!`;
+    let warning: string | undefined = undefined;
+
+    if (deployTriggered) {
+      msg = `Migrasi skema D1 selesai & Cloudflare Pages sedang melakukan build ulang sistem secara otomatis ke v${targetVersion}!`;
+    } else if (deployHookInfo.configured) {
+      msg = `Migrasi skema D1 selesai ke v${targetVersion}. Sinyal Deploy Hook gagal dikirimkan; periksa konektivitas webhook Cloudflare.`;
+      warning =
+        "Sinyal Deploy Hook Cloudflare gagal merespons. Periksa URL webhook Anda.";
     } else {
-      msg = `Sistem berhasil diselaraskan dan diperbarui ke versi v${targetVersion}!`;
+      if (migrationResult.appliedCount > 0) {
+        msg = `Berhasil menerapkan ${migrationResult.appliedCount} migrasi skema database D1 untuk v${targetVersion}!`;
+      } else {
+        msg = `Skema database berhasil diselaraskan ke versi v${targetVersion}!`;
+      }
+      warning =
+        "Deploy Hook belum dikonfigurasi. Kode backend serverless Worker memerlukan rebuild / deploy ulang manual di Cloudflare Pages agar fitur baru aktif sepenuhnya.";
     }
 
     return c.json({
       success: true,
       message: msg,
+      warning,
+      deployTriggered,
+      hasDeployHook: deployHookInfo.configured,
       data: {
         coreVersion: targetVersion,
         schemaVersion: migrationResult.currentVersion,
         appliedCount: migrationResult.appliedCount,
         history: migrationResult.history,
         isManual,
+        deployTriggered,
+        hasDeployHook: deployHookInfo.configured,
         updatedComponents: DEFAULT_UPDATED_COMPONENTS,
       },
     });
@@ -1024,14 +1062,9 @@ otaRouter.post("/trigger-deploy", async c => {
         { success: false, error: "Database binding tidak ditemukan" },
         500
       );
-    const row: any = await db
-      .prepare(
-        "SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1"
-      )
-      .first();
-    const hookUrl = row?.value ? row.value.trim() : "";
+    const deployHookInfo = await otaAddonService.getDeployHook(db);
 
-    if (!hookUrl) {
+    if (!deployHookInfo.configured || !deployHookInfo.hookUrl) {
       return c.json(
         {
           success: false,
@@ -1042,8 +1075,12 @@ otaRouter.post("/trigger-deploy", async c => {
       );
     }
 
-    const res = await fetch(hookUrl, { method: "POST" });
-    if (res.ok) {
+    const deployRes = await otaAddonService.triggerDeployHook(
+      deployHookInfo.hookUrl,
+      (c as any).executionCtx
+    );
+
+    if (deployRes.success) {
       return c.json({
         success: true,
         message:
@@ -1053,7 +1090,9 @@ otaRouter.post("/trigger-deploy", async c => {
       return c.json(
         {
           success: false,
-          error: `Deploy Hook gagal merespons (HTTP ${res.status}). Pastikan URL Deploy Hook Cloudflare Anda valid.`,
+          error:
+            deployRes.error ||
+            "Deploy Hook gagal merespons. Pastikan URL Deploy Hook Cloudflare Anda valid.",
         },
         500
       );

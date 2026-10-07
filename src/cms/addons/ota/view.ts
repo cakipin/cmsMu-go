@@ -8,6 +8,35 @@ import { otaManagerScript } from "./view.client";
 import { otaReportModal } from "./report.modal";
 import { CORE_VERSION } from "./services/ota.service";
 
+const enhancedOtaReportModal = otaReportModal
+  .replace(
+    `<span>Kode & DB Sinkron</span>`,
+    `<span x-text="updateReport?.deployTriggered ? 'Worker Rebuild Berjalan' : (updateReport?.hasDeployHook ? 'Kode & DB Sinkron' : 'Menunggu Rebuild Worker')">Kode & DB Sinkron</span>`
+  )
+  .replace(
+    `<!-- Petunjuk Pasca Pembaruan -->`,
+    `<!-- Status Rebuild Cloudflare Pages -->
+            <template x-if="updateReport?.deployTriggered">
+                <div class="p-3.5 bg-teal-50 border border-teal-200 rounded-xl text-teal-900 text-[11px] leading-relaxed flex items-start gap-2.5">
+                    <i class="fas fa-rocket text-teal-600 mt-0.5 text-sm"></i>
+                    <div>
+                        <strong class="font-bold block mb-0.5">Cloudflare Pages Rebuild Terpicu Otomatis 🚀</strong>
+                        <span>Sinyal Deploy Hook berhasil dikirim. Cloudflare Pages sedang mengompilasi ulang bundle Worker di latar belakang. Fitur baru serverless akan aktif dalam 1-2 menit.</span>
+                    </div>
+                </div>
+            </template>
+            <template x-if="!updateReport?.deployTriggered">
+                <div class="p-3.5 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-[11px] leading-relaxed flex items-start gap-2.5">
+                    <i class="fas fa-exclamation-triangle text-amber-600 mt-0.5 text-sm"></i>
+                    <div>
+                        <strong class="font-bold block mb-0.5">Deploy Hook Belum Dipasang ⚠️</strong>
+                        <span>Migrasi skema database D1 telah diterapkan dengan sukses. Namun kode serverless Worker belum diperbarui secara otomatis. Silakan pasang Deploy Hook di menu pengaturan atau lakukan redeploy manual di Cloudflare Pages.</span>
+                    </div>
+                </div>
+            </template>
+            <!-- Petunjuk Pasca Pembaruan -->`
+  );
+
 export const otaView = `
 <div class="animate-fade" style="padding-bottom:60px;" x-data="otaManagerData()">
     <!-- Header Section -->
@@ -599,6 +628,111 @@ export const otaView = `
                     </div>
                 </div>
             </div>
+
+            <!-- CLOUDFLARE PAGES DEPLOY HOOK AUTOMATION CARD -->
+            <div class="bg-white rounded-xl border border-slate-200 shadow-xs p-5 sm:p-6">
+                <div class="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                    <div class="flex items-start gap-3.5">
+                        <div class="w-10 h-10 rounded-xl bg-orange-50 text-orange-600 flex items-center justify-center shrink-0 shadow-xs text-lg">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                        </div>
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <h3 class="text-sm font-bold text-slate-800 m-0">Otomasi Pembaruan Serverless (Cloudflare Pages Deploy Hook)</h3>
+                                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold border" 
+                                      :class="hasDeployHook ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-amber-50 text-amber-700 border-amber-200'"
+                                      x-text="hasDeployHook ? 'Terhubung (Otomatis 100%)' : 'Belum Dikonfigurasi'">Belum Dikonfigurasi</span>
+                            </div>
+                            <p class="text-xs text-slate-500 m-0 mt-1 max-w-xl leading-relaxed">
+                                Kode backend serverless Cloudflare Pages bersifat <em>immutable bundle</em>. Agar pembaruan core backend, API router, dan tema langsung aktif saat memperbarui, pasang URL Deploy Hook Cloudflare Pages di bawah ini.
+                            </p>
+                        </div>
+                    </div>
+
+                    <button type="button" @click="showDeployHookGuide = !showDeployHookGuide"
+                            class="px-3 py-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-all shrink-0 self-start shadow-2xs">
+                        <i class="fas fa-book text-slate-400"></i>
+                        <span x-text="showDeployHookGuide ? 'Tutup Panduan' : 'Panduan Setup'">Panduan Setup</span>
+                    </button>
+                </div>
+
+                <!-- Input & Action Section -->
+                <div class="mt-5 pt-4 border-t border-slate-100">
+                    <template x-if="hasDeployHook && !showDeployHookInput">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                            <div class="flex items-center gap-2.5 overflow-hidden">
+                                <span class="w-2 h-2 rounded-full bg-emerald-500 shrink-0"></span>
+                                <span class="text-xs text-slate-500 shrink-0">URL Hook Aktif:</span>
+                                <code class="text-xs font-mono font-bold text-slate-800 truncate" x-text="deployHookMasked">https://api.cloudflare.com/...</code>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <button type="button" @click="triggerDeployTest()" :disabled="isTriggeringDeploy"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 flex items-center gap-1.5 cursor-pointer shadow-2xs transition-all">
+                                    <i class="fas" :class="isTriggeringDeploy ? 'fa-spinner fa-spin text-teal-600' : 'fa-play text-emerald-600'"></i>
+                                    <span>Uji Trigger Build</span>
+                                </button>
+                                <button type="button" @click="showDeployHookInput = true"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-semibold bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 cursor-pointer shadow-2xs transition-all">
+                                    Ganti URL
+                                </button>
+                                <button type="button" @click="removeDeployHook()" :disabled="isSavingDeployHook"
+                                        class="px-3 py-1.5 rounded-lg text-xs font-semibold border border-rose-200 text-rose-600 hover:bg-rose-50 cursor-pointer transition-all">
+                                    Hapus
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!hasDeployHook || showDeployHookInput">
+                        <div class="space-y-3">
+                            <label class="block text-xs font-semibold text-slate-700">
+                                Cloudflare Pages Deploy Hook URL
+                            </label>
+                            <div class="flex flex-col sm:flex-row gap-2">
+                                <input type="url" x-model="deployHookInput" placeholder="https://api.cloudflare.com/client/v4/pages/projects/<project>/deploy_hooks/<id>"
+                                       class="flex-1 px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs font-mono focus:outline-teal-500 bg-slate-50/50">
+                                <div class="flex items-center gap-2 shrink-0">
+                                    <button type="button" @click="saveDeployHook()" :disabled="isSavingDeployHook"
+                                            class="px-4 py-2.5 rounded-xl text-xs font-semibold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-all flex items-center gap-2 cursor-pointer border-0">
+                                        <i class="fas" :class="isSavingDeployHook ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                                        <span>Simpan Hook</span>
+                                    </button>
+                                    <template x-if="hasDeployHook && showDeployHookInput">
+                                        <button type="button" @click="showDeployHookInput = false"
+                                                class="px-3 py-2.5 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-50 cursor-pointer">
+                                            Batal
+                                        </button>
+                                    </template>
+                                </div>
+                            </div>
+                            <p class="m-0 text-[11px] text-slate-400">
+                                Dapatkan URL Deploy Hook dari menu <em>Settings &gt; Builds &amp; deployments &gt; Deploy hooks</em> di proyek Cloudflare Pages Anda.
+                            </p>
+                        </div>
+                    </template>
+                </div>
+
+                <!-- Step-by-Step Guidance Box -->
+                <div x-show="showDeployHookGuide" class="mt-4 p-4 rounded-xl bg-slate-50 border border-slate-200/80 text-xs text-slate-600 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <h4 class="text-xs font-bold text-slate-800 m-0 flex items-center gap-1.5">
+                            <i class="fas fa-info-circle text-teal-600"></i>
+                            <span>Langkah Mudah Membuat Deploy Hook di Cloudflare Pages</span>
+                        </h4>
+                        <a href="/docs/OTA_CLOUDFLARE_DEPLOY_HOOK_GUIDE.md" target="_blank" class="text-[11px] font-semibold text-teal-600 hover:underline flex items-center gap-1">
+                            <span>Baca Dokumen Lengkap</span>
+                            <i class="fas fa-external-link-alt text-[9px]"></i>
+                        </a>
+                    </div>
+                    <ol class="m-0 pl-4 list-decimal space-y-1.5 text-[11px] text-slate-600 leading-relaxed">
+                        <li>Buka <a href="https://dash.cloudflare.com" target="_blank" class="text-teal-600 font-semibold hover:underline">Cloudflare Dashboard</a> dan masuk ke menu <strong>Workers &amp; Pages</strong>.</li>
+                        <li>Pilih proyek Cloudflare Pages situs CMSMu Anda.</li>
+                        <li>Klik tab <strong>Settings</strong> &gt; pilih sub-menu <strong>Builds &amp; deployments</strong> &gt; gulir ke bawah ke bagian <strong>Deploy hooks</strong>.</li>
+                        <li>Klik <strong>Add deploy hook</strong>, beri nama (misal: <code class="px-1 py-0.5 bg-white rounded border border-slate-200 font-mono">cmsmu-ota</code>), dan pilih branch <code class="px-1 py-0.5 bg-white rounded border border-slate-200 font-mono">main</code>.</li>
+                        <li>Salin URL webhook yang dihasilkan, tempelkan ke kolom input di atas, dan klik <strong>Simpan Hook</strong>.</li>
+                    </ol>
+                </div>
+            </div>
         </div>
     </template>
 
@@ -719,7 +853,7 @@ export const otaView = `
     <div x-show="showApplyModal" style="display:none;" 
          class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs transition-opacity"
          @keydown.escape.window="showApplyModal = false">
-        <div class="bg-white rounded-2xl max-w-md w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
+        <div class="bg-white rounded-2xl max-w-lg w-full shadow-2xl border border-slate-200 overflow-hidden transform transition-all"
              @click.outside="showApplyModal = false">
             <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-teal-50/50">
                 <div class="flex items-center gap-2">
@@ -728,27 +862,80 @@ export const otaView = `
                     </div>
                     <div>
                         <h3 class="text-sm font-bold text-slate-800 m-0">Terapkan Pembaruan CMSMu</h3>
-                        <span class="text-[11px] text-teal-700" x-text="'Target Versi: v' + (updateInfo?.latestVersion || '0.1.2')"></span>
+                        <span class="text-[11px] text-teal-700 font-mono" x-text="'Target Versi: v' + (updateInfo?.latestVersion || '0.1.2')"></span>
                     </div>
                 </div>
                 <button @click="showApplyModal = false" class="text-slate-400 hover:text-slate-600 border-0 bg-transparent cursor-pointer">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="p-6 text-xs text-slate-600 leading-relaxed space-y-3">
+            <div class="p-6 text-xs text-slate-600 leading-relaxed space-y-3.5">
                 <p class="m-0">Anda akan menerapkan pembaruan sistem ke versi <strong class="text-slate-900 font-bold" x-text="'v' + (updateInfo?.latestVersion || '0.1.2')">v0.1.2</strong>.</p>
                 <div class="p-3 bg-amber-50/70 rounded-xl border border-amber-200/70 text-amber-900">
                     <span class="font-bold block mb-1">Catatan Pembaruan (Changelog):</span>
                     <p class="m-0 text-[11px] leading-relaxed italic" x-text="updateInfo?.changelog || '-'"></p>
                 </div>
-                <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
-                    <span class="font-semibold text-slate-700 block mb-1">Aksi Pembaruan:</span>
-                    <ul class="m-0 pl-4 list-disc space-y-1 text-[11px] text-slate-600">
-                        <li>Penyelarasan otomatis migrasi skema database Cloudflare D1.</li>
-                        <li>Penyegaran status rilis core engine dan sinkronisasi manifest resmi.</li>
-                    </ul>
+
+                <!-- Arsitektur Pembaruan Hybrid (2 Bagian) -->
+                <div class="space-y-2">
+                    <span class="font-bold text-slate-800 block text-xs">Arsitektur Pembaruan Hybrid (2 Bagian):</span>
+                    
+                    <!-- Bagian 1: Database Schema (D1) -->
+                    <div class="p-3 rounded-xl border border-emerald-200/80 bg-emerald-50/50 flex items-start gap-3">
+                        <div class="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
+                            <i class="fas fa-database text-xs"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="font-bold text-emerald-950 text-xs">1. Skema Database (Cloudflare D1)</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">Otomatis 100%</span>
+                            </div>
+                            <p class="text-[11px] text-emerald-800 m-0 mt-0.5">
+                                Eksekusi auto-migration D1 seketika tanpa downtime untuk menyelaraskan tabel &amp; kolom terbaru.
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Bagian 2: Serverless Worker Code (Cloudflare Pages) -->
+                    <template x-if="hasDeployHook">
+                        <div class="p-3 rounded-xl border border-teal-200/80 bg-teal-50/50 flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-teal-100 text-teal-700 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fas fa-cloud-upload-alt text-xs"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-bold text-teal-950 text-xs">2. Kode Serverless (Cloudflare Pages)</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-100 text-teal-800">Deploy Hook Aktif</span>
+                                </div>
+                                <p class="text-[11px] text-teal-800 m-0 mt-0.5">
+                                    Webhook Deploy Hook akan dipicu otomatis setelah migrasi database selesai untuk mengompilasi ulang bundle Worker.
+                                </p>
+                            </div>
+                        </div>
+                    </template>
+
+                    <template x-if="!hasDeployHook">
+                        <div class="p-3 rounded-xl border border-amber-300 bg-amber-50/80 flex items-start gap-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center shrink-0 mt-0.5">
+                                <i class="fas fa-exclamation-triangle text-xs"></i>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center justify-between gap-2">
+                                    <span class="font-bold text-amber-950 text-xs">2. Kode Serverless (Cloudflare Pages)</span>
+                                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-200 text-amber-900">Perlu Setup Hook</span>
+                                </div>
+                                <p class="text-[11px] text-amber-800 m-0 mt-0.5 leading-relaxed">
+                                    <strong>Deploy Hook belum terpasang.</strong> Migrasi database D1 akan diterapkan, namun kode serverless Worker memerlukan rebuild / deploy ulang manual di Cloudflare Pages agar update aktif 100%.
+                                </p>
+                                <div class="mt-1.5">
+                                    <span class="text-[10px] text-amber-900 font-medium">💡 Tip: Pasang Deploy Hook di menu pengaturan agar pembaruan kode berjalan otomatis.</span>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
                 </div>
-                <p class="m-0 text-[11px] text-slate-400">Proses pembaruan skema berjalan aman tanpa downtime.</p>
+
+                <p class="m-0 text-[11px] text-slate-400">Proses pembaruan skema database berjalan aman tanpa downtime.</p>
             </div>
             <div class="px-6 py-4 border-t border-slate-100 bg-slate-50/50 flex justify-end gap-2.5">
                 <button @click="showApplyModal = false" class="px-4 py-2 rounded-xl text-xs font-semibold bg-white border border-slate-200 text-slate-600 hover:bg-slate-100 cursor-pointer">
@@ -871,7 +1058,7 @@ export const otaView = `
     </div>
 
     <!-- MODAL LAPORAN PEMBARUAN SISTEM (AUDIT REPORT) -->
-    ${otaReportModal}
+    ${enhancedOtaReportModal}
 
     <!-- SCRIPT CLIENT ALPINE LOGIC (SELF-CONTAINED) -->
     <script>
