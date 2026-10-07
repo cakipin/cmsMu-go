@@ -79,17 +79,19 @@ app.use("/api/*", async (c, next) => {
   const isWhitelisted =
     path.includes("/login") ||
     path.startsWith("/api/public") ||
-    path.startsWith("/api/setup") ||
     path.startsWith("/api/users/sso") ||
-    path.startsWith("/api/ota") ||
+    // OTA: Hanya izinkan manifest publik dan endpoint telemetri GET
+    path === "/api/ota/manifest" ||
     (method === "GET" && path.startsWith("/api/addons/ota")) ||
     path.startsWith("/api/addons/ota/clients/report-status") ||
     path.startsWith("/api/addons/ota/clients/register") ||
     path.startsWith("/api/addons/ota/clients/heartbeat") ||
-    path.startsWith("/api/addons/ota/git-push") ||
     path === "/api/health" ||
+    // Media: Kecualikan /api/media/setup dari whitelist publik!
     ((method === "GET" || method === "HEAD") &&
-      (path.startsWith("/api/media") ||
+      (path === "/api/media" ||
+        (path.startsWith("/api/media/") &&
+          !path.startsWith("/api/media/setup")) ||
         path.startsWith("/api/posts") ||
         path.startsWith("/api/pages") ||
         path.startsWith("/api/contents") ||

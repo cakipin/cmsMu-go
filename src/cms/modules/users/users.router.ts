@@ -63,7 +63,7 @@ usersRouter.post("/", adminOnlyMiddleware, async c => {
     if (!username || !password)
       return c.json({ error: "Username & Password wajib" }, 400);
 
-    const finalPass = password;
+    const finalPass = await sha256(password);
 
     const db = getDb(c.env.DB);
     const res = await db
@@ -414,7 +414,7 @@ usersRouter.post("/register", async c => {
       );
     }
 
-    const token = generateUserToken(createdUser);
+    const token = await generateUserToken(createdUser, getJwtSecret(c.env));
 
     return c.json({
       success: true,

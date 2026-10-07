@@ -3,6 +3,7 @@ import { getDb } from "../../db";
 import { mediaMeta } from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
 import { getStorageBucket } from "../../storage/r2-adapter";
+import { adminOnlyMiddleware } from "../../middleware/auth";
 
 type Bindings = {
   DB: D1Database;
@@ -22,8 +23,8 @@ const getBucket = (c: any) => {
   return getStorageBucket(c);
 };
 
-// 1. ENDPOINT SETUP (RESET & SYNC)
-mediaRouter.get("/setup", async c => {
+// 1. ENDPOINT SETUP (RESET & SYNC - ADMIN ONLY)
+mediaRouter.get("/setup", adminOnlyMiddleware, async c => {
   try {
     if (!c.env.DB) throw new Error(`DB Error! Binding 'DB' hilang.`);
     const r2 = getBucket(c);
