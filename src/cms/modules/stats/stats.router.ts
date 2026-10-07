@@ -62,7 +62,8 @@ statsRouter.get('/history', async (c) => {
             dailyStats: dailyStatsResults || []
         });
     } catch (e: any) {
-        return c.json({ error: e.message }, 500);
+        console.warn('[Stats History Warning]:', e.message);
+        return c.json({ visitors: [], dailyStats: [] });
     }
 });
 

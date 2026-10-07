@@ -25,6 +25,8 @@ import notificationsRouter from './modules/users/notifications.router'; // Notif
 import { commentsRouter } from './modules/comments/comments.router';
 import { otaRouter } from './addons/ota/router';
 import { aiRouter } from './modules/ai/ai.router';
+import agensRouter from './modules/agens/agens.router';
+import { subscribersRouter } from './modules/subscribers/subscribers.router';
 
 // ADDONS
 // (All addons have been removed)
@@ -124,6 +126,8 @@ app.route('/api/posts', postsRouter);
 app.route('/api/pages', pagesRouter); // Route API Pages
 app.route('/api/theme-editor', themeEditorRouter); // Endpoint Editor Puck
 app.route('/api/ai', aiRouter);
+app.route('/api/agens', agensRouter);
+app.route('/api/subscribers', subscribersRouter);
 
 // Catch-all admin view (setelah spesifik routes)
 app.get('/admin/:view', (c) => c.html(renderAdmin({ view: c.req.param('view') })));
