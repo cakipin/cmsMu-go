@@ -45,6 +45,20 @@ export const editorPage = `
              return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
          },
 
+         getArticleTitle() {
+             var titleInput = document.querySelector('input[placeholder*="Judul Tulisan"]');
+             return (this.form && this.form.title ? this.form.title : (titleInput ? titleInput.value : '') || '').trim();
+         },
+
+         getArticleContent() {
+             var editorEl = document.querySelector('.modern-editor-content');
+             var rawTextarea = document.querySelector('.editor-raw-source-input');
+             var content = (this.form && this.form.body ? this.form.body : '') ||
+                           (editorEl ? editorEl.innerHTML : '') ||
+                           (rawTextarea ? rawTextarea.value : '') || '';
+             return (content === '<p><br></p>') ? '' : content.trim();
+         },
+
          // ===============================================
          // 2. LOAD DATA
          // ===============================================
@@ -419,7 +433,10 @@ export const editorPage = `
           },
 
           async save() {
-              const currentContent = this.form.body || '';
+              const currentContent = this.getArticleContent() || this.form.body || '';
+              if (currentContent) this.form.body = currentContent;
+              const currentTitle = this.getArticleTitle() || this.form.title || '';
+              if (currentTitle) this.form.title = currentTitle;
               this.form.slug = this.form.slug || this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
               
               const payload = JSON.parse(JSON.stringify({
@@ -624,7 +641,7 @@ export const editorPage = `
               });
 
               // Konten Body
-              var bodyHtml = this.form.body || '';
+              var bodyHtml = this.getArticleContent() || this.form.body || '';
               var plain = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
               var words = plain ? plain.split(/\\s+/).filter(Boolean) : [];
               var wordCount = words.length;
@@ -736,11 +753,12 @@ export const editorPage = `
           },
 
           async generateSingleMeta(field) {
-              var title = (this.form.title || '').trim();
-              var body = (this.form.body || '').trim();
+              var title = this.getArticleTitle() || (this.form.title || '').trim();
+              var body = this.getArticleContent() || (this.form.body || '').trim();
+              if (title && !this.form.title) this.form.title = title;
+              if (body && !this.form.body) this.form.body = body;
               if (!title && !body) {
                   if (window.showToast) window.showToast('Isi judul atau naskah artikel terlebih dahulu!', 'warning');
-                  
                   return;
               }
 
@@ -784,11 +802,12 @@ export const editorPage = `
 
           async generateSeoWithAi() {
               if (this.isGeneratingSeo) return;
-              var title = (this.form.title || '').trim();
-              var body = (this.form.body || '').trim();
+              var title = this.getArticleTitle() || (this.form.title || '').trim();
+              var body = this.getArticleContent() || (this.form.body || '').trim();
+              if (title && !this.form.title) this.form.title = title;
+              if (body && !this.form.body) this.form.body = body;
               if (!title && !body) {
                   if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
-                  
                   return;
               }
 
@@ -832,11 +851,12 @@ export const editorPage = `
 
           async fullAiOptimize() {
               if (this.isOptimizingFull) return;
-              var title = (this.form.title || '').trim();
-              var body = (this.form.body || '').trim();
+              var title = this.getArticleTitle() || (this.form.title || '').trim();
+              var body = this.getArticleContent() || (this.form.body || '').trim();
+              if (title && !this.form.title) this.form.title = title;
+              if (body && !this.form.body) this.form.body = body;
               if (!title && !body) {
                   if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
-                  
                   return;
               }
 
