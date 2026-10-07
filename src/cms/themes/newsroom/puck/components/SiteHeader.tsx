@@ -11,8 +11,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       options: [
         { label: "Logo + Nama", value: "both" },
         { label: "Hanya Gambar Logo", value: "image" },
-        { label: "Hanya Teks & Inisial", value: "text" }
-      ]
+        { label: "Hanya Teks & Inisial", value: "text" },
+      ],
     },
     logoImage: { type: "custom", render: ImageField },
     logoHeight: {
@@ -22,8 +22,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
         { label: "Kecil (36px)", value: "36px" },
         { label: "Sedang (44px) - Default", value: "44px" },
         { label: "Besar (52px)", value: "52px" },
-        { label: "Ekstra Besar (64px)", value: "64px" }
-      ]
+        { label: "Ekstra Besar (64px)", value: "64px" },
+      ],
     },
     logoLetter: { type: "text" },
     siteTitle: { type: "text" },
@@ -35,24 +35,24 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       type: "array",
       arrayFields: {
         label: { type: "text" },
-        url: { type: "text" }
-      }
+        url: { type: "text" },
+      },
     },
     menuPosition: {
       type: "radio",
       options: [
         { label: "Kiri", value: "justify-start" },
         { label: "Tengah", value: "justify-center" },
-        { label: "Kanan", value: "justify-end" }
-      ]
+        { label: "Kanan", value: "justify-end" },
+      ],
     },
     menuItemSpacing: {
       type: "select",
       options: [
         { label: "Rapat (16px)", value: "space-x-4" },
         { label: "Normal (24px)", value: "space-x-6" },
-        { label: "Renggang (32px)", value: "space-x-8" }
-      ]
+        { label: "Renggang (32px)", value: "space-x-8" },
+      ],
     },
     linkHoverColor: { type: "text" },
 
@@ -61,8 +61,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       type: "radio",
       options: [
         { label: "Tampilkan", value: "yes" },
-        { label: "Sembunyikan", value: "no" }
-      ]
+        { label: "Sembunyikan", value: "no" },
+      ],
     },
     ctaText: { type: "text" },
     ctaUrl: { type: "text" },
@@ -70,8 +70,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       type: "select",
       options: [
         { label: "Pill Solid", value: "solid" },
-        { label: "Garis Tepi (Outline)", value: "outline" }
-      ]
+        { label: "Garis Tepi (Outline)", value: "outline" },
+      ],
     },
     ctaBgColor: { type: "text" },
     ctaTextColor: { type: "text" },
@@ -82,8 +82,8 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       options: [
         { label: "Melayang (Fixed)", value: "fixed" },
         { label: "Menempel (Sticky)", value: "sticky" },
-        { label: "Statis (Ikut Scroll)", value: "static" }
-      ]
+        { label: "Statis (Ikut Scroll)", value: "static" },
+      ],
     },
     headerBgColor1: { type: "text" },
     headerBgColor2: { type: "text" },
@@ -91,16 +91,16 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       type: "radio",
       options: [
         { label: "Efek Kaca (Blur)", value: "yes" },
-        { label: "Warna Solid", value: "no" }
-      ]
+        { label: "Warna Solid", value: "no" },
+      ],
     },
     textColor: { type: "text" },
     showBorder: {
       type: "radio",
       options: [
         { label: "Ya", value: "yes" },
-        { label: "Tidak", value: "no" }
-      ]
+        { label: "Tidak", value: "no" },
+      ],
     },
     borderColor: { type: "text" },
     headerPadding: {
@@ -108,40 +108,43 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       options: [
         { label: "Kompak (64px)", value: "h-16" },
         { label: "Normal (80px)", value: "h-20" },
-        { label: "Lapang (96px)", value: "h-24" }
-      ]
+        { label: "Lapang (96px)", value: "h-24" },
+      ],
     },
     containerWidth: {
       type: "select",
       options: [
         { label: "Standar (1280px)", value: "max-w-7xl" },
         { label: "Kompak (1152px)", value: "max-w-6xl" },
-        { label: "Penuh (Full Width)", value: "max-w-full px-4 sm:px-6 lg:px-8" }
-      ]
+        {
+          label: "Penuh (Full Width)",
+          value: "max-w-full px-4 sm:px-6 lg:px-8",
+        },
+      ],
     },
     fontFamily: {
       type: "select",
       options: [
         { label: "Sans (Default)", value: "sans-serif" },
         { label: "Serif", value: "serif" },
-        { label: "Mono", value: "monospace" }
-      ]
+        { label: "Mono", value: "monospace" },
+      ],
     },
     // === 5. PENGATURAN GLOBAL WEBSITE ===
     applyGlobal: {
       type: "radio",
       options: [
         { label: "Aktif di Seluruh Web (Page & Post)", value: "all" },
-        { label: "Hanya Halaman Ini", value: "page_only" }
-      ]
+        { label: "Hanya Halaman Ini", value: "page_only" },
+      ],
     },
     syncLogo: {
       type: "radio",
       options: [
         { label: "Sinkronkan ke Logo Utama Website", value: "yes" },
-        { label: "Hanya Header Ini", value: "no" }
-      ]
-    }
+        { label: "Hanya Header Ini", value: "no" },
+      ],
+    },
   },
   defaultProps: {
     applyGlobal: "all",
@@ -157,7 +160,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       { label: "Fitur Unggulan", url: "#fitur" },
       { label: "Ekosistem", url: "#ekosistem" },
       { label: "Berita & Opini", url: "#berita" },
-      { label: "Hubungi Kami", url: "#kontak" }
+      { label: "Hubungi Kami", url: "#kontak" },
     ],
     menuPosition: "justify-center",
     menuItemSpacing: "space-x-6",
@@ -177,7 +180,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     borderColor: "#f1f5f9",
     headerPadding: "h-20",
     containerWidth: "max-w-7xl",
-    fontFamily: "sans-serif"
+    fontFamily: "sans-serif",
   },
   render: ({
     logoType = "both",
@@ -206,7 +209,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     borderColor = "#f1f5f9",
     headerPadding = "h-20",
     containerWidth = "max-w-7xl",
-    fontFamily = "sans-serif"
+    fontFamily = "sans-serif",
   }) => {
     // Normalisasi posisi menu navigasi untuk kompatibilitas data lama
     let resolvedPosition = menuPosition;
@@ -223,14 +226,17 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     const bg1 = headerBgColor1 || "#ffffff";
     const bg2 = headerBgColor2 || bg1;
     const isGlass = headerGlassmorphism !== "no";
-    const borderStyle = showBorder !== "no" ? `1px solid ${borderColor || "#f1f5f9"}` : "none";
+    const borderStyle =
+      showBorder !== "no" ? `1px solid ${borderColor || "#f1f5f9"}` : "none";
 
     const navStyle: React.CSSProperties = {
       background: `linear-gradient(90deg, ${bg1}, ${bg2})`,
       color: textColor || "#1e293b",
       fontFamily: fontFamily || "sans-serif",
       borderBottom: borderStyle,
-      ...(isGlass ? { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" } : {})
+      ...(isGlass
+        ? { backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)" }
+        : {}),
     };
 
     // Styling CTA Button
@@ -239,12 +245,12 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
       ? {
           borderColor: ctaBgColor || "#16a34a",
           color: ctaBgColor || "#16a34a",
-          backgroundColor: "transparent"
+          backgroundColor: "transparent",
         }
       : {
           backgroundColor: ctaBgColor || "#16a34a",
           color: ctaTextColor || "#ffffff",
-          boxShadow: `0 8px 20px -4px ${(ctaBgColor || "#16a34a")}44`
+          boxShadow: `0 8px 20px -4px ${ctaBgColor || "#16a34a"}44`,
         };
 
     const hasImage = Boolean(logoImage && logoImage.trim().length > 0);
@@ -252,34 +258,54 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
     const showText = logoType === "text" || logoType === "both" || !hasImage;
 
     return (
-      <nav id="navbar" className={`${posClass} transition-all duration-300`} style={navStyle}>
-        <div className={`${containerWidth || "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8`}>
-          <div className={`flex justify-between items-center ${headerPadding || "h-20"}`}>
-            
+      <nav
+        id="navbar"
+        className={`${posClass} transition-all duration-300`}
+        style={navStyle}
+      >
+        <div
+          className={`${containerWidth || "max-w-7xl"} mx-auto px-4 sm:px-6 lg:px-8`}
+        >
+          <div
+            className={`flex items-center justify-between ${headerPadding || "h-20"}`}
+          >
             {/* 1. BRANDING / LOGO */}
-            <a href="/" className="flex-shrink-0 flex items-center gap-2.5 text-decoration-none group">
+            <a
+              href="/"
+              className="text-decoration-none group flex flex-shrink-0 items-center gap-2.5"
+            >
               {showImg && (
                 <img
                   src={logoImage}
                   alt={siteTitle || "Logo"}
-                  style={{ height: logoHeight || "44px", width: "auto", objectFit: "contain" }}
+                  style={{
+                    height: logoHeight || "44px",
+                    width: "auto",
+                    objectFit: "contain",
+                  }}
                   className="transition-transform group-hover:scale-105"
                 />
               )}
               {/* Fallback avatar letter jika mode text atau logo image kosong */}
               {(!showImg || logoType === "text") && (
                 <div
-                  className="w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg text-white shadow-sm flex-shrink-0"
+                  className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white shadow-sm"
                   style={{ backgroundColor: highlightColor || "#16a34a" }}
                 >
                   {logoLetter || "M"}
                 </div>
               )}
               {showText && (
-                <span className="font-extrabold text-xl tracking-tight leading-none" style={{ color: textColor || "#1e293b" }}>
+                <span
+                  className="text-xl leading-none font-extrabold tracking-tight"
+                  style={{ color: textColor || "#1e293b" }}
+                >
                   {siteTitle || ""}
                   {siteTitleHighlight ? (
-                    <span className="ml-1" style={{ color: highlightColor || "#16a34a" }}>
+                    <span
+                      className="ml-1"
+                      style={{ color: highlightColor || "#16a34a" }}
+                    >
                       {siteTitleHighlight}
                     </span>
                   ) : null}
@@ -288,18 +314,23 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
             </a>
 
             {/* 2. DESKTOP NAVIGATION MENU */}
-            <div className={`hidden md:flex flex-1 mx-8 ${resolvedPosition || "justify-center"}`}>
-              <div className={`flex items-center ${menuItemSpacing || "space-x-6"}`}>
+            <div
+              className={`mx-8 hidden flex-1 md:flex ${resolvedPosition || "justify-center"}`}
+            >
+              <div
+                className={`flex items-center ${menuItemSpacing || "space-x-6"}`}
+              >
                 {(menuItems || []).map((item, i) => (
                   <a
                     key={i}
                     href={item.url}
-                    className="font-medium text-sm tracking-wide transition-colors duration-200 py-1"
+                    className="py-1 text-sm font-medium tracking-wide transition-colors duration-200"
                     style={{ color: textColor || "#1e293b" }}
-                    onMouseEnter={(e) => {
-                      if (linkHoverColor) e.currentTarget.style.color = linkHoverColor;
+                    onMouseEnter={e => {
+                      if (linkHoverColor)
+                        e.currentTarget.style.color = linkHoverColor;
                     }}
-                    onMouseLeave={(e) => {
+                    onMouseLeave={e => {
                       if (textColor) e.currentTarget.style.color = textColor;
                     }}
                   >
@@ -311,11 +342,11 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
 
             {/* 3. CTA BUTTON (DESKTOP) */}
             {showCta !== "no" && (
-              <div className="hidden md:flex items-center">
+              <div className="hidden items-center md:flex">
                 <a
                   href={ctaUrl || "/admin"}
                   style={ctaButtonStyle}
-                  className={`px-5 py-2.5 rounded-full text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98] ${
+                  className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98] ${
                     isOutline ? "border-2" : ""
                   }`}
                 >
@@ -325,41 +356,54 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
             )}
 
             {/* 4. MOBILE HAMBURGER MENU (CSS details/summary: zero-JS, works in SSR & Puck) */}
-            <div className="md:hidden flex items-center">
+            <div className="flex items-center md:hidden">
               <details className="relative">
                 <summary
-                  className="list-none cursor-pointer p-2 rounded-lg transition-colors flex items-center justify-center focus:outline-none"
+                  className="flex cursor-pointer list-none items-center justify-center rounded-lg p-2 transition-colors focus:outline-none"
                   style={{ color: textColor || "#1e293b" }}
                   aria-label="Toggle Navigation Menu"
                 >
-                  <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  <svg
+                    className="h-6 w-6"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 6h16M4 12h16M4 18h16"
+                    />
                   </svg>
                 </summary>
                 <div
-                  className="absolute right-0 mt-2 w-64 rounded-2xl shadow-2xl p-4 border flex flex-col gap-3 z-50"
+                  className="absolute right-0 z-50 mt-2 flex w-64 flex-col gap-3 rounded-2xl border p-4 shadow-2xl"
                   style={{
                     backgroundColor: bg1,
                     borderColor: borderColor || "#f1f5f9",
-                    color: textColor || "#1e293b"
+                    color: textColor || "#1e293b",
                   }}
                 >
                   {(menuItems || []).map((item, i) => (
                     <a
                       key={i}
                       href={item.url}
-                      className="font-medium text-sm py-2 px-3 rounded-lg hover:bg-black/5 transition"
+                      className="rounded-lg px-3 py-2 text-sm font-medium transition hover:bg-black/5"
                       style={{ color: textColor || "#1e293b" }}
                     >
                       {item.label}
                     </a>
                   ))}
                   {showCta !== "no" && (
-                    <div className="pt-2 border-t mt-1" style={{ borderColor: borderColor || "#f1f5f9" }}>
+                    <div
+                      className="mt-1 border-t pt-2"
+                      style={{ borderColor: borderColor || "#f1f5f9" }}
+                    >
                       <a
                         href={ctaUrl || "/admin"}
                         style={ctaButtonStyle}
-                        className={`block text-center w-full px-4 py-2.5 rounded-full text-sm font-semibold transition ${
+                        className={`block w-full rounded-full px-4 py-2.5 text-center text-sm font-semibold transition ${
                           isOutline ? "border-2" : ""
                         }`}
                       >
@@ -370,10 +414,9 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
                 </div>
               </details>
             </div>
-
           </div>
         </div>
       </nav>
     );
-  }
+  },
 };

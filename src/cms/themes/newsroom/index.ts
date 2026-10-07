@@ -1,16 +1,16 @@
-import type { ThemeContext, ThemeStructure } from '../types';
-import { _layout } from './layout';
-import { renderHome } from './home';
-import { renderSingle } from './single';
-import { renderCategory } from './category';
-import { renderPage } from './page';
-import { renderUserProfile } from './user-profile';
-import { renderSourceList, renderSourceDetail } from './source';
+import type { ThemeContext, ThemeStructure } from "../types";
+import { _layout } from "./layout";
+import { renderHome } from "./home";
+import { renderSingle } from "./single";
+import { renderCategory } from "./category";
+import { renderPage } from "./page";
+import { renderUserProfile } from "./user-profile";
+import { renderSourceList, renderSourceDetail } from "./source";
 
 const NewsroomTheme: ThemeStructure = {
   name: "Newsroom Editorial",
-  version: '1.0.0',
-  author: 'CMSMu & Redaksi Jejaring',
+  version: "1.0.0",
+  author: "CMSMu & Redaksi Jejaring",
   _brand() {
     return `<span style="font-size:1.5rem;font-weight:900;color:var(--text-primary);letter-spacing:-0.03em;">NEWSROOM</span>`;
   },
@@ -29,7 +29,8 @@ const NewsroomTheme: ThemeStructure = {
     return this.renderCategory(ctx);
   },
   render404(ctx: ThemeContext) {
-    return this._layout(`
+    return this._layout(
+      `
       <main class="nr-container nr-section" style="text-align:center; padding: 6rem 1rem;">
         <h1 style="font-size: 4rem; font-weight:900; color: var(--accent-primary); line-height: 1;">404</h1>
         <h2 style="font-size: 1.5rem; margin: 1rem 0;">Laporan Tidak Ditemukan</h2>
@@ -38,8 +39,12 @@ const NewsroomTheme: ThemeStructure = {
           &larr; Kembali ke Beranda
         </a>
       </main>
-    `, 'Halaman Tidak Ditemukan', ctx, '404');
-  }
+    `,
+      "Halaman Tidak Ditemukan",
+      ctx,
+      "404"
+    );
+  },
 };
 
 export default NewsroomTheme;

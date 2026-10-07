@@ -1,35 +1,35 @@
-import { escapeHtml } from './utils';
+import { escapeHtml } from "./utils";
 
 export function renderMajalahList(this: any, ctx: any) {
-    const list = ctx.data || [];
-    const title = "E-Majalah Suara 'Aisyiyah — Edisi Cetak Digital";
-    const pagination = ctx.pagination || {
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: list.length,
-        limit: 12,
-        q: '',
-        year: ''
-    };
+  const list = ctx.data || [];
+  const title = "E-Majalah Suara 'Aisyiyah — Edisi Cetak Digital";
+  const pagination = ctx.pagination || {
+    currentPage: 1,
+    totalPages: 1,
+    totalItems: list.length,
+    limit: 12,
+    q: "",
+    year: "",
+  };
 
-    function makeFilterUrl(chipYear: string) {
-        const params = new URLSearchParams();
-        if (chipYear) params.set('year', chipYear);
-        if (pagination.q) params.set('q', pagination.q);
-        const qs = params.toString();
-        return '/majalah' + (qs ? '?' + qs : '');
-    }
+  function makeFilterUrl(chipYear: string) {
+    const params = new URLSearchParams();
+    if (chipYear) params.set("year", chipYear);
+    if (pagination.q) params.set("q", pagination.q);
+    const qs = params.toString();
+    return "/majalah" + (qs ? "?" + qs : "");
+  }
 
-    function makePageUrl(p: number) {
-        const params = new URLSearchParams();
-        if (p > 1) params.set('page', String(p));
-        if (pagination.q) params.set('q', pagination.q);
-        if (pagination.year) params.set('year', pagination.year);
-        const qs = params.toString();
-        return '/majalah' + (qs ? '?' + qs : '');
-    }
+  function makePageUrl(p: number) {
+    const params = new URLSearchParams();
+    if (p > 1) params.set("page", String(p));
+    if (pagination.q) params.set("q", pagination.q);
+    if (pagination.year) params.set("year", pagination.year);
+    const qs = params.toString();
+    return "/majalah" + (qs ? "?" + qs : "");
+  }
 
-    let content = `
+  let content = `
     <main class="container sa-style-158" role="main" style="padding-top:40px; padding-bottom:80px;">
         <div style="text-align:center; max-width:700px; margin:0 auto 30px auto;">
             <span style="display:inline-block; background:#e6f4ef; color:#00885e; padding:6px 14px; border-radius:20px; font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">
@@ -45,13 +45,17 @@ export function renderMajalahList(this: any, ctx: any) {
         <div style="max-width:720px; margin:0 auto 32px auto;">
             <form method="GET" action="/majalah" style="display:flex; gap:8px; background:#fff; padding:6px; border-radius:12px; border:1px solid #cbd5e1; box-shadow:0 2px 10px rgba(0,0,0,0.04); align-items:center;">
                 <i class="fas fa-search" style="color:#94a3b8; margin-left:12px; font-size:15px;"></i>
-                <input type="text" name="q" value="${escapeHtml(pagination.q || '')}" placeholder="Cari judul, topik, nomor edisi, atau tahun..." style="flex:1; border:none; outline:none; font-size:14px; padding:8px 6px; color:#1e293b; background:transparent;">
-                ${pagination.year ? `<input type="hidden" name="year" value="${escapeHtml(pagination.year)}">` : ''}
-                ${pagination.q ? `
+                <input type="text" name="q" value="${escapeHtml(pagination.q || "")}" placeholder="Cari judul, topik, nomor edisi, atau tahun..." style="flex:1; border:none; outline:none; font-size:14px; padding:8px 6px; color:#1e293b; background:transparent;">
+                ${pagination.year ? `<input type="hidden" name="year" value="${escapeHtml(pagination.year)}">` : ""}
+                ${
+                  pagination.q
+                    ? `
                     <a href="${makeFilterUrl(pagination.year)}" style="color:#94a3b8; padding:6px 10px; text-decoration:none; font-size:14px; display:inline-flex; align-items:center;" title="Hapus pencarian">
                         <i class="fas fa-times-circle"></i>
                     </a>
-                ` : ''}
+                `
+                    : ""
+                }
                 <button type="submit" style="background:#059669; color:#fff; border:none; padding:10px 20px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:background 0.2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
                     Cari
                 </button>
@@ -61,39 +65,47 @@ export function renderMajalahList(this: any, ctx: any) {
             <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; justify-content:center; margin-top:14px;">
                 <span style="font-size:12px; font-weight:700; color:#64748b; margin-right:4px;"><i class="fas fa-filter"></i> Filter:</span>
                 ${[
-                    { label: 'Semua Edisi', val: '' },
-                    { label: '2026', val: '2026' },
-                    { label: '2022', val: '2022' },
-                    { label: '2021', val: '2021' },
-                    { label: '2020', val: '2020' },
-                    { label: '2019', val: '2019' },
-                    { label: 'Bebas Akses', val: 'free' },
-                ].map(chip => {
-                    const isActive = (pagination.year || '') === chip.val;
+                  { label: "Semua Edisi", val: "" },
+                  { label: "2026", val: "2026" },
+                  { label: "2022", val: "2022" },
+                  { label: "2021", val: "2021" },
+                  { label: "2020", val: "2020" },
+                  { label: "2019", val: "2019" },
+                  { label: "Bebas Akses", val: "free" },
+                ]
+                  .map(chip => {
+                    const isActive = (pagination.year || "") === chip.val;
                     return `
-                        <a href="${makeFilterUrl(chip.val)}" style="padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; text-decoration:none; transition:all 0.2s; ${isActive ? 'background:#059669; color:#fff; box-shadow:0 2px 6px rgba(5,150,105,0.3); border:1px solid #059669;' : 'background:#fff; color:#475569; border:1px solid #cbd5e1;'}" onmouseover="${!isActive ? "this.style.borderColor='#059669'; this.style.color='#059669';" : ''}" onmouseout="${!isActive ? "this.style.borderColor='#cbd5e1'; this.style.color='#475569';" : ''}">
+                        <a href="${makeFilterUrl(chip.val)}" style="padding:6px 13px; border-radius:20px; font-size:12px; font-weight:600; text-decoration:none; transition:all 0.2s; ${isActive ? "background:#059669; color:#fff; box-shadow:0 2px 6px rgba(5,150,105,0.3); border:1px solid #059669;" : "background:#fff; color:#475569; border:1px solid #cbd5e1;"}" onmouseover="${!isActive ? "this.style.borderColor='#059669'; this.style.color='#059669';" : ""}" onmouseout="${!isActive ? "this.style.borderColor='#cbd5e1'; this.style.color='#475569';" : ""}">
                             ${escapeHtml(chip.label)}
                         </a>
                     `;
-                }).join('')}
+                  })
+                  .join("")}
             </div>
         </div>
 
         <!-- SEARCH / FILTER INFO COUNTER -->
-        ${(pagination.q || pagination.year) ? `
+        ${
+          pagination.q || pagination.year
+            ? `
             <div style="max-width:1200px; margin:0 auto 24px auto; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; font-size:13px; color:#64748b; background:#f8fafc; padding:12px 18px; border-radius:10px; border:1px solid #e2e8f0;">
                 <div>
                     Menemukan <strong>${pagination.totalItems}</strong> edisi majalah
-                    ${pagination.q ? ` untuk kata kunci "<strong>${escapeHtml(pagination.q)}</strong>"` : ''}
-                    ${pagination.year ? ` (kategori: <strong>${pagination.year === 'free' ? 'Bebas Akses' : 'Tahun ' + escapeHtml(pagination.year)}</strong>)` : ''}
+                    ${pagination.q ? ` untuk kata kunci "<strong>${escapeHtml(pagination.q)}</strong>"` : ""}
+                    ${pagination.year ? ` (kategori: <strong>${pagination.year === "free" ? "Bebas Akses" : "Tahun " + escapeHtml(pagination.year)}</strong>)` : ""}
                 </div>
                 <a href="/majalah" style="color:#059669; text-decoration:none; font-weight:600; display:inline-flex; align-items:center; gap:5px;">
                     <i class="fas fa-undo"></i> Reset Filter
                 </a>
             </div>
-        ` : ''}
+        `
+            : ""
+        }
 
-        ${!list.length ? `
+        ${
+          !list.length
+            ? `
             <div style="text-align:center; padding:60px 20px; background:#fff; border-radius:16px; border:1px dashed #cbd5e1; max-width:600px; margin:0 auto;">
                 <i class="fas fa-book-open" style="font-size:42px; color:#cbd5e1; margin-bottom:15px; display:block;"></i>
                 <h3 style="color:#475569; margin:0 0 8px 0;">Tidak Ada Edisi Ditemukan</h3>
@@ -102,86 +114,115 @@ export function renderMajalahList(this: any, ctx: any) {
                     <i class="fas fa-th-large"></i> Lihat Semua Edisi
                 </a>
             </div>
-        ` : `
+        `
+            : `
             <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(240px, 1fr)); gap:28px;">
-                ${list.map((m: any) => `
+                ${list
+                  .map(
+                    (m: any) => `
                     <div class="card" style="background:#fff; border-radius:16px; overflow:hidden; border:1px solid #e2e8f0; box-shadow:0 4px 12px rgba(0,0,0,0.04); display:flex; flex-direction:column; transition:transform 0.2s, box-shadow 0.2s;">
                         <a href="/majalah/${escapeHtml(m.slug)}" style="position:relative; display:block; aspect-ratio:3/4; overflow:hidden; background:#f1f5f9;">
-                            <img src="${escapeHtml(m.coverImage || '/api/media/file/images/default-cover.jpg')}" alt="${escapeHtml(m.title)}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
+                            <img src="${escapeHtml(m.coverImage || "/api/media/file/images/default-cover.jpg")}" alt="${escapeHtml(m.title)}" style="width:100%; height:100%; object-fit:cover; transition:transform 0.3s;" onmouseover="this.style.transform='scale(1.04)'" onmouseout="this.style.transform='scale(1)'">
                             <div style="position:absolute; top:12px; right:12px;">
-                                ${m.isFree === 1 ? `
+                                ${
+                                  m.isFree === 1
+                                    ? `
                                     <span style="background:rgba(2, 132, 199, 0.9); color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; backdrop-filter:blur(4px);">
                                         <i class="fas fa-lock-open"></i> Bebas Akses
                                     </span>
-                                ` : `
+                                `
+                                    : `
                                     <span style="background:rgba(180, 83, 9, 0.9); color:#fff; padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; backdrop-filter:blur(4px);">
                                         <i class="fas fa-crown"></i> Pelanggan Pro
                                     </span>
-                                `}
+                                `
+                                }
                             </div>
                         </a>
                         <div style="padding:18px; display:flex; flex-direction:column; flex-grow:1; justify-content:space-between;">
                             <div>
-                                ${m.editionNumber ? `<div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:4px;">${escapeHtml(m.editionNumber)}</div>` : ''}
+                                ${m.editionNumber ? `<div style="font-size:12px; font-weight:700; color:#059669; margin-bottom:4px;">${escapeHtml(m.editionNumber)}</div>` : ""}
                                 <h3 style="margin:0 0 8px 0; font-size:16px; font-weight:700; color:#0f172a; line-height:1.4;">
                                     <a href="/majalah/${escapeHtml(m.slug)}" style="text-decoration:none; color:inherit;">${escapeHtml(m.title)}</a>
                                 </h3>
-                                ${m.publicationDate ? `<div style="font-size:13px; color:#64748b; margin-bottom:12px;"><i class="far fa-calendar-alt"></i> ${escapeHtml(m.publicationDate)}</div>` : ''}
+                                ${m.publicationDate ? `<div style="font-size:13px; color:#64748b; margin-bottom:12px;"><i class="far fa-calendar-alt"></i> ${escapeHtml(m.publicationDate)}</div>` : ""}
                             </div>
                             <a href="/majalah/${escapeHtml(m.slug)}" style="display:inline-flex; align-items:center; justify-content:center; gap:8px; width:100%; background:#059669; color:#fff; padding:10px; border-radius:8px; font-weight:600; font-size:13px; text-decoration:none; box-sizing:border-box; transition:background 0.2s;" onmouseover="this.style.background='#047857'" onmouseout="this.style.background='#059669'">
                                 <i class="fas fa-book-reader"></i> Buka E-Majalah
                             </a>
                         </div>
                     </div>
-                `).join('')}
+                `
+                  )
+                  .join("")}
             </div>
 
             <!-- PAGINATION CONTROLS -->
-            ${pagination.totalPages > 1 ? `
+            ${
+              pagination.totalPages > 1
+                ? `
                 <div style="display:flex; justify-content:center; align-items:center; gap:8px; margin-top:48px; flex-wrap:wrap;">
-                    ${pagination.currentPage > 1 ? `
+                    ${
+                      pagination.currentPage > 1
+                        ? `
                         <a href="${makePageUrl(pagination.currentPage - 1)}" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; color:#334155; font-size:13px; font-weight:600; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'; this.style.color='#059669';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.color='#334155';">
                             <i class="fas fa-chevron-left"></i> Sebelumnya
                         </a>
-                    ` : `
+                    `
+                        : `
                         <span style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; color:#94a3b8; font-size:13px; font-weight:600; cursor:not-allowed;">
                             <i class="fas fa-chevron-left"></i> Sebelumnya
                         </span>
-                    `}
+                    `
+                    }
 
                     <div style="display:flex; gap:6px; align-items:center;">
-                        ${Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(p => {
+                        ${Array.from(
+                          { length: pagination.totalPages },
+                          (_, i) => i + 1
+                        )
+                          .map(p => {
                             const isCurrent = p === pagination.currentPage;
                             return `
-                                <a href="${makePageUrl(p)}" style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; transition:all 0.2s; ${isCurrent ? 'background:#059669; color:#fff; box-shadow:0 2px 6px rgba(5,150,105,0.3);' : 'background:#fff; color:#475569; border:1px solid #cbd5e1;'}" onmouseover="${!isCurrent ? "this.style.borderColor='#059669'; this.style.color='#059669';" : ''}" onmouseout="${!isCurrent ? "this.style.borderColor='#cbd5e1'; this.style.color='#475569';" : ''}">
+                                <a href="${makePageUrl(p)}" style="display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; border-radius:8px; font-size:13px; font-weight:700; text-decoration:none; transition:all 0.2s; ${isCurrent ? "background:#059669; color:#fff; box-shadow:0 2px 6px rgba(5,150,105,0.3);" : "background:#fff; color:#475569; border:1px solid #cbd5e1;"}" onmouseover="${!isCurrent ? "this.style.borderColor='#059669'; this.style.color='#059669';" : ""}" onmouseout="${!isCurrent ? "this.style.borderColor='#cbd5e1'; this.style.color='#475569';" : ""}">
                                     ${p}
                                 </a>
                             `;
-                        }).join('')}
+                          })
+                          .join("")}
                     </div>
 
-                    ${pagination.currentPage < pagination.totalPages ? `
+                    ${
+                      pagination.currentPage < pagination.totalPages
+                        ? `
                         <a href="${makePageUrl(pagination.currentPage + 1)}" style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#fff; border:1px solid #cbd5e1; border-radius:8px; color:#334155; font-size:13px; font-weight:600; text-decoration:none; transition:all 0.2s;" onmouseover="this.style.borderColor='#059669'; this.style.color='#059669';" onmouseout="this.style.borderColor='#cbd5e1'; this.style.color='#334155';">
                             Selanjutnya <i class="fas fa-chevron-right"></i>
                         </a>
-                    ` : `
+                    `
+                        : `
                         <span style="display:inline-flex; align-items:center; gap:6px; padding:8px 16px; background:#f1f5f9; border:1px solid #e2e8f0; border-radius:8px; color:#94a3b8; font-size:13px; font-weight:600; cursor:not-allowed;">
                             Selanjutnya <i class="fas fa-chevron-right"></i>
                         </span>
-                    `}
+                    `
+                    }
                 </div>
-            ` : ''}
-        `}
+            `
+                : ""
+            }
+        `
+        }
     </main>
     `;
 
-    return this._layout(content, title, ctx, 'page');
+  return this._layout(content, title, ctx, "page");
 }
 
 function renderFallbackHtml(m: any) {
-    const defaultCover = '/api/media/file/images/default-cover.jpg';
-    const waText = encodeURIComponent(`Assalamu'alaikum Redaksi Suara 'Aisyiyah, saya ingin menanyakan ketersediaan naskah E-Majalah: ${m.title || ''}`);
-    return `
+  const defaultCover = "/api/media/file/images/default-cover.jpg";
+  const waText = encodeURIComponent(
+    `Assalamu'alaikum Redaksi Suara 'Aisyiyah, saya ingin menanyakan ketersediaan naskah E-Majalah: ${m.title || ""}`
+  );
+  return `
     <div id="missing-pdf-fallback" style="max-width:860px; width:92%; margin:auto; background:#1e293b; border:1px solid #334155; border-radius:18px; padding:32px 28px; box-shadow:0 20px 40px rgba(0,0,0,0.5); display:flex; flex-direction:column; gap:24px; animation:fadeIn 0.3s ease; box-sizing:border-box;">
         <div style="display:flex; flex-direction:row; gap:28px; align-items:flex-start; flex-wrap:wrap;">
             
@@ -199,7 +240,7 @@ function renderFallbackHtml(m: any) {
                     <span style="display:inline-flex; align-items:center; gap:6px; background:#fef3c7; color:#92400e; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:700;">
                         <i class="fas fa-hourglass-half"></i> Edisi Arsip Digital Sedang Disiapkan
                     </span>
-                    ${m.editionNumber ? `<span style="background:#334155; color:#94a3b8; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;">${escapeHtml(m.editionNumber)}</span>` : ''}
+                    ${m.editionNumber ? `<span style="background:#334155; color:#94a3b8; padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;">${escapeHtml(m.editionNumber)}</span>` : ""}
                 </div>
 
                 <h2 style="font-size:24px; font-weight:800; color:#f8fafc; margin:0; line-height:1.3; font-family:'Playfair Display', serif;">
@@ -207,7 +248,7 @@ function renderFallbackHtml(m: any) {
                 </h2>
 
                 <div style="font-size:13px; color:#94a3b8; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
-                    ${m.publicationDate ? `<span><i class="far fa-calendar-alt"></i> Terbit: ${escapeHtml(m.publicationDate)}</span>` : ''}
+                    ${m.publicationDate ? `<span><i class="far fa-calendar-alt"></i> Terbit: ${escapeHtml(m.publicationDate)}</span>` : ""}
                     ${m.isFree === 1 ? `<span style="color:#38bdf8;"><i class="fas fa-lock-open"></i> Bebas Akses</span>` : `<span style="color:#fbbf24;"><i class="fas fa-crown"></i> Pelanggan Pro</span>`}
                 </div>
 
@@ -239,31 +280,35 @@ function renderFallbackHtml(m: any) {
         </div>
 
         <!-- Editorial Preview (if description exists) -->
-        ${m.description ? `
+        ${
+          m.description
+            ? `
         <div style="background:#0f172a; border:1px solid #334155; border-radius:12px; padding:20px; margin-top:4px;">
             <h3 style="margin:0 0 10px 0; font-size:15px; font-weight:700; color:#38bdf8; display:flex; align-items:center; gap:8px;">
                 <i class="fas fa-feather-alt"></i> Mukadimah & Catatan Redaksi Edisi Ini
             </h3>
             <div style="font-size:13px; color:#cbd5e1; line-height:1.7; max-height:260px; overflow-y:auto; padding-right:8px;">
-                ${escapeHtml(m.description).replace(/\n/g, '<br>')}
+                ${escapeHtml(m.description).replace(/\n/g, "<br>")}
             </div>
         </div>
-        ` : ''}
+        `
+            : ""
+        }
 
     </div>
     `;
 }
 
 export function renderMajalahReader(this: any, ctx: any) {
-    const m = ctx.data;
-    if (!m) return this.render404(ctx);
+  const m = ctx.data;
+  if (!m) return this.render404(ctx);
 
-    const title = `${escapeHtml(m.title)} — E-Majalah Suara 'Aisyiyah`;
-    const previewPages = m.previewPages || 5;
-    const isFree = m.isFree === 1;
-    const hasPdf = m.hasPdf !== false;
+  const title = `${escapeHtml(m.title)} — E-Majalah Suara 'Aisyiyah`;
+  const previewPages = m.previewPages || 5;
+  const isFree = m.isFree === 1;
+  const hasPdf = m.hasPdf !== false;
 
-    let content = `
+  let content = `
     <!DOCTYPE html>
     <html lang="id">
     <head>
@@ -373,15 +418,17 @@ export function renderMajalahReader(this: any, ctx: any) {
                         ${escapeHtml(m.title)}
                     </h1>
                     <div style="font-size:10px; color:#94a3b8;">
-                        ${m.editionNumber ? escapeHtml(m.editionNumber) + ' &bull; ' : ''}
-                        ${m.publicationDate ? escapeHtml(m.publicationDate) : ''}
+                        ${m.editionNumber ? escapeHtml(m.editionNumber) + " &bull; " : ""}
+                        ${m.publicationDate ? escapeHtml(m.publicationDate) : ""}
                     </div>
                 </div>
             </div>
 
             <!-- Page Controls -->
             <div id="page-controls-container" style="display:flex; align-items:center; gap:6px;">
-                ${hasPdf ? `
+                ${
+                  hasPdf
+                    ? `
                     <button id="prev-page-btn" onclick="flipbookPrev()" title="Halaman Sebelumnya" style="background:#334155; color:#fff; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#334155'">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                     </button>
@@ -391,15 +438,17 @@ export function renderMajalahReader(this: any, ctx: any) {
                     <button id="next-page-btn" onclick="flipbookNext()" title="Halaman Berikutnya" style="background:#334155; color:#fff; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='#059669'" onmouseout="this.style.background='#334155'">
                         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
                     </button>
-                ` : `
+                `
+                    : `
                     <div style="font-size:12px; font-weight:600; min-width:105px; text-align:center; background:#0f172a; padding:6px 12px; border-radius:6px; border:1px solid #334155; color:#f59e0b;">
                         <i class="fas fa-archive"></i> Edisi Arsip
                     </div>
-                `}
+                `
+                }
             </div>
 
             <!-- View & Zoom Controls -->
-            <div id="view-controls-container" style="display:${hasPdf ? 'flex' : 'none'}; align-items:center; gap:6px;">
+            <div id="view-controls-container" style="display:${hasPdf ? "flex" : "none"}; align-items:center; gap:6px;">
                 <button onclick="zoomFlipbook(-0.15)" title="Perkecil" style="background:#334155; color:#fff; border:none; width:34px; height:34px; border-radius:6px; cursor:pointer; display:inline-flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='#475569'" onmouseout="this.style.background='#334155'">
                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
                 </button>
@@ -417,7 +466,9 @@ export function renderMajalahReader(this: any, ctx: any) {
 
         <!-- VIEWER VIEWPORT -->
         <main class="flipbook-viewport" id="reader-viewport">
-            ${hasPdf ? `
+            ${
+              hasPdf
+                ? `
                 <!-- Side Arrows for Easy Navigation -->
                 <button class="side-nav-btn side-prev" onclick="flipbookPrev()" title="Halaman Sebelumnya">
                     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
@@ -440,9 +491,11 @@ export function renderMajalahReader(this: any, ctx: any) {
                 <div id="flipbook-zoom-container" class="flipbook-container" style="display:none;">
                     <div id="flipbook" class="st-page-flip"></div>
                 </div>
-            ` : `
+            `
+                : `
                 ${renderFallbackHtml(m)}
-            `}
+            `
+            }
         </main>
     </div>
 
@@ -458,7 +511,7 @@ export function renderMajalahReader(this: any, ctx: any) {
     <script>
         pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-        var hasPdf = ${hasPdf ? 'true' : 'false'};
+        var hasPdf = ${hasPdf ? "true" : "false"};
         var pdfDoc = null;
         var pageFlip = null;
         var scale = 1.0;
@@ -880,5 +933,5 @@ export function renderMajalahReader(this: any, ctx: any) {
     </html>
     `;
 
-    return content;
+  return content;
 }

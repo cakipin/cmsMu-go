@@ -1,4 +1,4 @@
-import { CORE_VERSION } from './services/ota.service';
+import { CORE_VERSION } from "./services/ota.service";
 
 export const otaManagerScript = `
 if (typeof window !== 'undefined') {

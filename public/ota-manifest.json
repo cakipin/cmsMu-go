@@ -14,10 +14,7 @@
     "on-demand-post-fetching",
     "r2-multi-adapter"
   ],
-  "bundledPlugins": [
-    "sso-muhammadiyah",
-    "ota"
-  ],
+  "bundledPlugins": ["sso-muhammadiyah", "ota"],
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",

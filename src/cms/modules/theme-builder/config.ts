@@ -15,7 +15,7 @@ import {
   MagazineHeader,
   MagazineBigGrid,
   MagazineFlexBlock,
-  MagazineFooter
+  MagazineFooter,
 } from "./components/MiscBlocks";
 
 export const puckConfig: Config<Props> = {
@@ -34,8 +34,8 @@ export const puckConfig: Config<Props> = {
     MagazineHeader,
     MagazineBigGrid,
     MagazineFlexBlock,
-    MagazineFooter
-  }
+    MagazineFooter,
+  },
 };
 
 export const defaultHomePuck = {
@@ -47,10 +47,10 @@ export const defaultHomePuck = {
     { type: "Testimonial", props: { id: "Testimonial-1" } },
     { type: "RecentPosts", props: { id: "RecentPosts-1" } },
     { type: "CallToAction", props: { id: "CallToAction-1" } },
-    { type: "SiteFooter", props: { id: "SiteFooter-1" } }
+    { type: "SiteFooter", props: { id: "SiteFooter-1" } },
   ],
   root: {},
-  zones: {}
+  zones: {},
 };
 
 export const defaultLandingPuck = {
@@ -60,10 +60,10 @@ export const defaultLandingPuck = {
     { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
     { type: "RecentPosts", props: { id: "RecentPosts-1" } },
     { type: "CallToAction", props: { id: "CallToAction-1" } },
-    { type: "SiteFooter", props: { id: "SiteFooter-1" } }
+    { type: "SiteFooter", props: { id: "SiteFooter-1" } },
   ],
   root: {},
-  zones: {}
+  zones: {},
 };
 
 export type { Props };

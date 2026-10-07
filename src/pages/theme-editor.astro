@@ -11,15 +11,15 @@ import "@/styles/global.css";
 const slug = Astro.url.searchParams.get("slug") || "home";
 ---
 
-<!DOCTYPE html>
+<!doctype html>
 <html lang="id">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Theme Visual Editor - {slug}</title>
-</head>
-<body>
-  <!-- Render aplikasi React Puck Editor -->
-  <ThemeEditorApp client:only="react" slug={slug} />
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Theme Visual Editor - {slug}</title>
+  </head>
+  <body>
+    <!-- Render aplikasi React Puck Editor -->
+    <ThemeEditorApp client:only="react" slug={slug} />
+  </body>
 </html>

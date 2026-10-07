@@ -1,4 +1,4 @@
-import { customEditorTemplate } from '../custom-editor.ts';
+import { customEditorTemplate } from "../custom-editor.ts";
 
 export const editorForm = `
     <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">

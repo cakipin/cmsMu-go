@@ -1,1 +1,1 @@
-export { ALL, prerender } from '../../utils/honoHandler';
+export { ALL, prerender } from "../../utils/honoHandler";

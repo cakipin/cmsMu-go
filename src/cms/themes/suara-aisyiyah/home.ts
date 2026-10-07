@@ -1,87 +1,113 @@
-import type { ThemeContext } from '../types';
-import { escapeHtml, date, category, image } from './utils';
+import type { ThemeContext } from "../types";
+import { escapeHtml, date, category, image } from "./utils";
 export function renderHome(this: any, ctx: ThemeContext) {
-    const isStructured = ctx.data && !Array.isArray(ctx.data) && ctx.data.latest;
-    const posts = isStructured ? ctx.data.latest : (Array.isArray(ctx.data) ? ctx.data : []);
-    
-    if (!posts.length) return this._layout('<div class="container empty"><h1>Belum ada artikel</h1><p>Terbitkan artikel pertama untuk mengisi halaman ini.</p></div>', 'Beranda', ctx, 'home');
-    
-    const [hero,...rest] = posts;
-    const side = rest.slice(0,3);
+  const isStructured = ctx.data && !Array.isArray(ctx.data) && ctx.data.latest;
+  const posts = isStructured
+    ? ctx.data.latest
+    : Array.isArray(ctx.data)
+      ? ctx.data
+      : [];
 
-    // Gunakan data dari backend (structured) jika tersedia, jika tidak maka filter secara lokal (fallback)
-    const getCat = (key, name, max) => {
-      if (isStructured && ctx.data[key]) return ctx.data[key].slice(0, max);
-      return rest.filter(p => p.category && p.category.toLowerCase().includes(name.toLowerCase())).slice(0, max);
-    };
+  if (!posts.length)
+    return this._layout(
+      '<div class="container empty"><h1>Belum ada artikel</h1><p>Terbitkan artikel pertama untuk mengisi halaman ini.</p></div>',
+      "Beranda",
+      ctx,
+      "home"
+    );
 
-    const popular = isStructured ? ctx.data.popular : rest.slice(3, 7);
-    const hikmah = getCat('hikmah', 'Hikmah', 4);
-    const keluargaSakinah = getCat('keluargaSakinah', 'Keluarga Sakinah', 3);
-    const kalam = getCat('kalam', 'Kalam', 3);
-    const wawasan = getCat('wawasan', 'Wawasan', 4);
-    const gayaHidup = getCat('gayaHidup', 'Gaya Hidup', 3);
-    const perempuan = getCat('perempuan', 'Perempuan', 3);
-    const hajiCat = ctx.site.sa_haji_category || 'Haji';
-    const liputanHaji = getCat('liputanHaji', hajiCat, 4);
-    const inspirasi = getCat('inspirasi', 'Inspirasi', 3);
-    const muda = getCat('muda', 'Muda', 3);
-    const sosioTekno = getCat('sosioTekno', 'Sains dan Tekno', 3);
-    const isStructuredData = ctx.data && !Array.isArray(ctx.data);
-    const videos = (isStructuredData && (ctx.data as any).videos && (ctx.data as any).videos.length)
+  const [hero, ...rest] = posts;
+  const side = rest.slice(0, 3);
+
+  // Gunakan data dari backend (structured) jika tersedia, jika tidak maka filter secara lokal (fallback)
+  const getCat = (key, name, max) => {
+    if (isStructured && ctx.data[key]) return ctx.data[key].slice(0, max);
+    return rest
+      .filter(
+        p => p.category && p.category.toLowerCase().includes(name.toLowerCase())
+      )
+      .slice(0, max);
+  };
+
+  const popular = isStructured ? ctx.data.popular : rest.slice(3, 7);
+  const hikmah = getCat("hikmah", "Hikmah", 4);
+  const keluargaSakinah = getCat("keluargaSakinah", "Keluarga Sakinah", 3);
+  const kalam = getCat("kalam", "Kalam", 3);
+  const wawasan = getCat("wawasan", "Wawasan", 4);
+  const gayaHidup = getCat("gayaHidup", "Gaya Hidup", 3);
+  const perempuan = getCat("perempuan", "Perempuan", 3);
+  const hajiCat = ctx.site.sa_haji_category || "Haji";
+  const liputanHaji = getCat("liputanHaji", hajiCat, 4);
+  const inspirasi = getCat("inspirasi", "Inspirasi", 3);
+  const muda = getCat("muda", "Muda", 3);
+  const sosioTekno = getCat("sosioTekno", "Sains dan Tekno", 3);
+  const isStructuredData = ctx.data && !Array.isArray(ctx.data);
+  const videos =
+    isStructuredData &&
+    (ctx.data as any).videos &&
+    (ctx.data as any).videos.length
       ? (ctx.data as any).videos.slice(0, 3)
-      : rest.filter((p: any) => p.type === 'video' || (p.category && p.category.toLowerCase().includes('video')) || (p.video_url && String(p.video_url).trim())).slice(0, 3);
+      : rest
+          .filter(
+            (p: any) =>
+              p.type === "video" ||
+              (p.category && p.category.toLowerCase().includes("video")) ||
+              (p.video_url && String(p.video_url).trim())
+          )
+          .slice(0, 3);
 
-    const currentLang = (ctx as any).lang || 'id';
-    const langPrefix = currentLang && currentLang !== 'id' ? `/${currentLang}` : '';
+  const currentLang = (ctx as any).lang || "id";
+  const langPrefix =
+    currentLang && currentLang !== "id" ? `/${currentLang}` : "";
 
-    const translateLabel = (text: string) => {
-      if (currentLang === 'en') {
-        const map: Record<string, string> = {
-          'Tulisan Populer': 'Popular Posts',
-          'Baca semua': 'Read all',
-          'Tonton semua': 'Watch all',
-          'Inspirasi': 'Inspiration',
-          'Hikmah': 'Wisdom',
-          'Wawasan': 'Insights',
-          'Gaya Hidup': 'Lifestyle',
-          'Perempuan': 'Women',
-          'Muda': 'Youth',
-          'Sains dan Tekno': 'Science & Tech',
-          'Keluarga Sakinah': 'Sakinah Family',
-          'Kalam': 'Kalam',
-          'Video': 'Video',
-          'Belum ada tulisan di rubrik ini.': 'No posts in this category yet.',
-          'Belum ada video di rubrik ini.': 'No videos in this category yet.',
-        };
-        return map[text] || text;
-      }
-      if (currentLang === 'ar') {
-        const map: Record<string, string> = {
-          'Tulisan Populer': 'المنشورات الشائعة',
-          'Baca semua': 'قراءة الكل',
-          'Tonton semua': 'مشاهدة الكل',
-          'Inspirasi': 'إلهام',
-          'Hikmah': 'حكمة',
-          'Wawasan': 'رؤى',
-          'Gaya Hidup': 'أسلوب حياة',
-          'Perempuan': 'نساء',
-          'Muda': 'شباب',
-          'Sains dan Tekno': 'العلوم والتكنولوجيا',
-          'Keluarga Sakinah': 'الأسرة السكينة',
-          'Kalam': 'كلام',
-          'Video': 'فيديو',
-          'Belum ada tulisan di rubrik ini.': 'لا توجد مقالات في هذا القسم بعد.',
-          'Belum ada video di rubrik ini.': 'لا توجد مقاطع فيديو في هذا القسم بعد.',
-        };
-        return map[text] || text;
-      }
-      return text;
-    };
+  const translateLabel = (text: string) => {
+    if (currentLang === "en") {
+      const map: Record<string, string> = {
+        "Tulisan Populer": "Popular Posts",
+        "Baca semua": "Read all",
+        "Tonton semua": "Watch all",
+        Inspirasi: "Inspiration",
+        Hikmah: "Wisdom",
+        Wawasan: "Insights",
+        "Gaya Hidup": "Lifestyle",
+        Perempuan: "Women",
+        Muda: "Youth",
+        "Sains dan Tekno": "Science & Tech",
+        "Keluarga Sakinah": "Sakinah Family",
+        Kalam: "Kalam",
+        Video: "Video",
+        "Belum ada tulisan di rubrik ini.": "No posts in this category yet.",
+        "Belum ada video di rubrik ini.": "No videos in this category yet.",
+      };
+      return map[text] || text;
+    }
+    if (currentLang === "ar") {
+      const map: Record<string, string> = {
+        "Tulisan Populer": "المنشورات الشائعة",
+        "Baca semua": "قراءة الكل",
+        "Tonton semua": "مشاهدة الكل",
+        Inspirasi: "إلهام",
+        Hikmah: "حكمة",
+        Wawasan: "رؤى",
+        "Gaya Hidup": "أسلوب حياة",
+        Perempuan: "نساء",
+        Muda: "شباب",
+        "Sains dan Tekno": "العلوم والتكنولوجيا",
+        "Keluarga Sakinah": "الأسرة السكينة",
+        Kalam: "كلام",
+        Video: "فيديو",
+        "Belum ada tulisan di rubrik ini.": "لا توجد مقالات في هذا القسم بعد.",
+        "Belum ada video di rubrik ini.":
+          "لا توجد مقاطع فيديو في هذا القسم بعد.",
+      };
+      return map[text] || text;
+    }
+    return text;
+  };
 
-    const cleanExcerpt = "";
-    
-    const lead = `
+  const cleanExcerpt = "";
+
+  const lead = `
       <main class="container" role="main">
         <h1 class="sr-only">Suara 'Aisyiyah — Inspirasi Perempuan Berkemajuan</h1>
         <div class="hero-grid">
@@ -90,36 +116,39 @@ export function renderHome(this: any, ctx: ThemeContext) {
               <img src="${image(hero)}" alt="${escapeHtml(hero.title)}" loading="eager" width="800" height="450" fetchpriority="high">
             </a>
             <div class="hero-main-content">
-              <a href="${langPrefix}/${category(hero).toLowerCase().replace(/\s+/g, '-')}" class="cat-tag">${category(hero)}</a>
+              <a href="${langPrefix}/${category(hero).toLowerCase().replace(/\s+/g, "-")}" class="cat-tag">${category(hero)}</a>
               <h2><a href="${langPrefix}/${escapeHtml(hero.slug)}">${escapeHtml(hero.title)}</a></h2>
               <div class="post-meta">
                 <span>${date(hero.created_at)}</span>
               </div>
-              ${cleanExcerpt ? `<p>${cleanExcerpt}…</p>` : ''}
+              ${cleanExcerpt ? `<p>${cleanExcerpt}…</p>` : ""}
             </div>
           </div>
           <div class="hero-side">
-            ${side.map((p:any,i:number)=>`
+            ${side
+              .map(
+                (p: any, i: number) => `
               <div class="side-post">
                 <a href="${langPrefix}/${escapeHtml(p.slug)}" class="post-img-wrap">
-                  <img src="${image(p,i+1)}" alt="">
+                  <img src="${image(p, i + 1)}" alt="">
                 </a>
                 <div class="side-post-content">
-                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, '-')}" class="cat-tag">${category(p)}</a>
+                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, "-")}" class="cat-tag">${category(p)}</a>
                   <h3><a href="${langPrefix}/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a></h3>
                   <div class="post-meta">
                     <span>${date(p.created_at)}</span>
                   </div>
                 </div>
               </div>
-            `).join('')}
+            `
+              )
+              .join("")}
           </div>
         </div>
       </main>
     `;
 
-    
-    const sectionPrayerWidget = `
+  const sectionPrayerWidget = `
       <div class="container sa-style-39" >
         <div class="prayer-widget-inner sa-style-40" >
           <div class="sa-style-41">
@@ -144,100 +173,118 @@ export function renderHome(this: any, ctx: ThemeContext) {
       </div>
     `;
 
-    const sectionPopular = popular.length ? `
+  const sectionPopular = popular.length
+    ? `
       <div class="container">
         <div class="section-block">
           <div class="section-header sa-style-50" >
-            <h3 class="sa-style-51">${translateLabel('Tulisan Populer')}</h3>
-            <a href="${langPrefix}/populer" class="sa-style-52">${translateLabel('Baca semua')} &rarr;</a>
+            <h3 class="sa-style-51">${translateLabel("Tulisan Populer")}</h3>
+            <a href="${langPrefix}/populer" class="sa-style-52">${translateLabel("Baca semua")} &rarr;</a>
           </div>
           <div class="card-grid">
-            ${popular.map((p:any,i:number)=>`
+            ${popular
+              .map(
+                (p: any, i: number) => `
               <div class="grid-post">
                 <a href="${langPrefix}/${escapeHtml(p.slug)}" class="post-img-wrap">
-                  <img src="${image(p,i+4)}" alt="">
+                  <img src="${image(p, i + 4)}" alt="">
                 </a>
                 <div class="grid-post-content">
-                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, '-')}" class="cat-tag">${category(p)}</a>
+                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, "-")}" class="cat-tag">${category(p)}</a>
                   <h4><a href="${langPrefix}/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a></h4>
                   <div class="post-meta"><span>${date(p.created_at)}</span></div>
                 </div>
               </div>
-            `).join('')}
+            `
+              )
+              .join("")}
           </div>
         </div>
       </div>
-    ` : '';
+    `
+    : "";
 
-
-let banner1Abad = '';
-    if (ctx.site.sa_home_banner_html) {
-        banner1Abad = `<div class="container sa-style-53" >${ctx.site.sa_home_banner_html}</div>`;
-    } else if (ctx.site.sa_home_banner_image) {
-        const linkHref = ctx.site.sa_home_banner_link ? `href="${ctx.site.sa_home_banner_link}" target="_blank"` : '';
-        const tag = ctx.site.sa_home_banner_link ? 'a' : 'div';
-        banner1Abad = `
+  let banner1Abad = "";
+  if (ctx.site.sa_home_banner_html) {
+    banner1Abad = `<div class="container sa-style-53" >${ctx.site.sa_home_banner_html}</div>`;
+  } else if (ctx.site.sa_home_banner_image) {
+    const linkHref = ctx.site.sa_home_banner_link
+      ? `href="${ctx.site.sa_home_banner_link}" target="_blank"`
+      : "";
+    const tag = ctx.site.sa_home_banner_link ? "a" : "div";
+    banner1Abad = `
           <div class="container sa-style-54" >
             <${tag} ${linkHref} class="sa-banner-tag">
                <img src="${ctx.site.sa_home_banner_image}" alt="Banner Utama" class="sa-style-55">
             </${tag}>
           </div>
         `;
-    } else {
-        banner1Abad = `
+  } else {
+    banner1Abad = `
           <div class="container sa-style-54" >
             <div class="sa-style-56">
                <span class="sa-style-57">[ Placeholder Banner 1 Abad Suara 'Aisyiyah ]</span>
             </div>
           </div>
         `;
-    }
+  }
 
-    const createHorizontal = (title: string, items: any[]) => `
+  const createHorizontal = (title: string, items: any[]) => `
       <div class="container sa-style-58" >
         <div class="section-block">
           <div class="section-header sa-style-50" >
             <h3 class="sa-style-51">${translateLabel(title)}</h3>
-            <a href="${langPrefix}/${title.toLowerCase().replace(/\s+/g, '-')}" class="sa-style-52">${translateLabel('Baca semua')} &rarr;</a>
+            <a href="${langPrefix}/${title.toLowerCase().replace(/\s+/g, "-")}" class="sa-style-52">${translateLabel("Baca semua")} &rarr;</a>
           </div>
-          ${items.length ? `
+          ${
+            items.length
+              ? `
           <div class="card-grid">
-            ${items.map((p,i)=>`
+            ${items
+              .map(
+                (p, i) => `
               <div class="grid-post">
                 <a href="${langPrefix}/${escapeHtml(p.slug)}" class="post-img-wrap">
-                  <img src="${image(p,i+10)}" alt="">
+                  <img src="${image(p, i + 10)}" alt="">
                 </a>
                 <div class="grid-post-content">
-                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, '-')}" class="cat-tag">${category(p)}</a>
+                  <a href="${langPrefix}/${category(p).toLowerCase().replace(/\s+/g, "-")}" class="cat-tag">${category(p)}</a>
                   <h4><a href="${langPrefix}/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a></h4>
                   <div class="post-meta"><span>${date(p.created_at)}</span></div>
                 </div>
               </div>
-            `).join('')}
+            `
+              )
+              .join("")}
           </div>
-          ` : `
+          `
+              : `
           <div class="sa-style-59">
-            ${translateLabel('Belum ada tulisan di rubrik ini.')}
+            ${translateLabel("Belum ada tulisan di rubrik ini.")}
           </div>
-          `}
+          `
+          }
         </div>
       </div>
     `;
-    
-    
-    const createLiputanHajiBlock = (title, items, link, catName) => `
+
+  const createLiputanHajiBlock = (title, items, link, catName) => `
       <div class="container sa-style-60" >
         <div class="sa-style-61">
           <h2 class="sa-style-62">
             <a href="${link}" class="sa-style-33">${title}</a>
           </h2>
         </div>
-        ${items.length ? `
+        ${
+          items.length
+            ? `
         <div class="sa-style-63">
-          ${items.map((p,i)=>`
+          ${items
+            .map(
+              (p, i) => `
             <div>
               <a href="/${escapeHtml(p.slug)}" class="sa-style-64">
-                <img src="${image(p,i)}" alt="${escapeHtml(p.title)}" loading="lazy" class="sa-style-65" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                <img src="${image(p, i)}" alt="${escapeHtml(p.title)}" loading="lazy" class="sa-style-65" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
               </a>
               <div class="sa-style-66">
                 <span class="sa-style-67"><span class="sa-style-68">●</span> ${escapeHtml((category(p) || catName).toUpperCase())}</span>
@@ -247,56 +294,71 @@ let banner1Abad = '';
               </h4>
               <div class="sa-style-72">${date(p.created_at)}</div>
             </div>
-          `).join('')}
+          `
+            )
+            .join("")}
         </div>
-        ` : `
+        `
+            : `
         <div class="sa-style-59">
           Belum ada tulisan di rubrik ini.
         </div>
-        `}
+        `
+        }
       </div>
     `;
 
-    const createVertical = (title: string, items: any[]) => `
+  const createVertical = (title: string, items: any[]) => `
       <div class="section-block sa-style-73" >
         <div class="section-header sa-style-50" >
           <h3 class="sa-style-51">${translateLabel(title)}</h3>
-          <a href="${langPrefix}/${title.toLowerCase().replace(/\s+/g, '-')}" class="sa-style-52">${translateLabel('Baca semua')} &rarr;</a>
+          <a href="${langPrefix}/${title.toLowerCase().replace(/\s+/g, "-")}" class="sa-style-52">${translateLabel("Baca semua")} &rarr;</a>
         </div>
-        ${items.length ? `
+        ${
+          items.length
+            ? `
         <div class="sa-style-74">
-          ${items.map((p,i)=>`
+          ${items
+            .map(
+              (p, i) => `
             <div class="sa-style-75">
               <a href="${langPrefix}/${escapeHtml(p.slug)}" class="sa-style-76">
-                <img src="${image(p,i+20)}" class="sa-style-77" alt="">
+                <img src="${image(p, i + 20)}" class="sa-style-77" alt="">
               </a>
               <div class="sa-style-78">
                 <h4 class="sa-style-79"><a href="${langPrefix}/${escapeHtml(p.slug)}" class="sa-style-80">${escapeHtml(p.title)}</a></h4>
                 <span class="sa-style-81">${date(p.created_at)}</span>
               </div>
             </div>
-          `).join('')}
+          `
+            )
+            .join("")}
         </div>
-        ` : `
+        `
+            : `
         <div class="sa-style-82">
-          ${translateLabel('Belum ada tulisan di rubrik ini.')}
+          ${translateLabel("Belum ada tulisan di rubrik ini.")}
         </div>
-        `}
+        `
+        }
       </div>
     `;
 
-    const createVideoBlock = (items: any[]) => `
+  const createVideoBlock = (items: any[]) => `
       <div class="section-block sa-style-73" >
         <div class="section-header sa-style-50" >
-          <h3 class="sa-style-51">${translateLabel('Video')}</h3>
-          <a href="${langPrefix}/videos" class="sa-style-52">${translateLabel('Tonton semua')} &rarr;</a>
+          <h3 class="sa-style-51">${translateLabel("Video")}</h3>
+          <a href="${langPrefix}/videos" class="sa-style-52">${translateLabel("Tonton semua")} &rarr;</a>
         </div>
-        ${items && items.length ? `
+        ${
+          items && items.length
+            ? `
         <div class="sa-style-74">
-          ${items.map((p: any, i: number) => {
-            const vidUrl = p.video_url || p.videoUrl || '';
-            const thumb = image(p, i + 25);
-            return `
+          ${items
+            .map((p: any, i: number) => {
+              const vidUrl = p.video_url || p.videoUrl || "";
+              const thumb = image(p, i + 25);
+              return `
             <div class="sa-style-75 video-item-card">
               <a href="${langPrefix}/${escapeHtml(p.slug)}" onclick="openVideoModal('${escapeHtml(vidUrl)}', '${escapeHtml(p.title)}', '${langPrefix}/${escapeHtml(p.slug)}'); return false;" class="sa-style-76" style="position: relative; display: block; overflow: hidden; border-radius: 6px;" title="Putar Video: ${escapeHtml(p.title)}">
                 <img src="${thumb}" class="sa-style-77" alt="${escapeHtml(p.title)}" loading="lazy">
@@ -314,30 +376,35 @@ let banner1Abad = '';
               </div>
             </div>
             `;
-          }).join('')}
+            })
+            .join("")}
         </div>
-        ` : `
+        `
+            : `
         <div class="sa-style-82">
-          ${translateLabel('Belum ada video di rubrik ini.')}
+          ${translateLabel("Belum ada video di rubrik ini.")}
         </div>
-        `}
+        `
+        }
       </div>
     `;
 
-    const createAdBox = (title, imageKey, linkKey, htmlKey, titleKey) => {
-      const htmlCode = ctx.site[htmlKey];
-      const image = ctx.site[imageKey];
-      const link = ctx.site[linkKey];
-      const customTitle = ctx.site[titleKey];
+  const createAdBox = (title, imageKey, linkKey, htmlKey, titleKey) => {
+    const htmlCode = ctx.site[htmlKey];
+    const image = ctx.site[imageKey];
+    const link = ctx.site[linkKey];
+    const customTitle = ctx.site[titleKey];
 
-      const headerHtml = customTitle ? `
+    const headerHtml = customTitle
+      ? `
         <div class="sa-style-83">
           <span class="sa-style-84">${customTitle}</span>
         </div>
-      ` : '';
+      `
+      : "";
 
-      if (htmlCode) {
-        return `
+    if (htmlCode) {
+      return `
           <div class="section-block sa-style-73" >
             ${headerHtml}
             <div class="sa-style-85">
@@ -345,11 +412,11 @@ let banner1Abad = '';
             </div>
           </div>
         `;
-      }
-      if (image) {
-        const linkHref = link ? `href="${link}" target="_blank"` : '';
-        const tag = link ? 'a' : 'div';
-        return `
+    }
+    if (image) {
+      const linkHref = link ? `href="${link}" target="_blank"` : "";
+      const tag = link ? "a" : "div";
+      return `
           <div class="section-block sa-style-73" >
             ${headerHtml}
             <${tag} ${linkHref} class="sa-ad-tag">
@@ -357,8 +424,8 @@ let banner1Abad = '';
             </${tag}>
           </div>
         `;
-      }
-      return `
+    }
+    return `
       <div class="section-block sa-style-73" >
         <div class="section-header">
           <h3>${title}</h3>
@@ -368,44 +435,46 @@ let banner1Abad = '';
         </div>
       </div>
       `;
-    };
+  };
 
-    const isHajiEnabled = ctx.site.sa_haji_enable !== 'false' && ctx.site.sa_haji_enable !== false;
-    const hajiTitle = ctx.site.sa_haji_title || ('Liputan ' + hajiCat);
-    const hajiLink = '/' + encodeURIComponent(hajiCat.toLowerCase().replace(/\s+/g, '-'));
+  const isHajiEnabled =
+    ctx.site.sa_haji_enable !== "false" && ctx.site.sa_haji_enable !== false;
+  const hajiTitle = ctx.site.sa_haji_title || "Liputan " + hajiCat;
+  const hajiLink =
+    "/" + encodeURIComponent(hajiCat.toLowerCase().replace(/\s+/g, "-"));
 
-    const sectionGridBlocks = `
-      ${isHajiEnabled ? createLiputanHajiBlock(hajiTitle, liputanHaji, hajiLink, hajiCat) : ''}
-      ${createHorizontal('Hikmah', hikmah)}
+  const sectionGridBlocks = `
+      ${isHajiEnabled ? createLiputanHajiBlock(hajiTitle, liputanHaji, hajiLink, hajiCat) : ""}
+      ${createHorizontal("Hikmah", hikmah)}
       
       <div class="container sa-style-89" >
         <div class="sa-style-90">
-          ${createAdBox('Iklan', 'sa_home_ad_image', 'sa_home_ad_link', 'sa_home_ad_html', 'sa_home_ad_title')}
-          ${createVertical('Keluarga Sakinah', keluargaSakinah)}
-          ${createVertical('Kalam', kalam)}
+          ${createAdBox("Iklan", "sa_home_ad_image", "sa_home_ad_link", "sa_home_ad_html", "sa_home_ad_title")}
+          ${createVertical("Keluarga Sakinah", keluargaSakinah)}
+          ${createVertical("Kalam", kalam)}
         </div>
       </div>
 
-      ${createHorizontal('Wawasan', wawasan)}
+      ${createHorizontal("Wawasan", wawasan)}
       
       <div class="container sa-style-89" >
         <div class="sa-style-90">
-          ${createVertical('Gaya Hidup', gayaHidup)}
-          ${createVertical('Perempuan', perempuan)}
+          ${createVertical("Gaya Hidup", gayaHidup)}
+          ${createVertical("Perempuan", perempuan)}
           ${createVideoBlock(videos)}
         </div>
       </div>
       
       <div class="container sa-style-89" >
         <div class="sa-style-90">
-          ${createVertical('Inspirasi', inspirasi)}
-          ${createVertical('Muda', muda)}
-          ${createVertical('Sains dan Tekno', sosioTekno)}
+          ${createVertical("Inspirasi", inspirasi)}
+          ${createVertical("Muda", muda)}
+          ${createVertical("Sains dan Tekno", sosioTekno)}
         </div>
       </div>
     `;
-    
-    const videoModalHtml = `
+
+  const videoModalHtml = `
       <div id="video-player-modal" class="in-system-modal" style="display: none; position: fixed; inset: 0; z-index: 99999; background: rgba(0,0,0,0.85); backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px); align-items: center; justify-content: center; padding: 16px;">
         <div style="position: relative; width: 100%; max-width: 820px; background: #0f172a; border-radius: 12px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.7); border: 1px solid #334155;">
           <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; background: #1e293b; border-bottom: 1px solid #334155;">
@@ -490,5 +559,17 @@ let banner1Abad = '';
       </script>
     `;
 
-    return this._layout(`<div class="home-transparent-block">` + lead + sectionPopular + banner1Abad + sectionGridBlocks + sectionPrayerWidget + videoModalHtml + '</div>', 'Beranda', ctx, 'home');
+  return this._layout(
+    `<div class="home-transparent-block">` +
+      lead +
+      sectionPopular +
+      banner1Abad +
+      sectionGridBlocks +
+      sectionPrayerWidget +
+      videoModalHtml +
+      "</div>",
+    "Beranda",
+    ctx,
+    "home"
+  );
 }

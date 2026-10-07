@@ -6,13 +6,13 @@ export interface ThemeContext {
     [key: string]: any;
   };
   menus?: any;
-  categories?: any[];   // Daftar Kategori Dinamis dari Real DB
-  topics?: any[];       // Daftar Topik/Tag Sorotan Dinamis dari Real DB
-  sources?: any[];      // Daftar Media Sumber Terverifikasi dari Real DB
-  themeConfig?: any;    // Konfigurasi custom tema (contoh: header, footer, warna)
-  data?: any;           // Data Utama (Bisa Single Post atau List Post)
+  categories?: any[]; // Daftar Kategori Dinamis dari Real DB
+  topics?: any[]; // Daftar Topik/Tag Sorotan Dinamis dari Real DB
+  sources?: any[]; // Daftar Media Sumber Terverifikasi dari Real DB
+  themeConfig?: any; // Konfigurasi custom tema (contoh: header, footer, warna)
+  data?: any; // Data Utama (Bisa Single Post atau List Post)
   sidebarPosts?: any[]; // <--- TAMBAHAN: Data Khusus Sidebar
-  pageData?: any;       // Data dari halaman kustom (misalnya halaman 'home')
+  pageData?: any; // Data dari halaman kustom (misalnya halaman 'home')
   query?: string;
   categoryName?: string;
   pagination?: any;

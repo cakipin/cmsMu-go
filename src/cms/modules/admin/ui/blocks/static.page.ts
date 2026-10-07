@@ -1,4 +1,4 @@
-import { customEditorTemplate } from './custom-editor.ts';
+import { customEditorTemplate } from "./custom-editor.ts";
 
 export const staticPage = `
 <div x-show="view === 'pages' || view === 'add-page'" class="animate-fade" 

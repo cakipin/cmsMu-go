@@ -1,4 +1,4 @@
-import { getStorageBucket } from '../../../storage/r2-adapter';
+import { getStorageBucket } from "../../../storage/r2-adapter";
 
 /**
  * Helper: Mengunduh gambar artikel, mengonversinya ke WebP dengan sharp,
@@ -11,13 +11,15 @@ export async function processAndUploadImage(
   sourceSlug: string,
   c: any
 ): Promise<string> {
-  if (!imageUrl || !imageUrl.startsWith('http')) return '';
+  if (!imageUrl || !imageUrl.startsWith("http")) return "";
   try {
     const res = await fetch(imageUrl, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Accept': 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8'
-      }
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept:
+          "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+      },
     });
     if (!res.ok) return imageUrl;
 
@@ -27,13 +29,16 @@ export async function processAndUploadImage(
     // Konversi gambar ke WebP menggunakan sharp jika runtime mendukung
     let webpBuffer: any = Buffer.from(arrayBuffer);
     try {
-      const sharpModule = await (new Function('return import("sharp")')());
+      const sharpModule = await new Function('return import("sharp")')();
       const sharpFn = sharpModule.default || sharpModule;
       webpBuffer = await sharpFn(Buffer.from(arrayBuffer))
         .webp({ quality: 80 })
         .toBuffer();
     } catch (sharpErr) {
-      console.warn('Sharp conversion not available in current runtime, using original buffer:', sharpErr);
+      console.warn(
+        "Sharp conversion not available in current runtime, using original buffer:",
+        sharpErr
+      );
     }
 
     const bucket = getStorageBucket(c);
@@ -41,41 +46,50 @@ export async function processAndUploadImage(
       return imageUrl; // Fallback jika R2 belum siap
     }
 
-    const cleanSource = (sourceSlug || 'agregator')
-      .toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'agregator';
+    const cleanSource =
+      (sourceSlug || "agregator").toLowerCase().replace(/[^a-z0-9_-]/g, "") ||
+      "agregator";
     const now = new Date();
     const year = now.getFullYear();
-    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, "0");
     const folder = `${cleanSource}/${year}/${month}`;
     const cleanSlug = title
-      ? title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 40)
-      : 'foto';
+      ? title
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")
+          .slice(0, 40)
+      : "foto";
     const key = `${folder}/${Date.now()}-${cleanSlug}.webp`;
 
     await bucket.put(key, webpBuffer, {
-      httpMetadata: { contentType: 'image/webp' }
+      httpMetadata: { contentType: "image/webp" },
     });
 
     const fileUrl = `/api/media/file/${key}`;
 
     // Catat ke tabel media_meta CMSMu agar muncul di Media Library
     try {
-      await c.env.DB.prepare(`
+      await c.env.DB.prepare(
+        `
         INSERT INTO media_meta (key, url, type, size, title, alt, caption, created_at)
         VALUES (?, ?, 'image/webp', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-      `).bind(
-        key,
-        fileUrl,
-        webpBuffer.length,
-        title || 'Foto Berita Agregator',
-        title || 'Foto Berita Agregator',
-        sourceName ? `Foto: Dok. ${sourceName}` : ''
-      ).run();
+      `
+      )
+        .bind(
+          key,
+          fileUrl,
+          webpBuffer.length,
+          title || "Foto Berita Agregator",
+          title || "Foto Berita Agregator",
+          sourceName ? `Foto: Dok. ${sourceName}` : ""
+        )
+        .run();
     } catch (metaErr) {}
 
     return fileUrl;
   } catch (err) {
-    console.error('Failed to process and upload image to R2:', err);
+    console.error("Failed to process and upload image to R2:", err);
     return imageUrl;
   }
 }
@@ -92,7 +106,7 @@ export async function processArticleInlineImages(
   sourceSlug: string,
   c: any
 ): Promise<string> {
-  if (!htmlContent) return '';
+  if (!htmlContent) return "";
 
   const imgRegex = /<img[^>]+src=["'](https?:\/\/[^"']+)["'][^>]*>/gi;
   const matches = [...htmlContent.matchAll(imgRegex)];
@@ -103,17 +117,23 @@ export async function processArticleInlineImages(
 
   for (const match of matches) {
     const origSrc = match[1];
-    if (!origSrc || origSrc.startsWith('/api/media/')) continue;
+    if (!origSrc || origSrc.startsWith("/api/media/")) continue;
 
     try {
       const inlineTitle = `${title}-inline-${idx}`;
-      const r2Url = await processAndUploadImage(origSrc, inlineTitle, sourceName, sourceSlug, c);
+      const r2Url = await processAndUploadImage(
+        origSrc,
+        inlineTitle,
+        sourceName,
+        sourceSlug,
+        c
+      );
       if (r2Url && r2Url !== origSrc) {
         updatedContent = updatedContent.split(origSrc).join(r2Url);
       }
       idx++;
-    } catch(e) {
-      console.warn('Gagal memproses inline image:', origSrc, e);
+    } catch (e) {
+      console.warn("Gagal memproses inline image:", origSrc, e);
     }
   }
 

@@ -16,7 +16,7 @@ let themeValue: string =
   getPreferredTheme();
 
 function persist(): void {
-  (void 0);
+  void 0;
   reflect();
 }
 

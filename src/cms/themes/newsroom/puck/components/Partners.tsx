@@ -11,9 +11,9 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
       arrayFields: {
         name: { type: "text" },
         logoUrl: { type: "custom", render: ImageField },
-        url: { type: "text" }
-      }
-    }
+        url: { type: "text" },
+      },
+    },
   },
   defaultProps: {
     title: "Mendukung Ekosistem Persyarikatan & Amal Usaha Muhammadiyah",
@@ -21,19 +21,27 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
       { name: "Pimpinan Wilayah & Daerah", logoUrl: "", url: "" },
       { name: "Majelis & Lembaga", logoUrl: "", url: "" },
       { name: "Perguruan Tinggi & Sekolah", logoUrl: "", url: "" },
-      { name: "Rumah Sakit & Lembaga Layanan", logoUrl: "", url: "" }
-    ]
+      { name: "Rumah Sakit & Lembaga Layanan", logoUrl: "", url: "" },
+    ],
   },
   render: ({ title, partners }) => (
-    <section className="bg-white py-12 border-b border-slate-200">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-        <p className="text-sm text-slate-500 font-medium mb-8 uppercase tracking-wider">{title}</p>
-        <div className="flex justify-center flex-wrap items-center gap-8 md:gap-16 opacity-60 hover:opacity-100 transition duration-300">
+    <section className="border-b border-slate-200 bg-white py-12">
+      <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
+        <p className="mb-8 text-sm font-medium tracking-wider text-slate-500 uppercase">
+          {title}
+        </p>
+        <div className="flex flex-wrap items-center justify-center gap-8 opacity-60 transition duration-300 hover:opacity-100 md:gap-16">
           {(partners || []).map((partner, i) => {
             const innerContent = partner.logoUrl ? (
-              <img src={partner.logoUrl} alt={partner.name} className="h-10 object-contain grayscale hover:grayscale-0 transition duration-300" />
+              <img
+                src={partner.logoUrl}
+                alt={partner.name}
+                className="h-10 object-contain grayscale transition duration-300 hover:grayscale-0"
+              />
             ) : (
-              <span className="text-2xl font-bold text-slate-800 hover:text-emerald-600 transition">{partner.name}</span>
+              <span className="text-2xl font-bold text-slate-800 transition hover:text-emerald-600">
+                {partner.name}
+              </span>
             );
 
             if (partner.url && partner.url.trim() !== "") {
@@ -60,5 +68,5 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
         </div>
       </div>
     </section>
-  )
+  ),
 };

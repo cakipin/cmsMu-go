@@ -1,35 +1,41 @@
-import type { ThemeContext } from '../types';
-import { escapeHtml, date, category as getCategory, image } from './utils';
+import type { ThemeContext } from "../types";
+import { escapeHtml, date, category as getCategory, image } from "./utils";
 
 export function renderUserProfile(this: any, ctx: ThemeContext) {
-    const cx = ctx as any;
-    const user = cx.profileUser || {};
-    const magazines = Array.isArray(cx.magazines) ? cx.magazines : [];
-    const proPosts = Array.isArray(cx.proPosts) ? cx.proPosts : [];
-    const subscriptions = Array.isArray(cx.subscriptions) ? cx.subscriptions : [];
+  const cx = ctx as any;
+  const user = cx.profileUser || {};
+  const magazines = Array.isArray(cx.magazines) ? cx.magazines : [];
+  const proPosts = Array.isArray(cx.proPosts) ? cx.proPosts : [];
+  const subscriptions = Array.isArray(cx.subscriptions) ? cx.subscriptions : [];
 
-    const username = escapeHtml(user.username || '');
-    const displayName = escapeHtml(user.name || user.username || 'Pengguna');
-    const role = String(user.role || 'subscriber').toLowerCase();
-    const isSubscriberPro = role === 'subscriber_pro' || role === 'pro' || role === 'premium';
-    const expiresAt = user.subscriptionExpiresAt || user.subscription_expires_at || null;
+  const username = escapeHtml(user.username || "");
+  const displayName = escapeHtml(user.name || user.username || "Pengguna");
+  const role = String(user.role || "subscriber").toLowerCase();
+  const isSubscriberPro =
+    role === "subscriber_pro" || role === "pro" || role === "premium";
+  const expiresAt =
+    user.subscriptionExpiresAt || user.subscription_expires_at || null;
 
-    let expiresFormatted = '';
-    let daysRemaining = 0;
-    if (expiresAt) {
-        const expDate = new Date(expiresAt);
-        if (!isNaN(expDate.getTime())) {
-            expiresFormatted = expDate.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-            const now = new Date();
-            const diffTime = expDate.getTime() - now.getTime();
-            daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        }
+  let expiresFormatted = "";
+  let daysRemaining = 0;
+  if (expiresAt) {
+    const expDate = new Date(expiresAt);
+    if (!isNaN(expDate.getTime())) {
+      expiresFormatted = expDate.toLocaleDateString("id-ID", {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      const now = new Date();
+      const diffTime = expDate.getTime() - now.getTime();
+      daysRemaining = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     }
+  }
 
-    const initial = (displayName.charAt(0) || 'U').toUpperCase();
-    const avatarUrl = user.avatar ? escapeHtml(user.avatar) : '';
+  const initial = (displayName.charAt(0) || "U").toUpperCase();
+  const avatarUrl = user.avatar ? escapeHtml(user.avatar) : "";
 
-    let content = `
+  let content = `
     <main class="container" role="main" style="max-width: 1100px; margin: 30px auto 60px; padding: 0 16px;">
         <!-- 1. USER PROFILE HEADER CARD -->
         <div class="user-profile-header-card" style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 32px 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); margin-bottom: 28px;">
@@ -37,11 +43,15 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                 <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
                     <!-- Avatar -->
                     <div style="width: 76px; height: 76px; border-radius: 50%; overflow: hidden; border: 3px solid #059669; box-shadow: 0 4px 12px rgba(5,150,105,0.25); flex-shrink: 0; background: #059669; display: flex; align-items: center; justify-content: center;">
-                        ${avatarUrl ? `
+                        ${
+                          avatarUrl
+                            ? `
                             <img src="${avatarUrl}" alt="${displayName}" style="width:100%; height:100%; object-fit:cover;" onerror="this.outerHTML='<span style=\\'color:#fff; font-size:32px; font-weight:800;\\'>${initial}</span>'">
-                        ` : `
+                        `
+                            : `
                             <span style="color: #ffffff; font-size: 32px; font-weight: 800;">${initial}</span>
-                        `}
+                        `
+                        }
                     </div>
 
                     <!-- Details -->
@@ -50,44 +60,56 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                             <h1 style="font-size: 24px; font-weight: 800; color: #0f172a; margin: 0; line-height: 1.2;">
                                 ${displayName}
                             </h1>
-                            ${isSubscriberPro ? `
+                            ${
+                              isSubscriberPro
+                                ? `
                                 <span style="background: linear-gradient(135deg, #059669, #0d9488); color: #ffffff; font-size: 11px; font-weight: 800; padding: 4px 10px; border-radius: 20px; letter-spacing: 0.5px; display: inline-flex; align-items: center; gap: 4px; box-shadow: 0 2px 6px rgba(5,150,105,0.3);">
                                     ⭐ SUBSCRIBER PRO
                                 </span>
-                            ` : `
+                            `
+                                : `
                                 <span style="background: #f1f5f9; color: #475569; font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; border: 1px solid #cbd5e1;">
                                     ${role.toUpperCase()}
                                 </span>
-                            `}
+                            `
+                            }
                         </div>
                         <div style="font-size: 14px; color: #64748b; margin-top: 4px; font-weight: 500;">
-                            @${username} ${user.email ? `&bull; ${escapeHtml(user.email)}` : ''}
+                            @${username} ${user.email ? `&bull; ${escapeHtml(user.email)}` : ""}
                         </div>
                     </div>
                 </div>
 
                 <!-- Subscription Status Capsule -->
-                <div style="background: ${isSubscriberPro ? '#f0fdf4' : '#f8fafc'}; border: 1px solid ${isSubscriberPro ? '#a7f3d0' : '#e2e8f0'}; border-radius: 12px; padding: 14px 20px; text-align: right; min-width: 200px;">
-                    <div style="font-size: 11px; font-weight: 700; color: ${isSubscriberPro ? '#059669' : '#64748b'}; text-transform: uppercase; letter-spacing: 0.5px;">
-                        ${isSubscriberPro ? 'Status Langganan Aktif' : 'Status Akun'}
+                <div style="background: ${isSubscriberPro ? "#f0fdf4" : "#f8fafc"}; border: 1px solid ${isSubscriberPro ? "#a7f3d0" : "#e2e8f0"}; border-radius: 12px; padding: 14px 20px; text-align: right; min-width: 200px;">
+                    <div style="font-size: 11px; font-weight: 700; color: ${isSubscriberPro ? "#059669" : "#64748b"}; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ${isSubscriberPro ? "Status Langganan Aktif" : "Status Akun"}
                     </div>
-                    ${isSubscriberPro && expiresFormatted ? `
+                    ${
+                      isSubscriberPro && expiresFormatted
+                        ? `
                         <div style="font-size: 15px; font-weight: 800; color: #064e3b; margin-top: 3px;">
-                            ${daysRemaining > 0 ? `Sisa ${daysRemaining} Hari` : 'Hari Terakhir'}
+                            ${daysRemaining > 0 ? `Sisa ${daysRemaining} Hari` : "Hari Terakhir"}
                         </div>
                         <div style="font-size: 12px; color: #047857; margin-top: 2px;">
                             s/d ${expiresFormatted}
                         </div>
-                    ` : `
+                    `
+                        : `
                         <div style="font-size: 14px; font-weight: 700; color: #334155; margin-top: 3px;">
-                            ${isSubscriberPro ? 'Aktif Permanen' : 'Paket Gratis'}
+                            ${isSubscriberPro ? "Aktif Permanen" : "Paket Gratis"}
                         </div>
-                        ${!isSubscriberPro ? `
+                        ${
+                          !isSubscriberPro
+                            ? `
                             <a href="/berlangganan" style="display: inline-block; margin-top: 6px; font-size: 12px; font-weight: 700; color: #059669; text-decoration: none;">
                                 Upgrade ke Pro &rarr;
                             </a>
-                        ` : ''}
-                    `}
+                        `
+                            : ""
+                        }
+                    `
+                    }
                 </div>
             </div>
         </div>
@@ -122,31 +144,40 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                 <a href="/majalah" style="font-size: 13px; font-weight: 700; color: #059669; text-decoration: none;">Lihat Semua Edisi &rarr;</a>
             </div>
 
-            ${!magazines.length ? `
+            ${
+              !magazines.length
+                ? `
                 <div style="text-align: center; padding: 48px 16px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px;">
                     <div style="font-size: 40px; color: #94a3b8; margin-bottom: 10px;">📖</div>
                     <h4 style="font-size: 16px; color: #334155; margin-bottom: 4px;">Belum Ada Edisi Majalah</h4>
                     <p style="font-size: 13px; color: #64748b;">Edisi majalah digital akan segera diperbarui oleh redaksi.</p>
                 </div>
-            ` : `
+            `
+                : `
                 <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px;">
-                    ${magazines.map((m: any) => `
+                    ${magazines
+                      .map(
+                        (m: any) => `
                         <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.04); display: flex; flex-direction: column; transition: transform 0.2s;" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform='none'">
                             <div style="aspect-ratio: 3/4; width: 100%; background: #f1f5f9; overflow: hidden; position: relative;">
-                                <img src="${escapeHtml(m.coverImage || m.cover_image || '')}" alt="${escapeHtml(m.title)}" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
-                                ${isSubscriberPro ? `
+                                <img src="${escapeHtml(m.coverImage || m.cover_image || "")}" alt="${escapeHtml(m.title)}" style="width:100%; height:100%; object-fit:cover;" loading="lazy">
+                                ${
+                                  isSubscriberPro
+                                    ? `
                                     <span style="position: absolute; top: 10px; right: 10px; background: #059669; color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2);">
                                         AKSES PENUH
                                     </span>
-                                ` : `
+                                `
+                                    : `
                                     <span style="position: absolute; top: 10px; right: 10px; background: #d97706; color: #ffffff; font-size: 10px; font-weight: 800; padding: 3px 8px; border-radius: 12px;">
                                         PREVIEW
                                     </span>
-                                `}
+                                `
+                                }
                             </div>
                             <div style="padding: 14px; display: flex; flex-direction: column; flex: 1;">
                                 <div style="font-size: 11px; font-weight: 700; color: #059669; text-transform: uppercase;">
-                                    ${escapeHtml(m.editionNumber || m.edition_number || 'Edisi Digital')}
+                                    ${escapeHtml(m.editionNumber || m.edition_number || "Edisi Digital")}
                                 </div>
                                 <h4 style="font-size: 14px; font-weight: 700; color: #0f172a; margin: 4px 0 10px 0; line-height: 1.4; flex: 1;">
                                     ${escapeHtml(m.title)}
@@ -156,9 +187,12 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                                 </a>
                             </div>
                         </div>
-                    `).join('')}
+                    `
+                      )
+                      .join("")}
                 </div>
-            `}
+            `
+            }
         </div>
 
         <!-- TAB 2: KONTEN & ARTIKEL PRO -->
@@ -168,45 +202,63 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                 <p style="font-size: 13px; color: #64748b; margin: 4px 0 0 0;">Konten mendalam pilihan untuk menambah wawasan dan inspirasi Anda.</p>
             </div>
 
-            ${!proPosts.length ? `
+            ${
+              !proPosts.length
+                ? `
                 <div style="text-align: center; padding: 48px 16px; background: #ffffff; border: 1px dashed #cbd5e1; border-radius: 12px;">
                     <div style="font-size: 40px; color: #94a3b8; margin-bottom: 10px;">⭐</div>
                     <h4 style="font-size: 16px; color: #334155; margin-bottom: 4px;">Konten Khusus Belum Tersedia</h4>
                     <p style="font-size: 13px; color: #64748b;">Artikel dan video eksklusif Pro akan muncul di sini.</p>
                 </div>
-            ` : `
+            `
+                : `
                 <div class="card-grid">
-                    ${proPosts.map((p: any, i: number) => {
-                        const isVideo = p.type === 'video' || (p.video_url && String(p.video_url).trim() !== '');
+                    ${proPosts
+                      .map((p: any, i: number) => {
+                        const isVideo =
+                          p.type === "video" ||
+                          (p.video_url && String(p.video_url).trim() !== "");
                         const catName = getCategory(p);
-                        const catSlug = catName.toLowerCase().replace(/\s+/g, '-');
+                        const catSlug = catName
+                          .toLowerCase()
+                          .replace(/\s+/g, "-");
                         return `
                         <div class="grid-post">
                             <a href="/${escapeHtml(p.slug)}" class="post-img-wrap" style="position: relative;">
                                 <img src="${image(p, i)}" alt="${escapeHtml(p.title)}" loading="lazy">
-                                ${isVideo ? `
+                                ${
+                                  isVideo
+                                    ? `
                                     <span style="position: absolute; bottom: 8px; right: 8px; background: #dc2626; color: #ffffff; font-size: 10px; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;">
                                         <svg viewBox="0 0 24 24" width="10" height="10" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> VIDEO
                                     </span>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                             </a>
                             <div class="grid-post-content">
                                 <div style="margin-bottom: 6px;">
                                     <a href="/${catSlug}" class="cat-tag" style="font-size: 11px; padding: 2px 8px; text-decoration: none;">${catName}</a>
                                 </div>
                                 <h4><a href="/${escapeHtml(p.slug)}">${escapeHtml(p.title)}</a></h4>
-                                ${p.excerpt ? `
+                                ${
+                                  p.excerpt
+                                    ? `
                                     <p style="font-size: 13px; margin: 6px 0 10px 0; line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; opacity: 0.85;">
                                         ${escapeHtml(p.excerpt)}
                                     </p>
-                                ` : ''}
+                                `
+                                    : ""
+                                }
                                 <div class="post-meta"><span>${date(p.created_at)}</span></div>
                             </div>
                         </div>
                         `;
-                    }).join('')}
+                      })
+                      .join("")}
                 </div>
-            `}
+            `
+            }
         </div>
 
         <!-- TAB 3: STATUS LANGGANAN & INVOICE -->
@@ -217,19 +269,19 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                     <div style="background: #f8fafc; padding: 14px 18px; border-radius: 10px; border: 1px solid #e2e8f0;">
                         <div style="font-size: 12px; color: #64748b; font-weight: 600;">Paket Saat Ini</div>
                         <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 4px;">
-                            ${escapeHtml(user.subscriptionPlan || user.subscription_plan || (isSubscriberPro ? 'Subscriber Pro' : 'Gratis'))}
+                            ${escapeHtml(user.subscriptionPlan || user.subscription_plan || (isSubscriberPro ? "Subscriber Pro" : "Gratis"))}
                         </div>
                     </div>
                     <div style="background: #f8fafc; padding: 14px 18px; border-radius: 10px; border: 1px solid #e2e8f0;">
                         <div style="font-size: 12px; color: #64748b; font-weight: 600;">Masa Berlaku</div>
                         <div style="font-size: 16px; font-weight: 800; color: #059669; margin-top: 4px;">
-                            ${expiresFormatted ? expiresFormatted : (isSubscriberPro ? 'Aktif' : 'Tidak Aktif')}
+                            ${expiresFormatted ? expiresFormatted : isSubscriberPro ? "Aktif" : "Tidak Aktif"}
                         </div>
                     </div>
                     <div style="background: #f8fafc; padding: 14px 18px; border-radius: 10px; border: 1px solid #e2e8f0;">
                         <div style="font-size: 12px; color: #64748b; font-weight: 600;">Sisa Waktu Kuota</div>
                         <div style="font-size: 16px; font-weight: 800; color: #0f172a; margin-top: 4px;">
-                            ${daysRemaining > 0 ? `${daysRemaining} Hari Lagi` : (isSubscriberPro ? 'Aktif' : '-')}
+                            ${daysRemaining > 0 ? `${daysRemaining} Hari Lagi` : isSubscriberPro ? "Aktif" : "-"}
                         </div>
                     </div>
                 </div>
@@ -247,11 +299,14 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
             <!-- Invoice / Riwayat Transaksi -->
             <div style="background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 24px;">
                 <h3 style="font-size: 18px; font-weight: 700; color: #0f172a; margin: 0 0 16px 0;">Riwayat Pembayaran & Invoice</h3>
-                ${!subscriptions.length ? `
+                ${
+                  !subscriptions.length
+                    ? `
                     <div style="text-align: center; padding: 32px 16px; color: #64748b; font-size: 13px;">
                         Belum ada riwayat transaksi pembayaran online yang tercatat untuk akun ini.
                     </div>
-                ` : `
+                `
+                    : `
                     <div style="overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse; font-size: 13px; text-align: left;">
                             <thead>
@@ -264,40 +319,56 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                                 </tr>
                             </thead>
                             <tbody>
-                                ${subscriptions.map((s: any) => `
+                                ${subscriptions
+                                  .map(
+                                    (s: any) => `
                                     <tr style="border-bottom: 1px solid #f1f5f9;">
                                         <td style="padding: 12px; font-weight: 600; color: #0f172a;">
                                             #INV-${s.id}<br>
                                             <span style="font-size: 11px; color: #64748b; font-weight: 400;">${date(s.createdAt || s.created_at)}</span>
                                         </td>
                                         <td style="padding: 12px; font-weight: 600; text-transform: capitalize;">
-                                            ${escapeHtml(s.plan ? s.plan.replace('_', ' ') : 'Paket Langganan')}
+                                            ${escapeHtml(s.plan ? s.plan.replace("_", " ") : "Paket Langganan")}
                                         </td>
                                         <td style="padding: 12px; font-weight: 700; color: #059669;">
-                                            ${s.amount ? `Rp ${Number(s.amount).toLocaleString('id-ID')}` : '-'}
+                                            ${s.amount ? `Rp ${Number(s.amount).toLocaleString("id-ID")}` : "-"}
                                         </td>
                                         <td style="padding: 12px;">
-                                            ${s.status === 'approved' || s.status === 'active' ? `
+                                            ${
+                                              s.status === "approved" ||
+                                              s.status === "active"
+                                                ? `
                                                 <span style="background: #d1fae5; color: #065f46; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px;">Lunas / Aktif</span>
-                                            ` : s.status === 'pending' ? `
+                                            `
+                                                : s.status === "pending"
+                                                  ? `
                                                 <span style="background: #fef3c7; color: #92400e; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px;">Verifikasi</span>
-                                            ` : `
+                                            `
+                                                  : `
                                                 <span style="background: #fee2e2; color: #991b1b; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 12px;">${escapeHtml(s.status)}</span>
-                                            `}
+                                            `
+                                            }
                                         </td>
                                         <td style="padding: 12px;">
-                                            ${s.paymentProof || s.payment_proof ? `
+                                            ${
+                                              s.paymentProof || s.payment_proof
+                                                ? `
                                                 <a href="${escapeHtml(s.paymentProof || s.payment_proof)}" target="_blank" style="color: #059669; font-weight: 600; text-decoration: none;">
                                                     Lihat Struk
                                                 </a>
-                                            ` : '-'}
+                                            `
+                                                : "-"
+                                            }
                                         </td>
                                     </tr>
-                                `).join('')}
+                                `
+                                  )
+                                  .join("")}
                             </tbody>
                         </table>
                     </div>
-                `}
+                `
+                }
             </div>
         </div>
 
@@ -315,8 +386,8 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                         <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 8px;">Foto Profil (Avatar)</label>
                         <div style="display: flex; align-items: center; gap: 16px; flex-wrap: wrap;">
                             <div id="avatar-preview-box" style="width: 72px; height: 72px; border-radius: 50%; overflow: hidden; border: 2px solid #059669; background: #f1f5f9; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
-                                <img id="avatar-preview-img" src="${avatarUrl || ''}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; ${!avatarUrl ? 'display:none;' : ''}" onerror="this.style.display='none'; document.getElementById('avatar-preview-fallback').style.display='block';">
-                                <span id="avatar-preview-fallback" style="font-size: 26px; font-weight: 800; color: #059669; ${avatarUrl ? 'display:none;' : ''}">${initial}</span>
+                                <img id="avatar-preview-img" src="${avatarUrl || ""}" alt="Avatar" style="width:100%; height:100%; object-fit:cover; ${!avatarUrl ? "display:none;" : ""}" onerror="this.style.display='none'; document.getElementById('avatar-preview-fallback').style.display='block';">
+                                <span id="avatar-preview-fallback" style="font-size: 26px; font-weight: 800; color: #059669; ${avatarUrl ? "display:none;" : ""}">${initial}</span>
                             </div>
                             <div style="flex: 1; min-width: 220px;">
                                 <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
@@ -336,9 +407,9 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                         <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Username Akun (@username)</label>
                         <div style="display: flex; align-items: center; border: 1px solid #cbd5e1; border-radius: 8px; overflow: hidden; background: #ffffff;">
                             <span style="padding: 10px 14px; background: #f8fafc; border-right: 1px solid #cbd5e1; color: #059669; font-weight: 800; font-size: 14px;">@</span>
-                            <input type="text" id="prof-username" value="${escapeHtml(user.username || '')}" required style="width: 100%; padding: 10px 14px; border: none; font-size: 14px; outline: none; box-sizing: border-box;" placeholder="contoh: cakipin atau zainal.arifin">
+                            <input type="text" id="prof-username" value="${escapeHtml(user.username || "")}" required style="width: 100%; padding: 10px 14px; border: none; font-size: 14px; outline: none; box-sizing: border-box;" placeholder="contoh: cakipin atau zainal.arifin">
                         </div>
-                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Gunakan huruf kecil, angka, titik, atau garis bawah tanpa spasi. Link profil Anda: <strong id="preview-profile-url">/@${escapeHtml(user.username || '')}</strong></div>
+                        <div style="font-size: 12px; color: #64748b; margin-top: 4px;">Gunakan huruf kecil, angka, titik, atau garis bawah tanpa spasi. Link profil Anda: <strong id="preview-profile-url">/@${escapeHtml(user.username || "")}</strong></div>
                     </div>
 
                     <!-- Nama Lengkap -->
@@ -350,7 +421,7 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
                     <!-- Email -->
                     <div>
                         <label style="display: block; font-size: 13px; font-weight: 700; color: #334155; margin-bottom: 6px;">Alamat Email</label>
-                        <input type="email" id="prof-email" value="${escapeHtml(user.email || '')}" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #ffffff;">
+                        <input type="email" id="prof-email" value="${escapeHtml(user.email || "")}" style="width: 100%; padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 14px; box-sizing: border-box; background: #ffffff;">
                     </div>
 
                     <button type="submit" id="btn-save-profile" style="background: #059669; color: #ffffff; padding: 11px 22px; border: none; border-radius: 8px; font-size: 14px; font-weight: 700; cursor: pointer; transition: background 0.2s; align-self: flex-start; box-shadow: 0 2px 6px rgba(5,150,105,0.3);">
@@ -617,5 +688,5 @@ export function renderUserProfile(this: any, ctx: ThemeContext) {
     </script>
     `;
 
-    return this._layout(content, `Profil @${username}`, ctx);
+  return this._layout(content, `Profil @${username}`, ctx);
 }

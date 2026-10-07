@@ -11,6 +11,9 @@
     "./tokens.css": "./src/tokens/tokens.css",
     "./components": "./src/components/index.ts"
   },
+  "scripts": {
+    "check-types": "tsc --noEmit"
+  },
   "dependencies": {
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

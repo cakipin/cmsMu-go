@@ -1,4 +1,9 @@
-import type { D1Database, R2Bucket, KVNamespace, VectorizeIndex } from '@cloudflare/workers-types'
+import type {
+  D1Database,
+  R2Bucket,
+  KVNamespace,
+  VectorizeIndex,
+} from "@cloudflare/workers-types";
 
 export interface Bindings {
   // Database & Storage
@@ -19,7 +24,7 @@ export interface Bindings {
   AI: any;
   sa_cache?: KVNamespace;
   VECTORIZE_INDEX?: VectorizeIndex; // Untuk Tarjih CMS
-  VECTOR_INDEX?: VectorizeIndex;   // Untuk Quran (Opsional)
+  VECTOR_INDEX?: VectorizeIndex; // Untuk Quran (Opsional)
 }
 
 export type Content = {
@@ -30,4 +35,4 @@ export type Content = {
   type: string;
   status: string;
   attributes?: string;
-}
+};

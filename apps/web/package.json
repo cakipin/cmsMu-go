@@ -8,7 +8,8 @@
     "start": "astro dev",
     "build": "astro build",
     "preview": "astro preview",
-    "sync": "astro sync"
+    "sync": "astro sync",
+    "check-types": "tsc --noEmit"
   },
   "dependencies": {
     "@cmsmu/core": "workspace:*",

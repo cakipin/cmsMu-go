@@ -23,12 +23,16 @@ import cloudflare from "@astrojs/cloudflare";
 
 export default defineConfig({
   site: config.site.url,
-  output: 'server',
+  output: "server",
 
-  integrations: [mdx(), sitemap({
-    filter: page =>
-      config.features?.showArchives !== false || !page.endsWith("/archives/"),
-  }), react()],
+  integrations: [
+    mdx(),
+    sitemap({
+      filter: page =>
+        config.features?.showArchives !== false || !page.endsWith("/archives/"),
+    }),
+    react(),
+  ],
 
   i18n: {
     locales: ["en"],

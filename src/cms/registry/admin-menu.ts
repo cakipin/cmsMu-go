@@ -3,11 +3,11 @@
 export interface AdminMenuItem {
   group: string;
   title: string;
-  view?: string;       // Untuk menu internal (SPA)
-  href?: string;       // Untuk menu eksternal/link
+  view?: string; // Untuk menu internal (SPA)
+  href?: string; // Untuk menu eksternal/link
   icon: string;
   role?: string[];
-  pluginId?: string;   // ID plugin untuk mengontrol visibilitas dinamis (On/Off)
+  pluginId?: string; // ID plugin untuk mengontrol visibilitas dinamis (On/Off)
   actionCode?: string; // String function body untuk dijalankan di client
 }
 
@@ -33,8 +33,11 @@ export function registerPluginScript(script: string) {
 }
 
 // Fungsi untuk plugin mendaftarkan tampilan HTML view dirinya
-export function registerPluginView(viewName: string, htmlOrFn: string | (() => string)) {
-  if (typeof htmlOrFn === 'function') {
+export function registerPluginView(
+  viewName: string,
+  htmlOrFn: string | (() => string)
+) {
+  if (typeof htmlOrFn === "function") {
     pluginViews[viewName] = htmlOrFn;
     return;
   }
@@ -50,7 +53,7 @@ export function registerPluginView(viewName: string, htmlOrFn: string | (() => s
     }
   }
 
-  const cleanHtml = htmlOrFn.replace(scriptRegex, '');
+  const cleanHtml = htmlOrFn.replace(scriptRegex, "");
   pluginViews[viewName] = cleanHtml;
 }
 
@@ -58,7 +61,7 @@ export function registerPluginView(viewName: string, htmlOrFn: string | (() => s
 export function renderPluginViews(): string {
   return Object.entries(pluginViews)
     .map(([view, htmlOrFn]) => {
-      const html = typeof htmlOrFn === 'function' ? htmlOrFn() : htmlOrFn;
+      const html = typeof htmlOrFn === "function" ? htmlOrFn() : htmlOrFn;
       const scriptRegex = /<script\b[^>]*>([\s\S]*?)<\/script>/gi;
       let match;
       while ((match = scriptRegex.exec(html)) !== null) {
@@ -67,15 +70,15 @@ export function renderPluginViews(): string {
           registerPluginScript(scriptContent);
         }
       }
-      const cleanHtml = html.replace(scriptRegex, '');
+      const cleanHtml = html.replace(scriptRegex, "");
       return `<template x-if="view === '${view}'"><div class="exclusive-wrapper">${cleanHtml}</div></template>`;
     })
-    .join('\n');
+    .join("\n");
 }
 
 // Render seluruh skrip client yang didaftarkan plugin untuk disematkan di <head>
 export function renderPluginScripts(): string {
   return pluginScripts
     .map(script => `<script>\n${script}\n</script>`)
-    .join('\n');
+    .join("\n");
 }

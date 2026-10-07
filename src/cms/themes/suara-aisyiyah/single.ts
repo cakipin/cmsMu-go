@@ -1,158 +1,221 @@
-import type { ThemeContext } from '../types';
-import { escapeHtml, date, category, image, cleanAndFormatArticleContent } from './utils';
-import { renderSingleVideo } from './single-video';
+import type { ThemeContext } from "../types";
+import {
+  escapeHtml,
+  date,
+  category,
+  image,
+  cleanAndFormatArticleContent,
+} from "./utils";
+import { renderSingleVideo } from "./single-video";
 
 export function renderSingle(this: any, ctx: ThemeContext) {
-    const p = ctx.data;
-    if (!p) return this.render404(ctx);
+  const p = ctx.data;
+  if (!p) return this.render404(ctx);
 
-    if (p.type === 'video' || (p.video_url && String(p.video_url).trim() !== '')) {
-        return renderSingleVideo.call(this, ctx);
-    }
-    const cx = ctx as any;
-    const canonical = cx.canonical || `https://suaraaisyiyah.id/${p.slug}`;
-    const pubDate = p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString();
-    const modDate = p.updated_at ? new Date(p.updated_at).toISOString() : pubDate;
-    const pubDateShort = pubDate.split('T')[0];
-    const catSlug = category(p).toLowerCase().replace(/\s+/g, '-');
-    const catName = category(p);
-    const ogImg = cx.ogImage || (p.featured_image ? image(p) : 'https://suaraaisyiyah.id/default-og.jpg');
-    const langPrefix = cx.lang && cx.lang !== 'id' ? `/${cx.lang}` : '';
+  if (
+    p.type === "video" ||
+    (p.video_url && String(p.video_url).trim() !== "")
+  ) {
+    return renderSingleVideo.call(this, ctx);
+  }
+  const cx = ctx as any;
+  const canonical = cx.canonical || `https://suaraaisyiyah.id/${p.slug}`;
+  const pubDate = p.created_at
+    ? new Date(p.created_at).toISOString()
+    : new Date().toISOString();
+  const modDate = p.updated_at ? new Date(p.updated_at).toISOString() : pubDate;
+  const pubDateShort = pubDate.split("T")[0];
+  const catSlug = category(p).toLowerCase().replace(/\s+/g, "-");
+  const catName = category(p);
+  const ogImg =
+    cx.ogImage ||
+    (p.featured_image ? image(p) : "https://suaraaisyiyah.id/default-og.jpg");
+  const langPrefix = cx.lang && cx.lang !== "id" ? `/${cx.lang}` : "";
 
-    // JSON-LD Article
-    const jsonLdArticle = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "Article",
-      "headline": p.title,
-      "description": cx.metaDesc || '',
-      "image": ogImg,
-      "datePublished": pubDate,
-      "dateModified": modDate,
-      "url": canonical,
-      "author": { "@type": "Organization", "name": "Suara 'Aisyiyah", "url": "https://suaraaisyiyah.id" },
-      "publisher": {
-        "@type": "Organization",
-        "name": "Suara 'Aisyiyah",
-        "logo": { "@type": "ImageObject", "url": "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png" }
+  // JSON-LD Article
+  const jsonLdArticle = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Article",
+    headline: p.title,
+    description: cx.metaDesc || "",
+    image: ogImg,
+    datePublished: pubDate,
+    dateModified: modDate,
+    url: canonical,
+    author: {
+      "@type": "Organization",
+      name: "Suara 'Aisyiyah",
+      url: "https://suaraaisyiyah.id",
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "Suara 'Aisyiyah",
+      logo: {
+        "@type": "ImageObject",
+        url: "https://suaraaisyiyah.id/api/media/file/images/logo-sa.png",
       },
-      "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
-    });
+    },
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+  });
 
-    // Breadcrumb JSON-LD
-    const jsonLdBreadcrumb = JSON.stringify({
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Beranda", "item": "https://suaraaisyiyah.id/" },
-        { "@type": "ListItem", "position": 2, "name": catName, "item": `https://suaraaisyiyah.id/${catSlug}` },
-        { "@type": "ListItem", "position": 3, "name": p.title }
-      ]
-    });
+  // Breadcrumb JSON-LD
+  const jsonLdBreadcrumb = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      {
+        "@type": "ListItem",
+        position: 1,
+        name: "Beranda",
+        item: "https://suaraaisyiyah.id/",
+      },
+      {
+        "@type": "ListItem",
+        position: 2,
+        name: catName,
+        item: `https://suaraaisyiyah.id/${catSlug}`,
+      },
+      { "@type": "ListItem", position: 3, name: p.title },
+    ],
+  });
 
+  // User Access Logic
+  const user = cx.user;
+  const roleLower = user ? (user.role || "").toLowerCase() : "";
+  const isInternal =
+    user &&
+    (roleLower.includes("admin") ||
+      ["editor", "author", "penulis"].includes(roleLower));
+  const isPaidSubscriber =
+    user && ["premium", "berbayar", "member"].includes(roleLower);
+  const isFreeSubscriber = user && ["subscriber", "gratis"].includes(roleLower);
+  const hasPremiumAccess = isInternal || isPaidSubscriber;
+  const hasBasicAccess = !!user;
 
+  // Paywall Logic
 
-    // User Access Logic
-    const user = cx.user;
-    const roleLower = user ? (user.role || '').toLowerCase() : '';
-    const isInternal = user && (roleLower.includes('admin') || ['editor', 'author', 'penulis'].includes(roleLower));
-    const isPaidSubscriber = user && ['premium', 'berbayar', 'member'].includes(roleLower);
-    const isFreeSubscriber = user && ['subscriber', 'gratis'].includes(roleLower);
-    const hasPremiumAccess = isInternal || isPaidSubscriber;
-    const hasBasicAccess = !!user;
+  // Bersihkan shortcode [caption], hapus duplikasi gambar cover, dan format paragraf otomatis (Autop)
+  const formatted = cleanAndFormatArticleContent(
+    p.body || p.content || "",
+    !!p.featured_image
+  );
+  let bodyHtml = formatted.body;
+  let captionText = formatted.captionText;
 
-
-    // Paywall Logic
-
-    // Bersihkan shortcode [caption], hapus duplikasi gambar cover, dan format paragraf otomatis (Autop)
-    const formatted = cleanAndFormatArticleContent(p.body || p.content || '', !!p.featured_image);
-    let bodyHtml = formatted.body;
-    let captionText = formatted.captionText;
-
-    // Fallback ekstraksi caption text jika belum didapatkan dari shortcode
-    if (!captionText) {
-        const captionMatch = bodyHtml.match(/<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>(.*?)<\/p>/i) || bodyHtml.match(/<figcaption[^>]*>(.*?)<\/figcaption>/i);
-        if (captionMatch) {
-            captionText = captionMatch[1].replace(/<[^>]+>/g, '').trim();
-            bodyHtml = bodyHtml.replace(captionMatch[0], '');
-        }
-    } else {
-        bodyHtml = bodyHtml.replace(/^\s*<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>[\s\S]*?<\/p>\s*/i, '');
+  // Fallback ekstraksi caption text jika belum didapatkan dari shortcode
+  if (!captionText) {
+    const captionMatch =
+      bodyHtml.match(
+        /<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>(.*?)<\/p>/i
+      ) || bodyHtml.match(/<figcaption[^>]*>(.*?)<\/figcaption>/i);
+    if (captionMatch) {
+      captionText = captionMatch[1].replace(/<[^>]+>/g, "").trim();
+      bodyHtml = bodyHtml.replace(captionMatch[0], "");
     }
+  } else {
+    bodyHtml = bodyHtml.replace(
+      /^\s*<p[^>]*class="[^"]*wp-caption-text[^"]*"[^>]*>[\s\S]*?<\/p>\s*/i,
+      ""
+    );
+  }
 
-    // Pembersihan ekstra tag <br> mandiri, tag <p> kosong, dan tag rusak di awal teks
-    bodyHtml = bodyHtml.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '$1\n$2');
-    bodyHtml = bodyHtml.replace(/(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+/gi, '$1\n');
-    bodyHtml = bodyHtml.replace(/(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi, '\n$1');
-    bodyHtml = bodyHtml.replace(/<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>/gi, '');
-    bodyHtml = bodyHtml.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
-    bodyHtml = bodyHtml.replace(/^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi, '');
-    
-    // AUTO-LINK KATEGORI DI DALAM TEKS (max 5, 1 per paragraf)
-    const categoriesToLink = [
-        { regex: /(Hikmah)/gi, url: '/hikmah' },
-        { regex: /(Keluarga Sakinah)/gi, url: '/keluarga-sakinah' },
-        { regex: /(Kalam)/gi, url: '/kalam' },
-        { regex: /(Wawasan)/gi, url: '/wawasan' },
-        { regex: /(Gaya Hidup)/gi, url: '/gaya-hidup' },
-        { regex: /(Perempuan)/gi, url: '/perempuan' },
-        { regex: /(Inspirasi)/gi, url: '/inspirasi' },
-        { regex: /(Muda)/gi, url: '/muda' },
-        { regex: /(Sains dan Tekno)/gi, url: '/sains-dan-tekno' },
-        { regex: /(Sosio Tekno)/gi, url: '/sains-dan-tekno' }
-    ];
-    
-    let totalAutoLinks = 0;
-    let autoLinkParagraphs = bodyHtml.split('</p>');
-    
-    for (let i = 0; i < autoLinkParagraphs.length; i++) {
-        if (totalAutoLinks >= 5) break;
-        let pText = autoLinkParagraphs[i];
-        
-        // Skip paragraphs that contain links or images to avoid replacing inside HTML attributes
-        if (pText.includes('<a ') || pText.includes('<img')) continue;
+  // Pembersihan ekstra tag <br> mandiri, tag <p> kosong, dan tag rusak di awal teks
+  bodyHtml = bodyHtml.replace(
+    /(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi,
+    "$1\n$2"
+  );
+  bodyHtml = bodyHtml.replace(
+    /(<\/(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)>)\s*(?:<br\s*\/?>\s*)+/gi,
+    "$1\n"
+  );
+  bodyHtml = bodyHtml.replace(
+    /(?:<br\s*\/?>\s*)+(<(?:p|h[1-6]|div|blockquote|figure|ul|ol|table|section|article)[^>]*>)/gi,
+    "\n$1"
+  );
+  bodyHtml = bodyHtml.replace(
+    /<p[^>]*>\s*(?:&nbsp;|<br\s*\/?>|\s)*<\/p>/gi,
+    ""
+  );
+  bodyHtml = bodyHtml.replace(
+    /^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi,
+    ""
+  );
+  bodyHtml = bodyHtml.replace(
+    /^\s*(?:<\/div>|<\/p>|<p[^>]*>\s*<\/div>|<p[^>]*>\s*<\/p>|<br\s*\/?>)+/gi,
+    ""
+  );
 
-        for (let cat of categoriesToLink) {
-            if (cat.regex.test(pText)) {
-                // Replace only the first occurrence in this paragraph
-                autoLinkParagraphs[i] = pText.replace(cat.regex, function(match) {
-                    return `<a href="${cat.url}" class="sa-style-91">${match}</a>`;
-                });
-                totalAutoLinks++;
-                break; // Max 1 link per paragraph
-            }
-        }
-    }
-    bodyHtml = autoLinkParagraphs.join('</p>');
+  // AUTO-LINK KATEGORI DI DALAM TEKS (max 5, 1 per paragraf)
+  const categoriesToLink = [
+    { regex: /(Hikmah)/gi, url: "/hikmah" },
+    { regex: /(Keluarga Sakinah)/gi, url: "/keluarga-sakinah" },
+    { regex: /(Kalam)/gi, url: "/kalam" },
+    { regex: /(Wawasan)/gi, url: "/wawasan" },
+    { regex: /(Gaya Hidup)/gi, url: "/gaya-hidup" },
+    { regex: /(Perempuan)/gi, url: "/perempuan" },
+    { regex: /(Inspirasi)/gi, url: "/inspirasi" },
+    { regex: /(Muda)/gi, url: "/muda" },
+    { regex: /(Sains dan Tekno)/gi, url: "/sains-dan-tekno" },
+    { regex: /(Sosio Tekno)/gi, url: "/sains-dan-tekno" },
+  ];
 
-    // INLINE "BACA JUGA" SETIAP ~200 KATA DI AKHIR PARAGRAF TERDEKAT
-    const relatedList = (ctx.relatedPosts && Array.isArray(ctx.relatedPosts)) ? ctx.relatedPosts : [];
-    if (relatedList.length > 0) {
-        let wordAccumulator = 0;
-        let relatedIndex = 0;
-        const maxInline = Math.min(3, relatedList.length);
+  let totalAutoLinks = 0;
+  let autoLinkParagraphs = bodyHtml.split("</p>");
 
-        // Cari setiap paragraf <p>...</p> dan sisipkan inline callout setelah mencapai >= 200 kata
-        bodyHtml = bodyHtml.replace(/<p\b[^>]*>([\s\S]*?)<\/p>/gi, (fullMatch, innerText) => {
-            if (relatedIndex >= maxInline) return fullMatch;
-            if (fullMatch.includes('<iframe') || fullMatch.includes('<figure')) return fullMatch;
+  for (let i = 0; i < autoLinkParagraphs.length; i++) {
+    if (totalAutoLinks >= 5) break;
+    let pText = autoLinkParagraphs[i];
 
-            const plain = innerText.replace(/<[^>]+>/g, ' ').trim();
-            const words = plain ? plain.split(/\s+/).filter(Boolean).length : 0;
-            wordAccumulator += words;
+    // Skip paragraphs that contain links or images to avoid replacing inside HTML attributes
+    if (pText.includes("<a ") || pText.includes("<img")) continue;
 
-            if (wordAccumulator >= 200) {
-                const rp = relatedList[relatedIndex];
-                wordAccumulator = 0;
-                relatedIndex++;
-                const inlineCallout = `<p class="inline-baca-juga" style="margin: 22px 0; padding: 12px 18px; background: #f8fafc; border-left: 4px solid #047857; border-radius: 4px; font-size: 15px; line-height: 1.6;"><strong style="color: #047857;">Baca Juga: </strong><a href="/${escapeHtml(rp.slug)}" style="color: #1e293b; font-weight: 600; text-decoration: underline; text-underline-offset: 3px;" onmouseover="this.style.color='#047857'" onmouseout="this.style.color='#1e293b'">${escapeHtml(rp.title)}</a></p>`;
-                return fullMatch + '\n' + inlineCallout;
-            }
-            return fullMatch;
+    for (let cat of categoriesToLink) {
+      if (cat.regex.test(pText)) {
+        // Replace only the first occurrence in this paragraph
+        autoLinkParagraphs[i] = pText.replace(cat.regex, function (match) {
+          return `<a href="${cat.url}" class="sa-style-91">${match}</a>`;
         });
+        totalAutoLinks++;
+        break; // Max 1 link per paragraph
+      }
     }
+  }
+  bodyHtml = autoLinkParagraphs.join("</p>");
 
-    // FITUR COPY PASTE SUMBER
-    const copyPasteScript = `
+  // INLINE "BACA JUGA" SETIAP ~200 KATA DI AKHIR PARAGRAF TERDEKAT
+  const relatedList =
+    ctx.relatedPosts && Array.isArray(ctx.relatedPosts) ? ctx.relatedPosts : [];
+  if (relatedList.length > 0) {
+    let wordAccumulator = 0;
+    let relatedIndex = 0;
+    const maxInline = Math.min(3, relatedList.length);
+
+    // Cari setiap paragraf <p>...</p> dan sisipkan inline callout setelah mencapai >= 200 kata
+    bodyHtml = bodyHtml.replace(
+      /<p\b[^>]*>([\s\S]*?)<\/p>/gi,
+      (fullMatch, innerText) => {
+        if (relatedIndex >= maxInline) return fullMatch;
+        if (fullMatch.includes("<iframe") || fullMatch.includes("<figure"))
+          return fullMatch;
+
+        const plain = innerText.replace(/<[^>]+>/g, " ").trim();
+        const words = plain ? plain.split(/\s+/).filter(Boolean).length : 0;
+        wordAccumulator += words;
+
+        if (wordAccumulator >= 200) {
+          const rp = relatedList[relatedIndex];
+          wordAccumulator = 0;
+          relatedIndex++;
+          const inlineCallout = `<p class="inline-baca-juga" style="margin: 22px 0; padding: 12px 18px; background: #f8fafc; border-left: 4px solid #047857; border-radius: 4px; font-size: 15px; line-height: 1.6;"><strong style="color: #047857;">Baca Juga: </strong><a href="/${escapeHtml(rp.slug)}" style="color: #1e293b; font-weight: 600; text-decoration: underline; text-underline-offset: 3px;" onmouseover="this.style.color='#047857'" onmouseout="this.style.color='#1e293b'">${escapeHtml(rp.title)}</a></p>`;
+          return fullMatch + "\n" + inlineCallout;
+        }
+        return fullMatch;
+      }
+    );
+  }
+
+  // FITUR COPY PASTE SUMBER
+  const copyPasteScript = `
     <script>
     document.addEventListener('copy', function(event) {
         var selection = window.getSelection();
@@ -183,9 +246,9 @@ export function renderSingle(this: any, ctx: ThemeContext) {
     });
     </script>
     `;
-    
-    // TOOLS JURNALISTIK & PERBESARAN TEKS (ICON-ONLY SATU BARIS)
-    const toolsJurnalistik = `
+
+  // TOOLS JURNALISTIK & PERBESARAN TEKS (ICON-ONLY SATU BARIS)
+  const toolsJurnalistik = `
     <div class="article-toolbar">
         <button type="button" onclick="copyFullArticle()" class="article-action-btn" title="Salin Artikel" aria-label="Salin Artikel">
             <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
@@ -285,24 +348,31 @@ export function renderSingle(this: any, ctx: ThemeContext) {
       }
     </script>
     `;
-    
-    // We append the copyPasteScript at the end of bodyHtml, and insert toolsJurnalistik at top
-    bodyHtml = toolsJurnalistik + '<div id="article-body-content" class="sa-style-105">' + bodyHtml + '</div>' + copyPasteScript;
 
-    const fullBodyHtml = bodyHtml;
-    // Gunakan fungsi btoa dan encodeURIComponent untuk mengamankan data
-    let encodedFullBody = '';
-    const PAYWALL_ENABLED = false; // Paywall dinonaktifkan sementara sesuai instruksi user
-    if (PAYWALL_ENABLED && p.is_premium === 1) {
-        try { encodedFullBody = btoa(unescape(encodeURIComponent(fullBodyHtml))); } catch(e) {}
-        
-        const isSubscriber = hasPremiumAccess;
-        if (!isSubscriber) {
-            const parts = bodyHtml.split('</p>');
-            if (parts.length > 3) {
-                bodyHtml = parts.slice(0, 3).join('</p>') + '</p>';
-            }
-            bodyHtml += `
+  // We append the copyPasteScript at the end of bodyHtml, and insert toolsJurnalistik at top
+  bodyHtml =
+    toolsJurnalistik +
+    '<div id="article-body-content" class="sa-style-105">' +
+    bodyHtml +
+    "</div>" +
+    copyPasteScript;
+
+  const fullBodyHtml = bodyHtml;
+  // Gunakan fungsi btoa dan encodeURIComponent untuk mengamankan data
+  let encodedFullBody = "";
+  const PAYWALL_ENABLED = false; // Paywall dinonaktifkan sementara sesuai instruksi user
+  if (PAYWALL_ENABLED && p.is_premium === 1) {
+    try {
+      encodedFullBody = btoa(unescape(encodeURIComponent(fullBodyHtml)));
+    } catch (e) {}
+
+    const isSubscriber = hasPremiumAccess;
+    if (!isSubscriber) {
+      const parts = bodyHtml.split("</p>");
+      if (parts.length > 3) {
+        bodyHtml = parts.slice(0, 3).join("</p>") + "</p>";
+      }
+      bodyHtml += `
               <div class="paywall-block sa-style-106" >
                  <div class="sa-style-107">
                    <i class="fas fa-lock"></i>
@@ -312,27 +382,28 @@ export function renderSingle(this: any, ctx: ThemeContext) {
                  <a href="/berlangganan" class="subscribe-btn sa-style-110" >Berlangganan Sekarang</a>
               </div>
             `;
-        }
     }
+  }
 
-    return this._layout(`
+  return this._layout(
+    `
       <script type="application/ld+json">${jsonLdArticle}</script>
       <script type="application/ld+json">${jsonLdBreadcrumb}</script>
       <main class="container" role="main" style="padding-top: 24px; padding-bottom: 48px; margin-left: auto; margin-right: auto;">
         <article class="article-page" itemscope itemtype="https://schema.org/Article">
           <nav class="breadcrumb" aria-label="Breadcrumb" style="margin-bottom: 20px;">
             <ol style="display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 13px; color: var(--gray-text); padding: 0; margin: 0; list-style: none;">
-              <li><a href="${langPrefix || '/'}" aria-label="Beranda" style="display: inline-flex; align-items: center; color: var(--green);"><svg class="sa-style-111" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></a></li>
+              <li><a href="${langPrefix || "/"}" aria-label="Beranda" style="display: inline-flex; align-items: center; color: var(--green);"><svg class="sa-style-111" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width: 14px; height: 14px;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg></a></li>
               <li style="color: #cbd5e1;">&rsaquo;</li>
-              <li><a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}" style="color: var(--green); font-weight: 500;">${catName}</a></li>
+              <li><a href="${langPrefix ? langPrefix + "/" + catSlug : "/" + catSlug}" style="color: var(--green); font-weight: 500;">${catName}</a></li>
               <li style="color: #cbd5e1;">&rsaquo;</li>
               <li aria-current="page" style="color: #64748b; font-weight: 500; max-width: 320px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(p.title)}</li>
             </ol>
           </nav>
           <header class="article-header">
             <div style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; justify-content: flex-start;">
-              <a href="${langPrefix ? langPrefix + '/' + catSlug : '/' + catSlug}" class="cat-tag" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${catName}</a>
-              ${p.is_premium === 1 ? '<span class="premium-badge sa-style-114" ><i class="fas fa-crown sa-style-115" ></i> Premium</span>' : ''}
+              <a href="${langPrefix ? langPrefix + "/" + catSlug : "/" + catSlug}" class="cat-tag" style="background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; padding: 3px 10px; border-radius: 6px; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;">${catName}</a>
+              ${p.is_premium === 1 ? '<span class="premium-badge sa-style-114" ><i class="fas fa-crown sa-style-115" ></i> Premium</span>' : ""}
             </div>
             <h1 itemprop="headline">${escapeHtml(p.title)}</h1>
             <div class="post-meta">
@@ -344,26 +415,34 @@ export function renderSingle(this: any, ctx: ThemeContext) {
               <meta itemprop="dateModified" content="${modDate}">
             </div>
           </header>
-          ${p.featured_image ? `
+          ${
+            p.featured_image
+              ? `
           <figure class="article-cover-wrap" itemprop="image" itemscope itemtype="https://schema.org/ImageObject" style="margin: 0 0 32px 0;">
             <img class="article-cover" src="${image(p)}" alt="${escapeHtml(p.title)}" loading="lazy" width="1200" height="630" itemprop="url" style="width: 100%; max-height: 520px; object-fit: cover; border-radius: 12px; display: block;">
-            ${captionText ? `
+            ${
+              captionText
+                ? `
               <figcaption class="sa-style-118" style="font-size: 13px; color: #64748b; font-style: italic; margin-top: 8px; text-align: left; background: transparent; position: static; padding: 4px 0 0 0;">
                 ${captionText}
               </figcaption>
-            ` : ''}
+            `
+                : ""
+            }
             <meta itemprop="width" content="1200">
             <meta itemprop="height" content="630">
-          </figure>` : ''}
+          </figure>`
+              : ""
+          }
           
           <section class="article-body" itemprop="articleBody" id="article-body-container" data-encoded-body="${encodedFullBody}">
             ${bodyHtml}
           </section>
 
           <div class="share-block">
-            <h4>${cx.lang === 'en' ? 'Share this article:' : (cx.lang === 'ar' ? 'شارك هذا المقال:' : 'Bagikan artikel ini:')}</h4>
+            <h4>${cx.lang === "en" ? "Share this article:" : cx.lang === "ar" ? "شارك هذا المقال:" : "Bagikan artikel ini:"}</h4>
             <div class="share-buttons">
-              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + ' ' + canonical)}" target="_blank" rel="noopener" class="share-btn share-wa" aria-label="Share on WhatsApp">
+              <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + " " + canonical)}" target="_blank" rel="noopener" class="share-btn share-wa" aria-label="Share on WhatsApp">
                 <svg width="15" height="15" fill="currentColor" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51a12.8 12.8 0 00-.57-.01c-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/></svg>
                 <span class="share-label-full">WhatsApp</span><span class="share-label-short">WA</span>
               </a>
@@ -388,19 +467,28 @@ export function renderSingle(this: any, ctx: ThemeContext) {
             </div>
           </div>
 
-          ${p.tags ? `
+          ${
+            p.tags
+              ? `
           <footer class="article-footer">
             <div class="article-tags">
               <span class="tag-label">Tagar:</span>
-              ${p.tags.split(',').map((t: string) => {
-                const cleanT = t.trim().replace(/^#/, '');
-                const tagSlug = cleanT.toLowerCase().replace(/\s+/g, '-');
-                return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="post-tag" rel="tag">#${escapeHtml(cleanT)}</a>`;
-              }).join('')}
+              ${p.tags
+                .split(",")
+                .map((t: string) => {
+                  const cleanT = t.trim().replace(/^#/, "");
+                  const tagSlug = cleanT.toLowerCase().replace(/\s+/g, "-");
+                  return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="post-tag" rel="tag">#${escapeHtml(cleanT)}</a>`;
+                })
+                .join("")}
             </div>
-          </footer>` : ''}
+          </footer>`
+              : ""
+          }
 
-          ${p.allow_comments !== 0 ? `
+          ${
+            p.allow_comments !== 0
+              ? `
           <div class="comments-section" style="margin-top: 48px; padding-top: 36px; border-top: 2px solid #f1f5f9; font-family: ui-sans-serif, system-ui, sans-serif;">
             
             <div id="comments-loading" class="sa-style-124">Memuat sistem komentar...</div>
@@ -457,7 +545,7 @@ export function renderSingle(this: any, ctx: ThemeContext) {
 
                 document.getElementById('comments-loading').style.display = 'none';
 
-                const isPremiumPost = ${PAYWALL_ENABLED && p.is_premium === 1 ? 'true' : 'false'};
+                const isPremiumPost = ${PAYWALL_ENABLED && p.is_premium === 1 ? "true" : "false"};
                 
                 if (user) {
                     const role = (user.role || user.r || 'subscriber').toLowerCase();
@@ -584,10 +672,12 @@ export function renderSingle(this: any, ctx: ThemeContext) {
             </div>
             
           </div>
-          ` : ''}
+          `
+              : ""
+          }
 
           ${(() => {
-            let bannerBox = '';
+            let bannerBox = "";
             if (ctx.site.sa_banner_html) {
               bannerBox = `
                 <div class="related-banner-slot sa-style-153">
@@ -596,28 +686,36 @@ export function renderSingle(this: any, ctx: ThemeContext) {
               `;
             } else if (ctx.site.sa_banner_image) {
               bannerBox = `
-                <a href="${ctx.site.sa_banner_link || '#'}" class="related-banner-slot sa-style-154" style="background-image: url('${ctx.site.sa_banner_image}'); background-size: cover; background-position: center; border: none; padding: 0; display: block; min-height: 180px; border-radius: 8px;" target="_blank"></a>
+                <a href="${ctx.site.sa_banner_link || "#"}" class="related-banner-slot sa-style-154" style="background-image: url('${ctx.site.sa_banner_image}'); background-size: cover; background-position: center; border: none; padding: 0; display: block; min-height: 180px; border-radius: 8px;" target="_blank"></a>
               `;
             }
 
             if (!cx.relatedPosts || !cx.relatedPosts.length) {
-              return bannerBox ? `
+              return bannerBox
+                ? `
                 <div class="related-posts" style="margin-top: 36px;">
                   ${bannerBox}
                 </div>
-              ` : '';
+              `
+                : "";
             }
 
-            const relatedTitle = cx.lang === 'en' 
-              ? `Related Articles in ${catName}` 
-              : (cx.lang === 'ar' ? `مقالات ذات صلة في ${catName}` : `Artikel Terkait di ${catName}`);
-            const langPrefix = cx.lang && cx.lang !== 'id' ? `/${cx.lang}` : '';
+            const relatedTitle =
+              cx.lang === "en"
+                ? `Related Articles in ${catName}`
+                : cx.lang === "ar"
+                  ? `مقالات ذات صلة في ${catName}`
+                  : `Artikel Terkait di ${catName}`;
+            const langPrefix = cx.lang && cx.lang !== "id" ? `/${cx.lang}` : "";
 
             return `
               <div class="related-posts" style="margin-top: 48px; padding-top: 36px; border-top: 2px solid #f1f5f9;">
                 <h3 style="font-size: 20px; font-weight: 700; color: #0f172a; margin-bottom: 20px;">${relatedTitle}</h3>
                 <div class="related-grid">
-                  ${cx.relatedPosts.slice(0, 4).map((rp:any, i:number) => `
+                  ${cx.relatedPosts
+                    .slice(0, 4)
+                    .map(
+                      (rp: any, i: number) => `
                     <div class="grid-post">
                       <a href="${langPrefix}/${escapeHtml(rp.slug)}" class="post-img-wrap">
                         <img src="${image(rp, i)}" alt="${escapeHtml(rp.title)}" loading="lazy">
@@ -627,13 +725,19 @@ export function renderSingle(this: any, ctx: ThemeContext) {
                         <div class="post-meta"><span>${date(rp.created_at)}</span></div>
                       </div>
                     </div>
-                  `).join('')}
+                  `
+                    )
+                    .join("")}
                 </div>
-                ${bannerBox ? `<div class="related-banner-container" style="margin-top: 24px;">${bannerBox}</div>` : ''}
+                ${bannerBox ? `<div class="related-banner-container" style="margin-top: 24px;">${bannerBox}</div>` : ""}
               </div>
             `;
           })()}
         </article>
       </main>
-    `, p.title, ctx, 'post');
+    `,
+    p.title,
+    ctx,
+    "post"
+  );
 }

@@ -1,16 +1,34 @@
-import type { ThemeContext } from '../types';
-import { newsroomCss } from './style';
-import { escapeHtml, formatDateIndo } from './utils';
-import { renderGlobalHeaderHtml } from '../../modules/theme-builder';
+import type { ThemeContext } from "../types";
+import { newsroomCss } from "./style";
+import { escapeHtml, formatDateIndo } from "./utils";
+import { renderGlobalHeaderHtml } from "../../modules/theme-builder";
 
-export function _layout(this: any, content: string, title: string, ctx: ThemeContext, pageType: string = '') {
+export function _layout(
+  this: any,
+  content: string,
+  title: string,
+  ctx: ThemeContext,
+  pageType: string = ""
+) {
   const globalHeader = renderGlobalHeaderHtml(ctx.site, ctx.menus);
-  const siteTitle = escapeHtml(ctx.site?.site_title || ctx.site?.title || "CMSMu");
-  const siteSlogan = escapeHtml(ctx.site?.site_desc || ctx.site?.site_tagline || "");
-  const siteDesc = escapeHtml(ctx.site?.site_meta_desc || ctx.site?.site_desc || ctx.site?.site_tagline || ctx.site?.description || "CMSMu 1 Platform Untuk Keberkahan Bersama");
-  const isHomePage = pageType === 'home' || !title || title === 'Beranda';
+  const siteTitle = escapeHtml(
+    ctx.site?.site_title || ctx.site?.title || "CMSMu"
+  );
+  const siteSlogan = escapeHtml(
+    ctx.site?.site_desc || ctx.site?.site_tagline || ""
+  );
+  const siteDesc = escapeHtml(
+    ctx.site?.site_meta_desc ||
+      ctx.site?.site_desc ||
+      ctx.site?.site_tagline ||
+      ctx.site?.description ||
+      "CMSMu 1 Platform Untuk Keberkahan Bersama"
+  );
+  const isHomePage = pageType === "home" || !title || title === "Beranda";
   const pageTitle = isHomePage
-    ? (siteSlogan ? `${siteTitle} | ${siteSlogan}` : siteTitle)
+    ? siteSlogan
+      ? `${siteTitle} | ${siteSlogan}`
+      : siteTitle
     : `${escapeHtml(title)} — ${siteTitle}`;
   const todayIndo = formatDateIndo(new Date());
 
@@ -20,33 +38,48 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
     menuItems = ctx.menus;
   } else if (Array.isArray(ctx.categories) && ctx.categories.length > 0) {
     menuItems = [
-      { label: 'Beranda', url: '/' },
+      { label: "Beranda", url: "/" },
       ...ctx.categories.slice(0, 7).map((catName: string) => ({
         label: catName,
-        url: `/${catName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`
-      }))
+        url: `/${catName
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, "-")
+          .replace(/(^-|-$)/g, "")}`,
+      })),
     ];
   } else {
-    menuItems = [{ label: 'Beranda', url: '/' }];
+    menuItems = [{ label: "Beranda", url: "/" }];
   }
 
   // Topik/Tag sorotan dinamis dari real DB
-  const topicItems: { name: string; slug: string }[] = Array.isArray(ctx.topics) && ctx.topics.length > 0
-    ? ctx.topics
-    : (Array.isArray(ctx.categories) ? ctx.categories.slice(0, 5).map((c: string) => ({
-        name: c,
-        slug: c.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
-      })) : []);
+  const topicItems: { name: string; slug: string }[] =
+    Array.isArray(ctx.topics) && ctx.topics.length > 0
+      ? ctx.topics
+      : Array.isArray(ctx.categories)
+        ? ctx.categories.slice(0, 5).map((c: string) => ({
+            name: c,
+            slug: c
+              .toLowerCase()
+              .replace(/[^a-z0-9]+/g, "-")
+              .replace(/(^-|-$)/g, ""),
+          }))
+        : [];
 
   // Kanal Berita Footer dinamis dari categories real DB
-  const footerCategories: { label: string; url: string }[] = Array.isArray(ctx.categories) && ctx.categories.length > 0
-    ? ctx.categories.slice(0, 6).map((c: string) => ({
-        label: c,
-        url: `/${c.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')}`
-      }))
-    : menuItems.filter(m => m.url !== '/');
+  const footerCategories: { label: string; url: string }[] =
+    Array.isArray(ctx.categories) && ctx.categories.length > 0
+      ? ctx.categories.slice(0, 6).map((c: string) => ({
+          label: c,
+          url: `/${c
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "")}`,
+        }))
+      : menuItems.filter(m => m.url !== "/");
 
-  const faviconUrl = escapeHtml(ctx.site?.site_favicon || ctx.site?.favicon || "/favicon.svg");
+  const faviconUrl = escapeHtml(
+    ctx.site?.site_favicon || ctx.site?.favicon || "/favicon.svg"
+  );
 
   return `<!DOCTYPE html>
 <html lang="id">
@@ -56,12 +89,12 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <title>${pageTitle}</title>
   <meta name="description" content="${siteDesc}">
   <link rel="icon" href="${faviconUrl}">
-  <link rel="canonical" href="${ctx.canonical || '/'}">
+  <link rel="canonical" href="${ctx.canonical || "/"}">
   <meta property="og:title" content="${pageTitle}">
   <meta property="og:description" content="${siteDesc}">
-  <meta property="og:url" content="${ctx.canonical || '/'}">
+  <meta property="og:url" content="${ctx.canonical || "/"}">
   <meta property="og:site_name" content="${siteTitle}">
-  <meta property="og:type" content="${pageType === 'post' || pageType === 'single' ? 'article' : 'website'}">
+  <meta property="og:type" content="${pageType === "post" || pageType === "single" ? "article" : "website"}">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="${pageTitle}">
   <meta name="twitter:description" content="${siteDesc}">
@@ -69,7 +102,9 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,300;0,400;0,700;0,900;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-  ${globalHeader ? `
+  ${
+    globalHeader
+      ? `
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -85,14 +120,19 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
       }
     }
   </script>
-  ` : ''}
+  `
+      : ""
+  }
   <style>${newsroomCss}</style>
 </head>
 <body>
-  ${globalHeader ? `
+  ${
+    globalHeader
+      ? `
     ${globalHeader.html}
-    ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ''}
-  ` : `
+    ${globalHeader.isFixed ? `<div class="global-header-spacer" style="height: 80px;"></div>` : ""}
+  `
+      : `
   <!-- Topbar: Live Date & Breaking News Ticker -->
   <aside class="nr-topbar">
     <div class="nr-container nr-topbar-inner">
@@ -168,11 +208,15 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
   <nav class="nr-navbar">
     <div class="nr-container nr-navbar-inner">
       <ul class="nr-nav-links">
-        ${menuItems.map((m: any) => `
+        ${menuItems
+          .map(
+            (m: any) => `
           <li class="nr-nav-item">
             <a href="${escapeHtml(m.url)}">${escapeHtml(m.label)}</a>
           </li>
-        `).join('')}
+        `
+          )
+          .join("")}
       </ul>
     </div>
   </nav>
@@ -182,14 +226,19 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
     <div class="nr-container nr-topics-inner">
       <span class="nr-topics-label"><i class="fas fa-bolt"></i> Sorotan:</span>
       <div class="nr-topics-list">
-        ${topicItems.map((t: any) => `
-          <a href="/tag/${escapeHtml(t.slug)}" class="nr-topic-pill">#${escapeHtml(t.name.replace(/\s+/g, ''))}</a>
-        `).join('')}
+        ${topicItems
+          .map(
+            (t: any) => `
+          <a href="/tag/${escapeHtml(t.slug)}" class="nr-topic-pill">#${escapeHtml(t.name.replace(/\s+/g, ""))}</a>
+        `
+          )
+          .join("")}
         <a href="/sumber" class="nr-topic-pill"><i class="fas fa-network-wired" style="margin-right:4px;"></i> Media Jejaring</a>
       </div>
     </div>
   </div>
-  `}
+  `
+  }
 
   <!-- Content Body -->
   ${content}
@@ -207,9 +256,13 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
         <div>
           <h4 style="font-weight:700; color:#fff; text-transform:uppercase; font-size:0.75rem; letter-spacing:0.1em; margin-bottom:1rem;">Kanal Berita</h4>
           <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem;">
-            ${footerCategories.map((c: any) => `
+            ${footerCategories
+              .map(
+                (c: any) => `
               <li><a href="${escapeHtml(c.url)}">${escapeHtml(c.label)}</a></li>
-            `).join('')}
+            `
+              )
+              .join("")}
           </ul>
         </div>
         <div>
