@@ -29,9 +29,9 @@ export const editorMediaModal = `
                 <button type="button" @click="mediaModalOpen=false" style="border:none; background:#f3f4f6; width:36px; height:36px; border-radius:50%; font-size:18px; cursor:pointer; color:#6b7280; display:flex; align-items:center; justify-content:center; transition:background 0.2s;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'">&times;</button>
             </div>
 
-            <div style="display:flex; flex:1; overflow:hidden; position:relative;">
+            <div class="flex flex-col md:flex-row flex-1 overflow-hidden relative">
                 
-                <div style="flex:1; display:flex; flex-direction:column; padding:20px; overflow:hidden; background:#f9fafb;">
+                <div class="flex-1 flex flex-col p-3 md:p-5 overflow-hidden bg-slate-50">
                     
                     <div x-show="mediaTab === 'library'" style="margin-bottom:15px; display:flex; gap:10px;">
                         <div style="position:relative; flex:1;">
@@ -98,7 +98,7 @@ export const editorMediaModal = `
                     </div>
                 </div>
 
-                <div style="width:340px; background:white; border-left:1px solid #e5e7eb; display:flex; flex-direction:column; z-index:10;">
+                <div class="w-full md:w-[320px] bg-white border-t md:border-t-0 md:border-l border-slate-200 flex flex-col shrink-0 max-h-[40vh] md:max-h-none overflow-y-auto z-10">
                     
                     <div x-show="mediaTab === 'library' && !selectedMedia" style="flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:40px; color:#9ca3af;">
                         <div style="width:100px; height:100px; background:#f3f4f6; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:24px;">
