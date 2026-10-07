@@ -615,30 +615,31 @@ export function renderAdmin(data: any): string {
                     <!-- ===== Content Area End ===== -->
                 </div>
                 <!-- ===== Page Wrapper End ===== -->
-                <!-- In-System Toast Notification Container (SOP 16) -->
-                <div id="cms-toast-container" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
+            </template>
 
-                <!-- In-System Confirmation Modal (SOP 16) -->
-                <div id="cms-confirm-modal" class="fixed inset-0 z-[99998] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all">
-                    <div id="cms-confirm-card" class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 transform transition-all scale-95 opacity-0 duration-200">
-                        <div class="flex items-start gap-4">
-                            <div id="cms-confirm-icon-wrap" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600">
-                                <i id="cms-confirm-icon" class="fas fa-trash-alt text-xl"></i>
-                            </div>
-                            <div class="flex-1">
-                                <h4 id="cms-confirm-title" class="text-base font-bold text-slate-800">Konfirmasi Tindakan</h4>
-                                <p id="cms-confirm-message" class="text-sm text-slate-600 mt-1 whitespace-pre-line"></p>
-                            </div>
+            <!-- In-System Toast Notification Container (SOP 16) -->
+            <div id="cms-toast-container" class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2 pointer-events-none"></div>
+
+            <!-- In-System Confirmation Modal (SOP 16) -->
+            <div id="cms-confirm-modal" class="fixed inset-0 z-[99998] hidden flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4 transition-all">
+                <div id="cms-confirm-card" class="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 border border-slate-100 transform transition-all scale-95 opacity-0 duration-200">
+                    <div class="flex items-start gap-4">
+                        <div id="cms-confirm-icon-wrap" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600">
+                            <i id="cms-confirm-icon" class="fas fa-trash-alt text-xl"></i>
                         </div>
-                        <div class="flex justify-end gap-3 mt-6">
-                            <button id="cms-confirm-cancel-btn" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
-                            <button id="cms-confirm-ok-btn" class="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-colors flex items-center gap-2">
-                                <span id="cms-confirm-ok-text">Ya, Lanjutkan</span>
-                            </button>
+                        <div class="flex-1">
+                            <h4 id="cms-confirm-title" class="text-base font-bold text-slate-800">Konfirmasi Tindakan</h4>
+                            <p id="cms-confirm-message" class="text-sm text-slate-600 mt-1 whitespace-pre-line"></p>
                         </div>
                     </div>
+                    <div class="flex justify-end gap-3 mt-6">
+                        <button id="cms-confirm-cancel-btn" class="px-4 py-2 rounded-xl text-sm font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
+                        <button id="cms-confirm-ok-btn" class="px-5 py-2 rounded-xl text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 shadow-sm transition-colors flex items-center gap-2">
+                            <span id="cms-confirm-ok-text">Ya, Lanjutkan</span>
+                        </button>
+                    </div>
                 </div>
-            </template>
+            </div>
         </body>
         </html>`;
     } catch (err: any) {
