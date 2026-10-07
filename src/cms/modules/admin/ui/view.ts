@@ -587,9 +587,9 @@ export function renderAdmin(data: any): string {
                                 ${pagesBlock}
                                 <template x-if="view === 'menus'"><div class="exclusive-wrapper">${menusPage}</div></template>
                                 <template x-if="view === 'profile'"><div class="exclusive-wrapper">${profilePage}</div></template>
-                                ${ssoPage}
+                                <template x-if="view === 'sso-setup'"><div class="exclusive-wrapper">${ssoPage}</div></template>
                                 ${commentsPage}
-                                ${seoPage}
+                                <template x-if="view === 'seo'"><div class="exclusive-wrapper">${seoPage}</div></template>
                                 ${renderedPluginViews}
                                 ${globalModals}
                             </div>
