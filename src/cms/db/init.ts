@@ -75,6 +75,16 @@ export const updateSchema = async (db: D1Database) => {
     `).run();
     logs.push("✅ Table 'posts' checked (Safe).");
 
+    // 3A.1 INDEX POSTS (Performance Composite Indexes)
+    try {
+      await db.prepare("CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts (status, category, created_at DESC);").run();
+      await db.prepare("CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts (status, views DESC, created_at DESC);").run();
+      await db.prepare("CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts (status, created_at DESC);").run();
+      logs.push("✅ Composite indexes on 'posts' checked (Performance).");
+    } catch(e: any) {
+      logs.push("⚠️ Posts indexes note: " + e.message);
+    }
+
     // 3B. TABEL PAGES
     await db.prepare(`
       CREATE TABLE IF NOT EXISTS pages (
@@ -112,7 +122,24 @@ export const updateSchema = async (db: D1Database) => {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
       );
     `).run();
+    try {
+      await db.prepare("CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta (key);").run();
+    } catch(e: any) {}
     logs.push("✅ Table 'media_meta' checked (Safe).");
+
+    // 3D. TABEL DAILY_STATS
+    await db.prepare(`
+      CREATE TABLE IF NOT EXISTS daily_stats (
+        date TEXT PRIMARY KEY,
+        views INTEGER DEFAULT 0,
+        visitors INTEGER DEFAULT 0,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      );
+    `).run();
+    try {
+      await db.prepare("CREATE INDEX IF NOT EXISTS idx_daily_stats_date ON daily_stats (date);").run();
+    } catch(e: any) {}
+    logs.push("✅ Table 'daily_stats' checked (Safe).");
 
     // 4. TABEL SETTINGS
     // Menyimpan Judul Situs, Favicon, Deskripsi

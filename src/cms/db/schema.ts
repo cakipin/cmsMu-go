@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text } from 'drizzle-orm/sqlite-core';
+import { sqliteTable, integer, text, index } from 'drizzle-orm/sqlite-core';
 import { sql } from 'drizzle-orm';
 
 export const users = sqliteTable('users', {
@@ -35,7 +35,11 @@ export const posts = sqliteTable('posts', {
   isPremium: integer('is_premium').default(0),
   createdAt: text('created_at').default(String(Date.now())),
   updatedAt: text('updated_at').default(String(Date.now())),
-});
+}, (table) => ({
+  statusCatDateIdx: index('idx_posts_status_cat_date').on(table.status, table.category, table.createdAt),
+  statusViewsIdx: index('idx_posts_status_views').on(table.status, table.views, table.createdAt),
+  statusDateIdx: index('idx_posts_status_date').on(table.status, table.createdAt),
+}));
 
 export const pages = sqliteTable('pages', {
   id: integer('id').primaryKey({ autoIncrement: true }),
@@ -64,7 +68,9 @@ export const mediaMeta = sqliteTable('media_meta', {
   description: text('description'),
   caption: text('caption'),
   createdAt: text('created_at').default(String(Date.now())),
-});
+}, (table) => ({
+  keyIdx: index('idx_media_meta_key').on(table.key),
+}));
 
 export const settings = sqliteTable('settings', {
   key: text('key').primaryKey(),
@@ -122,7 +128,9 @@ export const dailyStats = sqliteTable('daily_stats', {
   views: integer('views').default(0),
   visitors: integer('visitors').default(0),
   updatedAt: text('updated_at').default(String(Date.now())),
-});
+}, (table) => ({
+  dateIdx: index('idx_daily_stats_date').on(table.date),
+}));
 
 export const subscriptions = sqliteTable('subscriptions', {
   id: integer('id').primaryKey({ autoIncrement: true }),

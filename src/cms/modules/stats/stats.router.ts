@@ -66,7 +66,6 @@ statsRouter.get('/history', async (c) => {
     }
 });
 
-
 // 1.8 GET Dashboard Aggregate Stats
 statsRouter.get('/dashboard', async (c) => {
     try {
