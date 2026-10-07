@@ -10,13 +10,14 @@ export const subscribersLogic = `
                 url += '&search=' + encodeURIComponent(this.searchSubscriber);
             }
             let res = await fetch(url, { headers: { 'Authorization': this.token } });
+            if (!res.ok) return;
             let json = await res.json();
             if (json.success) {
                 this.subscribersList = json.data;
                 this.pendingSubscribers = json.pending || 0;
             }
         } catch(e) {
-            console.error('Failed to load subscribers');
+            // endpoint not available in core CMS
         }
     },
 
