@@ -46,7 +46,7 @@ export const editorPage = `
          },
 
          getArticleTitle() {
-             var titleInput = document.querySelector('input[placeholder*="Judul Tulisan"]');
+             var titleInput = document.querySelector('.admin-post-title-input');
              return (this.form && this.form.title ? this.form.title : (titleInput ? titleInput.value : '') || '').trim();
          },
 

@@ -10,7 +10,7 @@ export const editorForm = `
 
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 items-start pb-12 md:pb-6">
         <div style="min-width: 0;">
-            <input x-model="form.title" class="input" placeholder="Judul Tulisan..." 
+            <input x-model="form.title" class="input admin-post-title-input" placeholder="Judul Tulisan..." 
                    style="font-size: clamp(18px, 3.5vw, 24px); font-weight: 600; padding: 12px 14px; margin-bottom: 16px; width: 100%; box-sizing: border-box;" 
                    @input="makeSlug()">
             <div style="margin-bottom:20px;">
