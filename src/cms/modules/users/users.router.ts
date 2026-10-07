@@ -2,21 +2,23 @@ import { Hono } from 'hono';
 import { getDb } from '../../db';
 import { users as usersTable, subscriptions as subscriptionsTable } from '../../db/schema';
 import { eq, or, desc, and, sql } from 'drizzle-orm';
-import { sha256, generateUserToken } from './auth.helper';
+import { sha256, generateUserToken, getJwtSecret } from './auth.helper';
+import { adminOnlyMiddleware } from '../../middleware/auth';
 import { processSsoLogin } from './sso.service';
 
 type Bindings = {
   DB: D1Database;
   SSO_CLIENT_ID: string;
   SSO_CLIENT_SECRET: string;
+  JWT_SECRET?: string;
 };
 
 const usersRouter = new Hono<{ Bindings: Bindings }>();
 
 // ---------------------------------------------------------------------
-// 1. GET ALL USERS
+// 1. GET ALL USERS (ADMIN ONLY)
 // ---------------------------------------------------------------------
-usersRouter.get('/', async (c) => {
+usersRouter.get('/', adminOnlyMiddleware, async (c) => {
   try {
     if (!c.env.DB) return c.json({ error: 'Database Error' }, 500);
     const db = getDb(c.env.DB);
@@ -37,9 +39,9 @@ usersRouter.get('/', async (c) => {
 });
 
 // ---------------------------------------------------------------------
-// 2. CREATE USER (POST /)
+// 2. CREATE USER (ADMIN ONLY - POST /)
 // ---------------------------------------------------------------------
-usersRouter.post('/', async (c) => {
+usersRouter.post('/', adminOnlyMiddleware, async (c) => {
   try {
     const body = await c.req.json();
     const { username, password, email, role, name, subscription_plan, subscription_expires_at } = body;
@@ -84,9 +86,9 @@ usersRouter.post('/', async (c) => {
 });
 
 // ---------------------------------------------------------------------
-// 3. UPDATE USER (PUT /:id)
+// 3. UPDATE USER (ADMIN ONLY - PUT /:id)
 // ---------------------------------------------------------------------
-usersRouter.put('/:id', async (c) => {
+usersRouter.put('/:id', adminOnlyMiddleware, async (c) => {
   try {
     const id = Number(c.req.param('id'));
     const body = await c.req.json();
@@ -99,7 +101,7 @@ usersRouter.put('/:id', async (c) => {
     if (subscription_expires_at !== undefined) updateData.subscriptionExpiresAt = subscription_expires_at;
 
     if (password && password.trim() !== '') {
-      updateData.password = password;
+      updateData.password = await sha256(password);
     }
 
     const res = await db.update(usersTable).set(updateData).where(eq(usersTable.id, id)).run();
@@ -140,9 +142,9 @@ usersRouter.put('/:id', async (c) => {
 });
 
 // ---------------------------------------------------------------------
-// 4. DELETE USER (DELETE /:id)
+// 4. DELETE USER (ADMIN ONLY - DELETE /:id)
 // ---------------------------------------------------------------------
-usersRouter.delete('/:id', async (c) => {
+usersRouter.delete('/:id', adminOnlyMiddleware, async (c) => {
   try {
     const id = Number(c.req.param('id'));
     const db = getDb(c.env.DB);
@@ -200,7 +202,12 @@ usersRouter.post('/login', async (c) => {
 
     if (!isPlainMatch && !isHashMatch) return c.json({ error: 'Password salah' }, 401);
 
-    const token = generateUserToken(user);
+    if (!isHashMatch) {
+      // Auto-upgrade password plaintext lama ke SHA-256
+      await db.update(usersTable).set({ password: hashedInput }).where(eq(usersTable.id, user.id)).run().catch(() => {});
+    }
+
+    const token = await generateUserToken(user, getJwtSecret(c.env));
 
     return c.json({ 
       success: true, 

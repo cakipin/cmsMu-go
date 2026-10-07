@@ -29,7 +29,7 @@ import { otaRouter } from './addons/ota/router';
 // (All addons have been removed)
 
 // AUTH MIDDLEWARE
-import { authMiddleware } from './middleware/auth'
+import { authMiddleware, adminOnlyMiddleware } from './middleware/auth'
 import { getStorageBucket } from './storage/r2-adapter'
 
 type Bindings = {
@@ -96,11 +96,14 @@ app.get('/admin', (c) => c.html(renderAdmin({ view: 'dash' })));
 app.get('/admin/login', (c) => c.html(renderAdmin({ view: 'login' })));
 app.get('/login', (c) => c.html(renderAdmin({ view: 'login' })));
 app.get('/admin/', (c) => c.redirect('/admin', 301));
+app.use('/admin/data/*', adminOnlyMiddleware);
 app.route('/admin', adminRouter);
-app.get('/sys/install', async (c) => {
+app.get('/sys/install', adminOnlyMiddleware, async (c) => {
   try { const logs = await updateSchema(c.env.DB); return c.json({ success: true, details: logs }); } 
   catch (e: any) { return c.json({ error: e.message }, 500); }
 });
+app.use('/sys/migration/*', adminOnlyMiddleware);
+app.use('/sys/migration', adminOnlyMiddleware);
 app.route('/sys/migration', migrationRouter);
 
 // API

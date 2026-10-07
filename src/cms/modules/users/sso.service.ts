@@ -180,7 +180,7 @@ export async function processSsoLogin(c: any, db: any, body: { code: string; red
   // 4. Generate Token
   const userRole = user.role || 'subscriber';
   const finalAvatar = user.avatar || ssoAvatar || '';
-  const token = generateUserToken({
+  const token = await generateUserToken({
     id: user.id,
     username: user.username,
     name: user.name,
