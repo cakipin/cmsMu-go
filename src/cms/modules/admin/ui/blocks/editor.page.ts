@@ -668,7 +668,7 @@ export const editorPage = `
               });
 
               // 7. Kerapian Paragraf (10 pt)
-              var pMatches = bodyHtml.match(/<p[^>]*>[\\s\\S]*?<\\/p>/gi) || [];
+              var pMatches = bodyHtml.match(new RegExp('<p[^>]*>[\\\\s\\\\S]*?<\\/p>', 'gi')) || [];
               var pCount = pMatches.length;
               var avgWords = pCount > 0 ? (wordCount / pCount) : 0;
               var pPass = pCount >= 1 && (avgWords <= 90 || wordCount < 100);
