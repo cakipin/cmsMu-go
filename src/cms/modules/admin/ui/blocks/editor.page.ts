@@ -862,7 +862,7 @@ export const editorPage = `
                           editorEls[ei].innerHTML = d.content;
                           editorEls[ei].dispatchEvent(new Event('input', { bubbles: true }));
                       }
-                      var htmlEls = document.querySelectorAll('textarea[x-ref=\'htmlSource\']');
+                      var htmlEls = document.querySelectorAll('.editor-raw-source-input');
                       for (var hi = 0; hi < htmlEls.length; hi++) {
                           htmlEls[hi].value = d.content;
                           htmlEls[hi].dispatchEvent(new Event('input', { bubbles: true }));

@@ -125,6 +125,7 @@ export const customEditorTemplate = `
         <!-- The Raw HTML Source Editor (HTML Mode) -->
         <div x-show="editorMode === 'html'" style="display: none; background: #f8fafc; border-top: 1px solid #c3c4c7;">
             <textarea x-ref="htmlSource"
+                      class="editor-raw-source-input"
                       x-model="form.body"
                       @input="onHtmlInput()"
                       placeholder="Ketik atau tempel kode HTML di sini..."
