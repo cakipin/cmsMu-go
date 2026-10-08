@@ -16,6 +16,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const rootDir = process.cwd();
+const distDir = fs.existsSync(path.join(rootDir, 'apps/web'))
+  ? path.join(rootDir, 'apps/web/dist')
+  : path.join(rootDir, 'dist');
 const wranglerJsonc = path.join(rootDir, 'wrangler.jsonc');
 const wranglerBackup = path.join(rootDir, 'wrangler.jsonc.staging_deploy_bak');
 
@@ -38,10 +41,10 @@ async function main() {
   run('npm run build');
 
   // 3. Persiapan payload dist
-  console.log('\n3️⃣ Merapikan artefak dist/_worker.js...');
-  run("rm -rf dist/server/wrangler.json dist/server/wrangler.jsonc dist/wrangler.jsonc .wrangler/deploy");
-  run("cp -r dist/client/* dist/");
-  fs.writeFileSync(path.join(rootDir, 'dist/_worker.js'), "export { default } from './server/entry.mjs';\n");
+  console.log(`\n3️⃣ Merapikan artefak ${path.relative(rootDir, distDir)}/_worker.js...`);
+  run(`rm -rf "${distDir}/server/wrangler.json" "${distDir}/server/wrangler.jsonc" "${distDir}/wrangler.jsonc" .wrangler/deploy`);
+  run(`cp -r "${distDir}/client/"* "${distDir}/"`);
+  fs.writeFileSync(path.join(distDir, '_worker.js'), "export { default } from './server/entry.mjs';\n");
 
   // 4. Isolasi konfigurasi wrangler.jsonc lokal
   // PENTING: Wrangler Pages CLI secara otomatis membaca wrangler.jsonc lokal dan menimpa binding remote proyek!
@@ -55,7 +58,7 @@ async function main() {
   try {
     // 5. Eksekusi deploy ke staging-newsroom
     console.log('\n5️⃣ Mengunggah ke Cloudflare Pages (project: staging-newsroom)...');
-    run('npx wrangler pages deploy dist --project-name staging-newsroom --branch main --commit-dirty=true');
+    run(`npx wrangler pages deploy "${distDir}" --project-name staging-newsroom --branch main --commit-dirty=true`);
   } finally {
     // Kembalikan wrangler.jsonc
     if (hasMoved && fs.existsSync(wranglerBackup)) {
