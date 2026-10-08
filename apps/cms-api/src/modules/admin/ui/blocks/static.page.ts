@@ -241,8 +241,8 @@ export const staticPage = `
 
          get filteredMediaList() {
              if(!this.mediaSearchQuery) return this.mediaList.slice(0, 60);
-             const q = this.mediaSearchQuery.toLowerCase();
-             return this.mediaList.filter(m => (m.title||'').toLowerCase().includes(q)).slice(0, 60);
+             const q = String(this.mediaSearchQuery).toLowerCase();
+             return this.mediaList.filter(m => String(m.title||'').toLowerCase().includes(q)).slice(0, 60);
          },
 
          selectMediaItem(img) {

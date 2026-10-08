@@ -45,7 +45,7 @@ export const editorMediaModal = `
 
                     <div x-show="mediaTab === 'library'" style="flex:1; overflow-y:auto; padding-right:5px;">
                         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px;">
-                            <template x-for="img in filteredMediaList" :key="img.url">
+                            <template x-for="img in filteredMediaList" :key="img.key || img.url || Math.random()">
                                 <div @click="selectMediaItem(img)" 
                                      style="aspect-ratio:1; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; background:#e5e7eb; border:3px solid transparent; transition:all 0.15s ease-in-out;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'border-color:#2563eb; transform:scale(0.96); box-shadow:0 0 0 2px #93c5fd;' : ''"
@@ -181,16 +181,13 @@ export const editorMediaModal = `
                          </div>
                          <div style="padding-top:20px; border-top:1px solid #e5e7eb;">
                             <button type="button" @click="uploadMediaAction(true)" :disabled="!uploadFile"
-                                    style="width:100%; background:#2563eb; color:white; border:none; padding:12px; border-radius:8px; font-weight:600; cursor:pointer; transition:all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px;"
-                                    :style="!uploadFile ? 'opacity:0.5; cursor:not-allowed;' : ''"
-                                    onmouseover="this.style.backgroundColor='#1d4ed8'" 
-                                    onmouseout="this.style.backgroundColor='#2563eb'">
+                                    class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
+                                    :class="!uploadFile ? 'opacity-50 cursor-not-allowed' : ''">
                                 <i class="fas fa-crop-alt"></i> Terapkan Potongan & Upload
                             </button>
                             <button type="button" @click="uploadMediaAction(false)" :disabled="!uploadFile"
-                                    style="width:100%; background:white; color:#4b5563; border:1px solid #d1d5db; padding:12px; border-radius:8px; font-weight:600; margin-top:10px; cursor:pointer; transition:all 0.2s; display:flex; justify-content:center; align-items:center; gap:8px;"
-                                    :style="!uploadFile ? 'opacity:0.5; cursor:not-allowed;' : ''"
-                                    onmouseover="this.style.background='#f3f4f6'" onmouseout="this.style.background='white'">
+                                    class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors mt-3"
+                                    :class="!uploadFile ? 'opacity-50 cursor-not-allowed' : ''">
                                 <i class="fas fa-cloud-upload-alt"></i> Upload Gambar Asli
                             </button>
                          </div>

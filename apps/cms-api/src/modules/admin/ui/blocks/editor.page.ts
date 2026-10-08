@@ -176,10 +176,10 @@ export const editorPage = `
 
          get filteredMediaList() {
              if(!this.searchQuery) return this.mediaList.slice(0, 60);
-             const q = this.searchQuery.toLowerCase();
+             const q = String(this.searchQuery).toLowerCase();
              return this.mediaList.filter(m => 
-                 (m.title && m.title.toLowerCase().includes(q)) || 
-                 (m.alt && m.alt.toLowerCase().includes(q))
+                 (m.title && String(m.title).toLowerCase().includes(q)) || 
+                 (m.alt && String(m.alt).toLowerCase().includes(q))
              ).slice(0, 60);
          },
 
