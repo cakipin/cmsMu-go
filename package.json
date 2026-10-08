@@ -28,6 +28,7 @@
     "lint": "eslint .",
     "generate-types": "wrangler types",
     "predeploy": "node scripts/verify-deploy-sync.mjs",
+    "deploy:staging-newsroom": "node scripts/deploy-staging-newsroom.mjs",
     "deploy": "node scripts/verify-deploy-sync.mjs && npm run build && rm -rf dist/server/wrangler.json .wrangler/deploy && cp -r dist/client/* dist/ && echo \"export { default } from './server/entry.mjs';\" > dist/_worker.js && npx wrangler pages deploy dist --project-name cmsmu --branch main",
     "release:git": "node scripts/push-to-git-upstream.mjs",
     "setup": "node scripts/setup-cloud.mjs",
