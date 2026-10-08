@@ -10,6 +10,10 @@
       "persistent": true
     },
     "lint": {},
-    "check-types": {}
+    "check-types": {},
+    "deploy": {
+      "dependsOn": ["build"],
+      "cache": false
+    }
   }
 }

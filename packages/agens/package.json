@@ -7,5 +7,10 @@
   "exports": {
     ".": "./agens.router.ts",
     "./public": "./agens.public.ts"
+  },
+  "dependencies": {
+    "@cmsmu/db": "workspace:*",
+    "@cmsmu/core": "workspace:*",
+    "hono": "^4.12.33"
   }
 }

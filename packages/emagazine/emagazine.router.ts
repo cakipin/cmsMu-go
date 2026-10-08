@@ -1,9 +1,9 @@
 import { Hono } from 'hono';
-import { getDb } from '../../src/cms/db';
-import { magazines, subscriptions, users, settings } from '../../src/cms/db/schema';
+import { getDb } from '@cmsmu/db';
+import { magazines, subscriptions, users, settings } from '@cmsmu/db';
 import { eq, desc, and, or } from 'drizzle-orm';
-import { verifyUserToken, getJwtSecret } from '../../src/cms/modules/users/auth.helper';
-import { getStorageBucket } from '../../src/cms/storage/r2-adapter';
+import { verifyUserToken, getJwtSecret } from '../../apps/cms-api/src/modules/users/auth.helper';
+import { getStorageBucket } from '../../apps/cms-api/src/storage/r2-adapter';
 
 type Bindings = {
   DB: D1Database;

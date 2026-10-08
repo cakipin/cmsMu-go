@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { getGlobalData, getRenderer } from '../../src/cms/modules/public/helpers';
+import { getGlobalData, getRenderer } from '../../apps/cms-api/src/modules/public/helpers';
 
 export const publicAgensRouter = new Hono();
 

@@ -1,9 +1,14 @@
 {
-  "extends": "../../tsconfig.base.json",
+  "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*", "../../packages/ui/worker-configuration.d.ts"],
+  "exclude": ["dist", "public/pagefind"],
   "compilerOptions": {
-    "moduleResolution": "Bundler",
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"],
+      "@/astro-paper.config": ["./astro-paper.config"]
+    },
     "jsx": "react-jsx",
     "jsxImportSource": "react"
-  },
-  "include": ["src/**/*"]
+  }
 }

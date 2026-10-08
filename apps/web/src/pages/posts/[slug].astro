@@ -3,10 +3,11 @@ export const prerender = false;
 
 import { getDb, posts as postsTable, settings as settingsTable } from '@cmsmu/db';
 import { eq, or } from 'drizzle-orm';
+import { env } from 'cloudflare:workers';
 import '@cmsmu/ui/tokens.css';
 
 const { slug } = Astro.params;
-const d1 = (Astro.locals as any)?.runtime?.env?.DB;
+const d1 = env?.DB;
 
 let article: any = null;
 let siteTitle = 'CMSMu';

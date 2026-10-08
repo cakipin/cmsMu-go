@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
-import { getDb } from '../../src/cms/db';
-import { agens } from '../../src/cms/db/schema';
+import { getDb } from '@cmsmu/db';
+import { agens } from '@cmsmu/db';
 import { eq, asc } from 'drizzle-orm';
 
 type Bindings = {

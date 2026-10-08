@@ -1,8 +1,8 @@
 import { Hono } from 'hono';
-import { getDb } from '../../src/cms/db';
-import { users, subscriptions, notifications } from '../../src/cms/db/schema';
+import { getDb } from '@cmsmu/db';
+import { users, subscriptions, notifications } from '@cmsmu/db';
 import { sql, eq, or, like, desc, and } from 'drizzle-orm';
-import { verifyUserToken, getJwtSecret } from '../../src/cms/modules/users/auth.helper';
+import { verifyUserToken, getJwtSecret } from '../../apps/cms-api/src/modules/users/auth.helper';
 import { getPlansConfig } from '../emagazine/emagazine.router';
 
 export const subscribersRouter = new Hono<{ Bindings: any }>();

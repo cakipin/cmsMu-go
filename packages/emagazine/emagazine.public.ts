@@ -1,11 +1,11 @@
 import { Hono } from 'hono';
 import type { Context } from 'hono';
-import { getGlobalData, getRenderer } from '../../src/cms/modules/public/helpers';
-import { getDb } from '../../src/cms/db';
-import { magazines as magazinesTable } from '../../src/cms/db/schema';
+import { getGlobalData, getRenderer } from '../../apps/cms-api/src/modules/public/helpers';
+import { getDb } from '@cmsmu/db';
+import { magazines as magazinesTable } from '@cmsmu/db';
 import { eq, desc, and } from 'drizzle-orm';
 import { getPlansConfig } from './emagazine.router';
-import { getStorageBucket } from '../../src/cms/storage/r2-adapter';
+import { getStorageBucket } from '../../apps/cms-api/src/storage/r2-adapter';
 
 export const publicBerlanggananRouter = new Hono();
 export const publicMajalahRouter = new Hono();
