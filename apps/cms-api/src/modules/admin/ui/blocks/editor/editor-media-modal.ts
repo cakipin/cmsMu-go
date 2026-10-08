@@ -45,7 +45,7 @@ export const editorMediaModal = `
 
                     <div x-show="mediaTab === 'library'" style="flex:1; overflow-y:auto; padding-right:5px;">
                         <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(130px, 1fr)); gap:15px;">
-                            <template x-for="img in filteredMediaList" :key="img.key || img.url || Math.random()">
+                            <template x-for="(img, idx) in filteredMediaList" :key="img.key || img.url || idx">
                                 <div @click="selectMediaItem(img)" 
                                      style="aspect-ratio:1; border-radius:10px; overflow:hidden; cursor:pointer; position:relative; background:#e5e7eb; border:3px solid transparent; transition:all 0.15s ease-in-out;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'border-color:#2563eb; transform:scale(0.96); box-shadow:0 0 0 2px #93c5fd;' : ''"

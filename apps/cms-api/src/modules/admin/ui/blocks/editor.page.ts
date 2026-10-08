@@ -175,12 +175,20 @@ export const editorPage = `
          },
 
          get filteredMediaList() {
-             if(!this.searchQuery) return this.mediaList.slice(0, 60);
-             const q = String(this.searchQuery).toLowerCase();
-             return this.mediaList.filter(m => 
-                 (m.title && String(m.title).toLowerCase().includes(q)) || 
-                 (m.alt && String(m.alt).toLowerCase().includes(q))
-             ).slice(0, 60);
+             try {
+                 if (!this.mediaList || !Array.isArray(this.mediaList)) return [];
+                 if (!this.searchQuery) return this.mediaList.slice(0, 60);
+                 const q = String(this.searchQuery).toLowerCase();
+                 return this.mediaList.filter(m => {
+                     if (!m) return false;
+                     const t = m.title ? String(m.title).toLowerCase() : '';
+                     const a = m.alt ? String(m.alt).toLowerCase() : '';
+                     return t.includes(q) || a.includes(q);
+                 }).slice(0, 60);
+             } catch (e) {
+                 console.error('filteredMediaList error:', e);
+                 return [];
+             }
          },
 
          selectMediaItem(img) {
