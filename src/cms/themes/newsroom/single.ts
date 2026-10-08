@@ -1,32 +1,21 @@
-import type { ThemeContext } from "../types";
-import {
-  escapeHtml,
-  getPostImage,
-  getPostCategory,
-  formatDateIndo,
-  cleanAndFormatArticleContent,
-  extractSourceInfo,
-} from "./utils";
+import type { ThemeContext } from '../types';
+import { escapeHtml, getPostImage, getPostCategory, formatDateIndo, cleanAndFormatArticleContent, extractSourceInfo } from './utils';
 
 export function renderSingle(this: any, ctx: ThemeContext) {
   const p = ctx.data;
   if (!p) return this.render404(ctx);
 
   const cx = ctx as any;
-  const siteUrl = ctx.site?.url || "http://localhost:4321";
+  const siteUrl = ctx.site?.url || 'http://localhost:4321';
   const canonical = cx.canonical || `${siteUrl}/${p.slug}`;
-  const pubDate = p.created_at
-    ? new Date(p.created_at).toISOString()
-    : new Date().toISOString();
+  const pubDate = p.created_at ? new Date(p.created_at).toISOString() : new Date().toISOString();
   const modDate = p.updated_at ? new Date(p.updated_at).toISOString() : pubDate;
-  const pubDateShort = pubDate.split("T")[0];
+  const pubDateShort = pubDate.split('T')[0];
   const catName = getPostCategory(p);
-  const catSlug = catName.toLowerCase().replace(/\s+/g, "-");
+  const catSlug = catName.toLowerCase().replace(/\s+/g, '-');
   const heroImage = getPostImage(p);
   const formattedDate = formatDateIndo(p.created_at);
-  const siteTitle = escapeHtml(
-    ctx.site?.site_title || ctx.site?.title || "Newsroom"
-  );
+  const siteTitle = escapeHtml(ctx.site?.site_title || ctx.site?.title || "Newsroom");
 
   // Ekstraksi Informasi Sumber Berita Asli (Media Asli & Favicon Asli dari Real DB)
   const sourceInfo = extractSourceInfo(p, siteTitle, ctx.sources || []);
@@ -35,76 +24,63 @@ export function renderSingle(this: any, ctx: ThemeContext) {
   const jsonLdArticle = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Article",
-    headline: p.title,
-    description: cx.metaDesc || "",
-    image: heroImage,
-    datePublished: pubDate,
-    dateModified: modDate,
-    url: canonical,
-    author: {
-      "@type": "Person",
-      name: p.author || "Redaksi Newsroom",
+    "headline": p.title,
+    "description": cx.metaDesc || '',
+    "image": heroImage,
+    "datePublished": pubDate,
+    "dateModified": modDate,
+    "url": canonical,
+    "author": { 
+      "@type": "Person", 
+      "name": p.author || "Redaksi Newsroom" 
     },
-    publisher: {
+    "publisher": {
       "@type": "Organization",
-      name: siteTitle,
-      logo: {
-        "@type": "ImageObject",
-        url: `${siteUrl}/favicon.svg`,
-      },
+      "name": siteTitle,
+      "logo": { 
+        "@type": "ImageObject", 
+        "url": `${siteUrl}/favicon.svg` 
+      }
     },
-    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+    "mainEntityOfPage": { "@type": "WebPage", "@id": canonical }
   });
 
   // 2. JSON-LD Breadcrumb Schema (Kategori Bersih tanpa /kategori/)
   const jsonLdBreadcrumb = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: "Beranda",
-        item: `${siteUrl}/`,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: catName,
-        item: `${siteUrl}/${catSlug}`,
-      },
-      { "@type": "ListItem", position: 3, name: p.title },
-    ],
+    "itemListElement": [
+      { "@type": "ListItem", "position": 1, "name": "Beranda", "item": `${siteUrl}/` },
+      { "@type": "ListItem", "position": 2, "name": catName, "item": `${siteUrl}/${catSlug}` },
+      { "@type": "ListItem", "position": 3, "name": p.title }
+    ]
   });
 
   // 3. Format & Bersihkan Konten Artikel
-  const formatted = cleanAndFormatArticleContent(
-    p.body || p.content || "",
-    !!p.featured_image
-  );
+  const formatted = cleanAndFormatArticleContent(p.body || p.content || '', !!p.featured_image);
   let bodyHtml = formatted.body;
-  let captionText = formatted.captionText || p.caption || "";
+  let captionText = formatted.captionText || p.caption || '';
 
   // 4. Auto-Link Kategori di dalam Teks (Kategori Bersih tanpa /kategori/)
   const categoriesToLink = [
-    { regex: / (Berita Daerah) /gi, url: "/berita-daerah" },
-    { regex: / (Warta Persyarikatan) /gi, url: "/warta-persyarikatan" },
-    { regex: / (Opini) /gi, url: "/opini" },
-    { regex: / (Pendidikan) /gi, url: "/pendidikan" },
-    { regex: / (Ekonomi) /gi, url: "/ekonomi" },
-    { regex: / (Kajian) /gi, url: "/kajian" },
+    { regex: / (Berita Daerah) /gi, url: '/berita-daerah' },
+    { regex: / (Warta Persyarikatan) /gi, url: '/warta-persyarikatan' },
+    { regex: / (Opini) /gi, url: '/opini' },
+    { regex: / (Pendidikan) /gi, url: '/pendidikan' },
+    { regex: / (Ekonomi) /gi, url: '/ekonomi' },
+    { regex: / (Kajian) /gi, url: '/kajian' }
   ];
 
   let totalAutoLinks = 0;
-  let autoLinkParagraphs = bodyHtml.split("</p>");
+  let autoLinkParagraphs = bodyHtml.split('</p>');
   for (let i = 0; i < autoLinkParagraphs.length; i++) {
     if (totalAutoLinks >= 5) break;
     let pText = autoLinkParagraphs[i];
-    if (pText.includes("<a ") || pText.includes("<img")) continue;
+    if (pText.includes('<a ') || pText.includes('<img')) continue;
 
     for (let cat of categoriesToLink) {
       if (cat.regex.test(pText)) {
-        autoLinkParagraphs[i] = pText.replace(cat.regex, function (match) {
+        autoLinkParagraphs[i] = pText.replace(cat.regex, function(match) {
           return `<a href="${cat.url}" style="color:var(--accent-primary);font-weight:600;text-decoration:underline;">${match}</a>`;
         });
         totalAutoLinks++;
@@ -112,34 +88,29 @@ export function renderSingle(this: any, ctx: ThemeContext) {
       }
     }
   }
-  bodyHtml = autoLinkParagraphs.join("</p>");
+  bodyHtml = autoLinkParagraphs.join('</p>');
 
   // 5. Baca Juga (Related Posts di Tengah Artikel)
   if (cx.relatedPosts && cx.relatedPosts.length > 0) {
-    const pList = bodyHtml.split("</p>");
+    const pList = bodyHtml.split('</p>');
     if (pList.length > 3) {
       const middle = Math.floor(pList.length / 2);
       let bacaJugaHtml = `
       <div class="nr-baca-juga">
         <h4><i class="fas fa-bookmark"></i> BACA JUGA</h4>
         <ul>
-          ${cx.relatedPosts
-            .slice(0, 3)
-            .map(
-              (rp: any) => `
+          ${cx.relatedPosts.slice(0, 3).map((rp: any) => `
             <li>
               <a href="/${escapeHtml(rp.slug)}">
                 <span style="color:var(--accent-primary);">&bull;</span>
                 <span>${escapeHtml(rp.title)}</span>
               </a>
             </li>
-          `
-            )
-            .join("")}
+          `).join('')}
         </ul>
       </div>`;
       pList.splice(middle, 0, bacaJugaHtml);
-      bodyHtml = pList.join("</p>");
+      bodyHtml = pList.join('</p>');
     }
   }
 
@@ -259,17 +230,15 @@ export function renderSingle(this: any, ctx: ThemeContext) {
 
   // Attribution Box jika disadur dari sumber lain / agregator
   const isAggregated = sourceInfo.name !== siteTitle;
-  const attributionHtml = isAggregated
-    ? `
+  const attributionHtml = isAggregated ? `
   <div class="nr-attribution-box">
     <p><strong>Pemberitahuan Redaksi:</strong> Artikel ini dihimpun melalui jejaring informasi sindikasi media.</p>
     <p style="margin-top:0.35rem; color:var(--text-secondary);">
       Sumber asli: <strong>${escapeHtml(sourceInfo.name)}</strong> 
-      ${sourceInfo.url && sourceInfo.url !== "/" && sourceInfo.url !== "#" ? `&bull; <a href="${escapeHtml(sourceInfo.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-primary); text-decoration:underline;">Kunjungi Tautan Asli &rarr;</a>` : ""}
+      ${sourceInfo.url && sourceInfo.url !== '/' && sourceInfo.url !== '#' ? `&bull; <a href="${escapeHtml(sourceInfo.url)}" target="_blank" rel="noopener noreferrer" style="color:var(--accent-primary); text-decoration:underline;">Kunjungi Tautan Asli &rarr;</a>` : ''}
     </p>
   </div>
-  `
-    : "";
+  ` : '';
 
   const content = `
   <script type="application/ld+json">${jsonLdArticle}</script>
@@ -283,7 +252,7 @@ export function renderSingle(this: any, ctx: ThemeContext) {
       </a>
       <h1 class="nr-hero-title">${escapeHtml(p.title)}</h1>
       <div class="nr-hero-byline">
-        <span>Published by <strong>${escapeHtml(p.author || "Redaksi Newsroom")}</strong></span>
+        <span>Published by <strong>${escapeHtml(p.author || 'Redaksi Newsroom')}</strong></span>
         <span>on</span>
         <time datetime="${pubDateShort}">${formattedDate}</time>
       </div>
@@ -306,15 +275,11 @@ export function renderSingle(this: any, ctx: ThemeContext) {
 
     <!-- Article Content -->
     <article class="nr-article-body" id="nr-article-body-content">
-      ${
-        captionText
-          ? `
+      ${captionText ? `
         <div style="font-size:0.875rem; color:var(--text-muted); font-style:italic; margin-bottom:1.5rem; padding-bottom:0.75rem; border-bottom:1px solid var(--border-subtle);">
           <i class="fas fa-camera"></i> Keterangan Foto: ${escapeHtml(captionText)}
         </div>
-      `
-          : ""
-      }
+      ` : ''}
 
       ${bodyHtml}
 
@@ -325,7 +290,7 @@ export function renderSingle(this: any, ctx: ThemeContext) {
     <div class="nr-share-block">
       <div class="nr-share-title">Bagikan Berita Ini:</div>
       <div class="nr-share-buttons">
-        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + " " + canonical)}" target="_blank" rel="noopener" class="nr-share-btn nr-share-wa">
+        <a href="https://api.whatsapp.com/send?text=${encodeURIComponent(p.title + ' ' + canonical)}" target="_blank" rel="noopener" class="nr-share-btn nr-share-wa">
           <i class="fab fa-whatsapp"></i> WhatsApp
         </a>
         <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(canonical)}" target="_blank" rel="noopener" class="nr-share-btn nr-share-fb">
@@ -341,28 +306,19 @@ export function renderSingle(this: any, ctx: ThemeContext) {
     </div>
 
     <!-- Tags Footer -->
-    ${
-      p.tags
-        ? `
+    ${p.tags ? `
     <div class="nr-article-tags">
       <span class="nr-tag-label"><i class="fas fa-tags"></i> Topik Terkait:</span>
-      ${p.tags
-        .split(",")
-        .map((t: string) => {
-          const cleanT = t.trim().replace(/^#/, "");
-          const tagSlug = cleanT.toLowerCase().replace(/\s+/g, "-");
-          return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="nr-tag-item">#${escapeHtml(cleanT)}</a>`;
-        })
-        .join("")}
+      ${p.tags.split(',').map((t: string) => {
+        const cleanT = t.trim().replace(/^#/, '');
+        const tagSlug = cleanT.toLowerCase().replace(/\s+/g, '-');
+        return `<a href="/tag/${encodeURIComponent(tagSlug)}" class="nr-tag-item">#${escapeHtml(cleanT)}</a>`;
+      }).join('')}
     </div>
-    `
-        : ""
-    }
+    ` : ''}
 
     <!-- Comments Section -->
-    ${
-      p.allow_comments !== 0
-        ? `
+    ${p.allow_comments !== 0 ? `
     <section class="nr-comments-section">
       <h3 class="nr-comments-title"><i class="far fa-comments"></i> Komentar & Diskusi Pembaca</h3>
 
@@ -459,22 +415,16 @@ export function renderSingle(this: any, ctx: ThemeContext) {
       });
       </script>
     </section>
-    `
-        : ""
-    }
+    ` : ''}
 
     <!-- Related Posts -->
-    ${
-      cx.relatedPosts && cx.relatedPosts.length
-        ? `
+    ${cx.relatedPosts && cx.relatedPosts.length ? `
     <section class="nr-related-section">
       <h3 style="font-size:1.35rem; font-weight:800; color:var(--text-primary);">
         <i class="fas fa-newspaper"></i> Liputan Terkait Lainnya
       </h3>
       <div class="nr-related-grid">
-        ${cx.relatedPosts
-          .map(
-            (rp: any) => `
+        ${cx.relatedPosts.map((rp: any) => `
           <div class="nr-card-standard">
             <a href="/${escapeHtml(rp.slug)}" class="nr-card-thumb">
               <img src="${getPostImage(rp)}" alt="${escapeHtml(rp.title)}" loading="lazy">
@@ -489,16 +439,12 @@ export function renderSingle(this: any, ctx: ThemeContext) {
               </div>
             </div>
           </div>
-        `
-          )
-          .join("")}
+        `).join('')}
       </div>
     </section>
-    `
-        : ""
-    }
+    ` : ''}
   </main>
   `;
 
-  return this._layout(content, p.title, ctx, "post");
+  return this._layout(content, p.title, ctx, 'post');
 }

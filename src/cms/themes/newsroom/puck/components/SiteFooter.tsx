@@ -5,24 +5,23 @@ import type { Props } from "../types";
 export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
   fields: {
     siteName: { type: "text" },
-    copyrightText: { type: "text" },
+    copyrightText: { type: "text" }
   },
   defaultProps: {
-    siteName: "CMSMu",
-    copyrightText:
-      "© 2026 CMSMu - Content Management System Muhammadiyah. Hak Cipta Dilindungi.",
+    siteName: "EkrafMu",
+    copyrightText: "© 2026 Lembaga Ekonomi Kreatif Muhammadiyah. Hak Cipta Dilindungi."
   },
   render: ({ siteName, copyrightText }) => (
-    <footer className="border-t border-slate-200 bg-white py-12">
-      <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-6 px-4 sm:px-6 md:flex-row lg:px-8">
+    <footer className="bg-white border-t border-slate-200 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
         <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-600 text-sm font-bold text-white">
-            M
-          </div>
-          <span className="text-lg font-bold text-slate-900">{siteName}</span>
+          <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold text-sm">M</div>
+          <span className="font-bold text-lg text-slate-900">{siteName}</span>
         </div>
-        <p className="text-sm text-slate-500">{copyrightText}</p>
+        <p className="text-slate-500 text-sm">
+          {copyrightText}
+        </p>
       </div>
     </footer>
-  ),
+  )
 };

@@ -8,59 +8,49 @@ export const CallToAction: ComponentConfig<Props["CallToAction"]> = {
     description: { type: "textarea" },
     buttonText: { type: "text" },
     buttonLink: { type: "text" },
-    footerText: { type: "text" },
+    footerText: { type: "text" }
   },
   defaultProps: {
-    title: "Mulai Bangun & Kelola Website Persyarikatan Anda",
-    description:
-      "Gunakan fondasi CMSMu untuk mengelola portal resmi pimpinan, majelis, lembaga, dan amal usaha Muhammadiyah dengan aman, cepat, dan terstruktur.",
-    buttonText: "Masuk Dashboard Admin",
-    buttonLink: "/admin",
-    footerText:
-      "Tersedia untuk seluruh tingkatan pimpinan dan amal usaha Muhammadiyah.",
+    title: "Siap Mengelevasi Skala Bisnis Anda?",
+    description: "Bergabunglah dengan ratusan inovator lainnya. Pendaftaran batch inkubasi bulan ini segera ditutup.",
+    buttonText: "Kirim Profil Usaha",
+    buttonLink: "#",
+    footerText: "Data Anda aman dan dikelola secara rahasia."
   },
   render: ({ title, description, buttonText, buttonLink, footerText }) => (
-    <section
-      id="gabung"
-      className="relative overflow-hidden bg-slate-900 py-20 text-center"
-    >
-      <div
-        className="absolute inset-0 opacity-10"
-        style={{
-          backgroundImage: "radial-gradient(#10b981 1px, transparent 1px)",
-          backgroundSize: "30px 30px",
-        }}
-      ></div>
-      <div className="relative z-10 mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-        <h2 className="mb-6 text-3xl leading-tight font-bold text-white md:text-5xl">
-          {title}
-        </h2>
-        <p className="mx-auto mb-10 max-w-2xl text-lg text-slate-300 md:text-xl">
+    <section id="gabung" className="py-20 bg-slate-900 text-center relative overflow-hidden">
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(#10b981 1px, transparent 1px)', backgroundSize: '30px 30px' }}></div>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <h2 className="text-3xl md:text-5xl font-bold text-white mb-6 leading-tight">{title}</h2>
+        <p className="text-xl text-slate-300 mb-10 max-w-2xl mx-auto">
           {description}
         </p>
-        <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-          <a
-            href={buttonLink || "/admin"}
-            className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-xl shadow-emerald-600/30 transition hover:bg-emerald-700"
-          >
-            <span>{buttonText || "Masuk Dashboard Admin"}</span>
-            <svg
-              className="h-5 w-5"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M14 5l7 7m0 0l-7 7m7-7H3"
-              ></path>
-            </svg>
-          </a>
+        <div className="bg-white p-8 rounded-2xl max-w-2xl mx-auto shadow-2xl text-left">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nama Lengkap</label>
+              <input type="text" className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="Cth: Ahmad Dahlan" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-2">Nomor WhatsApp</label>
+              <input type="text" className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500" placeholder="0812-xxxx-xxxx" />
+            </div>
+          </div>
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-slate-700 mb-2">Sektor Usaha Kreatif</label>
+            <select className="w-full border border-slate-200 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-green-500 bg-white">
+              <option>Pengembangan Perangkat Lunak & IT</option>
+              <option>Kuliner & FnB</option>
+              <option>Fashion & Kriya</option>
+              <option>Media & Desain</option>
+            </select>
+          </div>
+          <button className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl transition shadow-lg shadow-green-600/30 text-lg">
+            {buttonText}
+          </button>
+          <p className="text-center text-sm text-slate-500 mt-4">{footerText}</p>
         </div>
-        <p className="mt-6 text-center text-sm text-slate-400">{footerText}</p>
       </div>
     </section>
-  ),
+  )
 };

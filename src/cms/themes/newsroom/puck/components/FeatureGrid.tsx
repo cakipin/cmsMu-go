@@ -11,72 +11,50 @@ export const FeatureGrid: ComponentConfig<Props["FeatureGrid"]> = {
       arrayFields: {
         title: { type: "text" },
         description: { type: "textarea" },
-        svgIcon: { type: "textarea" },
-      },
-    },
+        svgIcon: { type: "textarea" }
+      }
+    }
   },
   defaultProps: {
-    title: "Fitur & Keunggulan Pondasi CMSMu",
-    description:
-      "Fondasi teknologi portal publikasi modern dengan arsitektur headless, visual page editor, dan manajemen konten terpadu untuk kebutuhan persyarikatan.",
+    title: "Mengapa Bergabung Bersama Kami?",
+    description: "Kami memadukan prinsip ekonomi Islam dengan literasi digital untuk memastikan bisnis Anda tumbuh secara etis dan eksponensial.",
     features: [
       {
-        title: "Visual Page Builder (Drag & Drop)",
-        description:
-          "Mendesain halaman visual, landing page, dan profil lembaga dengan blok komponen interaktif secara instan tanpa perlu menulis kode.",
-        svgIcon:
-          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z"></path>',
+        title: "Akselerasi Digital",
+        description: "Pendampingan integrasi sistem, dari pengelolaan server awan, otomasi database, hingga optimasi antarmuka digital UMKM.",
+        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>'
       },
       {
-        title: "Manajemen Berita & Artikel",
-        description:
-          "Meja kerja penulisan naskah yang rapi dengan editor kaya fitur, kategorisasi terstruktur, tagar, dan optimasi SEO otomatis.",
-        svgIcon:
-          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"></path>',
+        title: "Jaringan Saudagar",
+        description: "Akses eksklusif ke ribuan pelaku usaha dalam ekosistem persyarikatan untuk kolaborasi silang dan rantai pasok.",
+        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>'
       },
       {
-        title: "Pustaka Media Terpusat",
-        description:
-          "Pengelolaan berkas foto, dokumen, dan logo secara terpusat berbasis cloud storage dengan pengunggahan cepat dan responsif.",
-        svgIcon:
-          '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path>',
-      },
-    ],
+        title: "Pendampingan Syariah",
+        description: "Memastikan model bisnis, pendanaan, dan operasional Anda sesuai dengan prinsip ekonomi Islam yang amanah.",
+        svgIcon: '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path>'
+      }
+    ]
   },
   render: ({ title, description, features }) => (
-    <section id="manfaat" className="bg-white py-20">
-      <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-        <div className="mx-auto mb-16 max-w-3xl text-center">
-          <h2 className="mb-4 text-3xl font-bold text-slate-900 md:text-4xl">
-            {title}
-          </h2>
-          <p className="text-lg text-slate-600">{description}</p>
+    <section id="manfaat" className="py-20 bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <h2 className="text-3xl md:text-4xl font-bold text-slate-900 mb-4">{title}</h2>
+          <p className="text-slate-600 text-lg">{description}</p>
         </div>
-        <div className="grid gap-8 md:grid-cols-3">
-          {(features || []).map((feature, i) => (
-            <div
-              key={i}
-              className="group rounded-2xl border border-slate-100 bg-slate-50 p-8 transition-all duration-300 hover:border-green-100 hover:shadow-xl"
-            >
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-green-100 transition-transform duration-300 group-hover:scale-110">
-                <svg
-                  className="h-7 w-7 text-green-600"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  dangerouslySetInnerHTML={{ __html: feature.svgIcon }}
-                ></svg>
+        <div className="grid md:grid-cols-3 gap-8">
+          {features.map((feature, i) => (
+            <div key={i} className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-xl hover:border-green-100 transition-all duration-300 group">
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: feature.svgIcon }}></svg>
               </div>
-              <h3 className="mb-3 text-xl font-bold text-slate-900">
-                {feature.title}
-              </h3>
-              <p className="leading-relaxed text-slate-600">
-                {feature.description}
-              </p>
+              <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
+              <p className="text-slate-600 leading-relaxed">{feature.description}</p>
             </div>
           ))}
         </div>
       </div>
     </section>
-  ),
+  )
 };

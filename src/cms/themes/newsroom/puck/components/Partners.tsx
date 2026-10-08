@@ -10,63 +10,35 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
       type: "array",
       arrayFields: {
         name: { type: "text" },
-        logoUrl: { type: "custom", render: ImageField },
-        url: { type: "text" },
-      },
-    },
+        logoUrl: { type: "custom", render: ImageField }
+      }
+    }
   },
   defaultProps: {
-    title: "Mendukung Ekosistem Persyarikatan & Amal Usaha Muhammadiyah",
+    title: "Dipercaya & Berkolaborasi Dengan",
     partners: [
-      { name: "Pimpinan Wilayah & Daerah", logoUrl: "", url: "" },
-      { name: "Majelis & Lembaga", logoUrl: "", url: "" },
-      { name: "Perguruan Tinggi & Sekolah", logoUrl: "", url: "" },
-      { name: "Rumah Sakit & Lembaga Layanan", logoUrl: "", url: "" },
-    ],
+      { name: "SatuMu", logoUrl: "" },
+      { name: "Suara Muhammadiyah", logoUrl: "" },
+      { name: "BTM", logoUrl: "" },
+      { name: "Lazismu", logoUrl: "" }
+    ]
   },
   render: ({ title, partners }) => (
-    <section className="border-b border-slate-200 bg-white py-12">
-      <div className="mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
-        <p className="mb-8 text-sm font-medium tracking-wider text-slate-500 uppercase">
-          {title}
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-8 opacity-60 transition duration-300 hover:opacity-100 md:gap-16">
-          {(partners || []).map((partner, i) => {
-            const innerContent = partner.logoUrl ? (
-              <img
-                src={partner.logoUrl}
-                alt={partner.name}
-                className="h-10 object-contain grayscale transition duration-300 hover:grayscale-0"
-              />
-            ) : (
-              <span className="text-2xl font-bold text-slate-800 transition hover:text-emerald-600">
-                {partner.name}
-              </span>
-            );
-
-            if (partner.url && partner.url.trim() !== "") {
-              return (
-                <a
-                  key={i}
-                  href={partner.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center transition-transform duration-200 hover:scale-105"
-                  title={partner.name}
-                >
-                  {innerContent}
-                </a>
-              );
-            }
-
-            return (
-              <div key={i} className="flex items-center justify-center">
-                {innerContent}
-              </div>
-            );
-          })}
+    <section className="bg-white py-12 border-b border-slate-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <p className="text-sm text-slate-500 font-medium mb-8 uppercase tracking-wider">{title}</p>
+        <div className="flex justify-center flex-wrap gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition duration-300">
+          {partners.map((partner, i) => (
+            <div key={i} className="flex items-center justify-center">
+              {partner.logoUrl ? (
+                <img src={partner.logoUrl} alt={partner.name} className="h-10 object-contain" />
+              ) : (
+                <span className="text-2xl font-bold text-slate-800">{partner.name}</span>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </section>
-  ),
+  )
 };

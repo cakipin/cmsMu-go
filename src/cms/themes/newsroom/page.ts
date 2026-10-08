@@ -1,5 +1,5 @@
-import type { ThemeContext } from "../types";
-import { escapeHtml } from "./utils";
+import type { ThemeContext } from '../types';
+import { escapeHtml } from './utils';
 
 export function renderPage(this: any, ctx: ThemeContext) {
   const page = ctx.data;
@@ -11,10 +11,10 @@ export function renderPage(this: any, ctx: ThemeContext) {
       ${escapeHtml(page.title)}
     </h1>
     <div class="nr-article-content" style="max-width: 100%;">
-      ${page.body || ""}
+      ${page.body || ''}
     </div>
   </main>
   `;
 
-  return this._layout(content, page.title, ctx, "page");
+  return this._layout(content, page.title, ctx, 'page');
 }
