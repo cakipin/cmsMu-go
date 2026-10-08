@@ -933,6 +933,9 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
 publicRouter.get("/p/:slug", async c =>
   c.redirect("/" + c.req.param("slug"), 301)
 );
+publicRouter.get("/posts/:slug", async c =>
+  c.redirect("/" + c.req.param("slug"), 301)
+);
 publicRouter.get("/en/:slug", async c =>
   renderSinglePage(c, c.req.param("slug"), "en")
 );
