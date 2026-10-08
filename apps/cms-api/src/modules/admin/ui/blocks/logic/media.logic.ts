@@ -298,7 +298,7 @@ export const mediaLogic = {
       this.isUploading = true;
       
       let finalFile = this.uploadFile;
-      let newName = finalFile.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 40) || 'image';
+      let newName = finalFile.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40) || 'image';
 
       if (useCrop && this.cropperInstance) {
           try {

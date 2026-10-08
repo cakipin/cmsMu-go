@@ -293,7 +293,7 @@ export const editorPage = `
              if (seoTitle) {
                  newName = seoTitle.toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
              } else {
-                 newName = finalFile.name.replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9._-]/g, "").slice(0, 40) || 'image';
+                 newName = finalFile.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40) || 'image';
              }
 
              if (useCrop && this.cropperInstance) {
