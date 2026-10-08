@@ -25,6 +25,9 @@ export default defineConfig({
   site: config.site.url,
   output: "server",
   trailingSlash: "never",
+  security: {
+    checkOrigin: false,
+  },
 
   integrations: [
     mdx(),

@@ -44,9 +44,25 @@ export function renderHome(this: any, ctx: ThemeContext) {
   });
   const leftPosts = (opinionCandidates.length >= 3 ? opinionCandidates : heroList.slice(1, 5)).slice(0, 4);
 
-  // 3. Right Column (Trending Network / Populer Berperingkat - 4 artikel berikutnya)
+  // 3. Right Column (Trending Network / Populer Berperingkat - 5 artikel populer dari DB)
   const leftIds = new Set([hero.id, ...leftPosts.map((p: any) => p.id)]);
-  const trendingPosts = heroList.filter((p: any) => !leftIds.has(p.id)).slice(0, 4);
+  const popularFromDb = ctx.data && ctx.data.popularPosts && Array.isArray(ctx.data.popularPosts) && ctx.data.popularPosts.length > 0
+    ? ctx.data.popularPosts
+    : null;
+  const trendingPosts = popularFromDb
+    ? popularFromDb.slice(0, 5)
+    : heroList.filter((p: any) => !leftIds.has(p.id)).slice(0, 5);
+
+  const regionLabels: Record<string, string> = {
+    all: 'Seluruh Wilayah',
+    jateng: 'Jawa Tengah',
+    diy: 'D.I. Yogyakarta',
+    jatim: 'Jawa Timur',
+    jabar: 'Jawa Barat',
+    dki: 'DKI Jakarta',
+    luar_jawa: 'Luar Jawa'
+  };
+  const activeRegionLabel = regionLabels[currentRegion] || 'Seluruh Wilayah';
 
   // 4. Regular Grid (Berita Daerah & Sindikasi Media Terkini dari Seluruh Media - Tanpa Batasan Waktu)
   // Seluruh artikel yang tersedia di muat tanpa membatasi tanggal cutoff
@@ -172,52 +188,52 @@ export function renderHome(this: any, ctx: ThemeContext) {
     </div>
 
     <!-- Regular Grid Section: Sindikasi Media & Warta Daerah dengan Filter Wilayah Terpisah -->
-    ${regularPosts.length > 0 ? `
-      <section style="margin-top: 3.5rem;">
-        <div class="nr-section-header" style="flex-wrap:wrap; gap:0.75rem;">
-          <div>
-            <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-              <h2 class="nr-section-title">Sindikasi Media Muhammadiyah</h2>
-              <span class="nr-region-chip" title="Liputan seluruh wilayah persyarikatan">
-                <i class="fas fa-location-dot"></i> Seluruh Wilayah
-              </span>
-            </div>
-            <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:0.25rem;">
-              Liputan terverifikasi dari jejaring media persyarikatan dan wilayah di seluruh Indonesia tanpa batasan waktu
-            </p>
-          </div>
+    <section style="margin-top: 3.5rem;">
+      <div class="nr-section-header" style="flex-wrap:wrap; gap:0.75rem;">
+        <div>
           <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-            <a href="/berita-daerah" style="font-size:0.8125rem; font-weight:700; color:var(--accent-primary); display:inline-flex; align-items:center; gap:4px;">
-              Semua Wilayah &rarr;
-            </a>
+            <h2 class="nr-section-title">Sindikasi Media Muhammadiyah</h2>
+            <span class="nr-region-chip" title="Liputan wilayah persyarikatan">
+              <i class="fas fa-location-dot"></i> ${escapeHtml(activeRegionLabel)}
+            </span>
           </div>
+          <p style="font-size:0.8125rem; color:var(--text-secondary); margin-top:0.25rem;">
+            Liputan terverifikasi dari jejaring media persyarikatan dan wilayah di seluruh Indonesia tanpa batasan waktu
+          </p>
         </div>
-
-        <!-- Selector Tab Filter Wilayah Interaktif (Jateng, DIY, Jabar, DKI Terpisah) -->
-        <div class="nr-region-tabs" id="region-filter-tabs">
-          <a href="/" class="nr-region-tab-btn ${currentRegion === 'all' ? 'active' : ''}">
-            <i class="fas fa-globe-asia"></i> Semua Wilayah
-          </a>
-          <a href="/?region=jateng" class="nr-region-tab-btn ${currentRegion === 'jateng' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> Jawa Tengah
-          </a>
-          <a href="/?region=diy" class="nr-region-tab-btn ${currentRegion === 'diy' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> D.I. Yogyakarta
-          </a>
-          <a href="/?region=jatim" class="nr-region-tab-btn ${currentRegion === 'jatim' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> Jawa Timur
-          </a>
-          <a href="/?region=jabar" class="nr-region-tab-btn ${currentRegion === 'jabar' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> Jawa Barat
-          </a>
-          <a href="/?region=dki" class="nr-region-tab-btn ${currentRegion === 'dki' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> DKI Jakarta
-          </a>
-          <a href="/?region=luar_jawa" class="nr-region-tab-btn ${currentRegion === 'luar_jawa' ? 'active' : ''}">
-            <i class="fas fa-location-dot"></i> Luar Jawa
+        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
+          <a href="/berita-daerah" style="font-size:0.8125rem; font-weight:700; color:var(--accent-primary); display:inline-flex; align-items:center; gap:4px;">
+            Semua Wilayah &rarr;
           </a>
         </div>
+      </div>
 
+      <!-- Selector Tab Filter Wilayah Interaktif (Jateng, DIY, Jabar, DKI Terpisah) -->
+      <div class="nr-region-tabs" id="region-filter-tabs">
+        <a href="/" class="nr-region-tab-btn ${currentRegion === 'all' ? 'active' : ''}">
+          <i class="fas fa-globe-asia"></i> Semua Wilayah
+        </a>
+        <a href="/?region=jateng" class="nr-region-tab-btn ${currentRegion === 'jateng' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> Jawa Tengah
+        </a>
+        <a href="/?region=diy" class="nr-region-tab-btn ${currentRegion === 'diy' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> D.I. Yogyakarta
+        </a>
+        <a href="/?region=jatim" class="nr-region-tab-btn ${currentRegion === 'jatim' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> Jawa Timur
+        </a>
+        <a href="/?region=jabar" class="nr-region-tab-btn ${currentRegion === 'jabar' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> Jawa Barat
+        </a>
+        <a href="/?region=dki" class="nr-region-tab-btn ${currentRegion === 'dki' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> DKI Jakarta
+        </a>
+        <a href="/?region=luar_jawa" class="nr-region-tab-btn ${currentRegion === 'luar_jawa' ? 'active' : ''}">
+          <i class="fas fa-location-dot"></i> Luar Jawa
+        </a>
+      </div>
+
+      ${regularPosts.length > 0 ? `
         <div class="nr-grid-cards">
           ${regularPosts.map((p: any, idx: number) => {
             const cat = getPostCategory(p);
@@ -261,8 +277,17 @@ export function renderHome(this: any, ctx: ThemeContext) {
         </div>
         <!-- Pagination Navigasi Halaman -->
         ${paginationHtml}
-      </section>
-    ` : ''}
+      ` : `
+        <div style="text-align:center; padding:3.5rem 1rem; color:var(--text-muted); background:var(--bg-surface); border:1px dashed var(--border-strong); border-radius:12px; margin-top:1.5rem;">
+          <i class="fas fa-newspaper" style="font-size:2.25rem; color:var(--accent-primary); margin-bottom:0.75rem; display:block;"></i>
+          <h3 style="font-size:1.125rem; font-weight:700; color:var(--text-primary); margin-bottom:0.35rem;">Belum Ada Liputan ${escapeHtml(activeRegionLabel)}</h3>
+          <p style="font-size:0.875rem; margin-bottom:1.25rem;">Naskah berita dari kontributor atau sindikasi wilayah ini belum tersedia.</p>
+          <a href="/" class="nr-region-tab-btn active" style="display:inline-flex; align-items:center; gap:6px;">
+            <i class="fas fa-globe-asia"></i> Lihat Semua Wilayah
+          </a>
+        </div>
+      `}
+    </section>
   </main>
 
   <script>

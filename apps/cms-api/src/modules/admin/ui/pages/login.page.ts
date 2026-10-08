@@ -1,5 +1,5 @@
 export const loginPage = `
-<div style="position: fixed; inset: 0; background: linear-gradient(135deg, #327f2b, #d86c35); z-index: 99999; overflow-y: auto; display:flex; align-items:center; justify-content:center;"
+<div style="position: fixed; inset: 0; background: linear-gradient(135deg, #090d16 0%, #0f172a 60%, #0284c7 100%); z-index: 99999; overflow-y: auto; display:flex; align-items:center; justify-content:center;"
      x-data="{
         loginForm: { username: '', password: '' }, // Gunakan nama unik agar tidak bentrok dengan state global
         showPassword: false,
@@ -165,7 +165,8 @@ export const loginPage = `
             </div>
             <button type="submit" 
                     :disabled="isLoading"
-                    class="w-full py-3.5 px-4 rounded-xl bg-primary hover:bg-primary-hover text-white font-bold transition-all shadow-md shadow-primary/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer border-0 flex items-center justify-center gap-2 text-sm">
+                    style="background:#0284c7;"
+                    class="w-full py-3.5 px-4 rounded-xl hover:bg-sky-700 text-white font-bold transition-all shadow-md shadow-sky-500/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer border-0 flex items-center justify-center gap-2 text-sm">
                 <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
                 <span x-text="isLoading ? 'Memproses...' : 'Masuk'"></span>
             </button>

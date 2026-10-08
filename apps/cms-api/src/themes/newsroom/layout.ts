@@ -305,18 +305,40 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
           return decodeURIComponent(p.substring(12));
         }
       }
+      try {
+        var ls = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token');
+        if (ls) return ls;
+      } catch(e) {}
       return '';
     }
 
     function clearAuthCookieToken() {
       document.cookie = 'labmu_token=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
       try {
-        if (window.__origLsRemove) {
-          window.__origLsRemove.call(window.localStorage, 'labmu_token');
-          window.__origLsRemove.call(window.localStorage, 'admin_token');
-          window.__origLsRemove.call(window.localStorage, 'labmu_user');
-        }
+        localStorage.removeItem('labmu_token');
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('labmu_user');
       } catch(e) {}
+    }
+
+    function parseJwtPayload(token) {
+      if (!token) return null;
+      try {
+        var parts = token.split('.');
+        var b64Payload = parts.length > 1 ? parts[1] : parts[0];
+        var base64 = b64Payload.replace(/-/g, '+').replace(/_/g, '/');
+        var json = decodeURIComponent(atob(base64).split('').map(function(c) {
+          return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+        return JSON.parse(json);
+      } catch (e) {
+        try {
+          var p = token.split('.');
+          return JSON.parse(atob(p.length > 1 ? p[1] : p[0]));
+        } catch (e2) {
+          return null;
+        }
+      }
     }
 
     function headerUserLogout() {
@@ -327,14 +349,8 @@ export function _layout(this: any, content: string, title: string, ctx: ThemeCon
     function initHeaderAuth() {
       try {
         var raw = getAuthCookieToken();
-        try {
-          if (window.__origLsRemove) {
-            window.__origLsRemove.call(window.localStorage, 'labmu_token');
-            window.__origLsRemove.call(window.localStorage, 'admin_token');
-          }
-        } catch(e){}
         if (!raw) return;
-        var payload = JSON.parse(atob(raw));
+        var payload = parseJwtPayload(raw);
         if (!payload || !payload.id) return;
 
         var loginBtn = document.getElementById('header-login-btn');

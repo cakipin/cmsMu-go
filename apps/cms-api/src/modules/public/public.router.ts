@@ -6,6 +6,7 @@ import { eq, desc, asc, and, or, like, sql } from "drizzle-orm";
 import { translateTextWithAI } from "../../services/ai-translate";
 import { getGlobalData, getRenderer, formatPostForFrontend } from "./helpers";
 import { isPuckJson, renderPuckHtml } from "../theme-builder";
+import { detectArticleLocation } from "../../themes/newsroom/utils";
 
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
@@ -32,42 +33,75 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
     const page = Math.max(1, parseInt(c.req.query("page") || "1"));
     const limit = 12; // 12 artikel per halaman reguler
 
-    // Hitung total seluruh artikel yang publish
-    const totalRow: any = await db
-      .select({ total: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(eq(postsTable.status, "publish"))
-      .get();
-    const totalItems = Number(totalRow?.total || 0);
+    const regionParam = (c.req.query("region") || "all").toLowerCase().trim();
 
-    // Ambil 9 artikel teratas untuk Hero 3-Kolom Editorial
-    const heroPosts = await db
-      .select()
-      .from(postsTable)
-      .where(eq(postsTable.status, "publish"))
-      .orderBy(desc(postsTable.createdAt))
-      .limit(9);
-
-    // Untuk grid reguler:
-    // Pada halaman 1: lewati 9 artikel hero, ambil 12 artikel berikutnya (offset 9, limit 12)
-    // Pada halaman 2+: ambil 12 artikel sesuai halaman (offset 9 + (page - 2) * 12)
-    const gridOffset = page === 1 ? 9 : 9 + (page - 2) * limit;
-    const regularPostsRaw = await db
-      .select()
-      .from(postsTable)
-      .where(eq(postsTable.status, "publish"))
-      .orderBy(desc(postsTable.createdAt))
-      .limit(limit)
-      .offset(gridOffset);
-
-    // Total halaman dihitung dari sisa artikel setelah 9 artikel hero (atau minimal 1)
-    const remainingAfterHero = Math.max(0, totalItems - 9);
-    const totalPages = Math.max(1, 1 + Math.ceil(remainingAfterHero / limit));
+    let totalItems = 0;
+    let totalPages = 1;
+    let heroPosts: any[] = [];
+    let regularPostsRaw: any[] = [];
 
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);
+
+    if (regionParam !== "all") {
+      const allPosts = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.status, "publish"))
+        .orderBy(desc(postsTable.createdAt))
+        .limit(1200);
+
+      const regionalPosts = allPosts.filter((p: any) => {
+        const loc = detectArticleLocation(p, sources);
+        return loc.regionGroup === regionParam;
+      });
+
+      totalItems = regionalPosts.length;
+      totalPages = Math.max(1, Math.ceil(totalItems / limit));
+      const offset = (page - 1) * limit;
+      regularPostsRaw = regionalPosts.slice(offset, offset + limit);
+
+      heroPosts = allPosts.slice(0, 9);
+    } else {
+      const totalRow: any = await db
+        .select({ total: sql<number>`count(*)` })
+        .from(postsTable)
+        .where(eq(postsTable.status, "publish"))
+        .get();
+      totalItems = Number(totalRow?.total || 0);
+
+      heroPosts = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.status, "publish"))
+        .orderBy(desc(postsTable.createdAt))
+        .limit(9);
+
+      const gridOffset = page === 1 ? 9 : 9 + (page - 2) * limit;
+      regularPostsRaw = await db
+        .select()
+        .from(postsTable)
+        .where(eq(postsTable.status, "publish"))
+        .orderBy(desc(postsTable.createdAt))
+        .limit(limit)
+        .offset(gridOffset);
+
+      const remainingAfterHero = Math.max(0, totalItems - 9);
+      totalPages = Math.max(1, 1 + Math.ceil(remainingAfterHero / limit));
+    }
+
+    // Query 5 artikel terpopuler berdasarkan views di DB
+    const popularLimit = 5;
+    const popularPostsRaw = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.status, "publish"))
+      .orderBy(desc(postsTable.views), desc(postsTable.createdAt))
+      .limit(popularLimit);
+
     let structuredData: Record<string, any> = {
       heroPosts: mapList(heroPosts),
       regularPosts: mapList(regularPostsRaw),
+      popularPosts: mapList(popularPostsRaw),
       latest: mapList([...heroPosts, ...regularPostsRaw]),
     };
 
@@ -175,7 +209,10 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
       totalItems,
       hasNext: page < totalPages,
       hasPrev: page > 1,
-      baseUrl: "/",
+      baseUrl:
+        regionParam !== "all"
+          ? `/?region=${encodeURIComponent(regionParam)}`
+          : "/",
     };
 
     const context = {
@@ -187,6 +224,7 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
       data: structuredData,
       pagination: pagination,
       pageData: customHome || null,
+      currentRegion: regionParam,
       canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : "/"),
       ogImage: new URL(c.req.url).origin + "/default-og.jpg",
     };
