@@ -166,8 +166,9 @@ export const editorPage = `
                  const json = await res.json();
                  
                  let raw = Array.isArray(json) ? json : (json.results || []);
-                 this.mediaList = raw.map(m => ({
+                 this.mediaList = raw.map((m, idx) => ({
                      ...m,
+                     _uid: 'm_' + (m.id || idx) + '_' + idx,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
                  }));

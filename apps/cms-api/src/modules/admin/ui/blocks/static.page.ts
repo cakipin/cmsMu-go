@@ -231,8 +231,9 @@ export const staticPage = `
                  const res = await fetch('/api/media', { headers: { 'Authorization': 'Bearer ' + token } });
                  const json = await res.json();
                  let raw = Array.isArray(json) ? json : (json.results || []);
-                 this.mediaList = raw.map(m => ({
+                 this.mediaList = raw.map((m, idx) => ({
                      ...m,
+                     _uid: 'm_' + (m.id || idx) + '_' + idx,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
                  }));
@@ -583,7 +584,7 @@ export const staticPage = `
                     
                     <div x-show="mediaTab === 'library'">
                         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap:16px;">
-                            <template x-for="img in filteredMediaList" :key="img.key">
+                            <template x-for="img in filteredMediaList" :key="img._uid">
                                 <div @click="selectMediaItem(img)" 
                                      style="cursor:pointer; position:relative; aspect-ratio:1; background:white; border-radius:8px; overflow:hidden; transition:all 0.2s;"
                                      :style="selectedMedia && selectedMedia.url === img.url ? 'box-shadow: 0 0 0 4px rgba(37,99,235,0.3); border:2px solid #2563eb;' : 'border:1px solid #e5e7eb; box-shadow:0 1px 2px rgba(0,0,0,0.05);'"
