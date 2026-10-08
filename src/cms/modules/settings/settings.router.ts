@@ -5,6 +5,7 @@ import { authMiddleware } from "../../middleware/auth";
 import { getDb } from "../../db";
 import { settings as settingsTable } from "../../db/schema";
 import { sql } from "drizzle-orm";
+import { clearGlobalDataCache } from "../public/helpers";
 
 const settings = new Hono<{ Bindings: Bindings }>();
 
@@ -80,6 +81,11 @@ settings.post("/", authMiddleware, async c => {
       await db.batch(statements as any);
     }
 
+    // Bersihkan Global Data Cache (In-Memory & KV) saat settings diperbarui
+    clearGlobalDataCache(
+      (c.env as any).sa_cache || (c.env as any).cache || (c.env as any).CACHE
+    );
+
     return c.json({ success: true, message: "Settings saved" });
   } catch (e: any) {
     console.error("SAVE Settings Error:", e);
@@ -106,6 +112,9 @@ settings.post("/purge-cache", authMiddleware, async c => {
         }
       } while (cursor);
     }
+
+    // 2. Purge In-Memory Cache
+    clearGlobalDataCache(kv);
 
     return c.json({
       success: true,

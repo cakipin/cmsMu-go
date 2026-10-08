@@ -13,10 +13,15 @@ export const seoPage = `
             custom_head: '',
             custom_body_end: ''
         },
+        getToken() {
+            return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || 
+                   (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
+                   (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
+        },
         async loadSeoSettings() {
             this.isLoading = true;
             try {
-                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                const token = this.getToken();
                 const res = await fetch('/api/settings/admin', { headers: { 'Authorization': 'Bearer ' + token } });
                 const data = await res.json();
                 if (data.success && data.data) {
@@ -35,7 +40,7 @@ export const seoPage = `
             this.isSaving = true;
             this.saveMsg = '';
             try {
-                const token = localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '';
+                const token = this.getToken();
                 const res = await fetch('/api/settings', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },

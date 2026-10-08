@@ -63,7 +63,7 @@ export const profilePage = `
                                 method: 'PUT',
                                 headers: { 
                                     'Content-Type': 'application/json',
-                                    'Authorization': 'Bearer ' + localStorage.getItem('labmu_token')
+                                    'Authorization': 'Bearer ' + ((typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') || (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || ''))
                                 },
                                 body: JSON.stringify(this.pwdForm)
                             });
@@ -100,5 +100,8 @@ export const profilePage = `
                         </button>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
 </div>
 `;

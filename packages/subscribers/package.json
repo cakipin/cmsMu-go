@@ -1,0 +1,10 @@
+{
+  "name": "@cmsmu/plugin-subscribers",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "./subscribers.router.ts",
+  "exports": {
+    ".": "./subscribers.router.ts"
+  }
+}

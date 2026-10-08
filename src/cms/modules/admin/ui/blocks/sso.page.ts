@@ -41,9 +41,15 @@ export const ssoPage = `
             };
         },
 
+        getToken() {
+            return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || 
+                   (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
+                   (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
+        },
+
         async init() {
             this.isLoading = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = this.getToken();
             try {
                 const res = await fetch('/api/settings/admin', { 
                     headers: { 'Authorization': 'Bearer ' + token } 
@@ -62,7 +68,7 @@ export const ssoPage = `
 
         async saveSettings() {
             this.isSaving = true;
-            const token = localStorage.getItem('labmu_token');
+            const token = this.getToken();
             try {
                 const res = await fetch('/api/settings', { 
                     method: 'POST', 

@@ -7,6 +7,12 @@ export const commentsPage = `
     editingComment: null,
     editContent: '',
     
+    getToken() {
+        return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || 
+               (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
+               (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
+    },
+
     async init() {
         await this.loadComments();
     },
@@ -14,7 +20,7 @@ export const commentsPage = `
     async loadComments() {
         this.isLoading = true;
         try {
-            const headers = { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token') || '') };
+            const headers = { Authorization: 'Bearer ' + this.getToken() };
             const [r1, r2] = await Promise.all([
                 fetch('/api/comments/all', { headers }),
                 fetch('/api/comments/pending', { headers })
@@ -36,18 +42,18 @@ export const commentsPage = `
     countByStatus(s) { return this.allComments.filter(c => c.status === s).length; },
 
     async approve(id) {
-        const res = await fetch('/api/comments/' + id + '/approve', { method: 'PUT', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
+        const res = await fetch('/api/comments/' + id + '/approve', { method: 'PUT', headers: { Authorization: 'Bearer ' + this.getToken() } });
         if (res.ok) await this.loadComments();
     },
 
     async disable(id) {
-        const res = await fetch('/api/comments/' + id + '/disable', { method: 'PUT', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
+        const res = await fetch('/api/comments/' + id + '/disable', { method: 'PUT', headers: { Authorization: 'Bearer ' + this.getToken() } });
         if (res.ok) await this.loadComments();
     },
 
     async deleteComment(id) {
         if (!confirm('Yakin ingin menghapus komentar ini?')) return;
-        const res = await fetch('/api/comments/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') } });
+        const res = await fetch('/api/comments/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + this.getToken() } });
         if (res.ok) this.allComments = this.allComments.filter(c => c.id !== id);
     },
 
@@ -57,7 +63,7 @@ export const commentsPage = `
         if (!this.editingComment) return;
         const res = await fetch('/api/comments/' + this.editingComment.id, {
             method: 'PATCH',
-            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + (localStorage.getItem('labmu_token')||'') },
+            headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + this.getToken() },
             body: JSON.stringify({ content: this.editContent })
         });
         if (res.ok) {

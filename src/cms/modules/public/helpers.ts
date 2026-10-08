@@ -52,7 +52,66 @@ export function formatPostForFrontend(post: any) {
   };
 }
 
-export async function getGlobalData(db: any) {
+interface GlobalDataCacheEntry {
+  data: any;
+  expiry: number;
+}
+
+let memoryGlobalCache: GlobalDataCacheEntry | null = null;
+const MEMORY_CACHE_TTL_MS = 60 * 1000; // 60 detik RAM Worker isolate
+const KV_CACHE_TTL_SECONDS = 300; // 300 detik (5 menit) Cloudflare KV
+const GLOBAL_DATA_CACHE_KEY = "cmsmu:global_data_v1";
+
+export function clearGlobalDataCache(kv?: any) {
+  memoryGlobalCache = null;
+  if (kv && typeof kv.delete === "function") {
+    kv.delete(GLOBAL_DATA_CACHE_KEY).catch((err: any) => {
+      console.warn("[clearGlobalDataCache KV delete error]:", err);
+    });
+  }
+}
+
+export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
+  let db: any = dbOrEnv;
+  let kv: any = maybeKv;
+
+  // Handle jika dipanggil dengan env object (misal c.env)
+  if (
+    dbOrEnv &&
+    typeof dbOrEnv === "object" &&
+    dbOrEnv.DB &&
+    typeof dbOrEnv.DB.prepare === "function"
+  ) {
+    db = dbOrEnv.DB;
+    if (!kv) {
+      kv = dbOrEnv.sa_cache || dbOrEnv.cache || dbOrEnv.CACHE;
+    }
+  }
+
+  const now = Date.now();
+
+  // 1. Cek In-Memory Isolate Cache (< 0.1ms)
+  if (memoryGlobalCache && memoryGlobalCache.expiry > now) {
+    return memoryGlobalCache.data;
+  }
+
+  // 2. Cek Cloudflare KV Edge Cache (~15ms)
+  if (kv && typeof kv.get === "function") {
+    try {
+      const cached = await kv.get(GLOBAL_DATA_CACHE_KEY, "json");
+      if (cached && typeof cached === "object" && cached.settings) {
+        memoryGlobalCache = {
+          data: cached,
+          expiry: now + MEMORY_CACHE_TTL_MS,
+        };
+        return cached;
+      }
+    } catch (errKv) {
+      console.warn("[KV getGlobalData read error]:", errKv);
+    }
+  }
+
+  // 3. Fallback: Query Cloudflare D1 Database
   let settingsData: any = {};
   let menusData: any[] = [];
   let categoriesData: string[] = [];
@@ -146,13 +205,28 @@ export async function getGlobalData(db: any) {
     console.error("Error global data", e);
   }
 
-  return {
+  const result = {
     settings: settingsData,
     menus: menusData,
     categories: categoriesData,
     topics: topicsData,
     sources: sourcesData,
   };
+
+  // 4. Update In-Memory & Cloudflare KV Edge Cache
+  memoryGlobalCache = { data: result, expiry: now + MEMORY_CACHE_TTL_MS };
+
+  if (kv && typeof kv.put === "function") {
+    try {
+      await kv.put(GLOBAL_DATA_CACHE_KEY, JSON.stringify(result), {
+        expirationTtl: KV_CACHE_TTL_SECONDS,
+      });
+    } catch (errKv) {
+      console.warn("[KV putGlobalData write error]:", errKv);
+    }
+  }
+
+  return result;
 }
 
 export async function getRenderer(db: any) {

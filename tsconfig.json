@@ -5,7 +5,15 @@
   "compilerOptions": {
     "paths": {
       "@/*": ["./src/*"],
-      "@/astro-paper.config": ["./astro-paper.config"]
+      "@/astro-paper.config": ["./astro-paper.config"],
+      "@cmsmu/plugin-agens": ["./packages/agens/agens.router.ts"],
+      "@cmsmu/plugin-agens/*": ["./packages/agens/*.ts"],
+      "@cmsmu/plugin-emagazine": ["./packages/emagazine/emagazine.router.ts"],
+      "@cmsmu/plugin-emagazine/*": ["./packages/emagazine/*.ts"],
+      "@cmsmu/plugin-subscribers": [
+        "./packages/subscribers/subscribers.router.ts"
+      ],
+      "@cmsmu/plugin-subscribers/*": ["./packages/subscribers/*.ts"]
     },
     "jsx": "react-jsx",
     "jsxImportSource": "react"

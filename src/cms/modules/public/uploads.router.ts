@@ -49,6 +49,16 @@ const THUMB_REGEX = /-([0-9]+)x([0-9]+)(\.[a-zA-Z0-9]+)$/i;
 uploadsRouter.get("*", async c => {
   try {
     const fullPath = c.req.path;
+
+    // 1. Auto-Redirect HTTP 301 untuk jalur warisan /wp-content/uploads/*
+    if (fullPath.startsWith("/wp-content/uploads/")) {
+      const cleanSubpath = fullPath.replace(/^\/wp-content\/uploads\//i, "");
+      if (!cleanSubpath) {
+        return c.text("Not Found", 404);
+      }
+      return c.redirect(`/uploads/${cleanSubpath}`, 301);
+    }
+
     const subpath = fullPath.replace(
       /^(\/wp-content\/uploads\/|\/uploads\/)/i,
       ""
@@ -62,8 +72,18 @@ uploadsRouter.get("*", async c => {
 
     const defaultOrigin = "https://suaraaisyiyah.id";
     const wpOrigin = (c.env.WP_ORIGIN_URL || defaultOrigin).replace(/\/+$/, "");
-    const reqHost = c.req.header("host") || "";
-    const isSelfHost = wpOrigin.includes(reqHost);
+    const rawHost = c.req.header("host") || "";
+    const reqHostname = rawHost.split(":")[0].toLowerCase();
+
+    let originHostname = "";
+    try {
+      originHostname = new URL(wpOrigin).hostname.toLowerCase();
+    } catch (_) {
+      originHostname = "suaraaisyiyah.id";
+    }
+
+    // Hanya anggap self-host jika hostname asal sama persis dengan hostname tujuan request
+    const isSelfHost = originHostname === reqHostname;
 
     const isThumbnail = THUMB_REGEX.test(decodedSubpath);
 
@@ -88,7 +108,7 @@ uploadsRouter.get("*", async c => {
       // 1. Cek apakah gambar aslinya sudah ada di R2
       if (bucket) {
         for (const cand of candidates) {
-          const keys = [`wp-content/uploads/${cand}`, `uploads/${cand}`, cand];
+          const keys = [`uploads/${cand}`, `wp-content/uploads/${cand}`, cand];
           for (const key of keys) {
             const obj = await bucket.get(key);
             if (obj) {
@@ -114,11 +134,7 @@ uploadsRouter.get("*", async c => {
       }
 
       // 2. Gambar asli belum ada di R2 -> Ambil GAMBAR ASLINYA dari origin & simpan HANYA gambar aslinya ke R2
-      if (
-        !isSelfHost ||
-        !reqHost.includes("suaraaisyiyah.id") ||
-        c.env.WP_ORIGIN_URL
-      ) {
+      if (!isSelfHost || c.env.WP_ORIGIN_URL) {
         for (const cand of candidates) {
           const originOrigUrl = `${wpOrigin}/wp-content/uploads/${encodeURI(cand)}`;
           try {
@@ -133,20 +149,6 @@ uploadsRouter.get("*", async c => {
             if (originRes.ok && originRes.status === 200) {
               const contentType =
                 originRes.headers.get("content-type") || getContentType(cand);
-              const bodyBuffer = await originRes.arrayBuffer();
-
-              // Simpan HANYA file gambar asli ke R2
-              if (bucket) {
-                try {
-                  const storeKey = `wp-content/uploads/${cand}`;
-                  await bucket.put(storeKey, bodyBuffer, {
-                    httpMetadata: { contentType },
-                  });
-                } catch (e: any) {
-                  console.warn("[R2 Put Original Error]:", e.message);
-                }
-              }
-
               const resHeaders = new Headers();
               resHeaders.set("Content-Type", contentType);
               resHeaders.set(
@@ -159,6 +161,34 @@ uploadsRouter.get("*", async c => {
                 "ORIGIN-FETCH-SAVED-ORIGINAL-TO-R2"
               );
 
+              const bodyBuffer = await originRes.arrayBuffer();
+              if (bucket) {
+                const savePromise = Promise.all([
+                  bucket.put(`uploads/${cand}`, bodyBuffer, {
+                    httpMetadata: { contentType },
+                  }),
+                  bucket.put(`wp-content/uploads/${cand}`, bodyBuffer, {
+                    httpMetadata: { contentType },
+                  }),
+                ]).catch((e: any) =>
+                  console.warn("[R2 Put Original Error]:", e.message)
+                );
+
+                let executionCtx: any = null;
+                try {
+                  executionCtx = c.executionCtx;
+                } catch (_) {
+                  executionCtx = null;
+                }
+                if (
+                  executionCtx &&
+                  typeof executionCtx.waitUntil === "function"
+                ) {
+                  executionCtx.waitUntil(savePromise);
+                } else {
+                  await savePromise;
+                }
+              }
               return new Response(bodyBuffer, { headers: resHeaders });
             }
           } catch (err: any) {
@@ -170,7 +200,7 @@ uploadsRouter.get("*", async c => {
         }
 
         // 3. Fallback jika gambar asli tidak ditemukan di origin:
-        // Ambil thumbnail dari origin dan sajikan LANGSUNG ke user TANPA disimpan ke R2
+        // Ambil thumbnail dari origin dan sajikan LANGSUNG ke user via streaming TANPA disimpan ke R2
         const originThumbUrl = `${wpOrigin}/wp-content/uploads/${encodeURI(decodedSubpath)}`;
         try {
           const thumbRes = await fetch(originThumbUrl, {
@@ -185,8 +215,6 @@ uploadsRouter.get("*", async c => {
             const contentType =
               thumbRes.headers.get("content-type") ||
               getContentType(decodedSubpath);
-            const bodyBuffer = await thumbRes.arrayBuffer();
-            // JANGAN SIMPAN THUMBNAIL KE R2! Cukup sajikan langsung ke user
             const resHeaders = new Headers();
             resHeaders.set("Content-Type", contentType);
             resHeaders.set(
@@ -195,6 +223,12 @@ uploadsRouter.get("*", async c => {
             );
             resHeaders.set("Access-Control-Allow-Origin", "*");
             resHeaders.set("X-Storage-Source", "ORIGIN-THUMBNAIL-DIRECT-NO-R2");
+
+            // Stream langsung ke user tanpa buffer memori Worker
+            if (thumbRes.body) {
+              return new Response(thumbRes.body, { headers: resHeaders });
+            }
+            const bodyBuffer = await thumbRes.arrayBuffer();
             return new Response(bodyBuffer, { headers: resHeaders });
           }
         } catch (err: any) {
@@ -237,52 +271,72 @@ uploadsRouter.get("*", async c => {
     }
 
     // 2. Jika belum ada di R2 -> Ambil dari Origin & simpan ke R2
-    if (
-      !isSelfHost ||
-      !reqHost.includes("suaraaisyiyah.id") ||
-      c.env.WP_ORIGIN_URL
-    ) {
-      const targetOriginUrl = `${wpOrigin}/wp-content/uploads/${encodeURI(decodedSubpath)}`;
-      try {
-        const originRes = await fetch(targetOriginUrl, {
-          headers: {
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            Accept: "*/*",
-          },
-        });
+    if (!isSelfHost || c.env.WP_ORIGIN_URL) {
+      const candidates = [decodedSubpath];
+      const strippedEdit = decodedSubpath.replace(
+        /-e[0-9]+(\.[a-zA-Z0-9]+)$/i,
+        "$1"
+      );
+      if (strippedEdit !== decodedSubpath) {
+        candidates.push(strippedEdit);
+      }
 
-        if (originRes.ok && originRes.status === 200) {
-          const contentType =
-            originRes.headers.get("content-type") ||
-            getContentType(decodedSubpath);
-          const bodyBuffer = await originRes.arrayBuffer();
+      for (const cand of candidates) {
+        const targetOriginUrl = `${wpOrigin}/wp-content/uploads/${encodeURI(cand)}`;
+        try {
+          const originRes = await fetch(targetOriginUrl, {
+            headers: {
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              Accept: "*/*",
+            },
+          });
 
-          // Simpan gambar asli ke R2
-          if (bucket) {
-            try {
-              const storeKey = `wp-content/uploads/${decodedSubpath}`;
-              await bucket.put(storeKey, bodyBuffer, {
-                httpMetadata: { contentType },
-              });
-            } catch (e: any) {
-              console.warn("[R2 Put Original Error]:", e.message);
+          if (originRes.ok && originRes.status === 200) {
+            const contentType =
+              originRes.headers.get("content-type") || getContentType(cand);
+            const resHeaders = new Headers();
+            resHeaders.set("Content-Type", contentType);
+            resHeaders.set(
+              "Cache-Control",
+              "public, max-age=31536000, immutable"
+            );
+            resHeaders.set("Access-Control-Allow-Origin", "*");
+            resHeaders.set("X-Storage-Source", "ORIGIN-FETCH-SAVED-TO-R2");
+
+            const bodyBuffer = await originRes.arrayBuffer();
+            if (bucket) {
+              const savePromise = Promise.all([
+                bucket.put(`uploads/${cand}`, bodyBuffer, {
+                  httpMetadata: { contentType },
+                }),
+                bucket.put(`wp-content/uploads/${cand}`, bodyBuffer, {
+                  httpMetadata: { contentType },
+                }),
+              ]).catch((e: any) =>
+                console.warn("[R2 Put Original Error]:", e.message)
+              );
+
+              let executionCtx: any = null;
+              try {
+                executionCtx = c.executionCtx;
+              } catch (_) {
+                executionCtx = null;
+              }
+              if (
+                executionCtx &&
+                typeof executionCtx.waitUntil === "function"
+              ) {
+                executionCtx.waitUntil(savePromise);
+              } else {
+                await savePromise;
+              }
             }
+            return new Response(bodyBuffer, { headers: resHeaders });
           }
-
-          const resHeaders = new Headers();
-          resHeaders.set("Content-Type", contentType);
-          resHeaders.set(
-            "Cache-Control",
-            "public, max-age=31536000, immutable"
-          );
-          resHeaders.set("Access-Control-Allow-Origin", "*");
-          resHeaders.set("X-Storage-Source", "ORIGIN-FETCH-SAVED-TO-R2");
-
-          return new Response(bodyBuffer, { headers: resHeaders });
+        } catch (err: any) {
+          console.warn("[Origin Fetch Error]:", err.message);
         }
-      } catch (err: any) {
-        console.warn("[Origin Fetch Error]:", err.message);
       }
     }
 

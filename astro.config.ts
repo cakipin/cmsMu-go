@@ -24,6 +24,7 @@ import cloudflare from "@astrojs/cloudflare";
 export default defineConfig({
   site: config.site.url,
   output: "server",
+  trailingSlash: "never",
 
   integrations: [
     mdx(),
