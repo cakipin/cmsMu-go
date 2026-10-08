@@ -827,7 +827,7 @@ function customEditorLogic() {
             this.isAiTidying = true;
             try {
                 var title = (this.form && this.form.title) ? this.form.title : '';
-                var token = (typeof window !== 'undefined' && window.getCmsToken) ? window.getCmsToken() : '';
+                var token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
                 var res = await fetch('/api/ai/tidy-content', {
                     method: 'POST',
                     headers: { 
@@ -837,9 +837,14 @@ function customEditorLogic() {
                     body: JSON.stringify({ content: raw, title: title })
                 });
 
-                var json = await res.json();
+                var json;
+                try {
+                    json = await res.json();
+                } catch(pe) {
+                    throw new Error('Server mengembalikan respon tidak valid (Status ' + res.status + ')');
+                }
                 if (!res.ok || json.error) {
-                    throw new Error(json.error || 'Gagal memproses perapian dengan AI');
+                    throw new Error(json.error || 'Gagal memproses perapian dengan AI (Status ' + res.status + ')');
                 }
 
                 var tidied = json.data?.content || json.tidied_content || '';

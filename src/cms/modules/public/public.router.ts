@@ -589,25 +589,62 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
     const limit = 12;
     const offset = (page - 1) * limit;
 
-    const countSql = `SELECT count(*) as total FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish'`;
-    const countRow: any = await db
-      .prepare(countSql)
-      .bind(slug, slugSpace)
-      .first();
-    const totalItems = countRow?.total || 0;
+    const isSainsTekno = slug === "sains-teknologi" || slug === "teknologi" || slug === "sains";
+    let totalItems = 0;
+    let catPosts: any[] = [];
+    let title = "";
+
+    if (isSainsTekno) {
+      const teknoWhere = `status='publish' AND (
+        category = 'Sains & Teknologi' 
+        OR lower(category) = 'sains & teknologi' 
+        OR lower(category) LIKE '%teknolog%' 
+        OR lower(tags) LIKE '%teknologi%' 
+        OR lower(tags) LIKE '%ai%' 
+        OR lower(tags) LIKE '%digital%' 
+        OR lower(title) LIKE '%teknolog%' 
+        OR lower(title) LIKE '%sains%' 
+        OR lower(title) LIKE '% ai %' 
+        OR lower(title) LIKE 'ai %' 
+        OR lower(title) LIKE '%(ai)%' 
+        OR lower(title) LIKE '%kecerdasan buatan%' 
+        OR lower(title) LIKE '%robot%' 
+        OR lower(title) LIKE '%digital%' 
+        OR lower(title) LIKE '%software%' 
+        OR lower(title) LIKE '%coding%' 
+        OR lower(title) LIKE '%blockchain%' 
+        OR lower(title) LIKE '%komputer%' 
+        OR lower(title) LIKE '%sistem informasi%'
+      )`;
+      const countRow: any = await db.prepare(`SELECT count(*) as total FROM posts WHERE ${teknoWhere}`).first();
+      totalItems = countRow?.total || 0;
+      const res: any = await db.prepare(`SELECT * FROM posts WHERE ${teknoWhere} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(limit, offset).all();
+      catPosts = res?.results || [];
+      title = "Sains & Teknologi";
+    } else {
+      const countSql = `SELECT count(*) as total FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish'`;
+      const countRow: any = await db
+        .prepare(countSql)
+        .bind(slug, slugSpace)
+        .first();
+      totalItems = countRow?.total || 0;
+
+      if (totalItems > 0) {
+        const catQuery = `SELECT * FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish' ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+        const { results } = await db
+          .prepare(catQuery)
+          .bind(slug, slugSpace, limit, offset)
+          .all();
+        catPosts = results || [];
+        const realCategoryName = catPosts?.[0]?.category || slugSpace;
+        title = realCategoryName.replace(/\b\w/g, (l: string) =>
+          l.toUpperCase()
+        );
+      }
+    }
 
     if (totalItems > 0) {
       const totalPages = Math.ceil(totalItems / limit);
-      const catQuery = `SELECT * FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish' ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-      const { results: catPosts } = await db
-        .prepare(catQuery)
-        .bind(slug, slugSpace, limit, offset)
-        .all();
-
-      const realCategoryName = catPosts?.[0]?.category || slugSpace;
-      let title = realCategoryName.replace(/\b\w/g, (l: string) =>
-        l.toUpperCase()
-      );
       if (lang === "en" || lang === "ar") {
         title = await translateTextWithAI(
           title,
