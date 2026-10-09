@@ -1,8 +1,8 @@
 {
   "name": "CMSMu Core Framework",
-  "version": "0.1.5",
-  "buildDate": "2026-10-06",
-  "changelog": "Rilis pembaruan Core CMSMu v0.1.5 (Optimasi On-Demand Post Fetching, Multi-Adapter R2, Purge Cache & Decoupled Routers)",
+  "version": "0.1.6",
+  "buildDate": "2026-10-09",
+  "changelog": "Rilis pembaruan Core CMSMu v0.1.6 (Standardisasi Monorepo Turborepo, Image Cropper Module, Alpine Collision-Proof Unique IDs, & Pemulihan Tema Beranda)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
   "capabilities": [
@@ -12,48 +12,54 @@
     "sso-muhammadiyah-auth",
     "ota-client-runtime",
     "on-demand-post-fetching",
-    "r2-multi-adapter"
+    "r2-multi-adapter",
+    "turborepo-monorepo",
+    "image-cropper-wysiwyg"
   ],
-  "bundledPlugins": ["sso-muhammadiyah", "ota"],
+  "bundledPlugins": [
+    "sso-muhammadiyah",
+    "ota",
+    "agens",
+    "emagazine",
+    "subscribers"
+  ],
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",
-  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.5.zip",
+  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.6.zip",
   "updatedComponents": [
     {
-      "name": "Optimasi On-Demand Fetching & Taxonomy Management",
-      "type": "core",
+      "name": "Image Cropper Module & Modal WYSIWYG",
+      "type": "editor",
       "paths": [
-        "src/cms/modules/posts/posts.router.ts",
-        "src/cms/modules/posts/posts.service.ts"
+        "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-media-modal.ts",
+        "apps/cms-api/src/modules/admin/ui/blocks/editor.page.ts",
+        "apps/cms-api/src/modules/admin/ui/blocks/media.page.ts"
       ],
-      "description": "Pemisahan posts.body dari query daftar artikel untuk pencegahan memory leak ribuan artikel, taxonomy batch rename/delete, dan auto-tags.",
-      "updatedAt": "2026-10-06T18:00:00.000Z"
+      "description": "Integrasi Cropper.js visual dengan rasio aspek standar (16:9, 4:3, 1:1), tombol aksi potong responsif, dan proteksi duplikasi key Alpine.",
+      "updatedAt": "2026-10-09T02:00:00.000Z"
     },
     {
-      "name": "Storage Multi-Adapter R2 & Media Legacy Proxy",
+      "name": "Arsitektur Monorepo Turborepo & Restorasi Rute Tema",
       "type": "core",
       "paths": [
-        "src/cms/storage/r2-adapter.ts",
-        "src/cms/modules/public/uploads.router.ts",
-        "src/cms/modules/media/media.router.ts"
+        "apps/cms-api/src/modules/public/public.router.ts",
+        "apps/web/src/pages/index.ts",
+        "apps/web/src/utils/honoHandler.ts"
       ],
-      "description": "Multi-adapter R2 native binding dengan fallback S3 REST API (aws4fetch), dan proxy rute warisan WordPress uploads anti-404.",
-      "updatedAt": "2026-10-06T18:00:00.000Z"
+      "description": "Pemisahan modular apps/* dan packages/*, sinkronisasi gateway Astro SSR dengan Core Hono Theme Renderer.",
+      "updatedAt": "2026-10-09T02:00:00.000Z"
     },
     {
-      "name": "Admin UI Purge Cache & Clean Core Engine",
+      "name": "Multi-Adapter R2 Native & On-Demand Post Fetching",
       "type": "core",
       "paths": [
-        "src/cms/index.ts",
-        "src/cms/modules/settings/settings.router.ts",
-        "src/cms/modules/admin/ui/view.ts",
-        "src/cms/modules/admin/ui/blocks/settings.page.ts",
-        "src/cms/modules/admin/ui/blocks/logic/core.logic.ts",
-        "src/cms/modules/admin/ui/blocks/logic/settings.logic.ts"
+        "apps/cms-api/src/modules/media/media.router.ts",
+        "apps/cms-api/src/modules/posts/posts.router.ts",
+        "packages/db/src/schema/"
       ],
-      "description": "Pembersihan rute khusus klien dari core, penyediaan tombol instan Purge Cache di navbar dan menu pengaturan.",
-      "updatedAt": "2026-10-06T18:00:00.000Z"
+      "description": "Optimasi Drizzle ORM query, batch taxonomy, dan proxy media legacy.",
+      "updatedAt": "2026-10-09T02:00:00.000Z"
     }
   ]
 }
