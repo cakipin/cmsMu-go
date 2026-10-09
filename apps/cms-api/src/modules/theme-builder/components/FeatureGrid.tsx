@@ -58,9 +58,15 @@ export const FeatureGrid: ComponentConfig<Props["FeatureGrid"]> = {
               key={i}
               className="group rounded-2xl border border-slate-100 bg-slate-50 p-8 transition-all duration-300 hover:border-emerald-100 hover:shadow-xl"
             >
-              <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100 transition-transform duration-300 group-hover:scale-110">
+              <div
+                className="mb-6 flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100 transition-transform duration-300 group-hover:scale-110"
+                style={{ width: "56px", height: "56px", minWidth: "56px", minHeight: "56px" }}
+              >
                 <svg
                   className="h-7 w-7 text-emerald-600"
+                  width="28"
+                  height="28"
+                  style={{ width: "28px", height: "28px", maxWidth: "28px", maxHeight: "28px" }}
                   fill="none"
                   stroke="currentColor"
                   viewBox="0 0 24 24"

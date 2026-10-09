@@ -46,8 +46,8 @@ export const FeatureGrid: ComponentConfig<Props["FeatureGrid"]> = {
         <div className="grid md:grid-cols-3 gap-8">
           {features.map((feature, i) => (
             <div key={i} className="bg-slate-50 rounded-2xl p-8 border border-slate-100 hover:shadow-xl hover:border-green-100 transition-all duration-300 group">
-              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                <svg className="w-7 h-7 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: feature.svgIcon }}></svg>
+              <div className="w-14 h-14 bg-green-100 rounded-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300" style={{ width: "56px", height: "56px", minWidth: "56px", minHeight: "56px" }}>
+                <svg className="w-7 h-7 text-green-600" width="28" height="28" style={{ width: "28px", height: "28px", maxWidth: "28px", maxHeight: "28px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24" dangerouslySetInnerHTML={{ __html: feature.svgIcon }}></svg>
               </div>
               <h3 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h3>
               <p className="text-slate-600 leading-relaxed">{feature.description}</p>

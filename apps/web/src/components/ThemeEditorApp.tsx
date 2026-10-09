@@ -63,6 +63,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
   const [siteSettings, setSiteSettings] = useState<any>({});
   const [isGlobalHeaderActive, setIsGlobalHeaderActive] =
     useState<boolean>(false);
+  const [isSessionExpired, setIsSessionExpired] = useState<boolean>(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   const triggerToast = (
     message: string,
@@ -76,7 +78,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
 
   useEffect(() => {
     const token = getAuthToken();
-    const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+    const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
     // Fetch global site settings
     const fetchSettings = async () => {
@@ -132,6 +134,24 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
             credentials: "include",
           }
         );
+
+        if (response.status === 401 || response.status === 403) {
+          triggerToast(
+            "Sesi kedaluwarsa atau gagal memuat data halaman dari server (401/403).",
+            "error"
+          );
+          setIsSessionExpired(true);
+          // JANGAN memuat fallback defaultHomePuck/defaultLandingPuck jika halaman sudah ada di database atau jika terjadi galat server, agar data tidak tertimpa!
+          return;
+        }
+
+        if (!response.ok && response.status !== 404) {
+          const errMsg = `Gagal memuat data dari server (HTTP ${response.status}).`;
+          triggerToast(errMsg, "error");
+          setLoadError(errMsg);
+          return;
+        }
+
         if (response.ok) {
           const result = await response.json();
           let parsedData = null;
@@ -162,7 +182,8 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
 
           setInitialData(parsedData);
           setCurrentData(parsedData);
-        } else {
+        } else if (response.status === 404) {
+          // Halaman baru yang belum tersimpan di DB -> inisialisasi dengan layout template awal
           const urlParams =
             typeof window !== "undefined"
               ? new URLSearchParams(window.location.search)
@@ -181,12 +202,9 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         }
       } catch (error) {
         console.error("Error fetching data:", error);
-        const fallback =
-          slug === "home"
-            ? defaultHomePuck
-            : { content: [], root: {}, zones: {} };
-        setInitialData(fallback);
-        setCurrentData(fallback);
+        const errMsg = "Gagal terhubung ke server saat memuat data halaman.";
+        triggerToast(errMsg, "error");
+        setLoadError(errMsg);
       } finally {
         setIsLoading(false);
       }
@@ -206,7 +224,7 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       };
 
       const token = getAuthToken();
-      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
       const response = await fetch("/api/theme-editor/page", {
         method: "POST",
@@ -217,6 +235,15 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         credentials: "include",
         body: JSON.stringify(payload),
       });
+
+      if (response.status === 401 || response.status === 403) {
+        setIsSessionExpired(true);
+        triggerToast(
+          "Sesi login Anda telah berakhir (401/403). Silakan buka tab baru untuk login kembali tanpa menutup tab ini agar perubahan tidak hilang.",
+          "error"
+        );
+        return;
+      }
 
       if (response.ok) {
         // Sinkronisasi Logo & Pengaturan Header Global ke /api/settings
@@ -307,6 +334,60 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
       window.location.href = `?slug=${selectedSlug}`;
     }
   };
+
+  if (isSessionExpired && !initialData) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-rose-100">
+          <div className="text-4xl mb-3">⚠️</div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">
+            Sesi Admin Kedaluwarsa
+          </h2>
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            Sesi Anda telah berakhir. Untuk mencegah data halaman tertimpa oleh template default, editor dinonaktifkan sementara. Silakan login kembali di tab baru.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <a
+              href="/admin/login"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition inline-block"
+            >
+              Login di Tab Baru ↗
+            </a>
+            <button
+              onClick={() => window.location.reload()}
+              className="px-5 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg text-sm font-semibold transition"
+            >
+              Muat Ulang
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (loadError && !initialData) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-gray-50 p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-gray-200">
+          <div className="text-4xl mb-3">⚠️</div>
+          <h2 className="text-lg font-bold text-gray-900 mb-2">
+            Gagal Memuat Halaman
+          </h2>
+          <p className="text-sm text-gray-600 mb-6 leading-relaxed">
+            {loadError}
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="px-5 py-2.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-sm font-semibold transition"
+          >
+            Coba Lagi
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (isLoading || !initialData) {
     return (
@@ -525,6 +606,98 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         </div>
       )}
 
+      {/* Modal Sesi Kedaluwarsa Saat Desain Aktif (Proteksi Anti-Data-Loss) */}
+      {isSessionExpired && initialData && (
+        <div
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 999999,
+            background: "rgba(15, 23, 42, 0.7)",
+            backdropFilter: "blur(4px)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: "16px",
+          }}
+        >
+          <div
+            style={{
+              background: "#ffffff",
+              borderRadius: "16px",
+              padding: "24px",
+              maxWidth: "440px",
+              width: "100%",
+              boxShadow: "0 20px 40px rgba(0,0,0,0.2)",
+              textAlign: "center",
+            }}
+          >
+            <div style={{ fontSize: "36px", marginBottom: "12px" }}>⚠️</div>
+            <h3
+              style={{
+                margin: "0 0 8px 0",
+                fontSize: "16px",
+                fontWeight: "bold",
+                color: "#1e293b",
+              }}
+            >
+              Sesi Admin Kedaluwarsa
+            </h3>
+            <p
+              style={{
+                margin: "0 0 16px 0",
+                fontSize: "13px",
+                color: "#64748b",
+                lineHeight: "1.5",
+              }}
+            >
+              Sesi login Anda telah berakhir. Untuk mencegah kehilangan pekerjaan desain Anda, <b>JANGAN</b> tutup tab ini. Silakan buka tautan login di tab baru, selesaikan proses login, lalu kembali ke tab ini dan klik <b>Publish</b> lagi.
+            </p>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+                gap: "10px",
+              }}
+            >
+              <a
+                href="/admin/login"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: "8px",
+                  background: "#0d9488",
+                  color: "#ffffff",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  textDecoration: "none",
+                  display: "inline-block",
+                }}
+              >
+                Login di Tab Baru ↗
+              </a>
+              <button
+                type="button"
+                onClick={() => setIsSessionExpired(false)}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #e2e8f0",
+                  background: "#f8fafc",
+                  color: "#64748b",
+                  fontSize: "13px",
+                  fontWeight: "600",
+                  cursor: "pointer",
+                }}
+              >
+                Tutup & Lanjutkan Desain
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Puck
         config={puckConfig}
         data={initialData}
@@ -532,6 +705,41 @@ export default function ThemeEditorApp({ slug }: ThemeEditorAppProps) {
         onPublish={handlePublish}
         iframe={{ enabled: true, syncHostStyles: true }}
         overrides={{
+          iframe: ({ children, document }: any) => {
+            React.useEffect(() => {
+              if (!document) return;
+              if (!document.getElementById("puck-tailwind-cdn")) {
+                const script = document.createElement("script");
+                script.id = "puck-tailwind-cdn";
+                script.src = "https://cdn.tailwindcss.com";
+                document.head.appendChild(script);
+              }
+              if (!document.getElementById("puck-fonts")) {
+                const link = document.createElement("link");
+                link.id = "puck-fonts";
+                link.rel = "stylesheet";
+                link.href =
+                  "https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap";
+                document.head.appendChild(link);
+              }
+              if (!document.getElementById("puck-fa")) {
+                const link = document.createElement("link");
+                link.id = "puck-fa";
+                link.rel = "stylesheet";
+                link.href =
+                  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css";
+                document.head.appendChild(link);
+              }
+              if (!document.getElementById("puck-svg-reset")) {
+                const style = document.createElement("style");
+                style.id = "puck-svg-reset";
+                style.innerHTML = "svg { max-width: 100%; }";
+                document.head.appendChild(style);
+              }
+            }, [document]);
+
+            return <>{children}</>;
+          },
           headerActions: ({ children }) => (
             <>
               <a

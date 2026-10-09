@@ -83,6 +83,9 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
             <span>{primaryButtonText || "Jelajahi Fitur"}</span>
             <svg
               className="h-5 w-5"
+              width="20"
+              height="20"
+              style={{ width: "20px", height: "20px", maxWidth: "20px", maxHeight: "20px" }}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"

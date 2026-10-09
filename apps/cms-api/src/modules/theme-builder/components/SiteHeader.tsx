@@ -369,6 +369,9 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
                 >
                   <svg
                     className="h-6 w-6"
+                    width="24"
+                    height="24"
+                    style={{ width: "24px", height: "24px", maxWidth: "24px", maxHeight: "24px" }}
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor"

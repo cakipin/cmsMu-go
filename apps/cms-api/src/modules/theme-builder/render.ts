@@ -120,17 +120,37 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
     if (item.type === "RecentPosts") {
       if (latestPosts && Array.isArray(latestPosts) && latestPosts.length > 0) {
         const count = parseInt(mergedProps.postsCount || "3", 10) || 3;
-        mergedProps.posts = latestPosts.slice(0, count).map((p: any) => ({
-          id: p.id,
-          title: p.title || "Artikel Tanpa Judul",
-          slug: p.slug || "",
-          featured_image: p.featured_image || p.image || "",
-          excerpt:
-            p.excerpt || (p.description ? p.description.slice(0, 140) : ""),
-          created_at: p.created_at || p.published_at || "",
-          category:
-            p.category_name || p.category || p.categories?.[0]?.name || "",
-        }));
+        mergedProps.posts = latestPosts
+          .filter((p: any) => Boolean(p && typeof p === "object"))
+          .slice(0, count)
+          .map((p: any) => {
+            const rawCategory =
+              p.category_name ||
+              (typeof p.category === "object" ? p.category?.name : p.category) ||
+              p.categories?.[0]?.name ||
+              "";
+            const rawExcerpt =
+              p.excerpt ||
+              (p.description ? String(p.description).slice(0, 140) : "") ||
+              (p.content
+                ? String(p.content).replace(/<[^>]*>?/gm, "").slice(0, 140)
+                : "") ||
+              "";
+            return {
+              id: p.id ?? Math.random(),
+              title:
+                (typeof p.title === "string" && p.title.trim()) ||
+                "Artikel Tanpa Judul",
+              slug: (typeof p.slug === "string" ? p.slug : "") || "",
+              featured_image:
+                p.featured_image || p.image || p.cover_image || "",
+              excerpt:
+                typeof rawExcerpt === "string" ? rawExcerpt.trim() : "",
+              created_at: p.created_at || p.published_at || "",
+              category:
+                typeof rawCategory === "string" ? rawCategory.trim() : "",
+            };
+          });
       }
     }
 

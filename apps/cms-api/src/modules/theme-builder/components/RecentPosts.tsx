@@ -95,6 +95,9 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
                   <span>{viewAllText}</span>
                   <svg
                     className="h-5 w-5 transition-transform group-hover:translate-x-1"
+                    width="20"
+                    height="20"
+                    style={{ width: "20px", height: "20px", maxWidth: "20px", maxHeight: "20px" }}
                     fill="none"
                     stroke="currentColor"
                     viewBox="0 0 24 24"
@@ -143,6 +146,9 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
                       <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-emerald-500/10 to-teal-500/20 text-emerald-600">
                         <svg
                           className="h-12 w-12 opacity-40"
+                          width="48"
+                          height="48"
+                          style={{ width: "48px", height: "48px", maxWidth: "48px", maxHeight: "48px" }}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -190,6 +196,9 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
                         Baca Selengkapnya
                         <svg
                           className="h-4 w-4"
+                          width="16"
+                          height="16"
+                          style={{ width: "16px", height: "16px", maxWidth: "16px", maxHeight: "16px" }}
                           fill="none"
                           stroke="currentColor"
                           viewBox="0 0 24 24"

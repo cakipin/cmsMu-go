@@ -26,7 +26,7 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
           <div>
             <a href={viewAllLink} className="text-green-600 font-semibold hover:text-green-700 flex items-center gap-2 transition-all">
               {viewAllText}
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+              <svg className="w-5 h-5" width="20" height="20" style={{ width: "20px", height: "20px", maxWidth: "20px", maxHeight: "20px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
             </a>
           </div>
         </div>

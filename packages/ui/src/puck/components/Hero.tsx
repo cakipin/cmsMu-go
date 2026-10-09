@@ -54,7 +54,7 @@ export const Hero: ComponentConfig<Props["Hero"]> = {
         <div className="flex flex-col sm:flex-row justify-center gap-4">
           <a href={primaryButtonLink} className="bg-green-600 hover:bg-green-700 text-white px-8 py-4 rounded-full font-bold text-lg transition shadow-xl shadow-green-600/30 flex items-center justify-center gap-2">
             {primaryButtonText}
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+            <svg className="w-5 h-5" width="20" height="20" style={{ width: "20px", height: "20px", maxWidth: "20px", maxHeight: "20px" }} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
           </a>
           <a href={secondaryButtonLink} className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 px-8 py-4 rounded-full font-bold text-lg transition flex items-center justify-center">
             {secondaryButtonText}

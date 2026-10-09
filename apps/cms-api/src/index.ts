@@ -119,6 +119,7 @@ app.use("/api/*", async (c, next) => {
         path.startsWith("/api/pages") ||
         path.startsWith("/api/contents") ||
         path.startsWith("/api/comments") ||
+        path.startsWith("/api/theme-editor") ||
         path === "/api/settings"));
 
   if (isWhitelisted) return await next();
