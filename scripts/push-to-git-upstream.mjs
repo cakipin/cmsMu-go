@@ -40,11 +40,11 @@ async function main() {
 
     // 3. Stage file rilis & commit jika ada perubahan
     try {
-        run('git add package.json ota-manifest.json src/cms/addons/ota/ src/cms/index.ts scripts/push-to-git-upstream.mjs');
+        run('git add package.json ota-manifest.json apps/ packages/ turbo.json pnpm-workspace.yaml scripts/');
         const status = runCapture('git status --porcelain');
         if (status) {
             console.log('📝 Membuat commit rilis...');
-            run(`git commit -m "release(core): ${tagName} - patch OTA engine telemetry, SemVer precision & Tab 3 Git Upstream"`);
+            run(`git commit -m "release(core): ${tagName} - Monorepo standardization, image cropper & theme restoration"`);
         } else {
             console.log('✅ Tidak ada perubahan kode baru untuk di-commit.');
         }
