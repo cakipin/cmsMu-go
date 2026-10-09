@@ -3,11 +3,13 @@
  * 🔄 Sync Core CMSMu to Downstream Client Repository
  * SOP 19 & SOP 20 Compliant: Zero-Touch Core Engine & Zero-Touch Client Themes
  * 
+ * Supports both Monorepo targets (apps/*, packages/*) and Legacy targets (root src/*)
+ * 
  * Penggunaan:
- *   node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run]
+ *   node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run] [--mode=monorepo|legacy]
  * Contoh:
  *   node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom --dry-run
- *   node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom
+ *   node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/cmsMu/simsMu --dry-run
  */
 
 import fs from 'fs';
@@ -22,19 +24,22 @@ const CORE_DIR = path.resolve(__dirname, '..');
 const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run') || args.includes('-d');
 const isVerbose = args.includes('--verbose') || args.includes('-v');
+const modeFlag = args.find(arg => arg.startsWith('--mode='));
+const explicitMode = modeFlag ? modeFlag.split('=')[1] : null;
 const targetArg = args.find(arg => !arg.startsWith('--') && !arg.startsWith('-'));
 
 if (!targetArg) {
   console.log('====================================================');
   console.log('📘 PANDUAN PENGGUNAAN ORKESTRATOR SINKRONISASI CORE');
   console.log('====================================================');
-  console.log('Perintah: node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run]\n');
+  console.log('Perintah: node scripts/sync-core-to-client.mjs <target-client-dir> [--dry-run] [--mode=monorepo|legacy]\n');
   console.log('Opsi:');
-  console.log('  --dry-run, -d  Simulasi sinkronisasi tanpa mengubah berkas fisik di disk');
-  console.log('  --verbose, -v  Menampilkan detail setiap berkas yang diperiksa\n');
+  console.log('  --dry-run, -d              Simulasi sinkronisasi tanpa mengubah berkas fisik di disk');
+  console.log('  --mode=monorepo|legacy     Paksa target layout (default: deteksi otomatis)');
+  console.log('  --verbose, -v              Menampilkan detail setiap berkas yang diperiksa\n');
   console.log('Contoh:');
   console.log('  node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom --dry-run');
-  console.log('  node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/newsroom');
+  console.log('  node scripts/sync-core-to-client.mjs /Users/cakiphin/projects/cmsMu/simsMu --dry-run');
   process.exit(1);
 }
 
@@ -56,6 +61,25 @@ if (!fs.existsSync(targetPackageJson)) {
   console.warn('⚠️  Peringatan: Direktori target tidak memiliki package.json. Pastikan path benar.');
 }
 
+// 3. TARGET LAYOUT DETECTION (Monorepo vs Legacy)
+const hasRootAstro = fs.existsSync(path.join(TARGET_DIR, 'astro.config.ts')) || 
+                     fs.existsSync(path.join(TARGET_DIR, 'astro.config.mjs'));
+const hasWebAstro = fs.existsSync(path.join(TARGET_DIR, 'apps/web/astro.config.ts')) || 
+                    fs.existsSync(path.join(TARGET_DIR, 'apps/web/astro.config.mjs'));
+
+let targetMode = 'legacy';
+if (explicitMode === 'monorepo' || explicitMode === 'legacy') {
+  targetMode = explicitMode;
+} else if (hasRootAstro) {
+  // If target has active root astro.config.ts (like simsMu), it is legacy layout
+  targetMode = 'legacy';
+} else if (hasWebAstro || fs.existsSync(path.join(TARGET_DIR, 'apps/web'))) {
+  // If target has no root astro config, but has apps/web (like newsroom), it is monorepo
+  targetMode = 'monorepo';
+} else {
+  targetMode = 'legacy';
+}
+
 const startTime = Date.now();
 let copiedCount = 0;
 let skippedCount = 0;
@@ -64,37 +88,35 @@ console.log('====================================================');
 console.log(`🚀 MEMULAI AUTO PUSH / SYNC CORE CMSMU KE KLIEN ${isDryRun ? '🔍 [DRY-RUN]' : ''}`);
 console.log(`📦 Sumber Core:   ${CORE_DIR}`);
 console.log(`🎯 Target Klien:  ${TARGET_DIR}`);
+console.log(`🏗️  Mode Layout:   ${targetMode.toUpperCase()} ${explicitMode ? '(Manual Flag)' : '(Auto-Detected)'}`);
 if (isDryRun) {
   console.log('ℹ️  MODE SIMULASI: Tidak ada berkas fisik yang akan dimodifikasi di disk.');
 }
 console.log('====================================================\n');
 
-// 3. DAFTAR DIREKTORI CORE YANG WAJIB DISINKRONKAN (KATEGORI A)
-const CORE_DIRS = [
-  'src/cms/modules',
-  'src/cms/db',
-  'src/cms/registry',
-  'src/cms/addons/ota',
-  'src/cms/storage'
-];
-
-// 4. DAFTAR FILE CORE SPESIFIK
-const CORE_FILES = [
-  'src/cms/types.ts',
-  'src/cms/index.ts',
-  'src/components/ThemeEditorApp.tsx',
-  'src/pages/theme-editor.astro'
-];
-
-// 5. DAFTAR WILAYAH TERPROTEKSI MUTLAK (SOP 19 & SOP 20 ZERO-TOUCH CLIENT)
+// 4. DAFTAR WILAYAH TERPROTEKSI MUTLAK (SOP 19 & SOP 20 ZERO-TOUCH CLIENT)
 const PROTECTED_PREFIXES = [
+  // Legacy paths
   'src/cms/themes',
   'src/themes',
   'src/cms/addons/index.ts',
   'src/cms/addons/newsroom',
   'src/cms/addons/aggregator',
+  'src/cms/addons/simsmu',
   'src/cms/modules/theme-builder',
   'src/cms/modules/public/public.router.ts',
+  'src/cms/db/schema.sims.ts',
+  // Monorepo paths
+  'apps/cms-api/src/themes',
+  'apps/cms-api/src/addons/index.ts',
+  'apps/cms-api/src/addons/newsroom',
+  'apps/cms-api/src/addons/aggregator',
+  'apps/cms-api/src/addons/simsmu',
+  'apps/cms-api/src/modules/theme-builder',
+  'apps/cms-api/src/modules/public/public.router.ts',
+  'apps/web/src/themes',
+  'packages/db/src/schema.sims.ts',
+  // Global config & assets
   'wrangler.jsonc',
   'wrangler.toml',
   '.env',
@@ -107,7 +129,7 @@ function isProtected(relPath) {
   return PROTECTED_PREFIXES.some(p => norm === p || norm.startsWith(p + '/'));
 }
 
-function copyDirRecursive(srcDir, destDir, relBase = '') {
+function copyDirRecursive(srcDir, destDir, relDestBase = '') {
   if (!fs.existsSync(srcDir)) return;
   if (!isDryRun) {
     fs.mkdirSync(destDir, { recursive: true });
@@ -117,7 +139,7 @@ function copyDirRecursive(srcDir, destDir, relBase = '') {
   for (const entry of entries) {
     const srcPath = path.join(srcDir, entry.name);
     const destPath = path.join(destDir, entry.name);
-    const itemRel = path.join(relBase, entry.name).replace(/\\/g, '/');
+    const itemRel = path.join(relDestBase, entry.name).replace(/\\/g, '/');
 
     if (entry.name === '.DS_Store' || entry.name === 'node_modules' || entry.name === '.git' || isProtected(itemRel)) {
       if (entry.name !== '.DS_Store' && entry.name !== 'node_modules' && entry.name !== '.git') {
@@ -143,68 +165,126 @@ function copyDirRecursive(srcDir, destDir, relBase = '') {
   }
 }
 
-// 6. EKSEKUSI SINKRONISASI DIREKTORI KATEGORI A
-for (const relDir of CORE_DIRS) {
-  const srcFull = path.join(CORE_DIR, relDir);
-  const destFull = path.join(TARGET_DIR, relDir);
-  console.log(`\n📂 Menyinkronkan direktori: ${relDir}`);
-  copyDirRecursive(srcFull, destFull, relDir);
+// 5. DEFINISI PEMETAAN BERKAS & DIREKTORI BERDASARKAN MODE LAYOUT
+let syncMappings = [];
+
+if (targetMode === 'monorepo') {
+  syncMappings = [
+    // API directories
+    { src: 'apps/cms-api/src/modules', dest: 'apps/cms-api/src/modules', type: 'dir' },
+    { src: 'apps/cms-api/src/registry', dest: 'apps/cms-api/src/registry', type: 'dir' },
+    { src: 'apps/cms-api/src/addons/ota', dest: 'apps/cms-api/src/addons/ota', type: 'dir' },
+    { src: 'apps/cms-api/src/storage', dest: 'apps/cms-api/src/storage', type: 'dir' },
+    { src: 'apps/cms-api/src/core', dest: 'apps/cms-api/src/core', type: 'dir' },
+    { src: 'apps/cms-api/src/services', dest: 'apps/cms-api/src/services', type: 'dir' },
+    { src: 'apps/cms-api/src/middleware', dest: 'apps/cms-api/src/middleware', type: 'dir' },
+    // API specific files
+    { src: 'apps/cms-api/src/types.ts', dest: 'apps/cms-api/src/types.ts', type: 'file' },
+    { src: 'apps/cms-api/src/index.ts', dest: 'apps/cms-api/src/index.ts', type: 'file', protectIfExists: true },
+    // Web components
+    { src: 'apps/web/src/components/ThemeEditorApp.tsx', dest: 'apps/web/src/components/ThemeEditorApp.tsx', type: 'file' },
+    { src: 'apps/web/src/pages/theme-editor.astro', dest: 'apps/web/src/pages/theme-editor.astro', type: 'file' }
+  ];
+} else {
+  // Legacy layout (runs from root src/)
+  syncMappings = [
+    // API directories mapped to src/cms/*
+    { src: 'apps/cms-api/src/modules', dest: 'src/cms/modules', type: 'dir' },
+    { src: 'apps/cms-api/src/registry', dest: 'src/cms/registry', type: 'dir' },
+    { src: 'apps/cms-api/src/addons/ota', dest: 'src/cms/addons/ota', type: 'dir' },
+    { src: 'apps/cms-api/src/storage', dest: 'src/cms/storage', type: 'dir' },
+    { src: 'apps/cms-api/src/core', dest: 'src/cms/core', type: 'dir' },
+    { src: 'apps/cms-api/src/services', dest: 'src/cms/services', type: 'dir' },
+    { src: 'apps/cms-api/src/middleware', dest: 'src/cms/middleware', type: 'dir' },
+    // API specific files mapped to src/cms/*
+    { src: 'apps/cms-api/src/types.ts', dest: 'src/cms/types.ts', type: 'file' },
+    { src: 'apps/cms-api/src/index.ts', dest: 'src/cms/index.ts', type: 'file', protectIfExists: true },
+    // Web components mapped to src/components & src/pages
+    { src: 'apps/web/src/components/ThemeEditorApp.tsx', dest: 'src/components/ThemeEditorApp.tsx', type: 'file' },
+    { src: 'apps/web/src/pages/theme-editor.astro', dest: 'src/pages/theme-editor.astro', type: 'file' }
+  ];
 }
 
-// Menjaga integritas skema modular SimsMu
-const targetSchemaFile = path.join(TARGET_DIR, 'src/cms/db/schema.ts');
-const targetSimsSchemaFile = path.join(TARGET_DIR, 'src/cms/db/schema.sims.ts');
-if (!isDryRun && fs.existsSync(targetSchemaFile) && fs.existsSync(targetSimsSchemaFile)) {
-  const content = fs.readFileSync(targetSchemaFile, 'utf-8');
-  if (!content.includes("export * from './schema.sims';")) {
-    fs.appendFileSync(targetSchemaFile, "\n// Re-export Modular SimsMu School Schema\nexport * from './schema.sims';\n");
-    console.log("  🛡️  Menjaga re-export schema.sims pada src/cms/db/schema.ts");
-  }
-}
+// 6. EKSEKUSI PEMETAAN SINKRONISASI
+for (const item of syncMappings) {
+  const srcFull = path.join(CORE_DIR, item.src);
+  const destFull = path.join(TARGET_DIR, item.dest);
 
-// 7. SINKRONISASI MONOREPO PACKAGES (JIKA TARGET MENGADOPSI PACKAGES)
-const targetPackagesDir = path.join(TARGET_DIR, 'packages');
-if (fs.existsSync(targetPackagesDir)) {
-  const MONOREPO_PACKAGES = ['packages/db', 'packages/core', 'packages/ui'];
-  console.log('\n📦 Terdeteksi arsitektur monorepo pada target, menyinkronkan packages:');
-  for (const pkg of MONOREPO_PACKAGES) {
-    const srcPkg = path.join(CORE_DIR, pkg);
-    const destPkg = path.join(TARGET_DIR, pkg);
-    if (fs.existsSync(srcPkg)) {
-      console.log(`  📂 Package: ${pkg}`);
-      copyDirRecursive(srcPkg, destPkg, pkg);
-    }
-  }
-}
-
-// 8. EKSEKUSI SINKRONISASI BERKAS SPESIFIK KATEGORI A
-console.log('\n📄 Menyinkronkan berkas core:');
-for (const relFile of CORE_FILES) {
-  const srcFull = path.join(CORE_DIR, relFile);
-  const destFull = path.join(TARGET_DIR, relFile);
-  if (relFile === 'src/cms/index.ts' && fs.existsSync(destFull)) {
-    skippedCount++;
-    console.log(`  🛡️  MEMPERTAHANKAN RUTE KUSTOM KLIEN (TIDAK DITIMPA): ${relFile}`);
+  if (!fs.existsSync(srcFull)) {
     continue;
   }
-  if (fs.existsSync(srcFull) && !isProtected(relFile)) {
-    copiedCount++;
-    if (!isDryRun) {
-      fs.mkdirSync(path.dirname(destFull), { recursive: true });
-      fs.copyFileSync(srcFull, destFull);
-      console.log(`  ✓ Sync berkas: ${relFile}`);
+
+  if (item.type === 'dir') {
+    console.log(`\n📂 Menyinkronkan direktori: ${item.dest}`);
+    copyDirRecursive(srcFull, destFull, item.dest);
+  } else {
+    if (item.protectIfExists && fs.existsSync(destFull)) {
+      skippedCount++;
+      console.log(`  🛡️  MEMPERTAHANKAN BERKAS KUSTOM KLIEN (TIDAK DITIMPA): ${item.dest}`);
+      continue;
+    }
+
+    if (!isProtected(item.dest)) {
+      copiedCount++;
+      if (!isDryRun) {
+        fs.mkdirSync(path.dirname(destFull), { recursive: true });
+        fs.copyFileSync(srcFull, destFull);
+        console.log(`  ✓ Sync berkas: ${item.dest}`);
+      } else {
+        console.log(`  [DRY-RUN] Will sync berkas: ${item.dest}`);
+      }
     } else {
-      console.log(`  [DRY-RUN] Will sync berkas: ${relFile}`);
+      skippedCount++;
+      console.log(`  🛡️  MELEWATI (TERPROTEKSI SOP 19/20): ${item.dest}`);
     }
   }
 }
 
-// 9. STANDARISASI REGISTRY ADDONS (src/cms/addons/index.ts)
-const targetAddonsIndex = path.join(TARGET_DIR, 'src/cms/addons/index.ts');
-console.log('\n🔌 Menstandarkan registri addons (src/cms/addons/index.ts)...');
+// 7. SINKRONISASI MONOREPO PACKAGES (HANYA UNTUK MODE MONOREPO)
+if (targetMode === 'monorepo') {
+  const targetPackagesDir = path.join(TARGET_DIR, 'packages');
+  if (fs.existsSync(targetPackagesDir)) {
+    const MONOREPO_PACKAGES = ['packages/db', 'packages/core', 'packages/ui'];
+    console.log('\n📦 Menyinkronkan packages monorepo:');
+    for (const pkg of MONOREPO_PACKAGES) {
+      const srcPkg = path.join(CORE_DIR, pkg);
+      const destPkg = path.join(TARGET_DIR, pkg);
+      if (fs.existsSync(srcPkg)) {
+        console.log(`  📂 Package: ${pkg}`);
+        copyDirRecursive(srcPkg, destPkg, pkg);
+      }
+    }
+  }
+}
 
-const targetAddonsDir = path.join(TARGET_DIR, 'src/cms/addons');
-const hasOta = fs.existsSync(path.join(targetAddonsDir, 'ota')) || fs.existsSync(path.join(CORE_DIR, 'src/cms/addons/ota'));
+// 8. MENJAGA INTEGRITAS SKEMA MODULAR SIMSMU
+const targetSchemaFile = targetMode === 'monorepo' 
+  ? path.join(TARGET_DIR, 'packages/db/src/schema.ts')
+  : path.join(TARGET_DIR, 'src/cms/db/schema.ts');
+const targetSimsSchemaFile = targetMode === 'monorepo'
+  ? path.join(TARGET_DIR, 'packages/db/src/schema.sims.ts')
+  : path.join(TARGET_DIR, 'src/cms/db/schema.sims.ts');
+
+if (fs.existsSync(targetSchemaFile) && fs.existsSync(targetSimsSchemaFile)) {
+  const content = fs.readFileSync(targetSchemaFile, 'utf-8');
+  if (!content.includes("export * from './schema.sims';")) {
+    if (!isDryRun) {
+      fs.appendFileSync(targetSchemaFile, "\n// Re-export Modular SimsMu School Schema\nexport * from './schema.sims';\n");
+      console.log(`  🛡️  Menjaga re-export schema.sims pada ${path.relative(TARGET_DIR, targetSchemaFile)}`);
+    } else {
+      console.log(`  [DRY-RUN] Will preserve re-export schema.sims on ${path.relative(TARGET_DIR, targetSchemaFile)}`);
+    }
+  }
+}
+
+// 9. STANDARISASI REGISTRY ADDONS (src/cms/addons/index.ts atau apps/cms-api/src/addons/index.ts)
+const targetAddonsRel = targetMode === 'monorepo' ? 'apps/cms-api/src/addons' : 'src/cms/addons';
+const targetAddonsDir = path.join(TARGET_DIR, targetAddonsRel);
+const targetAddonsIndex = path.join(targetAddonsDir, 'index.ts');
+
+console.log(`\n🔌 Memeriksa registri addons (${path.relative(TARGET_DIR, targetAddonsIndex)})...`);
+
+const hasOta = fs.existsSync(path.join(targetAddonsDir, 'ota')) || fs.existsSync(path.join(CORE_DIR, 'apps/cms-api/src/addons/ota'));
 const hasAggregator = fs.existsSync(path.join(targetAddonsDir, 'aggregator'));
 const hasNewsroom = fs.existsSync(path.join(targetAddonsDir, 'newsroom'));
 const hasSimsmu = fs.existsSync(path.join(targetAddonsDir, 'simsmu'));
@@ -318,17 +398,17 @@ if (!isDryRun) {
   if (fs.existsSync(targetAddonsIndex)) {
     const existingContent = fs.readFileSync(targetAddonsIndex, 'utf8');
     if (existingContent.includes('theme-sa') || existingContent.includes('themeSa') || existingContent.includes('populer')) {
-      console.log(`  🛡️  MEMPERTAHANKAN REGISTRI ADDON KLIEN (TIDAK DITIMPA): src/cms/addons/index.ts`);
+      console.log(`  🛡️  MEMPERTAHANKAN REGISTRI ADDON KLIEN (TIDAK DITIMPA): ${targetAddonsRel}/index.ts`);
     } else {
       fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
-      console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
+      console.log(`  ✓ Sukses menstandarkan ${targetAddonsRel}/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
     }
-  } else if (fs.existsSync(path.dirname(targetAddonsIndex))) {
+  } else if (fs.existsSync(targetAddonsDir)) {
     fs.writeFileSync(targetAddonsIndex, standardizedAddonsIndex, 'utf8');
-    console.log(`  ✓ Sukses menstandarkan src/cms/addons/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
+    console.log(`  ✓ Sukses menstandarkan ${targetAddonsRel}/index.ts dengan addons: ${registeredNames.join(', ') || 'None'}`);
   }
 } else {
-  console.log(`  [DRY-RUN] Will inspect src/cms/addons/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
+  console.log(`  [DRY-RUN] Will inspect ${targetAddonsRel}/index.ts with addons: ${registeredNames.join(', ') || 'None'}`);
 }
 
 const duration = Date.now() - startTime;
