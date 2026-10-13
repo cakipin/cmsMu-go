@@ -14,13 +14,13 @@ export const editorTaxonomyModal = `
                     <div style="padding:30px; text-align:center; color:#94a3b8; font-size:13px;">Belum ada data.</div>
                 </template>
                 <template x-for="item in managerItems" :key="item">
-                    <div style="padding:12px 20px; border-bottom:1px solid #f1f5f9; display:flex; justify-content:space-between; align-items:center; transition:background 0.15s;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
-                        <span x-text="item" style="font-weight:600; font-size:13px; color:#334155;"></span>
-                        <div style="display:flex; gap:6px;">
-                            <button type="button" @click="openRenameItem(item)" style="color:#d97706; background:#fef3c7; border:1px solid #fde68a; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" title="Edit / Rename">
+                    <div class="px-4 py-3 sm:px-5 sm:py-3.5 border-b border-slate-100 flex justify-between items-center transition-colors hover:bg-slate-50">
+                        <span x-text="item" class="font-semibold text-xs sm:text-sm text-slate-700 truncate pr-2"></span>
+                        <div class="flex gap-2 shrink-0">
+                            <button type="button" @click="openRenameItem(item)" class="text-amber-700 bg-amber-50 border border-amber-200 min-w-[38px] min-h-[38px] rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-amber-100 active:scale-95" title="Edit / Rename">
                                 <i class="fas fa-pencil-alt text-xs"></i>
                             </button>
-                            <button type="button" @click="openDeleteItem(item)" style="color:#dc2626; background:#fee2e2; border:1px solid #fecaca; width:30px; height:30px; border-radius:8px; display:flex; align-items:center; justify-content:center; cursor:pointer; transition:all 0.2s;" title="Hapus">
+                            <button type="button" @click="openDeleteItem(item)" class="text-rose-700 bg-rose-50 border border-rose-200 min-w-[38px] min-h-[38px] rounded-lg flex items-center justify-center cursor-pointer transition-colors hover:bg-rose-100 active:scale-95" title="Hapus">
                                 <i class="fas fa-trash text-xs"></i>
                             </button>
                         </div>

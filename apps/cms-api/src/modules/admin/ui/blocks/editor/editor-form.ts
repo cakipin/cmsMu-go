@@ -1,16 +1,33 @@
-import { customEditorTemplate } from "../custom-editor.ts";
+import { customEditorTemplate } from '../custom-editor.ts';
 
 export const editorForm = `
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:20px;">
-        <button @click="view = 'posts'" class="btn" style="background:transparent; color:#555; border:1px solid #ccc;">
-            <i class="fas fa-arrow-left"></i> Kembali
-        </button>
-        <h2 style="margin:0;" x-text="editingId ? 'Edit Post' : 'Tambah Post Baru'"></h2>
+    <!-- Header Post Editor Responsif -->
+    <div class="flex items-center justify-between gap-2.5 mb-4 sticky top-0 z-20 bg-slate-100/95 backdrop-blur py-2 px-1 rounded-md sm:static sm:bg-transparent sm:py-0 sm:px-0">
+        <div class="flex items-center gap-2 min-w-0">
+            <button type="button" @click="view = 'posts'" class="btn min-h-[40px] px-3 py-2 bg-white text-slate-700 border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 active:scale-95 transition-all text-xs sm:text-sm flex items-center gap-1.5 flex-shrink-0">
+                <i class="fas fa-arrow-left"></i> <span class="hidden sm:inline">Kembali</span>
+            </button>
+            <h2 class="text-sm sm:text-xl font-bold text-slate-800 m-0 truncate" x-text="editingId ? 'Edit Post' : 'Tambah Post Baru'"></h2>
+        </div>
+
+        <!-- Tombol Aksi Cepat Header (Sangat Ergonomis di Layar Mobile) -->
+        <div class="flex items-center gap-2 flex-shrink-0">
+            <a x-show="form.slug" :href="'/' + form.slug" target="_blank" 
+               class="btn min-h-[40px] px-3 py-2 bg-white text-slate-600 border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 flex items-center justify-center text-xs active:scale-95 transition-all" 
+               title="Preview Artikel">
+                <i class="fas fa-external-link-alt"></i>
+            </a>
+            <button type="button" @click="save()" class="btn min-h-[40px] px-3.5 sm:px-5 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white font-semibold rounded-md shadow-sm flex items-center gap-1.5 text-xs sm:text-sm active:scale-95 transition-all" :disabled="isSaving">
+                <i class="fas fa-spinner fa-spin" x-show="isSaving"></i>
+                <i class="fas fa-paper-plane" x-show="!isSaving"></i>
+                <span x-text="isSaving ? 'Menyimpan...' : (editingId ? 'Perbarui' : 'Terbitkan')"></span>
+            </button>
+        </div>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 items-start pb-12 md:pb-6">
         <div style="min-width: 0;">
-            <input x-model="form.title" class="input admin-post-title-input" placeholder="Judul Tulisan..." 
+            <input x-model="form.title" class="input" placeholder="Judul Tulisan..." 
                    style="font-size: clamp(18px, 3.5vw, 24px); font-weight: 600; padding: 12px 14px; margin-bottom: 16px; width: 100%; box-sizing: border-box;" 
                    @input="makeSlug()">
             <div style="margin-bottom:20px;">
@@ -21,38 +38,38 @@ export const editorForm = `
             <div class="card" 
                  :style="'border: 1px solid ' + (getSeo().isPerfect ? '#10b981' : '#e5e7eb') + '; border-radius: 10px; background: white; margin-bottom: 20px; overflow: hidden; box-shadow: ' + (getSeo().isPerfect ? '0 4px 14px rgba(16,185,129,0.15)' : '0 1px 3px rgba(0,0,0,0.05)') + ';'">
                 
-                <!-- Header Card dengan Tombol Aksi AI -->
-                <div style="padding: 16px 20px; background: #fafafa; border-bottom: 1px solid #f0f0f1; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-                    <div style="display:flex; align-items:center; gap:8px;">
-                        <span style="display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:6px; background:#eff6ff; color:#2563eb;">
-                            <i class="fas fa-chart-line" style="font-size:14px;"></i>
+                <!-- Header Card dengan Tombol Aksi AI (Responsif Mobile) -->
+                <div class="p-3.5 sm:px-5 sm:py-4 bg-[#fafafa] border-b border-[#f0f0f1] flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+                    <div class="flex items-center gap-2.5">
+                        <span class="flex items-center justify-center w-8 h-8 rounded-lg bg-blue-50 text-blue-600 shrink-0">
+                            <i class="fas fa-chart-line text-sm"></i>
                         </span>
                         <div>
-                            <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: #1e293b;">
+                            <h3 class="m-0 text-sm sm:text-base font-bold text-slate-800">
                                 Analisis SEO & Metadata
                             </h3>
-                            <div style="font-size: 11px; color: #64748b;">Standar Google On-Page & Keterbacaan Mobile</div>
+                            <div class="text-[11px] text-slate-500">Standar Google On-Page & Keterbacaan Mobile</div>
                         </div>
                     </div>
 
-                    <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+                    <div class="grid grid-cols-1 xs:grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
                         <!-- Tombol AI Generate SEO Metadata -->
                         <button type="button" 
                                 @click="generateSeoWithAi()" 
                                 :disabled="isGeneratingSeo || isOptimizingFull"
-                                style="font-size:12px; padding:7px 14px; background:#f5f3ff; color:#7c3aed; border:1px solid #c4b5fd; border-radius:6px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.15s; line-height: 1.2; box-shadow: 0 1px 2px rgba(124,58,237,0.08);"
+                                class="w-full sm:w-auto min-h-[38px] px-3.5 py-2 text-xs font-bold rounded-lg bg-purple-50 text-purple-700 border border-purple-200 cursor-pointer inline-flex items-center justify-center gap-2 transition-all shadow-xs active:scale-95 disabled:opacity-50"
                                 title="Generate otomatis Meta Title, Meta Description, Excerpt, dan Tag dengan AI">
-                            <i class="fas fa-wand-magic-sparkles" :class="isGeneratingSeo ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'"></i>
-                            <span x-text="isGeneratingSeo ? 'Membuat SEO...' : '✨ AI Generate SEO'">✨ AI Generate SEO</span>
+                            <i class="fas fa-wand-magic-sparkles text-xs" :class="isGeneratingSeo ? 'fa-spinner fa-spin' : 'fa-wand-magic-sparkles'"></i>
+                            <span x-text="isGeneratingSeo ? 'Membuat...' : '✨ AI Generate SEO'">✨ AI Generate SEO</span>
                         </button>
 
                         <!-- Tombol AI Full Optimize (Konten + Metadata) -->
                         <button type="button" 
                                 @click="fullAiOptimize()" 
                                 :disabled="isGeneratingSeo || isOptimizingFull"
-                                style="font-size:12px; padding:7px 14px; background:#ecfdf5; color:#059669; border:1px solid #a7f3d0; border-radius:6px; font-weight:700; cursor:pointer; display:inline-flex; align-items:center; gap:6px; transition:all 0.15s; line-height: 1.2; box-shadow: 0 1px 2px rgba(16,185,129,0.08);"
+                                class="w-full sm:w-auto min-h-[38px] px-3.5 py-2 text-xs font-bold rounded-lg bg-emerald-50 text-emerald-700 border border-emerald-200 cursor-pointer inline-flex items-center justify-center gap-2 transition-all shadow-xs active:scale-95 disabled:opacity-50"
                                 title="Optimasi total 100%: Rapikan paragraf, sisipkan H2, dan lengkapi semua metadata SEO!">
-                            <i class="fas fa-rocket" :class="isOptimizingFull ? 'fa-spinner fa-spin' : 'fa-rocket'"></i>
+                            <i class="fas fa-rocket text-xs" :class="isOptimizingFull ? 'fa-spinner fa-spin' : 'fa-rocket'"></i>
                             <span x-text="isOptimizingFull ? 'Mengoptimasi...' : '🚀 AI Optimasi 100%'">🚀 AI Optimasi 100%</span>
                         </button>
                     </div>
@@ -277,18 +294,18 @@ export const editorForm = `
                 </div>
             </div>
 
-            <!-- KATEGORI -->
+            <!-- KATEGORI (Responsif Mobile) -->
             <div class="card" style="padding:15px; border-radius:8px; background:white; border:1px solid #e5e7eb;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h3 style="margin:0; font-size:13px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">Kategori</h3>
                     <div style="display:flex; gap:6px;">
-                        <button type="button" @click="openNewCategoryModal()" style="font-size:11px; background:#eff6ff; color:#2563eb; border:1px solid #dbeafe; padding:2px 8px; border-radius:4px; font-weight:600; cursor:pointer;" title="Tambah Kategori Baru">+ Tambah</button>
-                        <button type="button" @click="openManager('category')" style="font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px; font-weight:600; cursor:pointer;" title="Kelola Kategori">Kelola</button>
+                        <button type="button" @click="openNewCategoryModal()" class="text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors active:scale-95" title="Tambah Kategori Baru">+ Tambah</button>
+                        <button type="button" @click="openManager('category')" class="text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors active:scale-95" title="Kelola Kategori">Kelola</button>
                     </div>
                 </div>
                 
                 <div style="margin-bottom:8px;">
-                    <select x-model="form.category" class="input" style="width:100%; font-size:13px; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db;">
+                    <select x-model="form.category" class="input" style="width:100%; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid #d1d5db;">
                         <template x-for="cat in uniqueCategories" :key="cat">
                             <option :value="cat" x-text="cat" :selected="form.category === cat"></option>
                         </template>
@@ -296,18 +313,18 @@ export const editorForm = `
                 </div>
             </div>
 
-            <!-- TAGS -->
+            <!-- TAGS (Responsif Mobile) -->
             <div class="card" style="padding:15px; border-radius:8px; background:white; border:1px solid #e5e7eb;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
                     <h3 style="margin:0; font-size:13px; font-weight:600; color:#374151; text-transform:uppercase; letter-spacing:0.5px;">Tags</h3>
-                    <button type="button" @click="openManager('tag')" style="font-size:11px; background:#f8fafc; color:#475569; border:1px solid #e2e8f0; padding:2px 8px; border-radius:4px; font-weight:600; cursor:pointer;" title="Kelola Tags">Kelola</button>
+                    <button type="button" @click="openManager('tag')" class="text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 min-h-[32px] px-3 py-1 rounded-lg text-xs font-semibold cursor-pointer transition-colors active:scale-95" title="Kelola Tags">Kelola</button>
                 </div>
                 
-                <input x-model="form.tags" class="input" placeholder="Pisahkan dengan koma (,)" style="width:100%; font-size:13px; padding:8px 10px; border-radius:6px; border:1px solid #d1d5db; margin-bottom:8px; box-sizing:border-box;">
+                <input x-model="form.tags" class="input" placeholder="Pisahkan dengan koma (,)" style="width:100%; font-size:13px; padding:9px 10px; border-radius:8px; border:1px solid #d1d5db; margin-bottom:10px; box-sizing:border-box;">
                 
-                <div style="display:flex; flex-wrap:wrap; gap:4px; max-height:100px; overflow-y:auto;">
+                <div style="display:flex; flex-wrap:wrap; gap:6px; max-height:120px; overflow-y:auto;">
                     <template x-for="tag in uniqueTags.slice(0, 15)" :key="tag">
-                        <span @click="addTag(tag)" style="font-size:11px; background:#f3f4f6; color:#4b5563; padding:2px 8px; border-radius:12px; cursor:pointer; border:1px solid #e5e7eb;" onmouseover="this.style.background='#e5e7eb'" onmouseout="this.style.background='#f3f4f6'" x-text="'+ ' + tag"></span>
+                        <span @click="addTag(tag)" class="text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-full cursor-pointer border border-slate-200 transition-colors active:scale-95 select-none" x-text="'+ ' + tag"></span>
                     </template>
                 </div>
             </div>

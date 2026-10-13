@@ -3,6 +3,7 @@
   "include": [".astro/types.d.ts", "**/*", "../../packages/ui/worker-configuration.d.ts"],
   "exclude": ["dist", "public/pagefind"],
   "compilerOptions": {
+    "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"],

@@ -48,71 +48,123 @@ export const emagazinePage = `
 
     <!-- TAB 1: TABEL EMAGAZINES -->
     <div x-show="magTab === 'editions'">
-        <div class="card" style="padding:0; overflow-x:auto; background:#fff; border-radius:12px; border:1px solid #e2e8f0; box-shadow:0 1px 3px rgba(0,0,0,0.05);">
-            <table class="table" style="width:100%; border-collapse:collapse;">
-                <thead>
-                    <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Sampul</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Judul & Edisi</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Bulan/Tahun</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Akses</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Preview Bebas</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Status</th>
-                        <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px; text-align:right;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <template x-if="getFilteredMagazines().length === 0">
-                        <tr>
-                            <td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">
-                                <i :class="magSearch ? 'fas fa-search' : 'fas fa-book-open'" style="font-size:32px; margin-bottom:12px; display:block; opacity:0.4;"></i>
-                                <span x-text="magSearch ? ('Tidak ada edisi majalah yang cocok dengan pencarian \\'' + magSearch + '\\'.') : 'Belum ada edisi majalah. Klik tombol \\'Tambah Edisi Majalah\\' untuk mengunggah berkas PDF edisi baru.'"></span>
-                            </td>
+        <div class="card p-0 overflow-hidden bg-white rounded-xl border border-slate-200 shadow-sm">
+            <!-- Desktop Table View (Hidden di Mobile) -->
+            <div class="hidden md:block overflow-x-auto">
+                <table class="table" style="width:100%; border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:#f8fafc; border-bottom:2px solid #e2e8f0; text-align:left;">
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Sampul</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Judul & Edisi</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Bulan/Tahun</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Akses</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Preview Bebas</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px;">Status</th>
+                            <th style="padding:14px 16px; font-weight:600; color:#475569; font-size:13px; text-align:right;">Aksi</th>
                         </tr>
-                    </template>
-                    <template x-for="mag in getPaginatedMagazines()" :key="mag.id">
-                        <tr style="border-bottom:1px solid #e2e8f0; transition:background 0.2s;" class="hover:bg-gray-50">
-                            <td style="padding:12px 16px; width:80px;">
-                                <img :src="mag.coverImage || '/api/media/file/images/default-cover.jpg'" style="width:54px; height:72px; object-fit:cover; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:block;" onerror="this.src='https://placehold.co/100x140?text=Cover'">
-                            </td>
-                            <td style="padding:12px 16px;">
-                                <div style="font-weight:700; color:#0f172a; font-size:14px;" x-text="mag.title"></div>
-                                <div style="font-size:12px; color:#64748b; margin-top:2px;" x-text="mag.editionNumber || '- -'"></div>
-                                <div style="font-size:11px; color:#94a3b8; margin-top:2px;"><code x-text="'/majalah/' + mag.slug"></code></div>
-                            </td>
-                            <td style="padding:12px 16px; color:#334155; font-size:13px; font-weight:500;" x-text="mag.publicationDate || '- -'"></td>
-                            <td style="padding:12px 16px;">
-                                <span style="font-size:11px; font-weight:700; padding:4px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"
-                                    :style="mag.isFree === 1 ? 'background:#e0f2fe; color:#0369a1;' : 'background:#fef3c7; color:#92400e;'">
-                                    <i :class="mag.isFree === 1 ? 'fas fa-lock-open' : 'fas fa-lock'"></i>
-                                    <span x-text="mag.isFree === 1 ? 'Bebas Akses' : 'Pelanggan Pro'"></span>
-                                </span>
-                            </td>
-                            <td style="padding:12px 16px; color:#64748b; font-size:13px;">
-                                <span x-text="mag.previewPages || 5"></span> Halaman Pertama
-                            </td>
-                            <td style="padding:12px 16px;">
-                                <span style="font-size:11px; font-weight:700; padding:4px 8px; border-radius:4px;"
-                                    :style="mag.status === 'published' ? 'background:#dcfce7; color:#166534;' : 'background:#f1f5f9; color:#64748b;'"
-                                    x-text="(mag.status || 'draft').toUpperCase()"></span>
-                            </td>
-                            <td style="padding:12px 16px; text-align:right;">
-                                <div style="display:inline-flex; gap:6px;">
-                                    <a :href="'/majalah/' + mag.slug" target="_blank" title="Buka Reader Publik" style="background:#3b82f6; color:#fff; width:32px; height:32px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-size:12px;">
-                                        <i class="fas fa-external-link-alt"></i>
-                                    </a>
-                                    <button @click="openMagModal(mag)" title="Edit Metadata" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:12px;">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button @click="deleteMagazine(mag.id)" title="Hapus Edisi" style="background:#fee2e2; color:#b91c1c; border:none; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:12px;">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
+                    </thead>
+                    <tbody>
+                        <template x-if="getFilteredMagazines().length === 0">
+                            <tr>
+                                <td colspan="7" style="text-align:center; padding:40px; color:#94a3b8;">
+                                    <i :class="magSearch ? 'fas fa-search' : 'fas fa-book-open'" style="font-size:32px; margin-bottom:12px; display:block; opacity:0.4;"></i>
+                                    <span x-text="magSearch ? ('Tidak ada edisi majalah yang cocok dengan pencarian \'' + magSearch + '\'.') : 'Belum ada edisi majalah. Klik tombol \'Tambah Edisi Majalah\' untuk mengunggah berkas PDF edisi baru.'"></span>
+                                </td>
+                            </tr>
+                        </template>
+                        <template x-for="mag in getPaginatedMagazines()" :key="mag.id">
+                            <tr style="border-bottom:1px solid #e2e8f0; transition:background 0.2s;" class="hover:bg-gray-50">
+                                <td style="padding:12px 16px; width:80px;">
+                                    <img :src="mag.coverImage || '/uploads/images/default-cover.jpg'" style="width:54px; height:72px; object-fit:cover; border-radius:6px; box-shadow:0 2px 4px rgba(0,0,0,0.1); display:block;" onerror="this.src='https://placehold.co/100x140?text=Cover'">
+                                </td>
+                                <td style="padding:12px 16px;">
+                                    <div style="font-weight:700; color:#0f172a; font-size:14px;" x-text="mag.title"></div>
+                                    <div style="font-size:12px; color:#64748b; margin-top:2px;" x-text="mag.editionNumber || '- -'"></div>
+                                    <div style="font-size:11px; color:#94a3b8; margin-top:2px;"><code x-text="'/majalah/' + mag.slug"></code></div>
+                                </td>
+                                <td style="padding:12px 16px; color:#334155; font-size:13px; font-weight:500;" x-text="mag.publicationDate || '- -'"></td>
+                                <td style="padding:12px 16px;">
+                                    <span style="font-size:11px; font-weight:700; padding:4px 8px; border-radius:4px; display:inline-flex; align-items:center; gap:4px;"
+                                        :style="mag.isFree === 1 ? 'background:#e0f2fe; color:#0369a1;' : 'background:#fef3c7; color:#92400e;'">
+                                        <i :class="mag.isFree === 1 ? 'fas fa-lock-open' : 'fas fa-lock'"></i>
+                                        <span x-text="mag.isFree === 1 ? 'Bebas Akses' : 'Pelanggan Pro'"></span>
+                                    </span>
+                                </td>
+                                <td style="padding:12px 16px; color:#64748b; font-size:13px;">
+                                    <span x-text="mag.previewPages || 5"></span> Halaman Pertama
+                                </td>
+                                <td style="padding:12px 16px;">
+                                    <span style="font-size:11px; font-weight:700; padding:4px 8px; border-radius:4px;"
+                                        :style="mag.status === 'published' ? 'background:#dcfce7; color:#166534;' : 'background:#f1f5f9; color:#64748b;'"
+                                        x-text="(mag.status || 'draft').toUpperCase()"></span>
+                                </td>
+                                <td style="padding:12px 16px; text-align:right;">
+                                    <div style="display:inline-flex; gap:6px;">
+                                        <a :href="'/majalah/' + mag.slug" target="_blank" title="Buka Reader Publik" style="background:#3b82f6; color:#fff; width:32px; height:32px; border-radius:6px; display:inline-flex; align-items:center; justify-content:center; text-decoration:none; font-size:12px;">
+                                            <i class="fas fa-external-link-alt"></i>
+                                        </a>
+                                        <button @click="openMagModal(mag)" title="Edit Metadata" style="background:#f8fafc; color:#334155; border:1px solid #cbd5e1; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:12px;">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button @click="deleteMagazine(mag.id)" title="Hapus Edisi" style="background:#fee2e2; color:#b91c1c; border:none; width:32px; height:32px; border-radius:6px; cursor:pointer; font-size:12px;">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        </template>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Mobile Vertical Card List View (Block di Mobile) -->
+            <div class="block md:hidden divide-y divide-slate-100">
+                <template x-for="mag in getPaginatedMagazines()" :key="'mob_mag_' + mag.id">
+                    <div class="p-3.5 bg-white space-y-3">
+                        <div class="flex items-start gap-3">
+                            <img :src="mag.coverImage || '/uploads/images/default-cover.jpg'" 
+                                 class="w-16 h-22 object-cover rounded-lg shadow-sm border border-slate-200 shrink-0" 
+                                 onerror="this.src='https://placehold.co/100x140?text=Cover'">
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded"
+                                          :class="mag.status === 'published' ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-600'"
+                                          x-text="(mag.status || 'draft').toUpperCase()"></span>
+                                    <span class="text-[10px] font-bold px-2 py-0.5 rounded"
+                                          :class="mag.isFree === 1 ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800'">
+                                        <span x-text="mag.isFree === 1 ? 'Bebas Akses' : '⭐ Pro'"></span>
+                                    </span>
                                 </div>
-                            </td>
-                        </tr>
-                    </template>
-                </tbody>
-            </table>
+                                <h4 class="text-sm font-bold text-slate-900 leading-snug m-0 line-clamp-2" x-text="mag.title"></h4>
+                                <div class="text-xs text-slate-500 mt-0.5" x-text="mag.editionNumber || '- -'"></div>
+                                <div class="text-[11px] text-slate-400 font-medium mt-1">
+                                    <i class="far fa-calendar-alt mr-1"></i>
+                                    <span x-text="mag.publicationDate || '- -'"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Mobile Action Buttons -->
+                        <div class="grid grid-cols-3 gap-2 pt-1 border-t border-slate-50">
+                            <a :href="'/majalah/' + mag.slug" target="_blank" 
+                               class="min-h-[40px] px-2 py-1.5 text-xs font-semibold text-blue-700 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-all text-center">
+                                <i class="fas fa-external-link-alt text-xs"></i> <span>Baca</span>
+                            </a>
+                            <button type="button" @click="openMagModal(mag)" 
+                                    class="min-h-[40px] px-2 py-1.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                <i class="fas fa-pencil-alt text-xs"></i> <span>Edit</span>
+                            </button>
+                            <button type="button" @click="deleteMagazine(mag.id)" 
+                                    class="min-h-[40px] px-2 py-1.5 text-xs font-medium text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg flex items-center justify-center gap-1 active:scale-95 transition-all">
+                                <i class="fas fa-trash text-xs"></i> <span>Hapus</span>
+                            </button>
+                        </div>
+                    </div>
+                </template>
+                <div x-show="getFilteredMagazines().length === 0" class="p-8 text-center text-slate-400 text-xs">
+                    Belum ada edisi majalah.
+                </div>
+            </div>
 
             <!-- PAGINATION FOOTER -->
             <div x-show="getFilteredMagazines().length > 0" class="flex flex-wrap justify-between items-center px-4 py-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-600 rounded-b-xl">
@@ -312,6 +364,10 @@ export const emagazinePage = `
                 <div>
                     <label style="display:block; font-size:13px; font-weight:600; color:#334155; margin-bottom:4px;">Berkas PDF Majalah Cetak <span style="color:#ef4444;" x-show="!magForm.id">*</span></label>
                     <input type="file" id="magPdfFile" accept=".pdf" @change="handlePdfFileChange($event)" style="width:100%; padding:8px; border:1px dashed #94a3b8; border-radius:8px; font-size:13px; box-sizing:border-box; background:#f8fafc;">
+                    <div x-show="pdfSizeMsg" :style="pdfSizeWarning ? 'margin-top:6px; font-size:12px; color:#b45309; background:#fef3c7; padding:8px 12px; border-radius:6px; border:1px solid #fde68a; line-height:1.4;' : 'margin-top:6px; font-size:12px; color:#166534; background:#dcfce7; padding:8px 12px; border-radius:6px; border:1px solid #bbf7d0; line-height:1.4;'">
+                        <i :class="pdfSizeWarning ? 'fas fa-exclamation-triangle' : 'fas fa-check-circle'"></i>
+                        <span x-text="pdfSizeMsg" style="margin-left:4px;"></span>
+                    </div>
                     <div x-show="pdfConverting" style="margin-top:6px; font-size:12px; color:#0284c7; display:flex; align-items:center; gap:6px;">
                         <i class="fas fa-spinner fa-spin"></i> Memproses berkas PDF: mendeteksi jumlah halaman &amp; mengonversi halaman 1 menjadi sampul...
                     </div>
@@ -347,7 +403,7 @@ export const emagazinePage = `
                             </div>
                             <div>
                                 <label style="font-size:11px; color:#64748b; display:block; margin-bottom:2px;">Atau gunakan URL Gambar langsung:</label>
-                                <input type="text" x-model="magForm.cover_image" placeholder="https://... atau /api/media/file/..." style="width:100%; padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; box-sizing:border-box;">
+                                <input type="text" x-model="magForm.cover_image" placeholder="https://... atau /uploads/..." style="width:100%; padding:7px 10px; border:1px solid #cbd5e1; border-radius:6px; font-size:12px; box-sizing:border-box;">
                             </div>
                         </div>
                     </div>

@@ -63,12 +63,15 @@ export class S3R2BucketAdapter {
 
     if (options?.range) {
       const r = options.range;
-      if (r.offset !== undefined && r.length !== undefined) {
-        headers["Range"] = `bytes=${r.offset}-${r.offset + r.length - 1}`;
-      } else if (r.offset !== undefined) {
-        headers["Range"] = `bytes=${r.offset}-`;
-      } else if (r.suffix !== undefined) {
-        headers["Range"] = `bytes=-${r.suffix}`;
+      if (typeof r === "object" && r !== null && !("append" in r)) {
+        const rangeObj = r as R2Range;
+        if (rangeObj.offset !== undefined && rangeObj.length !== undefined) {
+          headers["Range"] = `bytes=${rangeObj.offset}-${rangeObj.offset + rangeObj.length - 1}`;
+        } else if (rangeObj.offset !== undefined) {
+          headers["Range"] = `bytes=${rangeObj.offset}-`;
+        } else if (rangeObj.suffix !== undefined) {
+          headers["Range"] = `bytes=-${rangeObj.suffix}`;
+        }
       }
     }
 

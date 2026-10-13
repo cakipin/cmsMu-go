@@ -1,16 +1,21 @@
 export const settingsPage = `
 <div x-show="view === 'settings'" class="animate-fade" style="padding-bottom:80px; position:relative;" x-data="settingsPageData()">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0; font-size:22px; font-weight:700; color:#1f2937;">Pengaturan Umum</h2>
+    <!-- Header Settings Responsif -->
+    <div class="flex items-center justify-between gap-3 mb-5 sticky top-0 z-20 bg-slate-100/95 backdrop-blur py-2 px-1 rounded-md sm:static sm:bg-transparent sm:py-0 sm:px-0">
+        <div>
+            <h2 class="text-lg sm:text-2xl font-bold text-slate-800 m-0">Pengaturan Umum</h2>
+            <p class="text-xs text-slate-500 m-0 mt-0.5 hidden sm:block">Kelola identitas situs, logo, dan konfigurasi umum.</p>
+        </div>
         <button @click="saveSettings()" :disabled="isSaving" 
-                class="bg-teal-600 hover:bg-teal-700 active:scale-[0.98] text-white px-4 py-2 rounded-xl text-xs font-semibold shadow-sm transition-all flex items-center gap-2 cursor-pointer border-0 shrink-0">
+                class="min-h-[40px] px-4 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold shadow flex items-center gap-2 cursor-pointer transition-all shrink-0">
             <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Perubahan'">Simpan Perubahan</span>
         </button>
     </div>
 
-    <div style="display:grid; grid-template-columns: 2fr 1fr; gap:25px;">
+    <!-- Responsive Layout: 1 Kolom di Mobile, 2 Kolom di Desktop -->
+    <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         
         <div style="background:white; padding:25px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
             <h4 style="margin-top:0; margin-bottom:20px; font-size:15px; font-weight:700; color:#1f2937;">Identitas Situs</h4>

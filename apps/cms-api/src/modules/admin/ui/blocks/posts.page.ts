@@ -186,152 +186,255 @@ export const postsPage = `
      }" 
      x-init="loadData(); $watch('currentPage', () => selectAll = false)">
      
-  <div style="display:flex; justify-content:space-between; margin-bottom:15px; align-items:center;">
-    <h2 style="margin:0;">All Posts</h2>
-    <div style="display:flex; gap:10px;">
-        <button @click="loadData()" class="btn" style="background:#f1f5f9; color:#475569;" title="Refresh Data">
+  <!-- Header All Posts -->
+  <div class="flex flex-row justify-between items-center mb-4 gap-2">
+    <div class="flex items-center gap-2">
+      <h2 class="text-xl font-bold text-slate-800 m-0">All Posts</h2>
+      <span class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium" x-text="filteredPosts.length + ' item'"></span>
+    </div>
+    <div class="flex items-center gap-2">
+        <button @click="loadData()" class="btn min-h-[38px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition-colors" title="Refresh Data">
             <i class="fas fa-sync" :class="isLoading ? 'fa-spin' : ''"></i>
         </button>
-        <button @click="openEditorCerdas(null)" class="btn" style="background:#2271b1; color:#fff;">
-            <i class="fas fa-plus"></i> Add New
+        <button @click="openEditorCerdas(null)" class="btn min-h-[38px] px-3 sm:px-4 bg-[#2271b1] hover:bg-[#135e96] text-white font-medium rounded-md shadow-sm transition-colors flex items-center gap-1.5">
+            <i class="fas fa-plus"></i> <span class="hidden xs:inline">Add New</span>
         </button>
     </div>
   </div>
 
-  <div style="margin-bottom:10px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-      <select x-model="bulkAction" class="input" style="width:auto; margin:0; padding:4px 8px; font-size:13px;">
-          <option value="">Bulk Actions</option>
-          <option value="delete">Hapus</option>
-      </select>
-      <button @click="applyBulkAction()" class="btn" style="padding:4px 12px; font-size:13px;">Apply</button>
-      
-      <select class="input" style="width:auto; margin:0; padding:4px 8px; font-size:13px; margin-left:10px;" 
-              x-model="filterCategory" @change="currentPage = 1">
-          <option value="">Semua Kategori</option>
-          <template x-for="cat in uniqueCategories">
-              <option :value="cat" x-text="cat"></option>
-          </template>
-      </select>
+  <!-- Filter Toolbar Responsif Mobile -->
+  <div class="bg-white p-3 rounded-lg border border-slate-200 mb-4 space-y-2.5 shadow-sm">
+    <!-- Baris 1: Pencarian Full-Width di Mobile -->
+    <div class="relative w-full">
+      <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
+      <input type="text" x-model="searchQuery" @input="currentPage = 1" placeholder="Cari judul, kategori, slug, tag..." 
+             class="input w-full pl-8 pr-3 py-2 text-xs sm:text-sm rounded-md border border-slate-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none">
+    </div>
 
-      <select class="input" style="width:auto; margin:0; padding:4px 8px; font-size:13px;" 
-              x-model="filterStatus" @change="currentPage = 1">
-          <option value="">Semua Status</option>
-          <option value="publish">Published</option>
-          <option value="draft">Draft</option>
-          <option value="curated">Kurasi (Newsroom)</option>
-      </select>
+    <!-- Baris 2: Filter Grid & Bulk Actions -->
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+      <!-- Filter Kategori & Status Grid -->
+      <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-1">
+        <select class="input w-full sm:w-auto py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white" 
+                x-model="filterCategory" @change="currentPage = 1">
+            <option value="">Semua Kategori</option>
+            <template x-for="cat in uniqueCategories" :key="cat">
+                <option :value="cat" x-text="cat"></option>
+            </template>
+        </select>
 
-      <input type="text" x-model="searchQuery" @input="currentPage = 1" placeholder="Cari judul, kategori, atau tag..." 
-             class="input" style="width: 250px; margin: 0 0 0 auto; padding: 5px 12px; font-size: 13px; border-radius: 6px; border: 1px solid #ccc; outline: none;">
+        <select class="input w-full sm:w-auto py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white" 
+                x-model="filterStatus" @change="currentPage = 1">
+            <option value="">Semua Status</option>
+            <option value="publish">Published</option>
+            <option value="draft">Draft</option>
+            <option value="curated">Kurasi</option>
+        </select>
+      </div>
+
+      <!-- Bulk Actions Bar -->
+      <div class="flex items-center gap-1.5 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+        <select x-model="bulkAction" class="input flex-1 sm:flex-initial py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white">
+            <option value="">Bulk Actions</option>
+            <option value="delete">Hapus</option>
+        </select>
+        <button @click="applyBulkAction()" class="btn py-1.5 px-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md font-medium active:scale-95 transition-all">
+          Terapkan
+        </button>
+      </div>
+    </div>
   </div>
 
-  <div class="card" style="padding:0; overflow:hidden; border: 1px solid #ccc; background:#fff;">
-    <table class="wp-table" style="width:100%; border-collapse:collapse;">
-      <thead>
-        <tr style="background:#f8f9fa; border-bottom:2px solid #ddd;">
-          <th width="30" style="text-align:center; padding:12px;">
-            <input type="checkbox" @click="toggleAll()" :checked="selectAll">
-          </th>
-          <th style="text-align:left; padding:12px;">Title</th>
-          <th style="text-align:left; width:140px;">Date</th>
-          <th style="text-align:left; width:120px;">Category</th>
-          <th style="text-align:left; width:100px;">Tags</th>
-          <th width="80" style="text-align:center;">Views</th>
-          <th width="80" style="text-align:center;">Status</th>
-          <th width="140" style="text-align:center; padding:12px;">Action</th>
-        </tr>
-      </thead>
-      <tbody>
-        <template x-for="p in paginatedPosts" :key="p.id">
-          <tr style="border-bottom:1px solid #eee;" 
-              :style="selectedIds.includes(p.id) ? 'background:#f0f7ff' : ''">
-            
-            <td style="text-align:center; padding:12px;">
-                <input type="checkbox" :value="p.id" x-model="selectedIds">
-            </td>
-            
-            <td style="padding:12px;">
-              <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
-                <span x-show="p.type === 'video' || (p.video_url && p.video_url.length > 0)" style="display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px;">
+  <div class="card p-0 overflow-hidden border border-slate-200 rounded-lg bg-white shadow-sm">
+    <!-- Desktop Table View (Hidden di Mobile) -->
+    <div class="hidden md:block overflow-x-auto">
+      <table class="wp-table" style="width:100%; border-collapse:collapse;">
+        <thead>
+          <tr style="background:#f8f9fa; border-bottom:2px solid #ddd;">
+            <th width="30" style="text-align:center; padding:12px;">
+              <input type="checkbox" @click="toggleAll()" :checked="selectAll">
+            </th>
+            <th style="text-align:left; padding:12px;">Title</th>
+            <th style="text-align:left; width:140px;">Date</th>
+            <th style="text-align:left; width:120px;">Category</th>
+            <th style="text-align:left; width:100px;">Tags</th>
+            <th width="80" style="text-align:center;">Views</th>
+            <th width="80" style="text-align:center;">Status</th>
+            <th width="140" style="text-align:center; padding:12px;">Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="p in paginatedPosts" :key="p.id">
+            <tr style="border-bottom:1px solid #eee;" 
+                :style="selectedIds.includes(p.id) ? 'background:#f0f7ff' : ''">
+              
+              <td style="text-align:center; padding:12px;">
+                  <input type="checkbox" :value="p.id" x-model="selectedIds">
+              </td>
+              
+              <td style="padding:12px;">
+                <div style="display:flex; align-items:center; gap:6px; margin-bottom:4px; flex-wrap:wrap;">
+                  <span x-show="p.type === 'video' || (p.video_url && p.video_url.length > 0)" style="display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; background:#fee2e2; color:#dc2626; padding:2px 6px; border-radius:4px;">
+                    <i class="fas fa-video"></i> VIDEO
+                  </span>
+                  <b x-text="p.title" @click="openEditorCerdas(p)" style="color:#2271b1; font-size:14px; cursor:pointer;"></b>
+                </div>
+                <div style="font-size:11px; color:#666; font-family:monospace;" x-text="'/'+p.slug"></div>
+              </td>
+              
+              <td style="font-size:12px;">
+                  <template x-if="p.created_at">
+                      <div>
+                          <span style="font-weight:600; color:#333;">
+                              <i class="far fa-calendar-alt" style="margin-right:3px; color:#888;"></i>
+                              <span x-text="new Date(p.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})"></span>
+                          </span>
+                      </div>
+                  </template>
+              </td>
+              
+              <td style="font-size:12px; color:#555;" x-text="p.category"></td>
+              <td style="font-size:12px; color:#555;" x-text="p.tags"></td>
+              
+              <td style="text-align:center; font-size:12px; font-weight:bold; color:#64748b;" x-text="p.views || 0"></td>
+              
+              <td style="text-align:center;">
+                <i x-show="p.status=='publish'" class="fas fa-check-circle" style="color:#10b981; font-size:16px;" title="Published"></i>
+                <i x-show="p.status=='draft'" class="fas fa-file-alt" style="color:#94a3b8; font-size:16px;" title="Draft"></i>
+                <i x-show="p.status=='curated'" class="fas fa-tasks" style="color:#f59e0b; font-size:16px;" title="Dalam Kurasi"></i>
+              </td>
+              
+              <td style="padding:8px; text-align:center;">
+                <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
+                  <button @click="viewPost(p.slug)" title="Lihat" style="color:#2271b1; background:none; border:none; cursor:pointer;">
+                      <i class="fas fa-eye"></i>
+                  </button>
+                  <button @click="openEditorCerdas(p)" title="Edit" style="color:#f39c12; background:none; border:none; cursor:pointer;">
+                      <i class="fas fa-pencil-alt"></i>
+                  </button>
+                  <button @click="deletePost(p.id)" title="Hapus" style="color:#e74c3c; background:none; border:none; cursor:pointer;">
+                      <i class="fas fa-trash-alt"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Mobile Card List View (Block di Mobile, Hidden di Desktop) -->
+    <div class="block md:hidden divide-y divide-slate-100">
+      <!-- Select All Mobile Bar -->
+      <div class="p-3 bg-slate-50 flex items-center justify-between text-xs text-slate-600 border-b border-slate-200">
+        <label class="flex items-center gap-2 cursor-pointer font-medium">
+          <input type="checkbox" @click="toggleAll()" :checked="selectAll" class="rounded text-blue-600">
+          <span>Pilih Semua di Halaman Ini</span>
+        </label>
+        <span x-show="selectedIds.length > 0" class="font-semibold text-blue-600" x-text="selectedIds.length + ' dipilih'"></span>
+      </div>
+
+      <!-- Card Items -->
+      <template x-for="p in paginatedPosts" :key="p.id">
+        <div class="p-3.5 transition-colors" :class="selectedIds.includes(p.id) ? 'bg-blue-50/60' : 'bg-white'">
+          <div class="flex items-start gap-2.5">
+            <input type="checkbox" :value="p.id" x-model="selectedIds" class="mt-1 rounded text-blue-600 flex-shrink-0">
+            <div class="flex-1 min-w-0">
+              <!-- Judul & Badge -->
+              <div class="flex items-center gap-1.5 flex-wrap mb-1">
+                <span x-show="p.type === 'video' || (p.video_url && p.video_url.length > 0)" class="inline-flex items-center gap-1 text-[10px] font-bold bg-red-100 text-red-600 px-1.5 py-0.5 rounded">
                   <i class="fas fa-video"></i> VIDEO
                 </span>
-                <b x-text="p.title" @click="openEditorCerdas(p)" style="color:#2271b1; font-size:14px; cursor:pointer;"></b>
+                <span x-show="p.status=='publish'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
+                  <i class="fas fa-check-circle"></i> Publish
+                </span>
+                <span x-show="p.status=='draft'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
+                  <i class="fas fa-file-alt"></i> Draft
+                </span>
+                <span x-show="p.status=='curated'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                  <i class="fas fa-tasks"></i> Kurasi
+                </span>
               </div>
-              <div style="font-size:11px; color:#666; font-family:monospace;" x-text="'/'+p.slug"></div>
-            </td>
-            
-            <td style="font-size:12px;">
-                <template x-if="p.created_at">
-                    <div>
-                        <span style="font-weight:600; color:#333;">
-                            <i class="far fa-calendar-alt" style="margin-right:3px; color:#888;"></i>
-                            <span x-text="new Date(p.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})"></span>
-                        </span>
-                    </div>
-                </template>
-            </td>
-            
-            <td style="font-size:12px; color:#555;" x-text="p.category"></td>
-            <td style="font-size:12px; color:#555;" x-text="p.tags"></td>
-            
-            <td style="text-align:center; font-size:12px; font-weight:bold; color:#64748b;" x-text="p.views || 0"></td>
-            
-            <td style="text-align:center;">
-              <i x-show="p.status=='publish'" class="fas fa-check-circle" style="color:#10b981; font-size:16px;" title="Published"></i>
-              <i x-show="p.status=='draft'" class="fas fa-file-alt" style="color:#94a3b8; font-size:16px;" title="Draft"></i>
-              <i x-show="p.status=='curated'" class="fas fa-tasks" style="color:#f59e0b; font-size:16px;" title="Dalam Kurasi"></i>
-            </td>
-            
-            <td style="padding:8px; text-align:center;">
-              <div style="display:flex; align-items:center; justify-content:center; gap:15px;">
-                <button @click="viewPost(p.slug)" title="Lihat" style="color:#2271b1; background:none; border:none; cursor:pointer;">
-                    <i class="fas fa-eye"></i>
-                </button>
-                <button @click="openEditorCerdas(p)" title="Edit" style="color:#f39c12; background:none; border:none; cursor:pointer;">
-                    <i class="fas fa-pencil-alt"></i>
-                </button>
-                <button @click="deletePost(p.id)" title="Hapus" style="color:#e74c3c; background:none; border:none; cursor:pointer;">
-                    <i class="fas fa-trash-alt"></i>
-                </button>
-              </div>
-            </td>
-          </tr>
-        </template>
-      </tbody>
-    </table>
 
-    <div x-show="isLoading" style="text-align:center; padding:20px; color:#666;">
-        <i class="fas fa-spinner fa-spin"></i> Memuat Editor Modern...
+              <!-- Judul Klik Langsung ke Editor -->
+              <h3 class="text-sm font-semibold text-slate-900 leading-snug mb-1 cursor-pointer hover:text-blue-600 active:text-blue-800 break-words" 
+                  x-text="p.title" @click="openEditorCerdas(p)"></h3>
+
+              <!-- Slug URL -->
+              <div class="text-[11px] text-slate-500 font-mono truncate mb-2" x-text="'/' + p.slug"></div>
+
+              <!-- Metadata Baris: Kategori, Tanggal, Views -->
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-500 mb-2.5">
+                <span class="inline-flex items-center gap-1 bg-slate-100 px-2 py-0.5 rounded text-slate-700 font-medium">
+                  <i class="fas fa-folder text-[10px] text-slate-400"></i>
+                  <span x-text="p.category"></span>
+                </span>
+                <template x-if="p.created_at">
+                  <span class="inline-flex items-center gap-1">
+                    <i class="far fa-calendar-alt text-[10px] text-slate-400"></i>
+                    <span x-text="new Date(p.created_at).toLocaleDateString('id-ID', {day:'numeric', month:'short', year:'numeric'})"></span>
+                  </span>
+                </template>
+                <span class="inline-flex items-center gap-1 font-semibold text-slate-600">
+                  <i class="fas fa-eye text-[10px] text-slate-400"></i>
+                  <span x-text="p.views || 0"></span>
+                </span>
+              </div>
+
+              <!-- Action Bar Mobile dengan Tap Target Nyaman (min 40px) -->
+              <div class="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <button type="button" @click="viewPost(p.slug)" title="Lihat Post" 
+                        class="min-h-[40px] px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 rounded-md flex items-center justify-center gap-1.5 flex-1 active:scale-95 transition-all">
+                  <i class="fas fa-eye text-blue-600"></i> Lihat
+                </button>
+                <button type="button" @click="openEditorCerdas(p)" title="Edit Post" 
+                        class="min-h-[40px] px-3 py-1.5 text-xs font-semibold text-amber-700 bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded-md flex items-center justify-center gap-1.5 flex-1 active:scale-95 transition-all">
+                  <i class="fas fa-pencil-alt text-amber-600"></i> Edit
+                </button>
+                <button type="button" @click="deletePost(p.id)" title="Hapus Post" 
+                        class="min-h-[40px] px-3 py-1.5 text-xs font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 rounded-md flex items-center justify-center gap-1.5 active:scale-95 transition-all">
+                  <i class="fas fa-trash-alt"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </template>
+    </div>
+
+    <!-- Loading & Empty States -->
+    <div x-show="isLoading" class="text-center py-6 text-slate-500 text-sm">
+        <i class="fas fa-spinner fa-spin mr-1"></i> Memuat daftar postingan...
     </div>
     
-    <div x-show="!isLoading && filteredPosts.length === 0" style="text-align:center; padding:40px; color:#999;">
+    <div x-show="!isLoading && filteredPosts.length === 0" class="text-center py-10 text-slate-400 text-sm">
         Belum ada atau tidak ditemukan postingan.
     </div>
 
-    <div x-show="filteredPosts.length > 0" style="display:flex; justify-content:space-between; align-items:center; padding:15px; background:#f8f9fa; border-top:1px solid #eee;">
-        <div style="font-size: 13px; color: #666;">
+    <!-- Pagination Bar Responsif Mobile & Desktop -->
+    <div x-show="filteredPosts.length > 0" class="flex flex-col sm:flex-row justify-between items-center gap-3 p-3.5 bg-slate-50 border-t border-slate-200">
+        <div class="text-xs text-slate-600 text-center sm:text-left">
             Menampilkan <b x-text="filteredPosts.length === 0 ? 0 : ((currentPage - 1) * itemsPerPage) + 1"></b> - 
             <b x-text="Math.min(currentPage * itemsPerPage, filteredPosts.length)"></b> 
             dari <b x-text="filteredPosts.length"></b> artikel
         </div>
         
-        <div style="display:flex; gap: 5px; align-items:center;">
+        <div class="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
             <button @click="if(currentPage > 1) currentPage--" :disabled="currentPage === 1" 
-                    class="btn" style="padding: 4px 12px; font-size: 13px; background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 4px;" 
-                    :style="currentPage === 1 ? 'opacity:0.5; cursor:not-allowed;' : ''">
+                    class="btn min-h-[40px] px-3.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md flex items-center gap-1 text-slate-700 shadow-sm active:scale-95 transition-all" 
+                    :class="currentPage === 1 ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'">
                 <i class="fas fa-chevron-left"></i> Prev
             </button>
             
-            <span style="padding: 0 10px; font-size: 13px; font-weight: bold; color:#444;" x-text="'Halaman ' + currentPage + ' dari ' + totalPages"></span>
+            <span class="px-2 text-xs font-bold text-slate-700" x-text="'Hal ' + currentPage + ' / ' + totalPages"></span>
             
             <button @click="if(currentPage < totalPages) currentPage++" :disabled="currentPage === totalPages" 
-                    class="btn" style="padding: 4px 12px; font-size: 13px; background: #fff; border: 1px solid #ccc; cursor: pointer; border-radius: 4px;" 
-                    :style="currentPage === totalPages ? 'opacity:0.5; cursor:not-allowed;' : ''">
+                    class="btn min-h-[40px] px-3.5 py-1.5 text-xs bg-white border border-slate-300 rounded-md flex items-center gap-1 text-slate-700 shadow-sm active:scale-95 transition-all" 
+                    :class="currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : 'hover:bg-slate-50 cursor-pointer'">
                 Next <i class="fas fa-chevron-right"></i>
             </button>
         </div>
     </div>
-
   </div>
 </div>
 `;

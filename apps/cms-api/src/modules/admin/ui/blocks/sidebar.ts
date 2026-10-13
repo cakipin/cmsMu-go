@@ -3,15 +3,15 @@ export const sidebarBlock = `
 <div x-show="sidebarOpen" class="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-sm lg:hidden transition-opacity duration-300" @click="sidebarOpen = false"></div>
 
 <aside 
-  :class="sidebarOpen ? 'translate-x-0 w-60' : '-translate-x-full w-60 lg:w-[72px] lg:translate-x-0'"
+  :class="sidebarOpen ? 'translate-x-0 w-[280px] sm:w-72' : '-translate-x-full w-[280px] sm:w-72 lg:w-[72px] lg:translate-x-0'"
   class="fixed left-0 top-0 z-50 flex h-screen flex-col overflow-y-hidden overflow-x-hidden bg-gradient-to-b from-[#2b323c] via-[#222730] to-[#1a1e24] border-r border-slate-700/60 duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] lg:static shrink-0 shadow-2xl transition-[width,transform]"
 >
   <!-- SIDEBAR HEADER (Dynamic Brand synced with Settings) -->
-  <div class="flex items-center px-3.5 py-3.5 border-b border-slate-700/40" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
-    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'">
+  <div class="flex items-center px-4 py-3.5 border-b border-slate-700/40" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
+    <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'CMSMu Dashboard'">
       <!-- Logo Container -->
       <template x-if="settings && (settings.site_logo || settings.logo)">
-        <img :src="settings.site_logo || settings.logo" class="w-8 h-8 object-contain rounded-lg shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200" :alt="settings.site_title || 'Logo'">
+        <img :src="settings.site_logo || settings.logo" class="w-8 h-8 object-contain rounded-lg shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200" :alt="settings.site_title || 'CMSMu'">
       </template>
       <template x-if="!settings || (!settings.site_logo && !settings.logo)">
         <div class="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-teal-500 to-sky-600 text-white shadow-md shrink-0 ring-1 ring-white/10 group-hover:scale-105 transition-transform duration-200">
@@ -22,28 +22,28 @@ export const sidebarBlock = `
       <!-- Brand Text -->
       <div x-show="sidebarOpen" class="flex flex-col text-left leading-none transition-opacity duration-200 overflow-hidden">
         <span class="text-sm font-bold tracking-tight text-white flex items-center gap-1.5 truncate">
-          <span x-text="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'" class="truncate"></span>
+          <span x-text="(settings && settings.site_title) ? settings.site_title : 'CMSMu'" class="truncate"></span>
           <span class="text-[9px] font-medium px-1 py-0.5 bg-teal-500/20 text-teal-300 border border-teal-500/30 rounded leading-none shrink-0">CMS</span>
         </span>
-        <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1 truncate max-w-[140px]" x-text="(settings && settings.site_desc) ? settings.site_desc : 'Redaksi Dashboard'"></span>
+        <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1 truncate max-w-[160px]" x-text="(settings && settings.site_desc) ? settings.site_desc : 'Redaksi Dashboard'"></span>
       </div>
     </a>
-    <button class="block lg:hidden text-slate-400 hover:text-white p-1 ml-1 rounded transition-colors" @click.stop="sidebarOpen = false" x-show="sidebarOpen">
-      <i class="fas fa-times text-sm"></i>
+    <button class="block lg:hidden text-slate-400 hover:text-white p-2 rounded-lg hover:bg-slate-700/50 transition-colors" @click.stop="sidebarOpen = false" x-show="sidebarOpen" title="Tutup Menu">
+      <i class="fas fa-times text-base"></i>
     </button>
   </div>
   <!-- SIDEBAR HEADER END -->
 
-  <!-- SIDEBAR NAVIGATION -->
-  <div class="no-scrollbar flex flex-col overflow-y-auto overflow-x-hidden duration-200 flex-1 py-2">
-    <nav class="px-2" :class="!sidebarOpen ? 'lg:px-2' : ''">
+  <!-- SIDEBAR NAVIGATION: pb-8 untuk safe-area navigasi gesture Android/iOS -->
+  <div class="no-scrollbar flex flex-col overflow-y-auto overflow-x-hidden duration-200 flex-1 py-2 pb-8">
+    <nav class="px-2.5" :class="!sidebarOpen ? 'lg:px-2' : ''">
       
       <!-- MENU UTAMA -->
       <div>
         <h3 class="mb-1.5 ml-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-show="sidebarOpen">MENU</h3>
-        <ul class="mb-2 flex flex-col gap-0.5">
+        <ul class="mb-2 flex flex-col gap-1">
           <li class="relative group">
-            <a class="relative flex items-center rounded-lg py-2 text-[13px] font-normal text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
+            <a class="relative flex items-center rounded-xl py-2.5 min-h-[44px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
                :class="[view=='dash'?'bg-[#374151] text-white shadow-sm border-l-2 border-teal-400':'', sidebarOpen ? 'px-3 gap-3' : 'px-0 justify-center w-full']" 
                @click="view='dash'; if(window.innerWidth < 1024) sidebarOpen = false;" title="Dashboard" href="javascript:void(0);">
               <i class="fas fa-tachometer-alt w-5 text-center text-sm transition-colors group-hover:text-teal-400" :class="view=='dash'?'text-teal-400':''"></i> 
@@ -60,18 +60,18 @@ export const sidebarBlock = `
 
       <!-- LOOP MENU GRUP -->
       <template x-for="groupName in ['Content', 'Appearance', 'System', 'Plugins']">
-        <div x-show="(window.adminMenus || []).some(m => m.group === groupName && (!m.role || m.role.includes(userRole) || (userRole === 'superadmin' && m.role.includes('admin'))) && (!m.pluginId || isPluginActive(m.pluginId)))">
+        <div x-show="(window.adminMenus || []).some(m => m.group === groupName && (!m.role || m.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && m.role.includes('admin'))) && (!m.pluginId || isPluginActive(m.pluginId)))">
           <!-- Label Grup Saat Expanded -->
           <h3 class="mb-1.5 ml-2 mt-3 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-text="groupName" x-show="sidebarOpen"></h3>
           <!-- Garis Pemisah Halus Saat Rail Collapsed -->
           <div class="border-t border-slate-700/40 my-2 mx-1 hidden lg:block" x-show="!sidebarOpen"></div>
           
-          <ul class="mb-2 flex flex-col gap-0.5">
+          <ul class="mb-2 flex flex-col gap-1">
             <template x-for="menu in (window.adminMenus || []).filter(m => m.group === groupName)">
-              <template x-if="(!menu.role || menu.role.includes(userRole) || (userRole === 'superadmin' && menu.role.includes('admin'))) && (!menu.pluginId || isPluginActive(menu.pluginId))">
+              <template x-if="(!menu.role || menu.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && menu.role.includes('admin'))) && (!menu.pluginId || isPluginActive(menu.pluginId))">
                 <li class="relative group">
                   <template x-if="!menu.href">
-                    <a class="relative flex items-center rounded-lg py-2 text-[13px] font-normal text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
+                    <a class="relative flex items-center rounded-xl py-2.5 min-h-[44px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
                        :class="[view == menu.view ? 'bg-[#374151] text-white shadow-sm border-l-2 border-teal-400' : '', sidebarOpen ? 'px-3 gap-3' : 'px-0 justify-center w-full']" 
                        @click="view = menu.view; if(menu.action) menu.action(); if(window.innerWidth < 1024) sidebarOpen = false;" 
                        :title="menu.title" href="javascript:void(0);">
@@ -91,7 +91,7 @@ export const sidebarBlock = `
                   </template>
 
                   <template x-if="menu.href">
-                    <a :href="menu.href" class="relative flex items-center rounded-lg py-2 text-[13px] font-normal text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
+                    <a :href="menu.href" class="relative flex items-center rounded-xl py-2.5 min-h-[44px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
                        :class="sidebarOpen ? 'px-3 gap-3' : 'px-0 justify-center w-full'"
                        :title="menu.title">
                       <i :class="menu.icon + ' w-5 text-center text-sm transition-colors group-hover:text-teal-400'"></i> 
@@ -113,10 +113,11 @@ export const sidebarBlock = `
     </nav>
   </div>
 
-  <!-- USER PROFILE STRIP (Bottom Rail / Expanded) -->
-  <div class="border-t border-slate-700/40 p-2.5 bg-black/10">
-    <div class="flex items-center gap-2.5" :class="sidebarOpen ? 'px-2' : 'justify-center'">
-      <div class="h-8 w-8 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/10 shrink-0">
+  <!-- USER PROFILE STRIP (Bottom Rail / Expanded) dengan Safe-Area Navigation Gestures -->
+  <div class="border-t border-slate-700/40 p-2.5 pb-6 lg:pb-2.5 bg-black/20">
+    <div class="flex items-center gap-2.5" :class="sidebarOpen ? 'px-1' : 'justify-center'">
+      <div @click="view='profile'; if(window.innerWidth < 1024) sidebarOpen = false;" 
+           class="h-9 w-9 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/10 shrink-0 cursor-pointer hover:ring-teal-400 transition-all">
         <template x-if="userAvatar">
           <img :src="userAvatar" alt="Avatar" class="h-full w-full object-cover rounded-full">
         </template>
@@ -124,12 +125,15 @@ export const sidebarBlock = `
           <i class="fas fa-user text-xs"></i>
         </template>
       </div>
-      <div x-show="sidebarOpen" class="flex flex-col text-left leading-none overflow-hidden flex-1">
-        <span class="text-xs font-semibold text-white truncate" x-text="userName || 'Administrator'">Administrator</span>
+      <div x-show="sidebarOpen" @click="view='profile'; if(window.innerWidth < 1024) sidebarOpen = false;" 
+           class="flex flex-col text-left leading-none overflow-hidden flex-1 cursor-pointer group">
+        <span class="text-xs font-semibold text-white group-hover:text-teal-300 transition-colors truncate" x-text="userName || 'Administrator'">Administrator</span>
         <span class="text-[10px] text-teal-400 capitalize mt-1" x-text="userRole || 'Admin'">Admin</span>
       </div>
-      <button x-show="sidebarOpen" @click="logout()" class="text-slate-400 hover:text-rose-400 p-1 rounded transition-colors" title="Logout">
-        <i class="fas fa-sign-out-alt text-xs"></i>
+      <button x-show="sidebarOpen" @click="logout()" 
+              class="min-h-[38px] min-w-[38px] flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 active:scale-95 transition-all shrink-0" 
+              title="Logout">
+        <i class="fas fa-sign-out-alt text-sm"></i>
       </button>
     </div>
   </div>

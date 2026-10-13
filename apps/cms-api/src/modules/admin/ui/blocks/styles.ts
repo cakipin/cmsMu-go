@@ -7,10 +7,23 @@ export const adminStyles = `
     --bg: #f0f0f1; 
     --txt: #3c434a; 
     --border: #c3c4c7; 
+    --safe-bottom: max(16px, env(safe-area-inset-bottom, 16px));
   }
   
-  * { box-sizing: border-box; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   body { margin:0; font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--txt); font-size:13px; height:100vh; overflow:hidden; }
+  
+  /* MOBILE SAFE AREA UTILITIES */
+  .safe-bottom-padding { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 24px) !important; }
+  .safe-bottom-margin { margin-bottom: calc(env(safe-area-inset-bottom, 0px) + 16px) !important; }
+  
+  /* RESPONSIVE TABLE WRAPPER */
+  .table-responsive-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
   
   /* LAYOUT UTAMA */
   .app-layout { display:grid; height:100vh; transition: grid-template-columns 0.3s ease; }

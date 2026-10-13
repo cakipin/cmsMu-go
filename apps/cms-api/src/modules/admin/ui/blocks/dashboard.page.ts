@@ -2,7 +2,7 @@ export const dashboardPage = `
 <div x-show="view==='dash'">
   
   <!-- HEADER WELCOME & TOP ACTIONS -->
-  <div class="mb-6 rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+  <div class="mb-5 sm:mb-6 rounded-2xl border border-slate-200/80 bg-white p-5 sm:p-6 shadow-sm border-l-4 border-l-teal-600 relative overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-4">
      <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-teal-50 blur-3xl pointer-events-none"></div>
      
      <div class="relative z-10">
@@ -10,24 +10,24 @@ export const dashboardPage = `
         <p class="text-xs sm:text-sm text-slate-500 font-normal">Sistem berjalan normal. Siap untuk mempublikasikan ide-ide hebat hari ini?</p>
      </div>
 
-     <!-- Top Action Buttons -->
-     <div class="relative z-10 flex items-center gap-2 shrink-0">
-        <button @click="openEditor()" class="inline-flex items-center gap-1.5 rounded-lg bg-teal-600 hover:bg-teal-700 px-3.5 py-2 text-xs font-medium text-white active:scale-95 transition-all shadow-sm">
-            <i class="fas fa-plus text-[10px]"></i>
+     <!-- Top Action Buttons: Full width on mobile, ergonomis 44px+ tap target -->
+     <div class="relative z-10 flex items-center gap-2.5 w-full md:w-auto shrink-0">
+        <button @click="openEditor()" class="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] px-4 py-2.5 min-h-[44px] text-xs font-bold text-white transition-all shadow-sm">
+            <i class="fas fa-plus text-xs"></i>
             <span>Tulis Artikel Baru</span>
         </button>
-        <a href="/" target="_blank" class="inline-flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 px-3.5 py-2 text-xs font-medium text-slate-700 active:scale-95 transition-all shadow-sm">
-            <i class="fas fa-external-link-alt text-[10px] text-slate-400"></i>
-            <span>Lihat Website</span>
+        <a href="/" target="_blank" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] px-3.5 py-2.5 min-h-[44px] text-xs font-semibold text-slate-700 transition-all shadow-sm">
+            <i class="fas fa-external-link-alt text-xs text-slate-400"></i>
+            <span class="hidden sm:inline">Lihat Website</span>
         </a>
      </div>
   </div>
 
   <!-- ALERT BANNER: PENDING PRO SUBSCRIBERS -->
   <template x-if="pendingSubscribers > 0">
-     <div class="mb-6 rounded-2xl border border-amber-300 bg-amber-50/90 p-5 shadow-sm flex items-center justify-between flex-wrap gap-4" x-transition>
+     <div class="mb-5 sm:mb-6 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-sm flex items-center justify-between flex-wrap gap-4" x-transition>
         <div class="flex items-center gap-3">
-           <div class="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+           <div class="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
               <i class="fas fa-gem"></i>
            </div>
            <div>
@@ -35,7 +35,7 @@ export const dashboardPage = `
               <p class="text-xs text-amber-700">Pelanggan baru telah mengirim bukti transfer. Mohon verifikasi pembayaran untuk mengaktifkan akses Pro.</p>
            </div>
         </div>
-        <button @click="view='subscribers'; loadSubscribers()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors shadow-sm flex items-center gap-2">
+        <button @click="view='subscribers'; loadSubscribers()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 min-h-[40px] rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
            <span>Periksa Pembayaran</span>
            <i class="fas fa-arrow-right text-[10px]"></i>
         </button>
@@ -381,19 +381,19 @@ export const dashboardPage = `
       <div class="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 sm:p-7">
          <!-- Header dengan Tab Switcher & Sinkronisasi Filter Periode -->
          <div class="flex items-center justify-between mb-6 flex-wrap gap-4 border-b border-slate-100 pb-4">
-             <div class="flex items-center gap-2">
+             <div class="flex items-center gap-1.5 sm:gap-2 bg-slate-100 p-1 rounded-xl">
                  <!-- Tab 1: Artikel Populer (Default) -->
                  <button 
                      type="button"
                      @click="dashboardTab = 'popular'"
                      :class="dashboardTab === 'popular' 
-                         ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-xs font-bold' 
-                         : 'bg-transparent text-slate-500 hover:text-slate-800 border-transparent font-medium'"
-                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm border flex items-center gap-2 transition-all cursor-pointer">
-                     <span :class="dashboardTab === 'popular' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors">
+                         ? 'bg-white text-teal-700 shadow-xs font-bold' 
+                         : 'bg-transparent text-slate-500 hover:text-slate-800 font-medium'"
+                     class="px-3 py-2 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
+                     <span :class="dashboardTab === 'popular' ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-500'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors shrink-0">
                          <i class="fas fa-fire"></i>
                      </span>
-                     <span x-text="dashboardTab === 'popular' ? ('Artikel Populer (' + (chartPeriod === '7d' ? '7 Hari' : (chartPeriod === 'daily' ? '14 Hari' : (chartPeriod === 'monthly' ? '6 Bulan' : (chartPeriod === 'yearly' ? '5 Tahun' : 'Sepanjang Masa')))) + ')') : 'Artikel Populer'">Artikel Populer</span>
+                     <span class="truncate" x-text="dashboardTab === 'popular' ? ('Populer (' + (chartPeriod === '7d' ? '7H' : (chartPeriod === 'daily' ? '14H' : (chartPeriod === 'monthly' ? '6B' : (chartPeriod === 'yearly' ? '5T' : 'Semua')))) + ')') : 'Populer'">Populer</span>
                  </button>
 
                  <!-- Tab 2: Artikel Terbaru -->
@@ -401,20 +401,20 @@ export const dashboardPage = `
                      type="button"
                      @click="dashboardTab = 'latest'"
                      :class="dashboardTab === 'latest' 
-                         ? 'bg-teal-50 text-teal-700 border-teal-200 shadow-xs font-bold' 
-                         : 'bg-transparent text-slate-500 hover:text-slate-800 border-transparent font-medium'"
-                     class="px-3.5 py-2 rounded-xl text-xs sm:text-sm border flex items-center gap-2 transition-all cursor-pointer">
-                     <span :class="dashboardTab === 'latest' ? 'bg-teal-600 text-white' : 'bg-slate-100 text-slate-400'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors">
+                         ? 'bg-white text-teal-700 shadow-xs font-bold' 
+                         : 'bg-transparent text-slate-500 hover:text-slate-800 font-medium'"
+                     class="px-3 py-2 sm:px-3.5 sm:py-2 rounded-lg text-xs sm:text-sm flex items-center justify-center gap-2 transition-all cursor-pointer">
+                     <span :class="dashboardTab === 'latest' ? 'bg-teal-600 text-white' : 'bg-slate-200 text-slate-500'" class="w-5 h-5 rounded-md flex items-center justify-center text-[10px] transition-colors shrink-0">
                          <i class="fas fa-clock"></i>
                      </span>
-                     <span>Artikel Terbaru</span>
+                     <span class="truncate">Terbaru</span>
                  </button>
              </div>
 
              <!-- Kontrol Kanan: Sinkronisasi Periode & Lihat Semua -->
-             <div class="flex items-center gap-3">
-                 <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1" x-show="dashboardTab === 'popular'">
-                     <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden sm:inline">Periode:</span>
+             <div class="flex items-center justify-between sm:justify-end gap-2.5 w-full md:w-auto pt-1 sm:pt-0">
+                 <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5" x-show="dashboardTab === 'popular'">
+                     <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Periode:</span>
                      <select x-model="chartPeriod" class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
                          <option value="7d">7 Hari Terakhir</option>
                          <option value="daily">Harian (14 Hari)</option>
@@ -425,13 +425,57 @@ export const dashboardPage = `
                  </div>
 
                  <!-- Link Lihat Semua -->
-                 <button type="button" @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1 cursor-pointer">
-                     <span>Lihat Semua Artikel</span>
+                 <button type="button" @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1.5 cursor-pointer py-1.5 px-2">
+                     <span>Semua Artikel</span>
                      <i class="fas fa-arrow-right text-[10px]"></i>
                  </button>
              </div>
          </div>
-         <div class="overflow-x-auto no-scrollbar">
+
+         <!-- VIEW 1: MOBILE LIST VIEW (Zero Horizontal Scroll, Card Style) -->
+         <div class="block md:hidden divide-y divide-slate-100">
+             <template x-for="(post, idx) in (dashboardTab === 'popular' ? popularPosts : latestPosts)" :key="'mob-' + post.id">
+                 <div class="py-3.5 first:pt-0 last:pb-0 flex items-start gap-3">
+                     <!-- Badge Peringkat / Icon -->
+                     <template x-if="dashboardTab === 'popular'">
+                         <span :class="idx === 0 ? 'bg-amber-100 text-amber-800 ring-1 ring-amber-300 font-black' : (idx === 1 ? 'bg-slate-200 text-slate-800 font-bold' : (idx === 2 ? 'bg-orange-100 text-orange-800 font-bold' : 'bg-slate-100 text-slate-600 font-medium'))" 
+                               class="w-6 h-6 rounded-lg text-xs flex items-center justify-center shrink-0 mt-0.5" 
+                               x-text="idx + 1">
+                         </span>
+                     </template>
+                     <template x-if="dashboardTab !== 'popular'">
+                         <div class="w-6 h-6 rounded-lg bg-teal-50 text-teal-600 flex items-center justify-center shrink-0 text-xs mt-0.5">
+                             <i class="fas fa-file-alt text-[10px]"></i>
+                         </div>
+                     </template>
+
+                     <!-- Detail Konten Artikel -->
+                     <div class="min-w-0 flex-1">
+                         <a :href="'/' + post.slug" target="_blank" class="font-bold text-slate-800 text-xs hover:text-teal-600 transition-colors line-clamp-2 leading-snug">
+                             <span x-text="cleanTitle(post.title)"></span>
+                         </a>
+                         
+                         <!-- Metadata Pill Row -->
+                         <div class="flex items-center flex-wrap gap-2 mt-2 text-[11px] text-slate-500">
+                             <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded font-medium text-[10px]" x-text="post.category || 'Uncategorized'"></span>
+                             <span class="font-bold text-teal-700 flex items-center gap-1">
+                                 <i class="fas fa-eye text-[9px] text-teal-500"></i>
+                                 <span x-text="(Number(post.views) || 0).toLocaleString('id-ID') + ' views'"></span>
+                             </span>
+                             <span class="text-slate-400 text-[10px]" x-text="formatDate(post.created_at)"></span>
+                         </div>
+                     </div>
+                 </div>
+             </template>
+             <template x-if="(dashboardTab === 'popular' ? popularPosts : latestPosts).length === 0">
+                 <div class="py-8 text-center text-slate-400 text-xs">
+                     Belum ada artikel yang terbit pada periode ini
+                 </div>
+             </template>
+         </div>
+
+         <!-- VIEW 2: DESKTOP TABLE VIEW (Full Columns) -->
+         <div class="hidden md:block overflow-x-auto no-scrollbar">
              <table class="w-full text-sm text-slate-600 text-left">
                 <thead class="text-xs uppercase bg-slate-50 text-slate-500 border-b border-slate-200">
                    <tr>

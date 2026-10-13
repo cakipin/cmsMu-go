@@ -12,78 +12,82 @@ export const customEditorTemplate = `
             </button>
         </div>
 
-        <div style="display: flex; gap: 4px; align-items: flex-end;">
+        <div class="editor-tab-group">
             <button type="button" @click="setMode('visual')" 
                     class="editor-tab-btn" 
                     :class="{ 'active': editorMode === 'visual' }">
-                <i class="fas fa-eye" style="font-size: 11px;"></i> <span>Visual</span>
+                <i class="fas fa-eye"></i> <span>Visual</span>
             </button>
             <button type="button" @click="setMode('html')" 
                     class="editor-tab-btn" 
                     :class="{ 'active': editorMode === 'html' }">
-                <i class="fas fa-code" style="font-size: 11px;"></i> <span>Text / HTML</span>
+                <i class="fas fa-code"></i> <span>Text / HTML</span>
             </button>
         </div>
     </div>
 
     <!-- Main Editor Box -->
-    <div class="custom-editor-container" style="border: 1px solid #cbd5e1; border-radius: 0 6px 6px 6px; background: #fff; overflow: hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.04);">
+    <div class="custom-editor-container">
         <!-- WP Classic Style Toolbar (Shown in Visual Mode Only) -->
         <div x-show="editorMode === 'visual'" class="editor-toolbar">
             
-            <!-- Format Dropdown (WP Classic Style - Anti Focus Theft) -->
-            <div style="position:relative; display:inline-flex; align-items:center;" @click.outside="formatDropdownOpen = false">
-                <button type="button" 
-                        @mousedown.prevent 
-                        @click="formatDropdownOpen = !formatDropdownOpen" 
-                        class="editor-format-btn" 
+            <!-- Format Select (Native HTML Select - Anti Overflow Clipping, 100% Mobile Touch Safe) -->
+            <div class="editor-select-wrapper">
+                <select class="editor-format-select"
+                        :value="currentBlockFormat"
+                        @focus="saveSelection()"
+                        @mousedown="saveSelection()"
+                        @change="setBlockFormat($event.target.value)"
                         title="Pilih Format Blok Teks">
-                    <span x-text="formatLabels[currentBlockFormat] || 'Paragraph'">Paragraph</span>
-                    <i class="fas fa-chevron-down" style="font-size: 9px; margin-left: 6px; opacity: 0.6;"></i>
-                </button>
-
-                <!-- Format Dropdown Menu -->
-                <div x-show="formatDropdownOpen" x-cloak
-                     style="position:absolute; top:calc(100% + 4px); left:0; z-index:9999; background:#ffffff; border:1px solid #cbd5e1; border-radius:6px; min-width:145px; box-shadow:0 4px 16px rgba(0,0,0,0.12); padding:4px 0;">
-                    <button type="button" @mousedown.prevent @click="setBlockFormat('p')" class="editor-dropdown-item" :class="{'active': currentBlockFormat === 'p'}">Paragraph</button>
-                    <button type="button" @mousedown.prevent @click="setBlockFormat('h2')" class="editor-dropdown-item" :class="{'active': currentBlockFormat === 'h2'}" style="font-size:15px; font-weight:700;">Heading 2</button>
-                    <button type="button" @mousedown.prevent @click="setBlockFormat('h3')" class="editor-dropdown-item" :class="{'active': currentBlockFormat === 'h3'}" style="font-size:14px; font-weight:600;">Heading 3</button>
-                    <button type="button" @mousedown.prevent @click="setBlockFormat('h4')" class="editor-dropdown-item" :class="{'active': currentBlockFormat === 'h4'}" style="font-size:13px; font-weight:600;">Heading 4</button>
-                    <button type="button" @mousedown.prevent @click="setBlockFormat('blockquote')" class="editor-dropdown-item" :class="{'active': currentBlockFormat === 'blockquote'}" style="font-style:italic;">Quote</button>
-                </div>
+                    <option value="p">Paragraph</option>
+                    <option value="h2">Heading 2</option>
+                    <option value="h3">Heading 3</option>
+                    <option value="h4">Heading 4</option>
+                    <option value="blockquote">Quote</option>
+                </select>
+                <i class="fas fa-chevron-down editor-select-icon"></i>
             </div>
             
             <span class="toolbar-divider"></span>
 
-            <button type="button" @mousedown.prevent @click="execCmd('bold')" class="editor-btn" :class="{'active': activeFormats.bold}" title="Tebal (Bold)"><i class="fas fa-bold"></i></button>
-            <button type="button" @mousedown.prevent @click="execCmd('italic')" class="editor-btn" :class="{'active': activeFormats.italic}" title="Miring (Italic)"><i class="fas fa-italic"></i></button>
-            <button type="button" @mousedown.prevent @click="execCmd('underline')" class="editor-btn" :class="{'active': activeFormats.underline}" title="Garis Bawah (Underline)"><i class="fas fa-underline"></i></button>
-            <button type="button" @mousedown.prevent @click="execCmd('strikeThrough')" class="editor-btn" :class="{'active': activeFormats.strikeThrough}" title="Coret (Strikethrough)"><i class="fas fa-strikethrough"></i></button>
+
+            <div class="editor-btn-group">
+                <button type="button" @mousedown.prevent @click="execCmd('bold')" class="editor-btn" :class="{'active': activeFormats.bold}" title="Tebal (Bold)"><i class="fas fa-bold"></i></button>
+                <button type="button" @mousedown.prevent @click="execCmd('italic')" class="editor-btn" :class="{'active': activeFormats.italic}" title="Miring (Italic)"><i class="fas fa-italic"></i></button>
+                <button type="button" @mousedown.prevent @click="execCmd('underline')" class="editor-btn" :class="{'active': activeFormats.underline}" title="Garis Bawah (Underline)"><i class="fas fa-underline"></i></button>
+                <button type="button" @mousedown.prevent @click="execCmd('strikeThrough')" class="editor-btn" :class="{'active': activeFormats.strikeThrough}" title="Coret (Strikethrough)"><i class="fas fa-strikethrough"></i></button>
+            </div>
             
             <span class="toolbar-divider"></span>
             
-            <button type="button" @mousedown.prevent @click="execCmd('insertUnorderedList')" class="editor-btn" :class="{'active': activeFormats.ul}" title="Daftar Poin (Bulleted List)"><i class="fas fa-list-ul"></i></button>
-            <button type="button" @mousedown.prevent @click="execCmd('insertOrderedList')" class="editor-btn" :class="{'active': activeFormats.ol}" title="Daftar Angka (Numbered List)"><i class="fas fa-list-ol"></i></button>
+            <div class="editor-btn-group">
+                <button type="button" @mousedown.prevent @click="execCmd('insertUnorderedList')" class="editor-btn" :class="{'active': activeFormats.ul}" title="Daftar Poin (Bulleted List)"><i class="fas fa-list-ul"></i></button>
+                <button type="button" @mousedown.prevent @click="execCmd('insertOrderedList')" class="editor-btn" :class="{'active': activeFormats.ol}" title="Daftar Angka (Numbered List)"><i class="fas fa-list-ol"></i></button>
+            </div>
             
             <span class="toolbar-divider"></span>
             
             <!-- Alignment Buttons (Direct Block Style) -->
-            <button type="button" @mousedown.prevent @click="setAlignment('left')" class="editor-btn" :class="{'active': activeFormats.alignLeft}" title="Rata Kiri"><i class="fas fa-align-left"></i></button>
-            <button type="button" @mousedown.prevent @click="setAlignment('center')" class="editor-btn" :class="{'active': activeFormats.alignCenter}" title="Rata Tengah"><i class="fas fa-align-center"></i></button>
-            <button type="button" @mousedown.prevent @click="setAlignment('right')" class="editor-btn" :class="{'active': activeFormats.alignRight}" title="Rata Kanan"><i class="fas fa-align-right"></i></button>
-            <button type="button" @mousedown.prevent @click="setAlignment('justify')" class="editor-btn" :class="{'active': activeFormats.alignJustify}" title="Rata Kiri-Kanan (Justify)"><i class="fas fa-align-justify"></i></button>
+            <div class="editor-btn-group">
+                <button type="button" @mousedown.prevent @click="setAlignment('left')" class="editor-btn" :class="{'active': activeFormats.alignLeft}" title="Rata Kiri"><i class="fas fa-align-left"></i></button>
+                <button type="button" @mousedown.prevent @click="setAlignment('center')" class="editor-btn" :class="{'active': activeFormats.alignCenter}" title="Rata Tengah"><i class="fas fa-align-center"></i></button>
+                <button type="button" @mousedown.prevent @click="setAlignment('right')" class="editor-btn" :class="{'active': activeFormats.alignRight}" title="Rata Kanan"><i class="fas fa-align-right"></i></button>
+                <button type="button" @mousedown.prevent @click="setAlignment('justify')" class="editor-btn" :class="{'active': activeFormats.alignJustify}" title="Rata Kiri-Kanan (Justify)"><i class="fas fa-align-justify"></i></button>
+            </div>
 
             <span class="toolbar-divider"></span>
             
             <!-- Link Dropdown Wrapper -->
-            <div style="position:relative; display:inline-flex; align-items:center;">
+            <div style="position:relative; display:inline-flex; align-items:center; flex-shrink:0;">
                 <button type="button" @mousedown.prevent @click="promptLink()" class="editor-btn" :class="{'active': linkModalOpen}" title="Tambah Link"><i class="fas fa-link"></i></button>
                 
-                <!-- Dropdown Popover muncul di bawah tombol -->
+                <!-- Dropdown Popover muncul di bawah tombol (Desktop) / Modal Center Viewport (Mobile) -->
                 <div x-show="linkModalOpen" x-cloak
+                     @touchstart.stop
+                     @click.stop
                      @click.outside="closeLinkModal()"
                      @keydown.escape.window="closeLinkModal()"
-                     style="position:absolute; top:calc(100% + 6px); left:0; z-index:9999; background:#fff; border:1px solid #c3c4c7; border-radius:6px; padding:12px; width:280px; box-shadow:0 4px 15px rgba(0,0,0,0.15);">
+                     class="editor-link-popover">
                     <div style="font-size:12px; font-weight:600; color:#1d2327; margin-bottom:8px;">Masukkan URL Link</div>
                     <input x-model="linkUrl" @keydown.enter.prevent="confirmLinkModal()" type="url" placeholder="https://example.com"
                            style="width:100%; padding:7px 9px; border:1px solid #8c8f94; border-radius:3px; font-size:13px; box-sizing:border-box; outline:none;"
@@ -114,8 +118,9 @@ export const customEditorTemplate = `
              x-ref="editor" 
              contenteditable="true" 
              class="modern-editor-content"
-             style="min-height: 400px; padding: 20px; outline: none; font-size: 16px; line-height: 1.6; color: #2c3338; background: #fff; overflow-y: auto; max-height: 700px;"
+             style="min-height: 380px; padding: 20px; outline: none; font-size: 16px; line-height: 1.6; color: #2c3338; background: #fff; overflow-y: auto; max-height: 700px;"
              @mouseup="checkSelection" 
+             @touchend="checkSelection"
              @keyup="checkSelection(); updateContent()"
              @input="updateContent()"
              @keydown.enter="handleEnter($event)"
@@ -125,14 +130,34 @@ export const customEditorTemplate = `
         <!-- The Raw HTML Source Editor (HTML Mode) -->
         <div x-show="editorMode === 'html'" style="display: none; background: #f8fafc; border-top: 1px solid #c3c4c7;">
             <textarea x-ref="htmlSource"
-                      class="editor-raw-source-input"
                       x-model="form.body"
                       @input="onHtmlInput()"
                       placeholder="Ketik atau tempel kode HTML di sini..."
-                      style="width: 100%; min-height: 420px; padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; color: #0f172a; background: #f8fafc; border: none; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+                      style="width: 100%; min-height: 400px; padding: 16px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 13px; line-height: 1.6; color: #0f172a; background: #f8fafc; border: none; outline: none; resize: vertical; box-sizing: border-box;"></textarea>
+        </div>
+
+        <!-- Editor Status Footer Bar: Word & Character Count + Format Indicator -->
+        <div class="editor-status-bar">
+            <div style="display:flex; align-items:center; gap:12px;">
+                <span class="editor-status-badge">
+                    <i class="fas fa-pen-nib" style="font-size:10px;"></i>
+                    <span x-text="currentWordCount + ' kata'">0 kata</span>
+                </span>
+                <span class="editor-status-muted" x-text="currentCharCount + ' karakter'">0 karakter</span>
+            </div>
+            <div class="editor-status-badge" style="background:#f1f5f9; color:#475569;">
+                <span x-text="'Format: ' + (formatLabels[currentBlockFormat] || 'Paragraph')">Format: Paragraph</span>
+            </div>
         </div>
 
         <style>
+            .custom-editor-container {
+                border: 1px solid #cbd5e1;
+                border-radius: 0 6px 6px 6px;
+                background: #fff;
+                overflow: visible;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+            }
             .editor-top-bar {
                 display: flex !important;
                 justify-content: space-between !important;
@@ -140,6 +165,11 @@ export const customEditorTemplate = `
                 margin-bottom: -1px !important;
                 z-index: 2 !important;
                 width: 100% !important;
+            }
+            .editor-tab-group {
+                display: flex !important;
+                gap: 4px !important;
+                align-items: flex-end !important;
             }
             .editor-tab-btn {
                 display: inline-flex !important;
@@ -199,6 +229,14 @@ export const customEditorTemplate = `
                 background: #f8fafc !important;
                 border-bottom: 1px solid #e2e8f0 !important;
                 box-sizing: border-box !important;
+                position: relative !important;
+                z-index: 10 !important;
+            }
+            .editor-btn-group {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 2px !important;
+                flex-shrink: 0 !important;
             }
             .editor-format-btn {
                 display: inline-flex !important;
@@ -220,6 +258,42 @@ export const customEditorTemplate = `
             .editor-format-btn:hover {
                 background: #f8fafc !important;
                 border-color: #94a3b8 !important;
+            }
+            .editor-select-wrapper {
+                position: relative !important;
+                display: inline-flex !important;
+                align-items: center !important;
+                flex-shrink: 0 !important;
+            }
+            .editor-format-select {
+                appearance: none !important;
+                -webkit-appearance: none !important;
+                -moz-appearance: none !important;
+                height: 28px !important;
+                padding: 2px 28px 2px 10px !important;
+                border: 1px solid #cbd5e1 !important;
+                border-radius: 4px !important;
+                background: #ffffff !important;
+                font-size: 12px !important;
+                font-weight: 500 !important;
+                color: #334155 !important;
+                cursor: pointer !important;
+                outline: none !important;
+                flex-shrink: 0 !important;
+                min-width: 100px !important;
+                max-width: 130px !important;
+                transition: border-color 0.15s ease !important;
+            }
+            .editor-format-select:focus {
+                border-color: #94a3b8 !important;
+            }
+            .editor-select-icon {
+                position: absolute !important;
+                right: 8px !important;
+                pointer-events: none !important;
+                font-size: 9px !important;
+                opacity: 0.6 !important;
+                color: #334155 !important;
             }
             .editor-dropdown-item {
                 display: block !important;
@@ -311,6 +385,44 @@ export const customEditorTemplate = `
                 margin: 0 3px !important;
                 flex-shrink: 0 !important;
             }
+            .editor-link-popover {
+                position: absolute;
+                top: calc(100% + 6px);
+                left: 0;
+                z-index: 9999;
+                background: #fff;
+                border: 1px solid #c3c4c7;
+                border-radius: 6px;
+                padding: 12px;
+                width: 280px;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            }
+            .editor-status-bar {
+                display: flex !important;
+                align-items: center !important;
+                justify-content: space-between !important;
+                padding: 8px 14px !important;
+                background: #f8fafc !important;
+                border-top: 1px solid #e2e8f0 !important;
+                font-size: 12px !important;
+                color: #64748b !important;
+                box-sizing: border-box !important;
+            }
+            .editor-status-badge {
+                display: inline-flex !important;
+                align-items: center !important;
+                gap: 5px !important;
+                padding: 2px 8px !important;
+                border-radius: 4px !important;
+                background: #e0f2fe !important;
+                color: #0369a1 !important;
+                font-weight: 600 !important;
+                font-size: 11px !important;
+            }
+            .editor-status-muted {
+                font-size: 11px !important;
+                color: #94a3b8 !important;
+            }
 
             .modern-editor-content { font-family: inherit; }
             .modern-editor-content h2 { font-size: 1.8em; font-weight: 700; margin-top: 1.2em; margin-bottom: 0.5em; line-height: 1.3; color: #1d2327; }
@@ -344,23 +456,121 @@ export const customEditorTemplate = `
 
             @media (max-width: 640px) {
                 .editor-top-bar {
-                    flex-wrap: wrap !important;
-                    gap: 8px !important;
+                    flex-direction: row !important;
+                    justify-content: space-between !important;
                     align-items: center !important;
+                    gap: 6px !important;
+                    padding-bottom: 2px !important;
+                    min-height: 44px !important;
                 }
                 .editor-media-btn, .editor-tab-btn {
-                    padding: 6px 10px !important;
-                    font-size: 11px !important;
+                    padding: 8px 12px !important;
+                    font-size: 12px !important;
+                    min-height: 42px !important;
+                    display: inline-flex !important;
+                    align-items: center !important;
                 }
-                .editor-toolbar {
-                    padding: 6px !important;
+                .editor-tab-group {
                     gap: 3px !important;
                 }
+                /* Mobile: Toolbar horizontal scroll dengan sticky header */
+                .editor-toolbar {
+                    flex-wrap: nowrap !important;
+                    overflow-x: auto !important;
+                    -webkit-overflow-scrolling: touch !important;
+                    scrollbar-width: none !important;
+                    padding: 6px 8px !important;
+                    gap: 5px !important;
+                    position: sticky !important;
+                    top: 0 !important;
+                    z-index: 30 !important;
+                    background: #f8fafc !important;
+                    border-bottom: 1px solid #cbd5e1 !important;
+                    box-shadow: 0 1px 3px rgba(0,0,0,0.03) !important;
+                }
+                .editor-toolbar::-webkit-scrollbar {
+                    display: none !important;
+                }
+                .editor-format-btn {
+                    height: 36px !important;
+                    padding: 4px 10px !important;
+                    font-size: 13px !important;
+                }
+                .editor-format-select {
+                    height: 36px !important;
+                    font-size: 13px !important;
+                    padding: 4px 28px 4px 10px !important;
+                    min-width: 110px !important;
+                    max-width: 140px !important;
+                }
+                .editor-dropdown-item {
+                    padding: 10px 14px !important;
+                    font-size: 14px !important;
+                }
                 .editor-toolbar button.editor-btn {
-                    width: 32px !important;
-                    height: 32px !important;
-                    min-width: 32px !important;
-                    font-size: 12px !important;
+                    width: 36px !important;
+                    height: 36px !important;
+                    min-width: 36px !important;
+                    max-width: 36px !important;
+                    font-size: 14px !important;
+                    border-radius: 6px !important;
+                }
+                .editor-toolbar button.editor-btn-ai {
+                    width: auto !important;
+                    max-width: none !important;
+                    min-width: 36px !important;
+                    padding: 0 8px !important;
+                }
+                .editor-toolbar button.editor-btn-ai .ai-text {
+                    opacity: 1 !important;
+                    max-width: 54px !important;
+                    font-size: 11px !important;
+                }
+                .editor-toolbar .toolbar-divider {
+                    height: 22px !important;
+                    margin: 0 2px !important;
+                }
+                /* Mobile: Modal Link Popover Fixed di Tengah Layar (Bypass toolbar overflow clipping) */
+                .editor-link-popover {
+                    position: fixed !important;
+                    top: 50% !important;
+                    left: 50% !important;
+                    transform: translate(-50%, -50%) !important;
+                    width: calc(100vw - 32px) !important;
+                    max-width: 340px !important;
+                    box-shadow: 0 10px 35px rgba(0,0,0,0.3) !important;
+                    z-index: 99999 !important;
+                }
+                /* Mobile: Anti scroll-trap pada contenteditable (Scroll alami level halaman) */
+                .modern-editor-content {
+                    padding: 14px 12px !important;
+                    font-size: 15px !important;
+                    min-height: 280px !important;
+                    max-height: none !important;
+                    overflow-y: visible !important;
+                    line-height: 1.65 !important;
+                }
+                .modern-editor-content h2 {
+                    font-size: 1.35em !important;
+                    margin-top: 0.9em !important;
+                    margin-bottom: 0.4em !important;
+                }
+                .modern-editor-content h3 {
+                    font-size: 1.2em !important;
+                    margin-top: 0.8em !important;
+                    margin-bottom: 0.35em !important;
+                }
+                .modern-editor-content h4 {
+                    font-size: 1.1em !important;
+                    margin-top: 0.7em !important;
+                    margin-bottom: 0.3em !important;
+                }
+                .modern-editor-content p {
+                    margin-bottom: 0.8em !important;
+                }
+                .editor-status-bar {
+                    padding: 6px 10px !important;
+                    font-size: 11px !important;
                 }
             }
         </style>
@@ -388,6 +598,8 @@ function customEditorLogic() {
         savedSelection: null,
         linkModalOpen: false,
         linkUrl: '',
+        currentWordCount: 0,
+        currentCharCount: 0,
         
         selectedImage: null,
         _imgToolbar: null,
@@ -423,6 +635,19 @@ function customEditorLogic() {
                 }
                 this.updateActiveFormats();
             }, 100);
+
+            // Listener sinkronisasi seleksi kursor (realtime di mobile touch & desktop)
+            const syncSel = () => {
+                if (this.editorMode !== 'visual') return;
+                const sel = window.getSelection();
+                if (sel && sel.rangeCount > 0 && this.$refs.editor && (this.$refs.editor === sel.anchorNode || this.$refs.editor.contains(sel.anchorNode))) {
+                    try {
+                        this.savedSelection = sel.getRangeAt(0).cloneRange();
+                        this.updateActiveFormats();
+                    } catch (_) {}
+                }
+            };
+            document.addEventListener('selectionchange', syncSel);
             
             // Create image toolbar element (pure DOM, no Alpine dependency)
             if (!this._imgToolbar) {
@@ -439,25 +664,33 @@ function customEditorLogic() {
                 document.body.appendChild(tb);
                 this._imgToolbar = tb;
                 
-                // Button click handlers
+                // Button click & touch handlers
                 const self = this;
                 tb.querySelectorAll('button[data-align]').forEach(btn => {
-                    btn.addEventListener('mousedown', (ev) => {
+                    const handleAlign = (ev) => {
                         ev.preventDefault();
                         ev.stopPropagation();
                         self.alignImage(btn.dataset.align);
                         self._updateToolbarActive(btn.dataset.align);
-                    });
+                    };
+                    btn.addEventListener('mousedown', handleAlign);
+                    btn.addEventListener('touchstart', handleAlign, { passive: false });
                 });
-                tb.querySelector('button[data-action="delete"]')?.addEventListener('mousedown', (ev) => {
-                    ev.preventDefault();
-                    ev.stopPropagation();
-                    self.removeImage();
-                });
+                const delBtn = tb.querySelector('button[data-action="delete"]');
+                if (delBtn) {
+                    const handleDelete = (ev) => {
+                        ev.preventDefault();
+                        ev.stopPropagation();
+                        self.removeImage();
+                    };
+                    delBtn.addEventListener('mousedown', handleDelete);
+                    delBtn.addEventListener('touchstart', handleDelete, { passive: false });
+                }
             }
             
-            // Image click listener — show floating toolbar above the image
-            this.$refs.editor?.addEventListener('click', (e) => {
+            // Image click & touch listener — show floating toolbar above the image
+            const handleImageSelect = (e) => {
+                if (!this.$refs.editor) return;
                 // Remove previous selection highlight
                 this.$refs.editor.querySelectorAll('img.img-selected').forEach(i => i.classList.remove('img-selected'));
                 
@@ -485,16 +718,25 @@ function customEditorLogic() {
                 } else {
                     this._hideToolbar();
                 }
+            };
+            this.$refs.editor?.addEventListener('click', handleImageSelect);
+            this.$refs.editor?.addEventListener('touchend', (e) => {
+                if (e.target && e.target.tagName === 'IMG') {
+                    handleImageSelect(e);
+                }
             });
             
             // Hide toolbar on scroll
             this.$refs.editor?.addEventListener('scroll', () => this._hideToolbar());
-            // Hide on click outside editor
-            document.addEventListener('click', (e) => {
+            window.addEventListener('scroll', () => this._hideToolbar(), { passive: true });
+            // Hide on click/tap outside editor
+            const hideOutside = (e) => {
                 if (this._imgToolbar && !this._imgToolbar.contains(e.target) && !this.$refs.editor?.contains(e.target)) {
                     this._hideToolbar();
                 }
-            });
+            };
+            document.addEventListener('click', hideOutside);
+            document.addEventListener('touchstart', hideOutside, { passive: true });
             
             // Listen for image insertion from Media Manager
             window.addEventListener('insert-media', (e) => {
@@ -827,24 +1069,15 @@ function customEditorLogic() {
             this.isAiTidying = true;
             try {
                 var title = (this.form && this.form.title) ? this.form.title : '';
-                var token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
                 var res = await fetch('/api/ai/tidy-content', {
                     method: 'POST',
-                    headers: { 
-                        'Content-Type': 'application/json',
-                        'Authorization': 'Bearer ' + token
-                    },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ content: raw, title: title })
                 });
 
-                var json;
-                try {
-                    json = await res.json();
-                } catch(pe) {
-                    throw new Error('Server mengembalikan respon tidak valid (Status ' + res.status + ')');
-                }
+                var json = await res.json();
                 if (!res.ok || json.error) {
-                    throw new Error(json.error || 'Gagal memproses perapian dengan AI (Status ' + res.status + ')');
+                    throw new Error(json.error || 'Gagal memproses perapian dengan AI');
                 }
 
                 var tidied = json.data?.content || json.tidied_content || '';
@@ -938,6 +1171,10 @@ function customEditorLogic() {
                 if (this.form) {
                     this.form.body = this.$refs.editor.innerHTML;
                 }
+                const text = (this.$refs.editor.innerText || this.$refs.editor.textContent || '')
+                    .replace(/\\s+/g, ' ').trim();
+                this.currentCharCount = text.length;
+                this.currentWordCount = text ? text.split(/\\s+/).filter(Boolean).length : 0;
             }
             this.autoFillSeo();
         },
@@ -1006,7 +1243,6 @@ function customEditorLogic() {
         setBlockFormat(tag) {
             tag = (tag || 'p').toLowerCase();
             this.formatDropdownOpen = false;
-            if (this.$refs.editor) this.$refs.editor.focus();
             this.restoreSelection();
 
             var success = false;
@@ -1020,8 +1256,9 @@ function customEditorLogic() {
                 } catch (e2) {}
             }
 
-            // Fallback direct DOM transformation
-            if (!success) {
+            // Fallback direct DOM transformation yang menjamin tag berubah & kursor tidak hilang di mobile
+            var currentTag = this.detectCurrentBlock();
+            if (!success || currentTag !== tag) {
                 var sel = window.getSelection();
                 if (sel && sel.anchorNode && this.$refs.editor) {
                     var node = sel.anchorNode;
@@ -1031,13 +1268,21 @@ function customEditorLogic() {
                     }
                     if (node && node !== this.$refs.editor) {
                         var newEl = document.createElement(tag);
-                        newEl.innerHTML = node.innerHTML;
+                        newEl.innerHTML = node.innerHTML || '<br>';
                         if (node.style.textAlign) newEl.style.textAlign = node.style.textAlign;
                         node.parentNode && node.parentNode.replaceChild(newEl, node);
+                        
+                        // Kembalikan seleksi / kursor ke elemen baru
+                        var newRange = document.createRange();
+                        newRange.selectNodeContents(newEl);
+                        newRange.collapse(false);
+                        sel.removeAllRanges();
+                        sel.addRange(newRange);
                     }
                 }
             }
 
+            this.saveSelection();
             this.currentBlockFormat = tag;
             this.updateActiveFormats();
             this.updateContent();
@@ -1045,7 +1290,6 @@ function customEditorLogic() {
         },
 
         setAlignment(align) {
-            if (this.$refs.editor) this.$refs.editor.focus();
             this.restoreSelection();
 
             var sel = window.getSelection();
@@ -1079,13 +1323,13 @@ function customEditorLogic() {
                 }
             }
 
+            this.saveSelection();
             this.updateActiveFormats();
             this.updateContent();
             if (this.$refs.editor) this.$refs.editor.focus();
         },
         
         execCmd(command, value = null) {
-            if (this.$refs.editor) this.$refs.editor.focus();
             this.restoreSelection();
             try {
                 if (command === 'formatBlock') {
@@ -1096,6 +1340,7 @@ function customEditorLogic() {
             } catch (err) {
                 console.warn('[Editor Command Error]', command, err);
             }
+            this.saveSelection();
             this.updateActiveFormats();
             this.updateContent();
             if (this.$refs.editor) this.$refs.editor.focus();
@@ -1119,16 +1364,17 @@ function customEditorLogic() {
         confirmLinkModal() {
             var url = (this.linkUrl || '').trim();
             if (url) {
-                if (this.$refs.editor) this.$refs.editor.focus();
                 this.restoreSelection();
                 if (!/^https?:\\/\\//i.test(url) && !url.startsWith('/') && !url.startsWith('#') && !url.startsWith('mailto:')) {
                     url = 'https://' + url;
                 }
                 document.execCommand('createLink', false, url);
+                this.saveSelection();
                 this.updateContent();
             }
             this.linkModalOpen = false;
             this.linkUrl = '';
+            if (this.$refs.editor) this.$refs.editor.focus();
         },
 
         openMediaManager() {
@@ -1137,6 +1383,74 @@ function customEditorLogic() {
         },
 
         handleEnter(e) {
+            var sel = window.getSelection();
+            if (sel && sel.anchorNode && this.$refs.editor) {
+                var node = sel.anchorNode;
+                if (node.nodeType === 3) node = node.parentNode;
+                while (node && node !== this.$refs.editor && ['h1', 'h2', 'h3', 'h4', 'blockquote'].indexOf(node.tagName.toLowerCase()) === -1) {
+                    node = node.parentNode;
+                }
+
+                // Jika Enter ditekan di dalam Heading atau Blockquote
+                if (node && node !== this.$refs.editor) {
+                    var tag = node.tagName.toLowerCase();
+                    if (['h1', 'h2', 'h3', 'h4', 'blockquote'].indexOf(tag) !== -1) {
+                        var text = (node.textContent || '').trim();
+                        // 1. Kasus Heading / Quote kosong: ubah langsung menjadi paragraf normal
+                        if (!text || text === '') {
+                            e.preventDefault();
+                            var p = document.createElement('p');
+                            p.innerHTML = '<br>';
+                            node.parentNode && node.parentNode.replaceChild(p, node);
+                            var range = document.createRange();
+                            range.setStart(p, 0);
+                            range.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(range);
+                            this.saveSelection();
+                            this.currentBlockFormat = 'p';
+                            this.updateActiveFormats();
+                            this.updateContent();
+                            return;
+                        }
+
+                        // 2. Kasus kursor berada di akhir baris Heading / Quote: buat <p><br></p> baru di bawahnya
+                        var curRange = sel.getRangeAt(0);
+                        var isAtEnd = false;
+                        try {
+                            var testRange = curRange.cloneRange();
+                            testRange.selectNodeContents(node);
+                            testRange.setStart(curRange.endContainer, curRange.endOffset);
+                            var remainingText = testRange.toString().trim();
+                            if (remainingText === '') {
+                                isAtEnd = true;
+                            }
+                        } catch (_) {}
+
+                        if (isAtEnd) {
+                            e.preventDefault();
+                            var newP = document.createElement('p');
+                            newP.innerHTML = '<br>';
+                            if (node.nextSibling) {
+                                node.parentNode.insertBefore(newP, node.nextSibling);
+                            } else {
+                                node.parentNode.appendChild(newP);
+                            }
+                            var r = document.createRange();
+                            r.setStart(newP, 0);
+                            r.collapse(true);
+                            sel.removeAllRanges();
+                            sel.addRange(r);
+                            this.saveSelection();
+                            this.currentBlockFormat = 'p';
+                            this.updateActiveFormats();
+                            this.updateContent();
+                            return;
+                        }
+                    }
+                }
+            }
+
             this.updateContent();
         },
         
@@ -1182,23 +1496,49 @@ function customEditorLogic() {
         saveSelection() {
             const sel = window.getSelection();
             if (sel && sel.rangeCount > 0) {
-                const range = sel.getRangeAt(0);
-                if (this.$refs.editor && this.$refs.editor.contains(range.commonAncestorContainer)) {
-                    this.savedSelection = range.cloneRange();
-                }
+                try {
+                    const range = sel.getRangeAt(0);
+                    if (this.$refs.editor && (this.$refs.editor === range.commonAncestorContainer || this.$refs.editor.contains(range.commonAncestorContainer))) {
+                        this.savedSelection = range.cloneRange();
+                    }
+                } catch (_) {}
             }
         },
         
         restoreSelection() {
-            if (this.savedSelection && this.$refs.editor) {
-                const sel = window.getSelection();
-                if (sel) {
-                    sel.removeAllRanges();
-                    sel.addRange(this.savedSelection);
-                }
-            } else if (this.$refs.editor) {
-                this.$refs.editor.focus();
+            if (!this.$refs.editor) return;
+            this.$refs.editor.focus();
+            const sel = window.getSelection();
+            if (!sel) return;
+
+            // 1. Coba pulihkan savedSelection jika masih terpasang valid di dalam editor
+            if (this.savedSelection) {
+                try {
+                    if (this.$refs.editor === this.savedSelection.commonAncestorContainer || this.$refs.editor.contains(this.savedSelection.commonAncestorContainer)) {
+                        sel.removeAllRanges();
+                        sel.addRange(this.savedSelection);
+                        return;
+                    }
+                } catch (_) {}
             }
+
+            // 2. Jika kursor saat ini sudah berada di dalam editor, gunakan dan simpan
+            if (sel.rangeCount > 0 && sel.anchorNode && (this.$refs.editor === sel.anchorNode || this.$refs.editor.contains(sel.anchorNode))) {
+                try {
+                    this.savedSelection = sel.getRangeAt(0).cloneRange();
+                } catch (_) {}
+                return;
+            }
+
+            // 3. Fallback: tempatkan kursor aktif di akhir dokumen editor
+            try {
+                const range = document.createRange();
+                range.selectNodeContents(this.$refs.editor);
+                range.collapse(false);
+                sel.removeAllRanges();
+                sel.addRange(range);
+                this.savedSelection = range.cloneRange();
+            } catch (_) {}
         }
     };
 }

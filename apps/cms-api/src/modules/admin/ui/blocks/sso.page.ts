@@ -1,5 +1,5 @@
 export const ssoPage = `
-<div x-show="view === 'sso-setup'" class="animate-fade" style="padding-bottom:80px;"
+<div class="animate-fade" style="padding-bottom:80px;"
      x-data="{
         isLoading: false,
         isSaving: false,
@@ -14,6 +14,12 @@ export const ssoPage = `
             sso_enabled: 'false', 
             sso_client_id: '',
             sso_client_secret: ''
+        },
+
+        getToken() {
+            return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || 
+                   (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
+                   (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
         },
 
         get detectedProvider() {
@@ -39,12 +45,6 @@ export const ssoPage = `
                 icon: 'fa-id-card',
                 desc: 'Aplikasi terdaftar pada server SSO Muhammadiyah ID Pusat'
             };
-        },
-
-        getToken() {
-            return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || 
-                   (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
-                   (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
         },
 
         async init() {
@@ -86,41 +86,44 @@ export const ssoPage = `
         }
      }">
 
-    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-        <h2 style="margin:0; font-size:24px; color:#1f2937;">Setup SSO Muhammadiyah ID</h2>
+    <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-5">
+        <div>
+            <h2 class="m-0 text-xl sm:text-2xl font-bold text-slate-800">Setup SSO Muhammadiyah ID</h2>
+            <p class="m-0 mt-0.5 text-xs sm:text-sm text-slate-500">Integrasi login satu pintu DiasMu & SSO Pusat.</p>
+        </div>
         <button @click="saveSettings()" :disabled="isSaving" 
-                style="background:#0d9488; color:white; border:none; padding:10px 20px; border-radius:8px; font-weight:600; cursor:pointer; display:flex; align-items:center; gap:8px;" class="shadow-sm hover:opacity-90 transition-all">
+                class="w-full sm:w-auto bg-teal-600 hover:bg-teal-700 text-white border-0 min-h-[40px] px-5 py-2.5 rounded-xl font-semibold cursor-pointer flex items-center justify-center gap-2 shadow-xs transition-all active:scale-95 text-xs sm:text-sm">
             <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Pengaturan'"></span>
         </button>
     </div>
 
-    <div style="background:white; padding:25px; border:1px solid #e2e8f0; border-radius:12px; max-width:640px; box-shadow:0 1px 3px rgba(0,0,0,0.03);">
-        <p style="color:#64748b; font-size:14px; margin-top:0; margin-bottom:20px; line-height:1.5;">
+    <div class="bg-white p-4 sm:p-6 border border-slate-200 rounded-2xl max-w-2xl shadow-xs">
+        <p class="text-slate-500 text-xs sm:text-sm mt-0 mb-5 leading-relaxed">
             Atur integrasi login menggunakan akun Muhammadiyah ID. Sistem mendukung <strong>dua SSO sekaligus</strong> (DiasMu & SSO Muhammadiyah Pusat) dengan fitur <strong>Auto-Switch deteksi otomatis</strong> dari format Client ID & Secret tanpa perlu memilih dropdown.
         </p>
 
         <!-- INFO CALLBACK URI DUA SSO -->
-        <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:10px; padding:16px; margin-bottom:24px;">
-            <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
-                <i class="fas fa-link" style="color:#0d9488; font-size:15px;"></i>
-                <span style="font-weight:700; font-size:14px; color:#0f172a;">Redirect / Callback URI Universal</span>
+        <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 mb-5">
+            <div class="flex items-center gap-2 mb-1.5">
+                <i class="fas fa-link text-teal-600 text-sm"></i>
+                <span class="font-bold text-xs sm:text-sm text-slate-900">Redirect / Callback URI Universal</span>
             </div>
-            <p style="font-size:12px; color:#64748b; margin:0 0 10px 0; line-height:1.5;">
-                Daftarkan URL Callback ini pada aplikasi OAuth di portal <a href="https://dias.muhammadiyah.or.id" target="_blank" style="color:#0d9488; text-decoration:underline; font-weight:600;">dias.muhammadiyah.or.id</a> maupun <a href="https://sso.muhammadiyah.id" target="_blank" style="color:#2563eb; text-decoration:underline; font-weight:600;">sso.muhammadiyah.id</a>:
+            <p class="text-xs text-slate-500 m-0 mb-3 leading-relaxed">
+                Daftarkan URL Callback ini pada aplikasi OAuth di portal <a href="https://dias.muhammadiyah.or.id" target="_blank" class="text-teal-600 underline font-semibold">dias.muhammadiyah.or.id</a> maupun <a href="https://sso.muhammadiyah.id" target="_blank" class="text-blue-600 underline font-semibold">sso.muhammadiyah.id</a>:
             </p>
-            <div style="display:flex; gap:8px; align-items:center;">
-                <input type="text" readonly :value="callbackUri" style="width:100%; padding:9px 12px; border:1px solid #cbd5e1; border-radius:6px; font-family:monospace; font-size:13px; background:#ffffff; color:#0f172a;" onclick="this.select()">
-                <button type="button" @click="copyCallback()" style="background:#0d9488; color:#fff; border:none; padding:9px 16px; border-radius:6px; font-size:13px; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:6px; white-space:nowrap;">
+            <div class="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center">
+                <input type="text" readonly :value="callbackUri" class="w-full py-2 px-3 border border-slate-300 rounded-lg font-mono text-xs bg-white text-slate-900" onclick="this.select()">
+                <button type="button" @click="copyCallback()" class="bg-teal-600 hover:bg-teal-700 text-white border-0 min-h-[38px] px-4 py-2 rounded-lg text-xs font-semibold cursor-pointer inline-flex items-center justify-center gap-1.5 whitespace-nowrap active:scale-95 transition-all shrink-0">
                     <i class="fas" :class="copied ? 'fa-check' : 'fa-copy'"></i>
                     <span x-text="copied ? 'Tersalin!' : 'Salin'"></span>
                 </button>
             </div>
         </div>
 
-        <div style="margin-bottom:20px;">
-            <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#334155;">Aktifkan SSO?</label>
-            <select x-model="settings.sso_enabled" style="width:100%; padding:10px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; background:white; font-size:14px;">
+        <div class="mb-5">
+            <label class="block text-xs font-bold mb-1.5 text-slate-700">Aktifkan SSO?</label>
+            <select x-model="settings.sso_enabled" class="w-full p-2.5 border border-slate-300 rounded-xl bg-white text-xs sm:text-sm outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500">
                 <option value="false">Tidak Aktif</option>
                 <option value="true">Aktif</option>
             </select>

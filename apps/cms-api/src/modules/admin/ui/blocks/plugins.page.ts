@@ -1,26 +1,23 @@
 export const pluginsPage = `
 <div x-show="view === 'plugins'" class="space-y-6">
-  <!-- Header Page -->
-  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+  <!-- Header Page Responsif -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
     <div>
       <div class="flex items-center gap-3">
-        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-lg">
+        <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-lg shrink-0">
           <i class="fas fa-puzzle-piece"></i>
         </div>
         <div>
-          <h2 class="text-xl font-bold text-slate-800 tracking-tight">Kelola Plugin & Ekstensi</h2>
+          <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight m-0">Kelola Plugin & Ekstensi</h2>
           <p class="text-xs text-slate-500 mt-0.5">Aktifkan, nonaktifkan, atau kelola plugin sistem Core CMSMu.</p>
         </div>
       </div>
     </div>
-    <div class="flex items-center gap-2 sm:gap-3">
-      <button @click="loadPlugins()" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">
+    <div class="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+      <button @click="loadPlugins()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors active:scale-95">
         <i class="fas fa-sync-alt"></i> Segarkan
       </button>
-      <button @click="showUploadPluginModal = true; uploadPluginTab = 'file';" class="flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors">
-        <i class="fas fa-cloud-upload-alt"></i> Unggah Plugin
-      </button>
-      <button @click="showAddPluginModal = true" class="flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors">
+      <button @click="showAddPluginModal = true" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors active:scale-95">
         <i class="fas fa-plus"></i> Tambah Plugin
       </button>
     </div>
@@ -38,7 +35,7 @@ export const pluginsPage = `
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold"
                    :class="p.active ? 'bg-teal-50 text-teal-600' : 'bg-slate-100 text-slate-400'">
-                <i class="fas" :class="p.id === 'aggregator' ? 'fa-satellite-dish' : (p.id === 'newsroom' ? 'fa-newspaper' : (p.id === 'sso-muhammadiyah' ? 'fa-shield-alt' : (p.id === 'emagazine' ? 'fa-book-open' : (p.id === 'ota' ? 'fa-cloud-upload-alt' : 'fa-plug'))))"></i>
+                <i class="fas" :class="p.id === 'ota' ? 'fa-cloud-upload-alt' : 'fa-plug'"></i>
               </div>
               <div>
                 <h3 class="text-sm font-bold text-slate-800 tracking-tight" x-text="p.name"></h3>
@@ -165,98 +162,6 @@ export const pluginsPage = `
                   class="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors">Simpan Plugin</button>
         </div>
       </form>
-    </div>
-  </div>
-
-  <!-- Modal Unggah & Impor Plugin (SOP 16 - In-System Modal) -->
-  <div x-show="showUploadPluginModal" x-transition.opacity.duration.200ms
-       class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-sm p-4" style="display: none;">
-    <div @click.outside="showUploadPluginModal = false" class="bg-white rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-slate-100 transform transition-all">
-      <div class="flex items-center justify-between pb-4 border-b border-slate-100 mb-5">
-        <div class="flex items-center gap-3">
-          <div class="w-9 h-9 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold">
-            <i class="fas fa-cloud-upload-alt"></i>
-          </div>
-          <div>
-            <h3 class="text-base font-bold text-slate-800">Unggah & Impor Plugin</h3>
-            <p class="text-[11px] text-slate-400">Instal bundle ekstensi (.zip / .json) atau impor via URL/Git</p>
-          </div>
-        </div>
-        <button @click="showUploadPluginModal = false" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100">
-          <i class="fas fa-times"></i>
-        </button>
-      </div>
-
-      <!-- Navigation Tabs -->
-      <div class="flex items-center gap-2 p-1 bg-slate-100 rounded-xl mb-5 text-xs font-semibold">
-        <button type="button" @click="uploadPluginTab = 'file'"
-                class="flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5"
-                :class="uploadPluginTab === 'file' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-          <i class="fas fa-file-archive"></i> Unggah File (.zip / .json)
-        </button>
-        <button type="button" @click="uploadPluginTab = 'url'"
-                class="flex-1 py-1.5 rounded-lg transition-all flex items-center justify-center gap-1.5"
-                :class="uploadPluginTab === 'url' ? 'bg-white text-teal-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'">
-          <i class="fas fa-link"></i> Impor via URL / Git
-        </button>
-      </div>
-
-      <!-- Tab 1: File Upload Form -->
-      <div x-show="uploadPluginTab === 'file'" class="space-y-4">
-        <div class="border-2 border-dashed border-slate-200 hover:border-teal-400 rounded-2xl p-6 text-center transition-colors bg-slate-50/50">
-          <div class="w-12 h-12 rounded-xl bg-white shadow-sm text-teal-600 flex items-center justify-center mx-auto mb-3 text-lg border border-slate-100">
-            <i class="fas fa-cloud-arrow-up"></i>
-          </div>
-          <p class="text-xs font-semibold text-slate-700 mb-1">Pilih bundle file plugin</p>
-          <p class="text-[11px] text-slate-400 mb-3">Mendukung arsip bundle .zip atau file manifest plugin.json</p>
-          <input type="file" id="pluginFileInput" accept=".zip,.json" @change="handlePluginFileSelect($event)" class="hidden">
-          <button type="button" @click="document.getElementById('pluginFileInput').click()"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors inline-flex items-center gap-2">
-            <i class="fas fa-folder-open"></i> Cari Berkas
-          </button>
-          <div x-show="selectedPluginFile" class="mt-3 p-2.5 rounded-xl bg-white border border-teal-200 text-left flex items-center justify-between">
-            <div class="flex items-center gap-2 text-xs truncate">
-              <i class="fas fa-file-code text-teal-600"></i>
-              <span class="font-medium text-slate-700 truncate" x-text="selectedPluginFile?.name"></span>
-              <span class="text-[10px] text-slate-400" x-text="'(' + Math.round((selectedPluginFile?.size || 0)/1024) + ' KB)'"></span>
-            </div>
-            <button type="button" @click="selectedPluginFile = null" class="text-slate-400 hover:text-rose-500 p-1">
-              <i class="fas fa-times text-xs"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-          <button type="button" @click="showUploadPluginModal = false"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
-          <button type="button" @click="submitPluginUpload()" :disabled="!selectedPluginFile || isUploadingPlugin"
-                  class="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            <i x-show="isUploadingPlugin" class="fas fa-spinner fa-spin"></i>
-            <span x-text="isUploadingPlugin ? 'Memproses Instalasi...' : 'Pasang Plugin Sekarang'"></span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Tab 2: URL / Git Import Form -->
-      <div x-show="uploadPluginTab === 'url'" class="space-y-4">
-        <div>
-          <label class="block text-xs font-bold text-slate-700 mb-1.5">URL Sumber Manifest / Repositori</label>
-          <input type="url" x-model="pluginImportUrl" placeholder="https://raw.githubusercontent.com/.../plugin.json"
-                 class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 font-mono">
-          <p class="text-[11px] text-slate-400 mt-1">Masukkan URL langsung file manifest JSON atau raw GitHub URL.</p>
-        </div>
-
-        <div class="flex justify-end gap-3 pt-3 border-t border-slate-100">
-          <button type="button" @click="showUploadPluginModal = false"
-                  class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors">Batal</button>
-          <button type="button" @click="submitPluginImportUrl()" :disabled="!pluginImportUrl || isUploadingPlugin"
-                  class="px-5 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-sm transition-colors flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed">
-            <i x-show="isUploadingPlugin" class="fas fa-spinner fa-spin"></i>
-            <span x-text="isUploadingPlugin ? 'Mengimpor Plugin...' : 'Impor & Pasang'"></span>
-          </button>
-        </div>
-      </div>
-
     </div>
   </div>
 </div>

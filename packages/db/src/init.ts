@@ -2,7 +2,7 @@ import type { D1Database } from "@cloudflare/workers-types";
 import { runAutoMigration } from "./migration-runner";
 
 export const updateSchema = async (db: D1Database) => {
-  const logs = [];
+  const logs: string[] = [];
 
   try {
     // 1. TABEL OPTIONS

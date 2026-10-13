@@ -50,7 +50,7 @@ export function renderAdmin(data: any): string {
         <html lang="id">
         <head>
             <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
             <title>Portal Redaksi Dashboard</title>
             <link rel="icon" id="admin-favicon" href="/favicon.svg">
             <script>
@@ -419,16 +419,16 @@ export function renderAdmin(data: any): string {
                         <!-- ===== Header / Topbar Start ===== -->
                         <header class="sticky top-0 z-40 flex w-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.05)] border-b border-slate-100">
                             <div class="flex flex-grow items-center justify-between px-4 py-2 md:px-6 2xl:px-8">
-                                <div class="flex items-center gap-3">
-                                    <!-- Sidebar Window Show/Hide Toggle BTN -->
-                                    <button @click.stop="sidebarOpen = !sidebarOpen" class="rounded-lg p-1.5 text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500/20" title="Buka / Tutup Sidebar">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="sidebarOpen ? 'text-teal-600' : 'text-slate-500'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                                <div class="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                                    <!-- Sidebar Window Show/Hide Toggle BTN (44x44 Touch Target) -->
+                                    <button @click.stop="sidebarOpen = !sidebarOpen" class="w-10 h-10 flex items-center justify-center rounded-xl text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500/20 shrink-0" title="Buka / Tutup Sidebar" aria-label="Toggle Navigation">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 transition-colors duration-200" :class="sidebarOpen ? 'text-teal-600' : 'text-slate-600'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                             <rect width="18" height="18" x="3" y="3" rx="2.5" />
                                             <path d="M9 3v18" />
                                         </svg>
                                     </button>
                                     
-                                    <h3 x-text="getPageTitle()" class="text-lg font-bold text-slate-800 hidden sm:block tracking-tight"></h3>
+                                    <h3 x-text="getPageTitle()" class="text-base sm:text-lg font-bold text-slate-800 tracking-tight truncate max-w-[160px] sm:max-w-none"></h3>
                                 </div>
 
                                 <div x-data="{
@@ -501,7 +501,7 @@ export function renderAdmin(data: any): string {
 
                                     <!-- Bell Icon -->
                                     <div class="relative">
-                                        <button @click="notifOpen = !notifOpen" @click.outside="notifOpen = false" class="relative flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        <button @click="notifOpen = !notifOpen" @click.outside="notifOpen = false" class="relative flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
                                             <span x-show="unreadCount > 0" class="absolute -top-1 -right-1 z-10 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 flex items-center justify-center text-[10px] text-white font-black shadow-sm" x-text="unreadCount">
                                             </span>
                                             <i class="far fa-bell text-sm"></i>

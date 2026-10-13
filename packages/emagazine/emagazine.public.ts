@@ -14,7 +14,7 @@ export async function handleBerlanggananPage(c: Context) {
     try {
         const db = (c.env as any).DB;
         const lang = c.req.path.startsWith('/en') ? 'en' : (c.req.path.startsWith('/ar') ? 'ar' : 'id');
-        const { settings, menus } = await getGlobalData(db, lang as any, c.env);
+        const { settings, menus } = await getGlobalData(c.env);
         const { Renderer } = await getRenderer(db);
         const plansConfig = await getPlansConfig(db);
         
@@ -37,7 +37,7 @@ export async function handleMajalahCatalog(c: Context) {
 
         const db = (c.env as any).DB;
         const lang = c.req.path.startsWith('/en') ? 'en' : (c.req.path.startsWith('/ar') ? 'ar' : 'id');
-        const { settings, menus } = await getGlobalData(db, lang as any, c.env);
+        const { settings, menus } = await getGlobalData(c.env);
         const { Renderer } = await getRenderer(db);
         
         const allList = await getDb(db).select({
@@ -109,9 +109,10 @@ export async function handleMajalahCatalog(c: Context) {
 export async function handleMajalahDetail(c: Context) {
     try {
         const slug = c.req.param('slug');
+        if (!slug) return c.notFound();
         const db = (c.env as any).DB;
         const lang = c.req.path.startsWith('/en') ? 'en' : (c.req.path.startsWith('/ar') ? 'ar' : 'id');
-        const { settings, menus } = await getGlobalData(db, lang as any, c.env);
+        const { settings, menus } = await getGlobalData(c.env);
         const { Renderer } = await getRenderer(db);
 
         const mag = await getDb(db).select()

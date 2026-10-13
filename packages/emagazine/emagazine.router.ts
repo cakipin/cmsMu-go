@@ -96,7 +96,7 @@ async function checkSubscriberOrAdmin(c: any): Promise<boolean> {
     const db = getDb(c.env.DB);
 
     // Kumpulkan kondisi identifikasi user (ID, username, email)
-    const userConditions = [];
+    const userConditions: any[] = [];
     if (payload.id && !isNaN(Number(payload.id))) userConditions.push(eq(users.id, Number(payload.id)));
     if (payload.username) userConditions.push(eq(users.username, String(payload.username)));
     if (payload.email) userConditions.push(eq(users.email, String(payload.email)));
@@ -124,7 +124,7 @@ async function checkSubscriberOrAdmin(c: any): Promise<boolean> {
 
     // 2. Fallback: Cek tabel subscriptions jika ada record approved yang belum expired
     const targetUserId = user ? user.id : (payload.id && !isNaN(Number(payload.id)) ? Number(payload.id) : null);
-    const subConditions = [];
+    const subConditions: any[] = [];
     if (targetUserId) subConditions.push(eq(subscriptions.userId, targetUserId));
     if (user && user.email) subConditions.push(eq(subscriptions.email, user.email));
     if (payload.email) subConditions.push(eq(subscriptions.email, String(payload.email)));
