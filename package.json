@@ -25,7 +25,6 @@
     "lint": "eslint .",
     "generate-types": "wrangler types",
     "predeploy": "node scripts/verify-deploy-sync.mjs",
-    "deploy:staging-newsroom": "node scripts/deploy-staging-newsroom.mjs",
     "deploy": "pnpm run deploy:web",
     "deploy:api": "turbo run deploy --filter=@cmsmu/cms-api",
     "deploy:web": "turbo run deploy --filter=@cmsmu/web",
@@ -40,9 +39,6 @@
     "db:generate": "drizzle-kit generate"
   },
   "dependencies": {
-    "@cmsmu/plugin-agens": "workspace:*",
-    "@cmsmu/plugin-emagazine": "workspace:*",
-    "@cmsmu/plugin-subscribers": "workspace:*",
     "@cloudflare/workers-types": "^5.20260801.1",
     "aws4fetch": "^1.0.20",
     "drizzle-orm": "^0.45.2",

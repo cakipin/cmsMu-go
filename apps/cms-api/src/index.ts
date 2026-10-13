@@ -25,23 +25,6 @@ import notificationsRouter from "./modules/users/notifications.router"; // Notif
 import { commentsRouter } from "./modules/comments/comments.router";
 import { otaRouter } from "./addons/ota/router";
 import { aiRouter } from "./modules/ai/ai.router";
-import agensRouter from "@cmsmu/plugin-agens";
-import {
-  subscribersRouter,
-  publicSubscribersRouter,
-} from "@cmsmu/plugin-subscribers";
-import {
-  emagazineRouter,
-  publicEmagazineRouter,
-} from "@cmsmu/plugin-emagazine";
-import { publicAgensRouter } from "@cmsmu/plugin-agens/public";
-import {
-  publicBerlanggananRouter,
-  publicMajalahRouter,
-} from "@cmsmu/plugin-emagazine/public";
-
-// ADDONS
-// (All addons have been removed)
 
 // AUTH MIDDLEWARE
 import { authMiddleware, adminOnlyMiddleware } from "./middleware/auth";
@@ -183,11 +166,6 @@ app.route("/api/posts", postsRouter);
 app.route("/api/pages", pagesRouter); // Route API Pages
 app.route("/api/theme-editor", themeEditorRouter); // Endpoint Editor Puck
 app.route("/api/ai", aiRouter);
-app.route("/api/agens", agensRouter);
-app.route("/api/subscribers", subscribersRouter);
-app.route("/api/public/subscribers", publicSubscribersRouter);
-app.route("/api/emagazine", emagazineRouter);
-app.route("/api/public/emagazine", publicEmagazineRouter);
 
 // Catch-all admin view (setelah spesifik routes)
 app.get("/admin/:view", c =>
@@ -221,19 +199,6 @@ app.get("/media/*", async c => {
 // WordPress Media Proxy & Clean Uploads Router (/uploads/* and /wp-content/uploads/*)
 app.route("/uploads", uploadsRouter);
 app.route("/wp-content/uploads", uploadsRouter);
-
-// Public Plugin Routes (ID, EN, AR)
-app.route("/agen", publicAgensRouter);
-app.route("/en/agen", publicAgensRouter);
-app.route("/ar/agen", publicAgensRouter);
-
-app.route("/berlangganan", publicBerlanggananRouter);
-app.route("/en/berlangganan", publicBerlanggananRouter);
-app.route("/ar/berlangganan", publicBerlanggananRouter);
-
-app.route("/majalah", publicMajalahRouter);
-app.route("/en/majalah", publicMajalahRouter);
-app.route("/ar/majalah", publicMajalahRouter);
 
 app.route("/", publicRouter);
 

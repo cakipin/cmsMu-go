@@ -23,25 +23,6 @@ export const dashboardPage = `
      </div>
   </div>
 
-  <!-- ALERT BANNER: PENDING PRO SUBSCRIBERS -->
-  <template x-if="pendingSubscribers > 0">
-     <div class="mb-5 sm:mb-6 rounded-2xl border border-amber-300 bg-amber-50/90 p-4 sm:p-5 shadow-sm flex items-center justify-between flex-wrap gap-4" x-transition>
-        <div class="flex items-center gap-3">
-           <div class="h-10 w-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold text-lg shadow-sm shrink-0">
-              <i class="fas fa-gem"></i>
-           </div>
-           <div>
-              <h4 class="text-sm font-bold text-amber-900 mb-0.5">Ada <span x-text="pendingSubscribers"></span> Pendaftaran Pelanggan Pro Menunggu Verifikasi</h4>
-              <p class="text-xs text-amber-700">Pelanggan baru telah mengirim bukti transfer. Mohon verifikasi pembayaran untuk mengaktifkan akses Pro.</p>
-           </div>
-        </div>
-        <button @click="view='subscribers'; loadSubscribers()" class="w-full sm:w-auto bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold px-4 py-2.5 min-h-[40px] rounded-xl transition-colors shadow-sm flex items-center justify-center gap-2">
-           <span>Periksa Pembayaran</span>
-           <i class="fas fa-arrow-right text-[10px]"></i>
-        </button>
-     </div>
-  </template>
-
   <!-- METRIC CARDS TITLE -->
   <div class="mb-3 flex items-center justify-between">
       <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">

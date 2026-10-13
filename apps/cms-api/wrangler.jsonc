@@ -8,19 +8,19 @@
     {
       "binding": "DB",
       "database_name": "cmsmu-db",
-      "database_id": "cf808b94-8328-478d-b5db-f0ad5a01be44"
+      "database_id": "00000000-0000-0000-0000-000000000000"
     }
   ],
   "r2_buckets": [
     {
       "binding": "BUCKET",
-      "bucket_name": "labmu-cms-dev"
+      "bucket_name": "cmsmu-media"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "SESSION",
-      "id": "72fcc89c00b0401283439ff7f50f912e"
+      "id": "00000000000000000000000000000001"
     }
   ]
 }

@@ -14,19 +14,17 @@
     "on-demand-post-fetching",
     "r2-multi-adapter",
     "turborepo-monorepo",
-    "image-cropper-wysiwyg"
+    "image-cropper-wysiwyg",
+    "mobile-responsive-admin"
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",
-    "ota",
-    "agens",
-    "emagazine",
-    "subscribers"
+    "ota"
   ],
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",
-  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.6.zip",
+  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.7.zip",
   "updatedComponents": [
     {
       "name": "Image Cropper Module & Modal WYSIWYG",

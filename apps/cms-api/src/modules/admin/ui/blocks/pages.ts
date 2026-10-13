@@ -1,4 +1,3 @@
-import { agensPage } from "./agens.page";
 import { postsPage } from "./posts.page";
 import { editorPage } from "./editor.page";
 import { mediaPage } from "./media.page";
@@ -9,7 +8,6 @@ import { staticPage } from "./static.page";
 import { pluginsPage } from "./plugins.page";
 
 export const pagesBlock = `
-    ${agensPage}
     ${postsPage}
     ${staticPage}     
     ${editorPage} 

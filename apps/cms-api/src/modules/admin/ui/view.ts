@@ -19,9 +19,6 @@ import { loginPage } from "./pages/login.page";
 import { commentsPage } from "./blocks/comments.page";
 import { profilePage } from "./blocks/profile.page";
 
-import { subscribersPage } from "./blocks/subscribers.page";
-import { subscribersLogic } from "./blocks/subscribers.logic";
-import { emagazinePage } from "./blocks/emagazine.page";
 import { seoPage } from "./blocks/seo.page";
 import { CORE_VERSION } from "../../../addons/ota/services/ota.service";
 
@@ -589,8 +586,6 @@ export function renderAdmin(data: any): string {
                         <main class="flex-grow pb-10">
                             <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-8">
                                 ${dashboardPage}
-                                <template x-if="view === 'subscribers'"><div class="exclusive-wrapper">${subscribersPage}</div></template>
-                                <template x-if="view === 'emagazine'"><div class="exclusive-wrapper">${emagazinePage}</div></template>
                                 ${pagesBlock}
                                 <template x-if="view === 'menus'"><div class="exclusive-wrapper">${menusPage}</div></template>
                                 <template x-if="view === 'profile'"><div class="exclusive-wrapper">${profilePage}</div></template>

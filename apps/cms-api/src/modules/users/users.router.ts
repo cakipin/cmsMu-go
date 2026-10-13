@@ -1,9 +1,6 @@
 import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
-import {
-  users as usersTable,
-  subscriptions as subscriptionsTable,
-} from "@cmsmu/db";
+import { users as usersTable } from "@cmsmu/db";
 import { eq, or, desc, and, sql } from "drizzle-orm";
 import { sha256, generateUserToken, getJwtSecret } from "./auth.helper";
 import { adminOnlyMiddleware } from "../../middleware/auth";
@@ -81,27 +78,6 @@ usersRouter.post("/", adminOnlyMiddleware, async c => {
       .run();
 
     if (res.success) {
-      if (role === "subscriber_pro") {
-        const createdUser = await db
-          .select({ id: usersTable.id })
-          .from(usersTable)
-          .where(eq(usersTable.username, username))
-          .get();
-        if (createdUser) {
-          await db
-            .insert(subscriptionsTable)
-            .values({
-              userId: createdUser.id,
-              email: email || "",
-              plan: subscription_plan || "1_bulan",
-              status: "approved",
-              notes: "Ditetapkan dari Manajemen User",
-              expiresAt: subscription_expires_at || null,
-            })
-            .run()
-            .catch(() => {});
-        }
-      }
       return c.json({ success: true, message: "User berhasil dibuat" });
     } else {
       return c.json({ error: "Gagal membuat user" }, 500);
@@ -147,54 +123,6 @@ usersRouter.put("/:id", adminOnlyMiddleware, async c => {
       .run();
 
     if (res.success) {
-      if (role === "subscriber_pro") {
-        const existingSub = await db
-          .select({ id: subscriptionsTable.id })
-          .from(subscriptionsTable)
-          .where(eq(subscriptionsTable.userId, id))
-          .get();
-        if (!existingSub) {
-          await db
-            .insert(subscriptionsTable)
-            .values({
-              userId: id,
-              email: email || "",
-              plan: subscription_plan || "1_bulan",
-              status: "approved",
-              notes: "Ditetapkan dari Manajemen User",
-              expiresAt: subscription_expires_at || null,
-            })
-            .run()
-            .catch(() => {});
-        } else {
-          await db
-            .update(subscriptionsTable)
-            .set({
-              status: "approved",
-              plan: subscription_plan || "1_bulan",
-              expiresAt: subscription_expires_at || null,
-              updatedAt: sql`CURRENT_TIMESTAMP`,
-            })
-            .where(eq(subscriptionsTable.userId, id))
-            .run()
-            .catch(() => {});
-        }
-      } else if (role === "subscriber") {
-        await db
-          .update(subscriptionsTable)
-          .set({
-            status: "expired",
-            updatedAt: sql`CURRENT_TIMESTAMP`,
-          })
-          .where(
-            and(
-              eq(subscriptionsTable.userId, id),
-              eq(subscriptionsTable.status, "approved")
-            )
-          )
-          .run()
-          .catch(() => {});
-      }
       return c.json({ success: true });
     } else {
       return c.json({ error: "Gagal update user" }, 500);

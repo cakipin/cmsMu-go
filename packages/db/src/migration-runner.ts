@@ -65,32 +65,8 @@ export const MIGRATIONS: MigrationStep[] = [
         )
         .run();
 
-      // Aggregator & Curation Queue
-      await db
-        .prepare(
-          `CREATE TABLE IF NOT EXISTS media_sources (id TEXT PRIMARY KEY, name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE, base_url TEXT NOT NULL, feed_url TEXT, feed_type TEXT DEFAULT 'wp_api', region_code TEXT, website_category TEXT DEFAULT 'Berita', default_category TEXT DEFAULT 'Berita Daerah', trust_score INTEGER DEFAULT 100, is_active INTEGER DEFAULT 1, auto_sync INTEGER DEFAULT 1, sync_interval INTEGER DEFAULT 15, auto_publish INTEGER DEFAULT 0, description TEXT, last_fetched_at DATETIME, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`
-        )
-        .run();
-      await db
-        .prepare(
-          `CREATE TABLE IF NOT EXISTS curation_queue (id TEXT PRIMARY KEY, source_id TEXT NOT NULL, raw_title TEXT NOT NULL, raw_content_html TEXT NOT NULL, raw_url TEXT NOT NULL UNIQUE, raw_published_at DATETIME, raw_image TEXT, raw_description TEXT, default_category TEXT DEFAULT 'Berita Daerah', status TEXT DEFAULT 'pending', created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`
-        )
-        .run();
-
-      // Default Plugins Seeding
+      // Default Plugins Seeding (SSO & OTA)
       const defaultPlugins = [
-        {
-          id: "aggregator",
-          name: "Sumber Agregator Berita",
-          desc: "Otomasi agregasi berita dari jaringan media Muhammadiyah & Aisyiyah",
-          ver: "1.0.0",
-        },
-        {
-          id: "newsroom",
-          name: "Meja Kurasi Redaksi",
-          desc: "Alur kerja kurasi dan penerbitan satu klik dari antrean agregator ke berita CMS",
-          ver: "1.0.0",
-        },
         {
           id: "sso-muhammadiyah",
           name: "SSO Muhammadiyah ID",
@@ -98,9 +74,9 @@ export const MIGRATIONS: MigrationStep[] = [
           ver: "1.0.0",
         },
         {
-          id: "emagazine",
-          name: "e-Magazine & Publikasi Digital",
-          desc: "Katalog majalah, buletin, dan dokumen digital interaktif",
+          id: "ota",
+          name: "Over-The-Air Update Engine",
+          desc: "Distribusi pembaruan sistem dan patch runtime mandiri",
           ver: "1.0.0",
         },
       ];

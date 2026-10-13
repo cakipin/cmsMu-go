@@ -1,6 +1,3 @@
-import { agensLogic } from "./agens.logic";
-import { subscribersLogic } from "./subscribers.logic";
-import { emagazineLogic } from "./emagazine.logic";
 // FIX: Tambahkan ekstensi .ts pada SEMUA import agar konsisten dan terbaca loader
 import { coreLogic } from "./logic/core.logic.ts";
 import { mediaLogic } from "./logic/media.logic.ts";
@@ -52,12 +49,9 @@ if (typeof window !== 'undefined') {
         window.__CMS_MEDIA = ${mediaScript};
         window.__CMS_POST = ${postScript};
         window.__CMS_MODALS = ${modalsScript};
-        window.__CMS_AGENS = { ${agensLogic} };
-        window.__CMS_SUB = { ${subscribersLogic} }; // FIX: Inject script hasil serialisasi
-        window.__CMS_MAG = { ${emagazineLogic} };
     } catch(e) { 
         console.error('❌ CMS Logic Inject Error:', e);
-        window.__CMS_CORE={}; window.__CMS_MEDIA={}; window.__CMS_POST={}; window.__CMS_MODALS={}; window.__CMS_AGENS={}; window.__CMS_SUB={}; window.__CMS_MAG={};
+        window.__CMS_CORE={}; window.__CMS_MEDIA={}; window.__CMS_POST={}; window.__CMS_MODALS={};
     }
 }
 
@@ -154,9 +148,6 @@ if (typeof window !== 'undefined') {
             ...window.__CMS_MEDIA,
             ...window.__CMS_POST,
             ...window.__CMS_MODALS,
-            ...window.__CMS_AGENS,
-            ...window.__CMS_SUB, // ADD: Merge Logic Modal agar bisa dipanggil dari HTML
-            ...window.__CMS_MAG,
 
             // ============================
             // 4. SMART ACTIONS
@@ -194,7 +185,7 @@ if (typeof window !== 'undefined') {
                 
                 if (this.token) {
                     try { 
-                        let base64 = this.token;
+                    let base64 = this.token;
                         if (this.token.includes('.')) {
                             base64 = this.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); 
                         }
@@ -222,13 +213,10 @@ if (typeof window !== 'undefined') {
                             if(this.loadPages) this.loadPages();
                             if(this.loadMedia) this.loadMedia();
                             if(this.loadUsers) this.loadUsers();
-                            if(this.loadSubscribers) this.loadSubscribers();
-                            this.loadAgens();
                             if(this.loadThemes) this.loadThemes();
                             if(this.loadPlugins) this.loadPlugins();
                             if(this.loadMenus) this.loadMenus();
                             if(this.loadSettings) this.loadSettings();
-                            setInterval(() => { if(typeof this.loadSubscribers === 'function') this.loadSubscribers(); }, 20000);
                         }
                     }, 100);
                 }
@@ -286,11 +274,7 @@ if (typeof window !== 'undefined') {
                     settings: 'Pengaturan CMS',
                     themes: 'Kelola Tema',
                     plugins: 'Ekstensi & Plugin',
-                    aggregator: 'Sumber Agregator',
-                    newsroom: 'Meja Redaksi & Kurasi',
-                    profile: 'Profil Pengguna',
-                    agens: 'Koresponden & Agen',
-                    subscribers: 'Pelanggan Pro'
+                    profile: 'Profil Pengguna'
                 };
                 return map[this.view] || (this.view.charAt(0).toUpperCase() + this.view.slice(1));
             },

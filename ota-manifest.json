@@ -19,10 +19,7 @@
   ],
   "bundledPlugins": [
     "sso-muhammadiyah",
-    "ota",
-    "agens",
-    "emagazine",
-    "subscribers"
+    "ota"
   ],
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",

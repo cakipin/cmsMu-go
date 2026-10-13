@@ -11,15 +11,6 @@ importers:
       '@cloudflare/workers-types':
         specifier: ^5.20260801.1
         version: 5.20260801.1
-      '@cmsmu/plugin-agens':
-        specifier: workspace:*
-        version: link:packages/agens
-      '@cmsmu/plugin-emagazine':
-        specifier: workspace:*
-        version: link:packages/emagazine
-      '@cmsmu/plugin-subscribers':
-        specifier: workspace:*
-        version: link:packages/subscribers
       aws4fetch:
         specifier: ^1.0.20
         version: 1.0.20
@@ -63,15 +54,6 @@ importers:
       '@cmsmu/db':
         specifier: workspace:*
         version: link:../../packages/db
-      '@cmsmu/plugin-agens':
-        specifier: workspace:*
-        version: link:../../packages/agens
-      '@cmsmu/plugin-emagazine':
-        specifier: workspace:*
-        version: link:../../packages/emagazine
-      '@cmsmu/plugin-subscribers':
-        specifier: workspace:*
-        version: link:../../packages/subscribers
       '@puckeditor/core':
         specifier: ^0.22.4
         version: 0.22.4(@floating-ui/dom@1.8.0)(@types/react-dom@19.2.4(@types/react@19.2.18))(@types/react@19.2.18)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)(use-sync-external-store@1.6.0(react@19.2.8))
@@ -231,18 +213,6 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  packages/agens:
-    dependencies:
-      '@cmsmu/core':
-        specifier: workspace:*
-        version: link:../core
-      '@cmsmu/db':
-        specifier: workspace:*
-        version: link:../db
-      hono:
-        specifier: ^4.12.33
-        version: 4.12.33
-
   packages/core:
     dependencies:
       '@cmsmu/db':
@@ -274,30 +244,6 @@ importers:
       typescript:
         specifier: ^6.0.3
         version: 6.0.3
-
-  packages/emagazine:
-    dependencies:
-      '@cmsmu/core':
-        specifier: workspace:*
-        version: link:../core
-      '@cmsmu/db':
-        specifier: workspace:*
-        version: link:../db
-      hono:
-        specifier: ^4.12.33
-        version: 4.12.33
-
-  packages/subscribers:
-    dependencies:
-      '@cmsmu/core':
-        specifier: workspace:*
-        version: link:../core
-      '@cmsmu/db':
-        specifier: workspace:*
-        version: link:../db
-      hono:
-        specifier: ^4.12.33
-        version: 4.12.33
 
   packages/ui:
     dependencies:

@@ -7,24 +7,6 @@ const plugins = new Hono<{ Bindings: any }>();
 
 const defaultPlugins = [
   {
-    id: "aggregator",
-    name: "Sindikasi Berita (Aggregator)",
-    description:
-      "Menarik berita otomatis dari portal media wilayah, daerah, dan institusi Muhammadiyah melalui WP REST API, RSS Feed, dan Web Scraper.",
-    author: "CMSMu Core Team",
-    version: "2.1.0",
-    active: 1,
-  },
-  {
-    id: "newsroom",
-    name: "Meja Kurasi (Newsroom Curation)",
-    description:
-      "Antrean meja kurasi redaksi untuk meninjau, menyunting, dan menerbitkan artikel berita dari sindikasi media ke portal utama.",
-    author: "CMSMu Core Team",
-    version: "1.8.0",
-    active: 1,
-  },
-  {
     id: "sso-muhammadiyah",
     name: "Single Sign-On (Muhammadiyah ID SSO)",
     description:

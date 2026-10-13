@@ -5,20 +5,15 @@ import { posts as postsTable, pages as pagesTable } from "@cmsmu/db";
 import { eq, desc, asc, and, or, like, sql } from "drizzle-orm";
 import { translateTextWithAI } from "../../services/ai-translate";
 import { getGlobalData, getRenderer, formatPostForFrontend } from "./helpers";
-import { isPuckJson, renderPuckHtml } from "../theme-builder";
-import { detectArticleLocation } from "../../themes/newsroom/utils";
-
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
 import profileRouter, { handleUserProfile } from "./routes/profile.router";
-import sourcesRouter from "./routes/sources.router";
 
 const publicRouter = new Hono<{ Bindings: Bindings }>();
 
 // Mount Sub-Routers
 publicRouter.route("/", seoRouter);
 publicRouter.route("/", profileRouter);
-publicRouter.route("/", sourcesRouter);
 
 // ============================================================
 // 1. ROUTE HOMEPAGE (Multi-Language & Pagination)
@@ -33,61 +28,33 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
     const page = Math.max(1, parseInt(c.req.query("page") || "1"));
     const limit = 12; // 12 artikel per halaman reguler
 
-    const regionParam = (c.req.query("region") || "all").toLowerCase().trim();
-
-    let totalItems = 0;
-    let totalPages = 1;
-    let heroPosts: any[] = [];
-    let regularPostsRaw: any[] = [];
-
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);
 
-    if (regionParam !== "all") {
-      const allPosts = await db
-        .select()
-        .from(postsTable)
-        .where(eq(postsTable.status, "publish"))
-        .orderBy(desc(postsTable.createdAt))
-        .limit(1200);
+    const totalRow: any = await db
+      .select({ total: sql<number>`count(*)` })
+      .from(postsTable)
+      .where(eq(postsTable.status, "publish"))
+      .get();
+    const totalItems = Number(totalRow?.total || 0);
 
-      const regionalPosts = allPosts.filter((p: any) => {
-        const loc = detectArticleLocation(p, sources);
-        return loc.regionGroup === regionParam;
-      });
+    const heroPosts = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.status, "publish"))
+      .orderBy(desc(postsTable.createdAt))
+      .limit(9);
 
-      totalItems = regionalPosts.length;
-      totalPages = Math.max(1, Math.ceil(totalItems / limit));
-      const offset = (page - 1) * limit;
-      regularPostsRaw = regionalPosts.slice(offset, offset + limit);
+    const gridOffset = page === 1 ? 9 : 9 + (page - 2) * limit;
+    const regularPostsRaw = await db
+      .select()
+      .from(postsTable)
+      .where(eq(postsTable.status, "publish"))
+      .orderBy(desc(postsTable.createdAt))
+      .limit(limit)
+      .offset(gridOffset);
 
-      heroPosts = allPosts.slice(0, 9);
-    } else {
-      const totalRow: any = await db
-        .select({ total: sql<number>`count(*)` })
-        .from(postsTable)
-        .where(eq(postsTable.status, "publish"))
-        .get();
-      totalItems = Number(totalRow?.total || 0);
-
-      heroPosts = await db
-        .select()
-        .from(postsTable)
-        .where(eq(postsTable.status, "publish"))
-        .orderBy(desc(postsTable.createdAt))
-        .limit(9);
-
-      const gridOffset = page === 1 ? 9 : 9 + (page - 2) * limit;
-      regularPostsRaw = await db
-        .select()
-        .from(postsTable)
-        .where(eq(postsTable.status, "publish"))
-        .orderBy(desc(postsTable.createdAt))
-        .limit(limit)
-        .offset(gridOffset);
-
-      const remainingAfterHero = Math.max(0, totalItems - 9);
-      totalPages = Math.max(1, 1 + Math.ceil(remainingAfterHero / limit));
-    }
+    const remainingAfterHero = Math.max(0, totalItems - 9);
+    const totalPages = Math.max(1, 1 + Math.ceil(remainingAfterHero / limit));
 
     // Query 5 artikel terpopuler berdasarkan views di DB
     const popularLimit = 5;

@@ -139,17 +139,8 @@ export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
       order_num: m.order_num ?? m.orderNum ?? 0,
     }));
 
-    // Ambil daftar media sources aktif dari DB (Zero Hardcode)
-    try {
-      const srcRows: any = await db
-        .prepare(
-          "SELECT id, name, slug, base_url, feed_url, feed_type, region_code, trust_score, is_active, description FROM media_sources WHERE is_active = 1 ORDER BY trust_score DESC, name ASC"
-        )
-        .all();
-      sourcesData = srcRows?.results || [];
-    } catch (errSrc) {
-      console.error("Error querying media_sources:", errSrc);
-    }
+    // Media sources (default empty in clean core)
+    sourcesData = [];
 
     // Ambil distinct categories dari posts yang dipublikasikan (Real DB)
     try {
