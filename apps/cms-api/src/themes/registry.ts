@@ -1,31 +1,21 @@
-import SuaraAisyiyah from "./suara-aisyiyah";
-import NewsroomTheme from "./newsroom";
+import DefaultTheme from "./default";
 
 // 1. Daftar Tema yang Tersedia
 export const availableThemes = [
   {
-    id: "suara-aisyiyah",
-    name: "CMSMu Magazine & Portal (Default)",
+    id: "default",
+    name: "CMSMu Editorial (Default)",
     version: "1.0.0",
     author: "CMSMu Core Team",
     description:
-      "Tema portal berita dan majalah modern dengan hero editorial, grid berita, dan identitas visual CMSMu.",
-  },
-  {
-    id: "newsroom",
-    name: "Newsroom Editorial",
-    version: "1.0.0",
-    author: "CMSMu & Redaksi Jejaring",
-    description:
-      "Tema portal berita modern kelas editorial jurnalisme dengan headline utama, breaking news ticker, dan kanal berita daerah jejaring.",
+      "Tema portal berita, opini, dan publikasi resmi CMSMu dengan performa tinggi, desain responsif modern, dan zero-hardcode.",
   },
 ];
 
-// 2. Fungsi Pengambilan Tema Aktif (Default: suara-aisyiyah)
+// 2. Fungsi Pengambilan Tema Aktif (Default: default)
 export const getActiveTheme = (id?: string) => {
   const themes: Record<string, any> = {
-    "suara-aisyiyah": SuaraAisyiyah,
-    newsroom: NewsroomTheme,
+    default: DefaultTheme,
   };
-  return id && themes[id] ? themes[id] : SuaraAisyiyah;
+  return id && themes[id] ? themes[id] : DefaultTheme;
 };

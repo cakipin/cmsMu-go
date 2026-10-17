@@ -189,7 +189,7 @@ export const seoPage = `
         <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
           <i class="fas fa-chart-line text-primary"></i> Analytics & Trafik Publik
         </h3>
-        <p class="text-xs text-slate-400 mb-6">Lacak pengunjung situs Suara 'Aisyiyah. Script akan otomatis diinjeksi ke setiap halaman publik.</p>
+        <p class="text-xs text-slate-400 mb-6">Lacak pengunjung situs publik. Script analitik akan otomatis diinjeksi ke setiap halaman publik.</p>
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <!-- Google Analytics 4 -->
@@ -210,11 +210,11 @@ export const seoPage = `
           <div>
             <div class="flex items-center justify-between mb-2 flex-wrap gap-2">
               <label class="text-xs font-bold text-slate-700">
-                <i class="fas fa-chart-bar text-orange-500 mr-1"></i> Histats (Kode Embed Resmi)
+                <i class="fas fa-chart-bar text-orange-500 mr-1"></i> Histats (Kode Embed)
               </label>
-              <button type="button" @click="applyHistatsDefault()" class="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1 shadow-2xs">
-                <span>⚡ Pasang Kode Resmi SA (SID: 5056563)</span>
-              </button>
+              <a href="https://www.histats.com" target="_blank" class="text-[11px] font-bold text-orange-600 hover:underline flex items-center gap-1">
+                <span>Daftar / Kelola Histats &rarr;</span>
+              </a>
             </div>
             <textarea x-model="form.seo_histats_code"
                       placeholder="Tempel kode script asinkron Histats di sini..."
@@ -222,10 +222,7 @@ export const seoPage = `
                       class="w-full border border-slate-200 px-4 py-2.5 rounded-xl text-xs font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all"></textarea>
             
             <div class="flex items-center justify-between mt-2 flex-wrap gap-2">
-              <p class="text-[11px] text-slate-400">ID Situs Resmi Suara 'Aisyiyah: <strong class="text-slate-600">5056563</strong></p>
-              <a href="https://www.histats.com/viewstats/?act=2&sid=5056563" target="_blank" class="inline-flex items-center gap-1 text-[11px] text-orange-600 font-bold hover:underline">
-                <i class="fas fa-chart-area text-[11px]"></i> Buka Statistik Live SA (sid=5056563) &rarr;
-              </a>
+              <p class="text-[11px] text-slate-400">Kode pelacak trafik real-time Histats</p>
             </div>
           </div>
         </div>
@@ -325,7 +322,7 @@ export const seoPage = `
           <div>
             <strong>Proteksi Otomatis Lingkungan Staging & Preview:</strong>
             <div class="mt-0.5 text-amber-700 leading-relaxed">
-              Jika diakses dari domain staging (seperti <code>pages.dev</code> atau <code>localhost</code>), server akan secara otomatis merespons dengan <code>User-agent: * Disallow: /</code> demi mencegah penalti konten duplikat di Google. Konfigurasi di bawah ini aktif berlaku penuh di domain produksi <strong>suaraaisyiyah.id</strong>.
+              Jika diakses dari domain staging (seperti <code>pages.dev</code> atau <code>localhost</code>), server akan secara otomatis merespons dengan <code>User-agent: * Disallow: /</code> demi mencegah penalti konten duplikat di Google. Konfigurasi di bawah ini aktif berlaku penuh di domain produksi utama.
             </div>
           </div>
         </div>
@@ -337,7 +334,7 @@ export const seoPage = `
                     placeholder="User-agent: *\\nAllow: /\\nDisallow: /admin/\\nDisallow: /api/\\n"
                     class="w-full border border-slate-200 px-4 py-3 rounded-xl text-xs font-mono focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all leading-relaxed"></textarea>
           <p class="text-[11px] text-slate-400 mt-1.5">
-            Baris <code>Sitemap: https://suaraaisyiyah.id/sitemap.xml</code> akan otomatis ditambahkan oleh server di akhir berkas jika belum tertulis.
+            Baris <code>Sitemap: https://domain-anda.com/sitemap.xml</code> akan otomatis ditambahkan oleh server di akhir berkas jika belum tertulis.
           </p>
         </div>
       </div>
@@ -347,7 +344,7 @@ export const seoPage = `
         <h3 class="text-base font-bold text-slate-800 mb-1 flex items-center gap-2">
           <i class="fas fa-sitemap text-blue-600"></i> Sitemap XML Real-Time & Notifikasi Mesin Pencari
         </h3>
-        <p class="text-xs text-slate-400 mb-6">Peta situs diperbarui secara langsung oleh server dari database artikel, laman, dan edisi majalah digital.</p>
+        <p class="text-xs text-slate-400 mb-6">Peta situs diperbarui secara langsung oleh server dari database artikel dan laman.</p>
 
         <!-- Status Kartu URL Sitemap -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
@@ -427,9 +424,9 @@ export const seoPage = `
           </div>
           <div class="p-3.5 bg-slate-50/60 rounded-xl border border-slate-100">
             <div class="text-xs font-bold text-slate-700 flex items-center gap-1.5">
-              <i class="fas fa-book-open text-purple-600 text-xs"></i> E-Majalah Digital
+              <i class="fas fa-tags text-purple-600 text-xs"></i> Kategori & Topik
             </div>
-            <div class="text-[11px] text-slate-500 mt-1">Menyertakan arsip edisi digital majalah Suara 'Aisyiyah dengan path <code>/majalah/:slug</code>.</div>
+            <div class="text-[11px] text-slate-500 mt-1">Menyertakan arsip kategori publikasi dan taksonomi konten.</div>
           </div>
         </div>
       </div>

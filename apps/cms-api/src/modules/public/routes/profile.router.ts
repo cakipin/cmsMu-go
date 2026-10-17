@@ -3,8 +3,6 @@ import type { Bindings } from "../../../types";
 import { getDb } from "@cmsmu/db";
 import {
   users as usersTable,
-  subscriptions as subscriptionsTable,
-  magazines as magazinesTable,
   posts as postsTable,
   mediaMeta as mediaMetaTable,
 } from "@cmsmu/db";

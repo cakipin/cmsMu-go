@@ -227,10 +227,10 @@ export async function getRenderer(db: any) {
       .from(themesTable)
       .where(eq(themesTable.active, 1))
       .get();
-    const themeId = activeThemeRow ? activeThemeRow.id : "newsroom";
+    const themeId = activeThemeRow ? activeThemeRow.id : "default";
     const theme = getActiveTheme(themeId);
-    return { Renderer: theme || getActiveTheme("newsroom"), themeId };
+    return { Renderer: theme || getActiveTheme("default"), themeId };
   } catch (e) {
-    return { Renderer: getActiveTheme("newsroom"), themeId: "newsroom" };
+    return { Renderer: getActiveTheme("default"), themeId: "default" };
   }
 }

@@ -5,7 +5,6 @@ import { posts as postsTable, pages as pagesTable } from "@cmsmu/db";
 import { eq, desc } from "drizzle-orm";
 
 const seoRouter = new Hono<{ Bindings: Bindings }>();
-const PROD_DOMAIN = "https://suaraaisyiyah.id";
 
 // ============================================================
 // SEO: robots.txt — noindex staging, allow production
@@ -49,10 +48,8 @@ seoRouter.get("/sitemap_index.xml", async c => {
 // ============================================================
 seoRouter.get("/sitemap.xml", async c => {
   const host = c.req.header("host") || "";
-  const base =
-    host === "suaraaisyiyah.id" || host === "www.suaraaisyiyah.id"
-      ? PROD_DOMAIN
-      : `https://${host}`;
+  const scheme = c.req.url.startsWith("https") ? "https" : "http";
+  const base = `${scheme}://${host}`;
   try {
     const dbDrizzle = getDb(c.env.DB);
     const posts = await dbDrizzle

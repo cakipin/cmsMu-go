@@ -141,7 +141,7 @@ export const themesPage = `
         <div style="padding:16px 20px; border-bottom:1px solid #e5e7eb; display:flex; justify-content:space-between; align-items:center; background:#f9fafb;">
             <div>
                 <h3 style="margin:0; font-size:17px; color:#1f2937;">🎨 Customize Theme</h3>
-                <p style="margin:2px 0 0; font-size:12px; color:#6b7280;">Ubah tampilan tema aktif (Newsroom)</p>
+                <p style="margin:2px 0 0; font-size:12px; color:#6b7280;" x-text="'Ubah konfigurasi dan tata letak tema aktif'"></p>
             </div>
             <button @click="themeEditorOpen=false" style="background:none; border:none; font-size:22px; cursor:pointer; color:#9ca3af; line-height:1;">&times;</button>
         </div>

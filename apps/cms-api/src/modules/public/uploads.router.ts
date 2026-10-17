@@ -70,16 +70,17 @@ uploadsRouter.get("*", async c => {
     const decodedSubpath = decodeURIComponent(subpath);
     const bucket = getBucket(c.env);
 
-    const defaultOrigin = "https://suaraaisyiyah.id";
-    const wpOrigin = (c.env.WP_ORIGIN_URL || defaultOrigin).replace(/\/+$/, "");
     const rawHost = c.req.header("host") || "";
     const reqHostname = rawHost.split(":")[0].toLowerCase();
+    const scheme = c.req.url.startsWith("https") ? "https" : "http";
+    const defaultOrigin = rawHost ? `${scheme}://${rawHost}` : "";
+    const wpOrigin = (c.env.WP_ORIGIN_URL || defaultOrigin).replace(/\/+$/, "");
 
     let originHostname = "";
     try {
-      originHostname = new URL(wpOrigin).hostname.toLowerCase();
+      originHostname = wpOrigin ? new URL(wpOrigin).hostname.toLowerCase() : reqHostname;
     } catch (_) {
-      originHostname = "suaraaisyiyah.id";
+      originHostname = reqHostname;
     }
 
     // Hanya anggap self-host jika hostname asal sama persis dengan hostname tujuan request

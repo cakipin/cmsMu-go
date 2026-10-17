@@ -121,7 +121,7 @@ export const loginPage = `
     <div style="position: relative; width: 100%; max-width: 420px; background: white; padding: 36px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: none; margin: 20px;">
         <div style="text-align:center; margin-bottom:24px;">
              <a href="/" style="text-decoration:none;">
-                 <h2 style="color: #0284c7; margin: 0 0 6px 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">NewsRoom</h2>
+                 <h2 style="color: #0d9488; margin: 0 0 6px 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">CMSMu</h2>
              </a>
              <p style="color: #64748b; margin-top: 5px; font-size: 14px; font-weight: 500;">Masuk ke Dashboard Pengelola</p>
         </div>

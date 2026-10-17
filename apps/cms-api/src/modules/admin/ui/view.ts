@@ -191,7 +191,7 @@ export function renderAdmin(data: any): string {
                 };
 
                 // Helper sanitasi konten berita dari link dan iklan (menggunakan DOM browser langsung)
-                window.cleanNewsroomContent = function(html) {
+                window.cleanEditorContent = window.cleanNewsroomContent = function(html) {
                     if (!html) return '';
                     try {
                         var doc = new DOMParser().parseFromString(html, 'text/html');
