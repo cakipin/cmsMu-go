@@ -1,0 +1,7 @@
+{
+  "id": "starter-plugin",
+  "name": "Starter Plugin Boilerplate",
+  "version": "1.0.0",
+  "author": "CMSMu Core Team",
+  "description": "Pondasi plugin percontohan untuk membuat fitur, API, dan menu admin baru tanpa mengubah core CMSMu."
+}

@@ -12,8 +12,12 @@
 
 import { execSync } from 'node:child_process';
 import path from 'node:path';
+import { verifyDeveloperBindings } from './verify-developer-bindings.mjs';
 
 const rootDir = process.cwd();
+
+// 0. Validasi binding Cloudflare mandiri
+verifyDeveloperBindings();
 
 function runCapture(cmd) {
   try {

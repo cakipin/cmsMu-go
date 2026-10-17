@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import registerAddons from "./addons";
+import registerCustomPlugins from "./plugins";
 
 // MODULES
 import adminRouter from "./modules/admin/admin.router";
@@ -111,6 +112,7 @@ app.use("/api/*", async (c, next) => {
 
 // 3. ROUTES DEFINITION
 registerAddons(app);
+registerCustomPlugins(app);
 
 // Health Check Endpoints
 app.get("/health", c =>
