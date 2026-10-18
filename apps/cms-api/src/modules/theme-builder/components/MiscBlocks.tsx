@@ -41,8 +41,8 @@ export const MagazineHeader: ComponentConfig<Props["MagazineHeader"]> = {
     logoUrl: "/theme-assets/labmu-pro/images/logo.png",
     menuItems: [
       { label: "Home", url: "/" },
-      { label: "News", url: "/category/news" },
-      { label: "Tech", url: "/category/tech" }
+      { label: "Berita", url: "/berita" },
+      { label: "Panduan", url: "/panduan" }
     ]
   },
   render: () => (

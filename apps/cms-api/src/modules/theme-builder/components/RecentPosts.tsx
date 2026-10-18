@@ -59,14 +59,14 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
     description:
       "Ikuti perkembangan terbaru, wawasan dakwah, dan kisah inspiratif di lingkungan persyarikatan dan amal usaha.",
     viewAllText: "Lihat Semua Artikel",
-    viewAllLink: "/kategori/berita",
+    viewAllLink: "/berita",
     postsCount: "3",
   },
   render: ({
     title = "Kabar & Wawasan Terbaru",
     description = "Ikuti perkembangan terbaru, wawasan dakwah, dan kisah inspiratif di lingkungan persyarikatan dan amal usaha.",
     viewAllText = "Lihat Semua Artikel",
-    viewAllLink = "/kategori/berita",
+    viewAllLink = "/berita",
     postsCount = "3",
     posts,
   }) => {
@@ -119,7 +119,7 @@ export const RecentPosts: ComponentConfig<Props["RecentPosts"]> = {
               const postUrl = post.slug
                 ? post.slug.startsWith("/")
                   ? post.slug
-                  : `/p/${post.slug}`
+                  : `/${post.slug}`
                 : "#";
               const dateStr = post.created_at
                 ? new Date(post.created_at).toLocaleDateString("id-ID", {

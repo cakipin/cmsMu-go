@@ -16,7 +16,35 @@ export function renderHome(ctx: ThemeContext): string {
   const categories = Array.isArray(ctx?.categories) ? ctx.categories : [];
   const topics = Array.isArray(ctx?.topics) ? ctx.topics : [];
 
-  const pagination = ctx?.pagination || { page: 1, totalPages: 1 };
+  const rawPag = (ctx?.pagination || {}) as any;
+  const pagination = {
+    page: rawPag.currentPage || rawPag.page || 1,
+    totalPages: rawPag.totalPages || 1,
+  };
+
+  const toCategoryObj = (c: any) => {
+    const name = typeof c === "string" ? c : c?.name || c?.title || "";
+    const slug =
+      typeof c === "object" && c?.slug
+        ? String(c.slug)
+        : String(name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+    return { name, slug };
+  };
+
+  const toTopicObj = (t: any) => {
+    const name = typeof t === "string" ? t : t?.name || t?.title || "";
+    const slug =
+      typeof t === "object" && t?.slug
+        ? String(t.slug)
+        : String(name)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+    return { name, slug };
+  };
 
   const contentHtml = `
   <div class="container">
@@ -42,12 +70,12 @@ export function renderHome(ctx: ThemeContext): string {
                   ${escapeHtml(mainHero.title)}
                 </h2>
                 <p style="font-size:0.875rem; opacity:0.9; line-height:1.5; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; margin-bottom:0.75rem;">
-                  ${getExcerpt(mainHero.excerpt || mainHero.content, 140)}
+                  ${getExcerpt(mainHero.excerpt || mainHero.body || mainHero.content, 140)}
                 </p>
                 <div style="display:flex; align-items:center; gap:0.75rem; font-size:0.75rem; opacity:0.8;">
                   <span><i class="far fa-user"></i> ${escapeHtml(mainHero.author || "Redaksi")}</span>
                   <span>&bull;</span>
-                  <span><i class="far fa-calendar-alt"></i> ${formatDate(mainHero.createdAt)}</span>
+                  <span><i class="far fa-calendar-alt"></i> ${formatDate(mainHero.createdAt || mainHero.created_at)}</span>
                 </div>
               </div>
             </a>
@@ -70,9 +98,9 @@ export function renderHome(ctx: ThemeContext): string {
                   <a href="/${escapeHtml(post.slug)}">
                     <h3 class="post-card-title">${escapeHtml(post.title)}</h3>
                   </a>
-                  <p class="post-card-excerpt">${getExcerpt(post.excerpt || post.content, 90)}</p>
+                  <p class="post-card-excerpt">${getExcerpt(post.excerpt || post.body || post.content, 90)}</p>
                   <div class="post-card-meta">
-                    <span class="meta-author-date"><i class="far fa-calendar-alt"></i> ${formatDate(post.createdAt)}</span>
+                    <span class="meta-author-date"><i class="far fa-calendar-alt"></i> ${formatDate(post.createdAt || post.created_at)}</span>
                     ${post.views ? `<span><i class="far fa-eye"></i> ${post.views}</span>` : ""}
                   </div>
                 </div>
@@ -125,13 +153,13 @@ export function renderHome(ctx: ThemeContext): string {
                   <a href="/${escapeHtml(post.slug)}">
                     <h3 class="post-card-title">${escapeHtml(post.title)}</h3>
                   </a>
-                  <p class="post-card-excerpt">${getExcerpt(post.excerpt || post.content, 110)}</p>
+                  <p class="post-card-excerpt">${getExcerpt(post.excerpt || post.body || post.content, 110)}</p>
                   <div class="post-card-meta">
                     <span class="meta-author-date">
                       <i class="far fa-user"></i> ${escapeHtml(post.author || "Redaksi")}
                     </span>
                     <span class="meta-author-date">
-                      <i class="far fa-calendar-alt"></i> ${formatDate(post.createdAt)}
+                      <i class="far fa-calendar-alt"></i> ${formatDate(post.createdAt || post.created_at)}
                     </span>
                   </div>
                 </div>
@@ -189,7 +217,7 @@ export function renderHome(ctx: ThemeContext): string {
                     ${escapeHtml(p.title)}
                   </a>
                   <div style="display:flex; align-items:center; gap:0.5rem; font-size:0.75rem; color:var(--text-muted); margin-top:0.35rem;">
-                    <span>${formatDate(p.createdAt)}</span>
+                    <span>${formatDate(p.createdAt || p.created_at)}</span>
                     ${p.views ? `<span>&bull; ${p.views} views</span>` : ""}
                   </div>
                 </div>
@@ -213,11 +241,13 @@ export function renderHome(ctx: ThemeContext): string {
           </h3>
           <ul style="list-style:none; display:flex; flex-direction:column; gap:0.5rem;">
             ${categories
+              .map(toCategoryObj)
+              .filter(c => c.name && c.slug)
               .map(
                 (c: any) => `
               <li>
-                <a href="/category/${escapeHtml(c.slug)}" style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.65rem; border-radius:var(--radius-sm); font-size:0.875rem; font-weight:600; color:var(--text-secondary); transition:all 0.2s;" onmouseover="this.style.background='var(--accent-subtle)'; this.style.color='var(--accent-primary)'" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)'">
-                  <span>${escapeHtml(c.name || c.title)}</span>
+                <a href="/${escapeHtml(c.slug)}" style="display:flex; justify-content:space-between; align-items:center; padding:0.5rem 0.65rem; border-radius:var(--radius-sm); font-size:0.875rem; font-weight:600; color:var(--text-secondary); transition:all 0.2s;" onmouseover="this.style.background='var(--accent-subtle)'; this.style.color='var(--accent-primary)'" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)'">
+                  <span>${escapeHtml(c.name)}</span>
                   <i class="fas fa-chevron-right" style="font-size:0.75rem; color:var(--text-muted);"></i>
                 </a>
               </li>
@@ -240,10 +270,12 @@ export function renderHome(ctx: ThemeContext): string {
           </h3>
           <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
             ${topics
+              .map(toTopicObj)
+              .filter(t => t.name && t.slug)
               .map(
                 (t: any) => `
-              <a href="/tag/${escapeHtml(t.slug || t.name)}" style="display:inline-block; padding:0.35rem 0.75rem; border:1px solid var(--border-subtle); border-radius:9999px; font-size:0.75rem; font-weight:600; color:var(--text-secondary); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.color='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)'; this.style.color='var(--text-secondary)'">
-                #${escapeHtml(t.name || t.title)}
+              <a href="/tag/${escapeHtml(t.slug)}" style="display:inline-block; padding:0.35rem 0.75rem; border:1px solid var(--border-subtle); border-radius:9999px; font-size:0.75rem; font-weight:600; color:var(--text-secondary); transition:all 0.2s;" onmouseover="this.style.borderColor='var(--accent-primary)'; this.style.color='var(--accent-primary)'" onmouseout="this.style.borderColor='var(--border-subtle)'; this.style.color='var(--text-secondary)'">
+                #${escapeHtml(t.name)}
               </a>
             `
               )

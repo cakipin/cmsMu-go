@@ -6,7 +6,7 @@ export function renderPage(ctx: ThemeContext): string {
   const page = ctx?.data || ctx?.pageData || {};
   const title = escapeHtml(page.title || "Halaman");
   const featuredImg = page.featuredImage || page.featured_image ? getImage(page, 0) : "";
-  const bodyContent = cleanArticleContent(page.content);
+  const bodyContent = cleanArticleContent(page.body || page.content || "");
 
   const contentHtml = `
   <div class="container" style="max-width: 860px;">

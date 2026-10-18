@@ -11,6 +11,8 @@ export function renderCategory(ctx: ThemeContext): string {
 
   const heading = ctx?.categoryName
     ? `Kategori: ${escapeHtml(ctx.categoryName)}`
+    : (ctx as any)?.tag
+    ? `Topik: #${escapeHtml((ctx as any).tag)}`
     : ctx?.query
     ? `Hasil Pencarian: "${escapeHtml(ctx.query)}"`
     : "Arsip Tulisan";
@@ -39,7 +41,7 @@ export function renderCategory(ctx: ThemeContext): string {
               <a href="/${escapeHtml(p.slug)}" style="text-decoration: none; color: var(--text);">
                 <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0.5rem 0;">${escapeHtml(p.title)}</h2>
               </a>
-              <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(p.createdAt)}</div>
+              <div style="font-size: 0.75rem; color: var(--text-muted);">${formatDate(p.createdAt || p.created_at)}</div>
             </div>
           </article>
         `

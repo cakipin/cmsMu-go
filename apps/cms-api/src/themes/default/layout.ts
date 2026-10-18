@@ -16,21 +16,52 @@ export function _layout(
   const fullTitle = pageTitle ? `${escapeHtml(pageTitle)} - ${siteTitle}` : siteTitle;
   const canonical = ctx?.currentSlug ? `/${ctx.currentSlug}` : "/";
 
-  // Dynamic Categories & Menus
+  // Dynamic Categories & Menus (Support string[] or object[] from Core getGlobalData)
   const categoriesList = Array.isArray(ctx?.categories) ? ctx.categories : [];
+  const rawMenus = Array.isArray(ctx?.menus)
+    ? ctx.menus
+    : Array.isArray((ctx?.menus as any)?.header)
+      ? (ctx?.menus as any).header
+      : [];
+
+  const toCategoryItem = (c: any) => {
+    const rawName = typeof c === "string" ? c : c?.name || c?.title || "";
+    const rawSlug =
+      typeof c === "object" && c?.slug
+        ? String(c.slug)
+        : String(rawName)
+            .toLowerCase()
+            .replace(/[^a-z0-9]+/g, "-")
+            .replace(/(^-|-$)/g, "");
+    return {
+      title: rawName || "Kategori",
+      url: rawSlug ? `/${rawSlug}` : "/berita",
+    };
+  };
+
+  const normalizeMenuUrl = (url?: string) => {
+    const u = String(url || "").trim();
+    if (!u || u === "/category/undefined" || u === "/kategori/berita") return "/berita";
+    if (u.startsWith("/category/")) return "/" + u.slice("/category/".length);
+    if (u.startsWith("/kategori/")) return "/" + u.slice("/kategori/".length);
+    return u;
+  };
+
   const headerMenus =
-    ctx?.menus?.header ||
-    (categoriesList.length > 0
-      ? categoriesList.slice(0, 7).map((c: any) => ({
-          title: c.name || c.title,
-          url: `/category/${c.slug}`,
+    rawMenus.length > 0
+      ? rawMenus.map((m: any) => ({
+          title: m.label || m.title || m.name || "Menu",
+          url: normalizeMenuUrl(m.url),
         }))
-      : [
-          { title: "Beranda", url: "/" },
-          { title: "Berita", url: "/category/berita" },
-          { title: "Artikel", url: "/category/artikel" },
-          { title: "Opini", url: "/category/opini" },
-        ]);
+      : categoriesList.length > 0
+        ? [
+            { title: "Beranda", url: "/" },
+            ...categoriesList.slice(0, 6).map(toCategoryItem),
+          ]
+        : [
+            { title: "Beranda", url: "/" },
+            { title: "Berita & Artikel", url: "/berita" },
+          ];
 
   return `<!DOCTYPE html>
 <html lang="id">

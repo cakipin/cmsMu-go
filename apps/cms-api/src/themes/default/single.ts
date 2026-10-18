@@ -106,13 +106,22 @@ export function renderSingle(ctx: ThemeContext): string {
     <div style="display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; margin-bottom: 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border-subtle);">
       <span style="font-size: 0.875rem; font-weight: 700; color: var(--text-secondary);"><i class="fas fa-tags"></i> Topik:</span>
       ${tagsList
-        .map(
-          (t: any) => `
-        <a href="/tag/${escapeHtml(typeof t === "string" ? t : t.slug || t.name)}" class="badge" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-secondary); text-transform: none;">
-          #${escapeHtml(typeof t === "string" ? t : t.name)}
+        .map((t: any) => {
+          const name = typeof t === "string" ? t : t.name || "";
+          const slug =
+            typeof t === "object" && t.slug
+              ? t.slug
+              : String(name)
+                  .toLowerCase()
+                  .trim()
+                  .replace(/[^a-z0-9\s-]/g, "")
+                  .replace(/\s+/g, "-");
+          return `
+        <a href="/tag/${escapeHtml(slug)}" class="badge" style="background: var(--bg-surface); border: 1px solid var(--border-subtle); color: var(--text-secondary); text-transform: none;">
+          #${escapeHtml(name)}
         </a>
-      `
-        )
+      `;
+        })
         .join("")}
     </div>
     `

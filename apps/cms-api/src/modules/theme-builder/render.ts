@@ -118,6 +118,11 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
 
     // 3. Hidrasi Data Artikel Riil ke RecentPosts dari Database
     if (item.type === "RecentPosts") {
+      if (typeof mergedProps.viewAllLink === "string") {
+        mergedProps.viewAllLink = mergedProps.viewAllLink
+          .replace(/^\/kategori\//, "/")
+          .replace(/^\/category\//, "/");
+      }
       if (latestPosts && Array.isArray(latestPosts) && latestPosts.length > 0) {
         const count = parseInt(mergedProps.postsCount || "3", 10) || 3;
         mergedProps.posts = latestPosts
@@ -132,8 +137,10 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
             const rawExcerpt =
               p.excerpt ||
               (p.description ? String(p.description).slice(0, 140) : "") ||
-              (p.content
-                ? String(p.content).replace(/<[^>]*>?/gm, "").slice(0, 140)
+              (p.body || p.content
+                ? String(p.body || p.content)
+                    .replace(/<[^>]*>?/gm, "")
+                    .slice(0, 140)
                 : "") ||
               "";
             return {

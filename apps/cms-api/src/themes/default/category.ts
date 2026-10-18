@@ -9,7 +9,12 @@ export function renderCategory(ctx: ThemeContext): string {
     ? ctx.data
     : [];
 
-  const pagination = ctx?.pagination || { page: 1, totalPages: 1, total: posts.length };
+  const rawPag = (ctx?.pagination || {}) as any;
+  const pagination = {
+    page: rawPag.currentPage || rawPag.page || 1,
+    totalPages: rawPag.totalPages || 1,
+    total: rawPag.totalItems ?? rawPag.total ?? posts.length,
+  };
 
   let pageTitle = "Arsip Berita";
   let pageHeading = "Koleksi Berita & Artikel";
@@ -19,6 +24,11 @@ export function renderCategory(ctx: ThemeContext): string {
     pageTitle = `Pencarian: ${escapeHtml(ctx.query)}`;
     pageHeading = `Hasil Pencarian: "${escapeHtml(ctx.query)}"`;
     pageSubtitle = `Ditemukan ${pagination.total || posts.length} artikel yang relevan.`;
+  } else if ((ctx as any)?.tag) {
+    const tagStr = escapeHtml((ctx as any).tag);
+    pageTitle = `Topik: #${tagStr}`;
+    pageHeading = `Topik: #${tagStr}`;
+    pageSubtitle = `Menampilkan seluruh tulisan dengan topik #${tagStr}.`;
   } else if (ctx?.categoryName) {
     pageTitle = `Kategori: ${escapeHtml(ctx.categoryName)}`;
     pageHeading = `Kategori: ${escapeHtml(ctx.categoryName)}`;

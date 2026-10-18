@@ -34,9 +34,9 @@ export function renderHome(ctx: ThemeContext): string {
               <a href="/${escapeHtml(p.slug)}" style="text-decoration: none; color: var(--text);">
                 <h2 style="font-size: 1.15rem; font-weight: 700; margin: 0.5rem 0;">${escapeHtml(p.title)}</h2>
               </a>
-              <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">${getExcerpt(p.excerpt || p.content)}</p>
+              <p style="font-size: 0.875rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 1rem;">${getExcerpt(p.excerpt || p.body || p.content)}</p>
               <div style="margin-top: auto; font-size: 0.75rem; color: var(--text-muted); border-top: 1px solid var(--border); padding-top: 0.75rem;">
-                ${formatDate(p.createdAt)}
+                ${formatDate(p.createdAt || p.created_at)}
               </div>
             </div>
           </article>
