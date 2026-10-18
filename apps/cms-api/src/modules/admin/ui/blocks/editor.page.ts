@@ -1,6 +1,7 @@
 import { editorForm } from "./editor/editor-form";
 import { editorMediaModal } from "./editor/editor-media-modal";
 import { editorTaxonomyModal } from "./editor/editor-taxonomy-modal";
+import { editorAutoSaveScript } from "./editor/editor-autosave";
 
 export const editorPage = `
 <div x-show="view === 'add' || view === 'edit'" class="animate-fade"
@@ -27,54 +28,6 @@ export const editorPage = `
          mediaTab: 'library', 
          uploadFile: null,
          uploadPreview: null,
-         cropperInstance: null,
-         cropRatio: 16/9,
-
-         initCropper(imageElement, ratio = 16/9) {
-             if (this.cropperInstance) this.cropperInstance.destroy();
-             if (window.Cropper) {
-                 this.cropperInstance = new Cropper(imageElement, {
-                     aspectRatio: ratio,
-                     viewMode: 1,
-                     autoCropArea: 0.9,
-                     responsive: true
-                 });
-             }
-         },
-
-         setCropRatio(ratio) {
-             this.cropRatio = ratio;
-             if (this.cropperInstance) {
-                 this.cropperInstance.setAspectRatio(ratio);
-             }
-         },
-
-         rotateCropper(degree) {
-             if (this.cropperInstance) this.cropperInstance.rotate(degree);
-         },
-
-         flipCropper() {
-             if (this.cropperInstance) {
-                 const scaleX = this.cropperInstance.getData().scaleX || 1;
-                 this.cropperInstance.scaleX(-scaleX);
-             }
-         },
-
-         resetCropper() {
-             if (this.cropperInstance) this.cropperInstance.reset();
-         },
-
-         async getCroppedBlob(maxWidth = 1600, quality = 0.8) {
-             if (!this.cropperInstance) return null;
-             const canvas = this.cropperInstance.getCroppedCanvas({
-                 maxWidth: maxWidth,
-                 imageSmoothingEnabled: true,
-                 imageSmoothingQuality: 'high'
-             });
-             return new Promise(resolve => {
-                 canvas.toBlob(blob => resolve(blob), 'image/webp', quality);
-             });
-         },
          selectedMedia: null,
          searchQuery: '',
          
@@ -89,62 +42,87 @@ export const editorPage = `
          isGeneratingExcerpt: false,
          showSeoDetails: false,
 
+         // State Slug & Permalink
+         isEditingSlug: false,
+         tempSlug: '',
+         isManualSlug: false,
+         slugCopied: false,
+
+         // State Auto Save Draft
+         autoSaveStatus: 'idle',
+         lastSavedTime: '',
+         hasLocalDraft: false,
+         localDraftTime: '',
+         localDraftData: null,
+         isAutoSaving: false,
+
          getToken() {
              return (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') || (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '');
          },
 
-         getArticleTitle() {
-             var titleInput = document.querySelector('.admin-post-title-input');
-             return (this.form && this.form.title ? this.form.title : (titleInput ? titleInput.value : '') || '').trim();
-         },
-
-         getArticleContent() {
-             var editorEl = document.querySelector('.modern-editor-content');
-             var rawTextarea = document.querySelector('.editor-raw-source-input');
-             var content = (this.form && this.form.body ? this.form.body : '') ||
-                           (editorEl ? editorEl.innerHTML : '') ||
-                           (rawTextarea ? rawTextarea.value : '') || '';
-             return (content === '<p><br></p>') ? '' : content.trim();
-         },
-
          // ===============================================
          // 2. LOAD DATA
-         // ===============================================
-         async loadGlobalData() {
-             try {
-                 const token = this.getToken();
-                 const res = await fetch('/api/posts?t=' + Date.now(), {
-                     headers: { 'Authorization': 'Bearer ' + token }
-                 });
-                 if (res.ok) {
-                     const json = await res.json();
-                     const posts = Array.isArray(json) ? json : (json.results || []);
-                     this.allPosts = posts; 
+        // ===============================================
+        // 2. LOAD DATA (Ringan, Cepat, Ter-cache sessionStorage)
+        // ===============================================
+        async loadGlobalData() {
+            // 1. Tampilkan cache lokal seketika (0 ms) jika tersedia
+            try {
+                const cachedCats = sessionStorage.getItem('sa_cms_cats');
+                const cachedTags = sessionStorage.getItem('sa_cms_tags');
+                if (cachedCats) this.uniqueCategories = JSON.parse(cachedCats);
+                if (cachedTags) this.uniqueTags = JSON.parse(cachedTags);
+            } catch (_) {}
 
-                     const cats = posts.map(p => p.category).filter(c => c && c !== 'Uncategorized');
-                     const catCounts = {};
-                     cats.forEach(c => catCounts[c] = (catCounts[c] || 0) + 1);
-                     const dbCategories = Object.keys(catCounts).sort((a,b) => catCounts[b] - catCounts[a]);
+            // 2. Muat data ringan dari server secara paralel tanpa membebani browser mobile
+            try {
+                const token = this.getToken();
+                const headers = { 'Authorization': 'Bearer ' + token };
 
-                     // Pastikan kategori default selalu tersedia di dropdown
-                     const defaultCategories = ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'];
-                     const merged = [...dbCategories];
-                     defaultCategories.forEach(dc => { if (!merged.includes(dc)) merged.push(dc); });
+                const [catsRes, postsRes] = await Promise.all([
+                    fetch('/api/posts/categories/list').catch(() => null),
+                    fetch('/api/posts?limit=30', { headers }).catch(() => null)
+                ]);
 
-                     // Pastikan form.category yang sudah di-set selalu tersedia
-                     if (this.form && this.form.category && this.form.category !== 'Uncategorized' && !merged.includes(this.form.category)) {
-                         merged.unshift(this.form.category);
-                     }
-                     this.uniqueCategories = merged;
+                // Proses kategori dari endpoint ringan
+                const defaultCategories = ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'];
+                let mergedCats = [...defaultCategories];
 
-                     const allTags = posts.flatMap(p => (p.tags || '').split(','));
-                     const cleanedTags = allTags.map(t => t.trim()).filter(t => t && t !== '-' && t.length > 2);
-                     const tagCounts = {};
-                     cleanedTags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
-                     this.uniqueTags = Object.keys(tagCounts).sort((a,b) => tagCounts[b] - tagCounts[a]);
-                 }
-             } catch(e) { console.error('Load Error', e); }
-         },
+                if (catsRes && catsRes.ok) {
+                    const dbCats = await catsRes.json();
+                    if (Array.isArray(dbCats)) {
+                        dbCats.forEach(c => {
+                            if (c && c !== 'Uncategorized' && !mergedCats.includes(c)) {
+                                mergedCats.push(c);
+                            }
+                        });
+                    }
+                }
+
+                if (this.form && this.form.category && this.form.category !== 'Uncategorized' && !mergedCats.includes(this.form.category)) {
+                    mergedCats.unshift(this.form.category);
+                }
+                this.uniqueCategories = mergedCats;
+                try { sessionStorage.setItem('sa_cms_cats', JSON.stringify(mergedCats)); } catch (_) {}
+
+                // Proses posts & tags dari 30 post terbaru (ringan & cepat)
+                if (postsRes && postsRes.ok) {
+                    const json = await postsRes.json();
+                    const posts = Array.isArray(json) ? json : (json.results || []);
+                    this.allPosts = posts;
+
+                    const allTags = posts.flatMap(p => (p.tags || '').split(','));
+                    const cleanedTags = allTags.map(t => t.trim()).filter(t => t && t !== '-' && t.length > 2);
+                    const tagCounts = {};
+                    cleanedTags.forEach(t => tagCounts[t] = (tagCounts[t] || 0) + 1);
+                    const sortedTags = Object.keys(tagCounts).sort((a,b) => tagCounts[b] - tagCounts[a]);
+                    if (sortedTags.length > 0) {
+                        this.uniqueTags = sortedTags;
+                        try { sessionStorage.setItem('sa_cms_tags', JSON.stringify(sortedTags)); } catch (_) {}
+                    }
+                }
+            } catch(e) { console.error('Load Error', e); }
+        },
 
          // ===============================================
          // 3. MEDIA LOGIC
@@ -166,9 +144,8 @@ export const editorPage = `
                  const json = await res.json();
                  
                  let raw = Array.isArray(json) ? json : (json.results || []);
-                 this.mediaList = raw.map((m, idx) => ({
+                 this.mediaList = raw.map(m => ({
                      ...m,
-                     _uid: 'm_' + (m.id || idx) + '_' + idx,
                      url: m.url || m.file_url || '',
                      title: m.title || (m.key ? m.key.split('/').pop() : 'No Title')
                  }));
@@ -176,20 +153,12 @@ export const editorPage = `
          },
 
          get filteredMediaList() {
-             try {
-                 if (!this.mediaList || !Array.isArray(this.mediaList)) return [];
-                 if (!this.searchQuery) return this.mediaList.slice(0, 60);
-                 const q = String(this.searchQuery).toLowerCase();
-                 return this.mediaList.filter(m => {
-                     if (!m) return false;
-                     const t = m.title ? String(m.title).toLowerCase() : '';
-                     const a = m.alt ? String(m.alt).toLowerCase() : '';
-                     return t.includes(q) || a.includes(q);
-                 }).slice(0, 60);
-             } catch (e) {
-                 console.error('filteredMediaList error:', e);
-                 return [];
-             }
+             if(!this.searchQuery) return this.mediaList.slice(0, 60);
+             const q = this.searchQuery.toLowerCase();
+             return this.mediaList.filter(m => 
+                 (m.title && m.title.toLowerCase().includes(q)) || 
+                 (m.alt && m.alt.toLowerCase().includes(q))
+             ).slice(0, 60);
          },
 
          selectMediaItem(img) {
@@ -244,12 +213,6 @@ export const editorPage = `
              this.uploadFile = file;
              this.uploadPreview = URL.createObjectURL(file);
              this.mediaForm.title = file.name.split('.')[0].replace(/-/g, ' '); 
-             
-             this.$nextTick(() => {
-                 if (this.$refs.cropperImage) {
-                     this.initCropper(this.$refs.cropperImage, this.cropRatio);
-                 }
-             });
          },
          compressImage(file, quality = 0.7, maxWidth = 1600, seoTitle = '') {
              return new Promise((resolve, reject) => {
@@ -293,29 +256,13 @@ export const editorPage = `
              });
          },
 
-         async uploadMediaAction(useCrop = true) {
+         async uploadMediaAction() {
              if (!this.uploadFile) { if(window.showToast) window.showToast('Pilih file dulu', 'warning'); return; }
              
              let finalFile = this.uploadFile;
-             const seoTitle = this.form.title || this.mediaForm.title || '';
-             let newName = 'image';
-             if (seoTitle) {
-                 newName = seoTitle.toString().toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 50);
-             } else {
-                 newName = finalFile.name.replace(/\.[^/.]+$/, '').replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 40) || 'image';
-             }
-
-             if (useCrop && this.cropperInstance) {
+             if (finalFile.type.startsWith('image/')) {
                  try {
-                     const blob = await this.getCroppedBlob(1600, 0.8);
-                     if (blob) {
-                         finalFile = new File([blob], newName + '.webp', { type: 'image/webp', lastModified: Date.now() });
-                     }
-                 } catch (err) {
-                     console.warn('Gagal crop, upload file asli', err);
-                 }
-             } else if (finalFile.type.startsWith('image/')) {
-                 try {
+                     const seoTitle = this.form.title || this.mediaForm.title || '';
                      finalFile = await this.compressImage(finalFile, 0.7, 1600, seoTitle);
                  } catch (err) {
                      console.warn('Gagal kompres', err);
@@ -509,14 +456,15 @@ export const editorPage = `
 
           initEditor() {
               // Custom editor logic handled by customEditorLogic
+              this.isEditingSlug = false;
+              this.slugCopied = false;
+              this.isManualSlug = Boolean(this.editingId && this.form && this.form.slug);
+              this.checkLocalDraft();
           },
 
           async save() {
-              const currentContent = this.getArticleContent() || this.form.body || '';
-              if (currentContent) this.form.body = currentContent;
-              const currentTitle = this.getArticleTitle() || this.form.title || '';
-              if (currentTitle) this.form.title = currentTitle;
-              this.form.slug = this.form.slug || this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              const currentContent = this.form.body || '';
+              this.form.slug = this.sanitizeSlug(this.form.slug || this.form.title || ('post-' + Date.now()));
               
               const payload = JSON.parse(JSON.stringify({
                   id: this.editingId || undefined,
@@ -574,6 +522,11 @@ export const editorPage = `
                        if (typeof window !== 'undefined' && window.showToast) {
                            window.showToast('Artikel berhasil disimpan!', 'success', 4000);
                        }
+                       if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) {
+                           window.__CMS_AUTOSAVE.clearLocal(newId || this.editingId);
+                       }
+                       this.hasLocalDraft = false;
+                       this.autoSaveStatus = 'saved';
                    } 
                    else { 
                        const r = await res.json().catch(() => ({})); 
@@ -639,9 +592,63 @@ export const editorPage = `
                }
            },
 
+          sanitizeSlug(str) {
+              if (!str) return '';
+              return String(str)
+                  .toLowerCase()
+                  .trim()
+                  .replace(/['’‘]/g, '')
+                  .replace(/[^a-z0-9]+/g, '-')
+                  .replace(/^-+|-+$/g, '');
+          },
+
+          startEditSlug() {
+              this.tempSlug = this.form.slug || this.sanitizeSlug(this.form.title || '');
+              this.isEditingSlug = true;
+          },
+
+          saveSlug() {
+              const cleaned = this.sanitizeSlug(this.tempSlug || this.form.title || '');
+              this.form.slug = cleaned;
+              this.isManualSlug = true;
+              this.isEditingSlug = false;
+              if (window.showToast) window.showToast('Slug diperbarui: ' + cleaned, 'success');
+          },
+
+          cancelEditSlug() {
+              this.isEditingSlug = false;
+          },
+
+          resetSlugToTitle() {
+              this.form.slug = this.sanitizeSlug(this.form.title || '');
+              this.isManualSlug = false;
+              this.isEditingSlug = false;
+              if (window.showToast) window.showToast('Slug disesuaikan dengan judul', 'info');
+          },
+
+          async copyPermalink() {
+              if (!this.form.slug) return;
+              const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? window.location.origin : 'https://suaraaisyiyah.id';
+              const url = base + '/' + this.form.slug;
+              try {
+                  await navigator.clipboard.writeText(url);
+                  this.slugCopied = true;
+                  if (window.showToast) window.showToast('Tautan berhasil disalin!', 'success');
+                  setTimeout(() => { this.slugCopied = false; }, 2000);
+              } catch (_) {
+                  prompt('Salin link berikut:', url);
+              }
+          },
+
+          triggerAutoSave() { if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) window.__CMS_AUTOSAVE.trigger(this); },
+          checkLocalDraft() { if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) window.__CMS_AUTOSAVE.checkLocal(this); },
+          restoreLocalDraft() { if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) window.__CMS_AUTOSAVE.restoreLocal(this); },
+          discardLocalDraft() { if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) window.__CMS_AUTOSAVE.discardLocal(this); },
+          async saveDraftManual() { if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) await window.__CMS_AUTOSAVE.saveDraftManual(this); else { this.form.status = 'draft'; await this.save(); } },
+
           makeSlug() {
-              if (!this.editingId && this.form.title) {
-                  this.form.slug = this.form.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+              if (!this.editingId && !this.isManualSlug && this.form.title) {
+                  this.form.slug = this.sanitizeSlug(this.form.title);
               }
               if (!this.form.meta_title || this.form.meta_title === this._autoMetaTitle) {
                   this.form.meta_title = (this.form.title || '').slice(0, 60);
@@ -720,7 +727,7 @@ export const editorPage = `
               });
 
               // Konten Body
-              var bodyHtml = this.getArticleContent() || this.form.body || '';
+              var bodyHtml = this.form.body || '';
               var plain = bodyHtml.replace(/<[^>]+>/g, ' ').replace(/\\s+/g, ' ').trim();
               var words = plain ? plain.split(/\\s+/).filter(Boolean) : [];
               var wordCount = words.length;
@@ -747,7 +754,7 @@ export const editorPage = `
               });
 
               // 7. Kerapian Paragraf (10 pt)
-              var pMatches = bodyHtml.match(new RegExp('<p[^>]*>[\\\\s\\\\S]*?<\\/p>', 'gi')) || [];
+              var pMatches = bodyHtml.match(/<p[^>]*>[\\s\\S]*?<\\/p>/gi) || [];
               var pCount = pMatches.length;
               var avgWords = pCount > 0 ? (wordCount / pCount) : 0;
               var pPass = pCount >= 1 && (avgWords <= 90 || wordCount < 100);
@@ -832,12 +839,11 @@ export const editorPage = `
           },
 
           async generateSingleMeta(field) {
-              var title = this.getArticleTitle() || (this.form.title || '').trim();
-              var body = this.getArticleContent() || (this.form.body || '').trim();
-              if (title && !this.form.title) this.form.title = title;
-              if (body && !this.form.body) this.form.body = body;
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
               if (!title && !body) {
                   if (window.showToast) window.showToast('Isi judul atau naskah artikel terlebih dahulu!', 'warning');
+                  
                   return;
               }
 
@@ -846,13 +852,9 @@ export const editorPage = `
               else if (field === 'excerpt') this.isGeneratingExcerpt = true;
 
               try {
-                  var token = this.getToken();
                   var res = await fetch('/api/ai/meta-field', {
                       method: 'POST',
-                      headers: { 
-                          'Content-Type': 'application/json',
-                          'Authorization': 'Bearer ' + token
-                      },
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ field: field, title: title, content: body })
                   });
                   var json = await res.json();
@@ -881,24 +883,19 @@ export const editorPage = `
 
           async generateSeoWithAi() {
               if (this.isGeneratingSeo) return;
-              var title = this.getArticleTitle() || (this.form.title || '').trim();
-              var body = this.getArticleContent() || (this.form.body || '').trim();
-              if (title && !this.form.title) this.form.title = title;
-              if (body && !this.form.body) this.form.body = body;
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
               if (!title && !body) {
                   if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
+                  
                   return;
               }
 
               this.isGeneratingSeo = true;
               try {
-                  var token = this.getToken();
                   var res = await fetch('/api/ai/seo-metadata', {
                       method: 'POST',
-                      headers: { 
-                          'Content-Type': 'application/json',
-                          'Authorization': 'Bearer ' + token
-                      },
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ title: title, content: body })
                   });
                   var json = await res.json();
@@ -930,24 +927,19 @@ export const editorPage = `
 
           async fullAiOptimize() {
               if (this.isOptimizingFull) return;
-              var title = this.getArticleTitle() || (this.form.title || '').trim();
-              var body = this.getArticleContent() || (this.form.body || '').trim();
-              if (title && !this.form.title) this.form.title = title;
-              if (body && !this.form.body) this.form.body = body;
+              var title = (this.form.title || '').trim();
+              var body = (this.form.body || '').trim();
               if (!title && !body) {
                   if (window.showToast) window.showToast('Tuliskan judul atau isi artikel terlebih dahulu!', 'warning');
+                  
                   return;
               }
 
               this.isOptimizingFull = true;
               try {
-                  var token = this.getToken();
                   var res = await fetch('/api/ai/optimize', {
                       method: 'POST',
-                      headers: { 
-                          'Content-Type': 'application/json',
-                          'Authorization': 'Bearer ' + token
-                      },
+                      headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({ title: title, content: body })
                   });
                   var json = await res.json();
@@ -956,16 +948,10 @@ export const editorPage = `
                   var d = json.data || {};
                   if (d.content) {
                       this.form.body = d.content;
-                      var editorEls = document.querySelectorAll('.modern-editor-content');
-                      for (var ei = 0; ei < editorEls.length; ei++) {
-                          editorEls[ei].innerHTML = d.content;
-                          editorEls[ei].dispatchEvent(new Event('input', { bubbles: true }));
-                      }
-                      var htmlEls = document.querySelectorAll('.editor-raw-source-input');
-                      for (var hi = 0; hi < htmlEls.length; hi++) {
-                          htmlEls[hi].value = d.content;
-                          htmlEls[hi].dispatchEvent(new Event('input', { bubbles: true }));
-                      }
+                      var editorEl = document.querySelector('[x-ref=\\'editor\\']');
+                      if (editorEl) editorEl.innerHTML = d.content;
+                      var htmlEl = document.querySelector('[x-ref=\\'htmlSource\\']');
+                      if (htmlEl) htmlEl.value = d.content;
                   }
                   if (d.meta_title) this.form.meta_title = d.meta_title;
                   if (d.meta_description) this.form.meta_description = d.meta_description;
@@ -1001,5 +987,8 @@ export const editorPage = `
     ${editorForm}
     ${editorMediaModal}
     ${editorTaxonomyModal}
+    <script>
+        ${editorAutoSaveScript}
+    </script>
 </div>
 `;

@@ -1,6 +1,7 @@
 import { customEditorTemplate } from "../custom-editor";
 
 export const editorForm = `
+    <div x-data="{ mobileTab: 'content' }">
     <!-- Header Post Editor Responsif -->
     <div class="flex items-center justify-between gap-2.5 mb-4 sticky top-0 z-20 bg-slate-100/95 backdrop-blur py-2 px-1 rounded-md sm:static sm:bg-transparent sm:py-0 sm:px-0">
         <div class="flex items-center gap-2 min-w-0">
@@ -10,10 +11,35 @@ export const editorForm = `
             <h2 class="text-sm sm:text-xl font-bold text-slate-800 m-0 truncate" x-text="editingId ? 'Edit Post' : 'Tambah Post Baru'"></h2>
         </div>
 
-        <!-- Tombol Aksi Cepat Header (Sangat Ergonomis di Layar Mobile) -->
-        <div class="flex items-center gap-2 flex-shrink-0">
+        <!-- Tombol Aksi Cepat Header & Indikator Auto-Save (Responsif Mobile & Desktop) -->
+        <div class="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
+            <!-- Indikator Auto-Save Badge -->
+            <div class="hidden sm:flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-md bg-white border border-slate-200 text-slate-600 shadow-2xs">
+                <span x-show="autoSaveStatus === 'saving'" class="flex items-center gap-1 text-blue-600 font-medium">
+                    <i class="fas fa-spinner fa-spin text-[11px]"></i> Menyimpan...
+                </span>
+                <span x-show="autoSaveStatus === 'saved'" class="flex items-center gap-1 text-emerald-600 font-medium" :title="'Draf tersimpan ' + lastSavedTime">
+                    <i class="fas fa-check-circle text-[11px]"></i> Tersimpan <span x-show="lastSavedTime" x-text="lastSavedTime" class="text-slate-400 font-normal ml-0.5"></span>
+                </span>
+                <span x-show="autoSaveStatus === 'unsaved'" class="flex items-center gap-1.5 text-amber-600 font-medium">
+                    <span class="w-2 h-2 rounded-full bg-amber-500 animate-pulse inline-block"></span> Ada perubahan
+                </span>
+                <span x-show="autoSaveStatus === 'idle'" class="text-slate-400 flex items-center gap-1">
+                    <i class="fas fa-shield-alt text-slate-300 text-[11px]"></i> Siap
+                </span>
+            </div>
+
+            <!-- Tombol Simpan Draf Cepat -->
+            <button type="button" @click="saveDraftManual()" 
+                    class="btn min-h-[40px] px-2.5 sm:px-3 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-300 rounded-md shadow-2xs flex items-center gap-1.5 text-xs sm:text-sm active:scale-95 transition-all cursor-pointer" 
+                    :disabled="isSaving || isAutoSaving"
+                    title="Simpan draf sekarang">
+                <i class="fas fa-save text-slate-500"></i>
+                <span class="hidden sm:inline">Draf</span>
+            </button>
+
             <a x-show="form.slug" :href="'/' + form.slug" target="_blank" 
-               class="btn min-h-[40px] px-3 py-2 bg-white text-slate-600 border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 flex items-center justify-center text-xs active:scale-95 transition-all" 
+               class="btn min-h-[40px] px-2.5 sm:px-3 py-2 bg-white text-slate-600 border border-slate-300 rounded-md shadow-sm hover:bg-slate-50 flex items-center justify-center text-xs active:scale-95 transition-all" 
                title="Preview Artikel">
                 <i class="fas fa-external-link-alt"></i>
             </a>
@@ -25,17 +51,129 @@ export const editorForm = `
         </div>
     </div>
 
+    <!-- Segmented Switcher Mobile: Tab 1 = Konten & Pengaturan Pos, Tab 2 = Khusus SEO (disembunyikan di desktop) -->
+    <div class="lg:hidden grid grid-cols-2 gap-1.5 p-1 mb-4 bg-slate-200/90 rounded-lg" role="tablist">
+        <button type="button" role="tab" @click="mobileTab = 'content'"
+            :class="mobileTab === 'content' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 font-medium'"
+            class="min-h-[44px] rounded-md text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-edit text-emerald-600"></i> Tulis &amp; Pengaturan
+        </button>
+        <button type="button" role="tab" @click="mobileTab = 'seo'"
+            :class="mobileTab === 'seo' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 font-medium'"
+            class="min-h-[44px] rounded-md text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5">
+            <i class="fas fa-chart-line text-blue-600"></i> Khusus SEO
+        </button>
+    </div>
+
     <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 items-start pb-12 md:pb-6">
         <div style="min-width: 0;">
-            <input x-model="form.title" class="input" placeholder="Judul Tulisan..." 
-                   style="font-size: clamp(18px, 3.5vw, 24px); font-weight: 600; padding: 12px 14px; margin-bottom: 16px; width: 100%; box-sizing: border-box;" 
-                   @input="makeSlug()">
-            <div style="margin-bottom:20px;">
+            <!-- Banner Pemulihan Draf Lokal (Crash Recovery) -->
+            <div x-show="hasLocalDraft" 
+                 class="mb-3.5 p-3 sm:p-3.5 bg-amber-50 border border-amber-300 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 shadow-2xs transition-all"
+                 style="display: none;">
+                <div class="flex items-center gap-2.5 text-xs sm:text-sm text-amber-900 font-medium">
+                    <i class="fas fa-exclamation-triangle text-amber-600 text-base shrink-0"></i>
+                    <span>Ditemukan draf lokal belum tersimpan (<span x-text="localDraftTime" class="font-bold"></span>). Pulihkan tulisan ini?</span>
+                </div>
+                <div class="flex items-center gap-2 shrink-0 w-full sm:w-auto justify-end">
+                    <button type="button" @click="restoreLocalDraft()" 
+                            class="px-3 py-1.5 text-xs font-bold text-white bg-amber-600 hover:bg-amber-700 rounded-md cursor-pointer active:scale-95 transition-all shadow-2xs">
+                        <i class="fas fa-undo-alt mr-1"></i> Pulihkan Draf
+                    </button>
+                    <button type="button" @click="discardLocalDraft()" 
+                            class="px-2.5 py-1.5 text-xs font-semibold text-amber-800 bg-white hover:bg-amber-100 border border-amber-300 rounded-md cursor-pointer active:scale-95 transition-all">
+                        Abaikan
+                    </button>
+                </div>
+            </div>
+
+            <input x-model="form.title" class="input" :class="mobileTab === 'seo' ? 'm-hide-seo' : ''" placeholder="Judul Tulisan..." 
+                   style="font-size: clamp(18px, 3.5vw, 24px); font-weight: 600; padding: 12px 14px; margin-bottom: 8px; width: 100%; box-sizing: border-box;" 
+                   @input="makeSlug(); triggerAutoSave();">
+
+            <!-- Permalink / Slug Editor (Clean WordPress Standard) -->
+            <div :class="mobileTab === 'seo' ? 'm-hide-seo' : ''"
+                 class="flex items-center flex-wrap sm:flex-nowrap gap-1.5 text-xs text-slate-500 -mt-1 mb-3.5 px-0.5 min-h-[30px]">
+                
+                <span class="text-slate-400 font-medium shrink-0 flex items-center gap-1">
+                    <i class="fas fa-link text-[10px] text-slate-400"></i>
+                    <span class="text-slate-600 font-semibold">Permalink:</span>
+                    <span class="text-slate-400 hidden sm:inline">https://suaraaisyiyah.id/</span>
+                    <span class="text-slate-400 sm:hidden">.../</span>
+                </span>
+
+                <!-- Mode Tampilan (Default) -->
+                <div x-show="!isEditingSlug" class="flex items-center gap-1.5 min-w-0">
+                    <span class="font-mono font-bold text-slate-800 bg-slate-100 hover:bg-slate-200/80 px-2 py-0.5 rounded cursor-pointer transition-colors truncate max-w-[220px] sm:max-w-xs md:max-w-md select-all"
+                          @click="startEditSlug()"
+                          :title="'Klik untuk mengedit slug: /' + (form.slug || '')"
+                          x-text="form.slug || '(otomatis-dari-judul)'"></span>
+                    <span class="text-slate-400 font-medium -ml-0.5">/</span>
+                    
+                    <div class="flex items-center gap-1 shrink-0 ml-1">
+                        <button type="button" 
+                                @click="startEditSlug()" 
+                                class="px-2 py-0.5 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded shadow-2xs cursor-pointer active:scale-95 transition-all"
+                                title="Edit slug secara manual">
+                            Edit
+                        </button>
+                        <button type="button" 
+                                x-show="form.slug"
+                                @click="copyPermalink()" 
+                                class="px-2 py-0.5 text-[11px] font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-300 rounded shadow-2xs cursor-pointer active:scale-95 transition-all"
+                                :class="slugCopied ? 'text-emerald-700 border-emerald-300 bg-emerald-50' : ''"
+                                title="Salin URL lengkap artikel">
+                            <span x-text="slugCopied ? 'Disalin!' : 'Salin'">Salin</span>
+                        </button>
+                        <a x-show="form.slug" 
+                           :href="'/' + form.slug" 
+                           target="_blank" 
+                           class="px-2 py-0.5 text-[11px] font-semibold text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded shadow-2xs cursor-pointer active:scale-95 transition-all inline-flex items-center gap-1"
+                           title="Lihat artikel di tab baru">
+                            <span>Lihat</span>
+                            <i class="fas fa-external-link-alt text-[9px]"></i>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Mode Edit Inline -->
+                <div x-show="isEditingSlug" class="flex items-center gap-1.5 min-w-0 flex-wrap sm:flex-nowrap flex-1">
+                    <input type="text" 
+                           x-model="tempSlug" 
+                           @keydown.enter.prevent="saveSlug()"
+                           @keydown.escape="cancelEditSlug()"
+                           placeholder="slug-artikel"
+                           class="px-2 py-0.5 text-xs font-mono font-bold text-slate-800 bg-white border border-blue-500 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 w-44 sm:w-64 md:w-80 box-border">
+                    <span class="text-slate-400 font-medium -ml-0.5">/</span>
+                    
+                    <div class="flex items-center gap-1 shrink-0">
+                        <button type="button" 
+                                @click="saveSlug()" 
+                                class="px-2.5 py-0.5 text-[11px] font-bold text-white bg-blue-600 hover:bg-blue-700 rounded shadow-2xs cursor-pointer active:scale-95 transition-all"
+                                title="Terapkan slug baru">
+                            OK
+                        </button>
+                        <button type="button" 
+                                @click="cancelEditSlug()" 
+                                class="px-2 py-0.5 text-[11px] font-semibold text-slate-600 bg-white hover:bg-slate-100 border border-slate-300 rounded cursor-pointer active:scale-95 transition-all"
+                                title="Batalkan perubahan">
+                            Batal
+                        </button>
+                        <button type="button" 
+                                @click="resetSlugToTitle()" 
+                                class="px-2 py-0.5 text-[11px] font-semibold text-purple-700 bg-purple-50 hover:bg-purple-100 border border-purple-200 rounded cursor-pointer active:scale-95 transition-all"
+                                title="Reset slug sesuai judul tulisan">
+                            Auto
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div style="margin-bottom:20px;" :class="mobileTab === 'seo' ? 'm-hide-seo' : ''">
                 ${customEditorTemplate}
             </div>
 
-            <!-- SEO & Metadata Section dengan Skor Indikator & Fitur AI -->
-            <div class="card" 
+            <!-- SEO & Metadata Section dengan Skor Indikator & Fitur AI (Hanya di Tab SEO pada Mobile) -->
+            <div class="card" :class="mobileTab === 'content' ? 'm-hide-content' : ''"
                  :style="'border: 1px solid ' + (getSeo().isPerfect ? '#10b981' : '#e5e7eb') + '; border-radius: 10px; background: white; margin-bottom: 20px; overflow: hidden; box-shadow: ' + (getSeo().isPerfect ? '0 4px 14px rgba(16,185,129,0.15)' : '0 1px 3px rgba(0,0,0,0.05)') + ';'">
                 
                 <!-- Header Card dengan Tombol Aksi AI (Responsif Mobile) -->
@@ -211,7 +349,7 @@ export const editorForm = `
             </div>
         </div>
 
-        <div style="display:flex; flex-direction:column; gap:20px;">
+        <div style="display:flex; flex-direction:column; gap:20px;" :class="mobileTab === 'seo' ? 'm-hide-seo' : ''">
             <!-- FORMAT POSTINGAN (STANDAR / VIDEO) -->
             <div class="card" style="padding:15px; border-top:3px solid #ef4444; border-radius:8px; background:white;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
@@ -283,14 +421,28 @@ export const editorForm = `
                     </button>
                 </div>
 
-                <div style="display:flex; gap:10px;">
-                    <a x-show="form.slug" :href="'/' + form.slug" target="_blank" class="btn" style="background:#f1f5f9; color:#475569; padding:10px; font-size:14px; border-radius:6px; display:flex; justify-content:center; align-items:center; border:1px solid #cbd5e1; text-decoration:none;" title="Preview Artikel">
-                        <i class="fas fa-external-link-alt"></i>
-                    </a>
-                    <button @click="save()" class="btn" style="flex:1; background:#2271b1; color:white; padding:10px; font-size:14px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:8px;" :disabled="isSaving">
+                <div style="display:flex; flex-direction:column; gap:8px;">
+                    <div style="display:flex; gap:8px;">
+                        <button type="button" @click="saveDraftManual()" class="btn" style="flex:1; background:#f8fafc; color:#334155; padding:9px 10px; font-size:13px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:6px; border:1px solid #cbd5e1; cursor:pointer;" :disabled="isSaving || isAutoSaving" title="Simpan sebagai draf">
+                            <i class="fas fa-save text-slate-500"></i>
+                            <span>Simpan Draf</span>
+                        </button>
+                        <a x-show="form.slug" :href="'/' + form.slug" target="_blank" class="btn" style="background:#f1f5f9; color:#475569; padding:9px 12px; font-size:13px; border-radius:6px; display:flex; justify-content:center; align-items:center; border:1px solid #cbd5e1; text-decoration:none;" title="Preview Artikel">
+                            <i class="fas fa-external-link-alt"></i>
+                        </a>
+                    </div>
+                    <button type="button" @click="save()" class="btn" style="width:100%; background:#2271b1; color:white; padding:10px; font-size:14px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:8px; cursor:pointer;" :disabled="isSaving">
                         <i class="fas fa-spinner fa-spin" x-show="isSaving"></i>
                         <span x-text="isSaving ? 'Menyimpan...' : (editingId ? 'Perbarui Tulisan' : 'Terbitkan Sekarang')"></span>
                     </button>
+                    <!-- Status Ringkas Auto-Save di Sidebar -->
+                    <div class="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 pt-1">
+                        <i class="fas fa-shield-alt text-emerald-600"></i>
+                        <span x-show="autoSaveStatus === 'saved'">Auto-save aktif (<span x-text="lastSavedTime || 'aman'"></span>)</span>
+                        <span x-show="autoSaveStatus === 'saving'">Sedang menyimpan draf...</span>
+                        <span x-show="autoSaveStatus === 'unsaved'">Perubahan belum disimpan</span>
+                        <span x-show="autoSaveStatus === 'idle'">Auto-save draf aktif</span>
+                    </div>
                 </div>
             </div>
 
@@ -375,9 +527,13 @@ export const editorForm = `
 
         </div>
     </div>
+    </div>
 </div>
 
     <style>
+        @media (max-width: 1023px) {
+            .m-hide-content, .m-hide-seo { display: none !important; }
+        }
         .comment-toggle-switch {
             position: relative !important;
             display: inline-flex !important;
