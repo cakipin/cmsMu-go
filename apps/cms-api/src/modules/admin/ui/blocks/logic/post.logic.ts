@@ -1,11 +1,32 @@
 /**
- * 🚀 POST LOGIC (Fixed: List Actions & Editor Sync)
- * Menangani Hapus, View, dan Edit agar konten muncul.
+ * 📝 CONTENT MODULE LOGIC (ISOLATED FEATURE MODULE: Posts, Pages, Editor)
+ * Seluruh state, aksi CRUD Posts & Pages, dan helper Editor berada di file ini.
+ * Perubahan pada fitur Konten cukup dilakukan di sini tanpa menyentuh Core.
  */
 
 export const postLogic: Record<string, any> & ThisType<any> = {
   posts: [],
+  pages: [],
   isLoading: false,
+  isLoadingPosts: false,
+  isLoadingPages: false,
+  editingId: null,
+  form: {
+    title: "",
+    slug: "",
+    body: "",
+    excerpt: "",
+    meta_title: "",
+    meta_description: "",
+    og_image: "",
+    type: "post",
+    status: "publish",
+    date: "",
+    category: "",
+    tags: "",
+    featured_image: "",
+    allow_comments: 1,
+  },
 
   // =========================================
   // 1. DATA PREPARATION (Payload Builder)
@@ -22,8 +43,8 @@ export const postLogic: Record<string, any> & ThisType<any> = {
     }
 
     // Normalisasi Status
-    let statusInput = (form.status || "draft").toString().toLowerCase();
-    let finalStatus =
+    const statusInput = (form.status || "draft").toString().toLowerCase();
+    const finalStatus =
       statusInput.includes("pub") || statusInput.includes("terbit")
         ? "publish"
         : "draft";
@@ -64,12 +85,29 @@ export const postLogic: Record<string, any> & ThisType<any> = {
   },
 
   // =========================================
-  // 2. API ACTIONS (CRUD)
+  // 2. API ACTIONS (CRUD POSTS & PAGES)
   // =========================================
+  async loadPages() {
+    this.isLoadingPages = true;
+    try {
+      const res = await this._fetch("/api/pages");
+      const json: any = await res.json();
+      this.pages = Array.isArray(json) ? json : json.results || json.data || [];
+    } catch (e) {
+      this.pages = [];
+    } finally {
+      this.isLoadingPages = false;
+    }
+  },
+
   async loadPosts() {
     this.isLoading = true;
+    this.isLoadingPosts = true;
     try {
-      const token = localStorage.getItem("labmu_token");
+      const token =
+        typeof window !== "undefined" && (window as any).getCmsToken
+          ? (window as any).getCmsToken()
+          : localStorage.getItem("labmu_token") || "";
       const res = await fetch("/api/posts?t=" + Date.now(), {
         headers: { Authorization: "Bearer " + token },
       });
@@ -85,12 +123,13 @@ export const postLogic: Record<string, any> & ThisType<any> = {
           p.category && p.category !== "null" ? p.category : "Uncategorized",
         tags: p.tags && p.tags !== "null" ? p.tags : "-",
         status: p.status || "draft",
-        body: p.body || "", // Pastikan body terbawa untuk keperluan Edit
+        body: p.body || "",
       }));
     } catch (e) {
       this.posts = [];
     } finally {
       this.isLoading = false;
+      this.isLoadingPosts = false;
     }
   },
 
@@ -98,7 +137,10 @@ export const postLogic: Record<string, any> & ThisType<any> = {
     const formToProcess = formInput || this.form;
     this.isLoading = true;
     try {
-      const token = localStorage.getItem("labmu_token");
+      const token =
+        typeof window !== "undefined" && (window as any).getCmsToken
+          ? (window as any).getCmsToken()
+          : localStorage.getItem("labmu_token") || "";
       const payload = this.preparePayload(formToProcess);
       const isEdit = payload.id !== undefined;
       const url = isEdit ? `/api/posts/${payload.id}` : "/api/posts";
@@ -116,148 +158,163 @@ export const postLogic: Record<string, any> & ThisType<any> = {
       const result: any = await res.json();
 
       if (res.ok) {
-        if ((window as any).showToast) (window as any).showToast("Berhasil disimpan!", "success");
+        if ((window as any).showToast)
+          (window as any).showToast("Berhasil disimpan!", "success");
         if (!isEdit) {
           this.view = "posts";
         }
         await this.loadPosts();
         return true;
       } else {
-        if ((window as any).showToast) (window as any).showToast("Gagal: " + (result.error || "Database Error"), "error");
+        if ((window as any).showToast)
+          (window as any).showToast(
+            "Gagal: " + (result.error || "Database Error"),
+            "error"
+          );
         return false;
       }
     } catch (e) {
-      if ((window as any).showToast) (window as any).showToast("Kesalahan koneksi.", "error");
+      if ((window as any).showToast)
+        (window as any).showToast("Kesalahan koneksi.", "error");
       return false;
     } finally {
       this.isLoading = false;
     }
   },
 
-  // --- FIX FITUR HAPUS ---
   async deletePost(id: string) {
     if (!id) return;
     if (!confirm("Hapus post ini permanen?")) return;
 
     try {
-      const token = localStorage.getItem("labmu_token");
+      const token =
+        typeof window !== "undefined" && (window as any).getCmsToken
+          ? (window as any).getCmsToken()
+          : localStorage.getItem("labmu_token") || "";
       const res = await fetch(`/api/posts/${id}`, {
         method: "DELETE",
         headers: { Authorization: "Bearer " + token },
       });
 
       if (res.ok) {
-        // Hapus dari tampilan segera (Optimistic Update)
         this.posts = this.posts.filter((p: any) => p.id !== id);
-        // Sinkronisasi ulang
         await this.loadPosts();
       } else {
-        if ((window as any).showToast) (window as any).showToast("Gagal menghapus.", "error");
+        if ((window as any).showToast)
+          (window as any).showToast("Gagal menghapus.", "error");
       }
     } catch (e) {
-      if ((window as any).showToast) (window as any).showToast("Gagal koneksi.", "error");
+      if ((window as any).showToast)
+        (window as any).showToast("Gagal koneksi.", "error");
     }
   },
 
   // =========================================
-  // 3. UI HELPERS (Edit, View, Image)
+  // 3. EDITOR & CONTENT HELPERS
   // =========================================
-
-  // --- FITUR BARU: GETTERS UNTUK DROPDOWN & TAGS ---
-  get uniqueCategories() {
-    if (!this.posts || this.posts.length === 0) return ["Uncategorized"];
-    const cats = this.posts
-      .map((p: any) => p.category)
-      .filter((c: any) => c && c !== "-" && c !== "Uncategorized");
-    return ["Uncategorized", ...new Set(cats)].sort();
-  },
-
-  get uniqueTags() {
-    if (!this.posts || this.posts.length === 0) return [];
-    const allTags = this.posts.flatMap((p: any) => (p.tags || "").split(","));
-    const cleaned = allTags
-      .map((t: string) => t.trim())
-      .filter((t: string) => t && t !== "-" && t.length > 2);
-    return [...new Set(cleaned)].sort();
-  },
-
-  // --- UPDATE: Saat buka editor, load data dulu biar dropdown muncul ---
-  openEditor(_type: string) {
+  openEditor(type: string) {
     this.view = "add";
     this.editingId = null;
-    // Reset Form
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+
     this.form = {
       title: "",
       slug: "",
       body: "",
-      status: "draft",
+      excerpt: "",
+      meta_title: "",
+      meta_description: "",
+      og_image: "",
+      type: type || "post",
+      video_url: "",
+      status: "publish",
+      date: now.toISOString().slice(0, 16),
       category: "",
       tags: "",
       featured_image: "",
     };
 
-    // Load data posts di background agar dropdown terisi
-    if (this.posts.length === 0) this.loadPosts();
+    if (!this.posts || this.posts.length === 0) this.loadPosts();
 
-    // Init Editor
     setTimeout(() => {
       if ((window as any).initCmsEditor)
-        (window as any).initCmsEditor("editor_id", "", (c: any) => (this.form.body = c));
-    }, 100);
+        (window as any).initCmsEditor(
+          "editor_id",
+          "",
+          (c: any) => (this.form.body = c)
+        );
+    }, 50);
   },
 
-  // --- FIX EDIT POST (Kalender & Editor) ---
-  editPost(item: any) {
+  async editContent(item: any) {
     this.view = "add";
     this.editingId = item.id;
-
-    // Deep clone data item ke form global
     this.form = JSON.parse(JSON.stringify(item));
+    this.form.type = item.type || "post";
+    this.form.video_url = item.video_url || "";
 
-    // Load posts jika kosong agar dropdown categories muncul saat edit
-    if (this.posts.length === 0) this.loadPosts();
-
-    // FIX KALENDER: Konversi ISO (UTC) ke Local Time untuk input datetime-local
-    if (this.form.created_at) {
-      const date = new Date(this.form.created_at);
-      // Menggeser waktu sesuai zona waktu lokal user (WIB/dll)
-      const localDate = new Date(
-        date.getTime() - date.getTimezoneOffset() * 60000
-      );
-      // Ambil 16 karakter pertama: "YYYY-MM-DDTHH:mm"
-      this.form.date = localDate.toISOString().slice(0, 16);
-    } else {
-      // Jika kosong, pakai waktu sekarang
-      const now = new Date();
-      const localNow = new Date(
-        now.getTime() - now.getTimezoneOffset() * 60000
-      );
-      this.form.date = localNow.toISOString().slice(0, 16);
+    if (item.id && !item.body && typeof fetch !== "undefined") {
+      try {
+        const token =
+          typeof window !== "undefined" && (window as any).getCmsToken
+            ? (window as any).getCmsToken()
+            : "";
+        const res = await fetch(
+          "/api/" + (item.type === "page" ? "pages" : "posts") + "/" + item.id,
+          {
+            headers: { Authorization: "Bearer " + token },
+          }
+        );
+        const data: any = await res.json();
+        if (data && data.body) {
+          this.form.body = data.body;
+          item.body = data.body;
+        }
+      } catch (e) {
+        console.error("Failed to load full post content", e);
+      }
     }
 
-    // Init Editor dengan Content
-    // Kita beri delay sedikit agar View 'add' selesai render dulu
+    if (this.form.date || this.form.created_at) {
+      const dt = this.form.date || this.form.created_at;
+      const d = new Date(dt);
+      d.setMinutes(d.getMinutes() - d.getTimezoneOffset());
+      this.form.date = d.toISOString().slice(0, 16);
+    }
+
     setTimeout(() => {
-      if ((window as any).initCmsEditor) {
-        // Panggil init editor dan masukkan form.body
-        (window as any).initCmsEditor("editor_id", item.body || "", (c: string) => {
-          this.form.body = c;
-        });
-      }
-    }, 100);
+      if ((window as any).initCmsEditor)
+        (window as any).initCmsEditor(
+          "editor_id",
+          item.body || "",
+          (c: string) => (this.form.body = c)
+        );
+    }, 50);
   },
 
-  // --- BARU: FITUR VIEW POST ---
+  editPost(item: any) {
+    return this.editContent(item);
+  },
+
+  makeSlug() {
+    if (!this.editingId && this.form.title) {
+      this.form.slug = this.form.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-+|-+$/g, "");
+    }
+  },
+
   viewPost(slug: string) {
     if (!slug) {
-      if ((window as any).showToast) (window as any).showToast("Slug belum ada.", "warning");
+      if ((window as any).showToast)
+        (window as any).showToast("Slug belum ada.", "warning");
       return;
     }
-    // Buka tab baru ke URL post (Sesuaikan domain jika perlu)
     window.open("/" + slug, "_blank");
   },
 
-  // --- Image & Tags ---
   openFeaturedImageSelector() {
     this.mediaSelectorTarget = "featured_image";
     this.view = "media";
@@ -287,12 +344,19 @@ export const postLogic: Record<string, any> & ThisType<any> = {
     }
   },
 
-  get availableCategories() {
-    if (!this.posts || !Array.isArray(this.posts)) return ["Uncategorized"];
-    const cats = this.posts
-      .map((p: any) => p.category)
-      .filter((c: any) => c && c !== "-" && c !== "null");
-    return ["Uncategorized", ...new Set(cats)];
+  cleanTitle(str: string) {
+    if (!str) return "";
+    return String(str)
+      .replace(/<[^>]+>/g, "")
+      .replace(/&#8216;/g, "‘")
+      .replace(/&#8217;/g, "’")
+      .replace(/&#8220;/g, "“")
+      .replace(/&#8221;/g, "”")
+      .replace(/&#038;/g, "&")
+      .replace(/&amp;/g, "&")
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .trim();
   },
 };
 
@@ -328,10 +392,7 @@ if (typeof window !== "undefined") {
             ],
           });
 
-          // Set konten awal (SANGAT PENTING UTK EDIT)
           editor.setContents(content || "");
-
-          // Event Listener untuk update form saat ketik
           editor.onChange = (c: string) => {
             if (callback) callback(c);
           };

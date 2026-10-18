@@ -2,7 +2,12 @@ import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
 import { users as usersTable } from "@cmsmu/db";
 import { eq, or, desc, and, sql } from "drizzle-orm";
-import { sha256, generateUserToken, getJwtSecret } from "./auth.helper";
+import {
+  sha256,
+  generateUserToken,
+  verifyUserToken,
+  getJwtSecret,
+} from "./auth.helper";
 import { adminOnlyMiddleware } from "../../middleware/auth";
 import { processSsoLogin } from "./sso.service";
 
@@ -13,7 +18,7 @@ type Bindings = {
   JWT_SECRET?: string;
 };
 
-const usersRouter = new Hono<{ Bindings: Bindings }>();
+const usersRouter = new Hono<{ Bindings: Bindings; Variables: { user?: any } }>();
 
 // ---------------------------------------------------------------------
 // 1. GET ALL USERS (ADMIN ONLY)
@@ -88,6 +93,82 @@ usersRouter.post("/", adminOnlyMiddleware, async c => {
 });
 
 // ---------------------------------------------------------------------
+// 2B. UPDATE PROFILE PASSWORD (PUT /profile-password)
+// ---------------------------------------------------------------------
+usersRouter.put("/profile-password", async c => {
+  try {
+    const authHeader = c.req.header("Authorization");
+    let token = authHeader ? authHeader.replace(/^Bearer\s+/i, "").trim() : "";
+
+    if (!token) {
+      const cookieHeader = c.req.header("Cookie") || "";
+      const parts = cookieHeader.split(";");
+      for (let i = 0; i < parts.length; i++) {
+        const p = parts[i].trim();
+        if (p.indexOf("labmu_token=") === 0) {
+          token = decodeURIComponent(p.substring(12));
+          break;
+        }
+      }
+    }
+
+    if (!token) {
+      return c.json({ error: "Autentikasi diperlukan" }, 401);
+    }
+
+    const payload = await verifyUserToken(token, getJwtSecret(c.env));
+    if (!payload || !payload.id) {
+      return c.json({ error: "Token pengguna tidak valid" }, 401);
+    }
+
+    const body = await c.req.json().catch(() => null);
+    const currentPassword = String(body?.currentPassword || "");
+    const newPassword = String(body?.newPassword || "");
+
+    if (!currentPassword || !newPassword) {
+      return c.json(
+        { error: "Password saat ini dan password baru wajib diisi" },
+        400
+      );
+    }
+    if (newPassword.length < 6) {
+      return c.json({ error: "Password baru minimal 6 karakter" }, 400);
+    }
+
+    const db = getDb(c.env.DB);
+    const user = await db
+      .select({ id: usersTable.id, password: usersTable.password })
+      .from(usersTable)
+      .where(eq(usersTable.id, Number(payload.id)))
+      .get();
+
+    if (!user) {
+      return c.json({ error: "Akun pengguna tidak ditemukan" }, 404);
+    }
+
+    const hashedCurrent = await sha256(currentPassword);
+    const dbPass = String(user.password || "");
+    if (hashedCurrent !== dbPass && currentPassword !== dbPass) {
+      return c.json({ error: "Password saat ini tidak sesuai" }, 400);
+    }
+
+    const hashedNew = await sha256(newPassword);
+    const res = await db
+      .update(usersTable)
+      .set({ password: hashedNew })
+      .where(eq(usersTable.id, user.id))
+      .run();
+
+    if (res.success) {
+      return c.json({ success: true, message: "Password berhasil diperbarui" });
+    }
+    return c.json({ error: "Gagal memperbarui password" }, 500);
+  } catch (e: any) {
+    return c.json({ error: e.message || "Gagal memperbarui password" }, 500);
+  }
+});
+
+// ---------------------------------------------------------------------
 // 3. UPDATE USER (ADMIN ONLY - PUT /:id)
 // ---------------------------------------------------------------------
 usersRouter.put("/:id", adminOnlyMiddleware, async c => {
@@ -105,15 +186,23 @@ usersRouter.put("/:id", adminOnlyMiddleware, async c => {
     } = body;
 
     const db = getDb(c.env.DB);
-    const updateData: any = { username, email, role, name };
+    const updateData: any = {};
 
+    if (username !== undefined) updateData.username = username;
+    if (email !== undefined) updateData.email = email;
+    if (role !== undefined) updateData.role = role;
+    if (name !== undefined) updateData.name = name;
     if (subscription_plan !== undefined)
       updateData.subscriptionPlan = subscription_plan;
     if (subscription_expires_at !== undefined)
       updateData.subscriptionExpiresAt = subscription_expires_at;
 
-    if (password && password.trim() !== "") {
-      updateData.password = await sha256(password);
+    if (password && String(password).trim() !== "") {
+      updateData.password = await sha256(String(password));
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      return c.json({ error: "Tidak ada data yang diperbarui" }, 400);
     }
 
     const res = await db
@@ -138,6 +227,17 @@ usersRouter.put("/:id", adminOnlyMiddleware, async c => {
 usersRouter.delete("/:id", adminOnlyMiddleware, async c => {
   try {
     const id = Number(c.req.param("id"));
+    const currentUser = c.get("user");
+    if (currentUser && Number(currentUser.id) === id) {
+      return c.json(
+        {
+          error:
+            "Dilarang menghapus akun Anda sendiri yang sedang aktif login!",
+        },
+        400
+      );
+    }
+
     const db = getDb(c.env.DB);
     const res = await db.delete(usersTable).where(eq(usersTable.id, id)).run();
 

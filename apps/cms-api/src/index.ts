@@ -26,6 +26,7 @@ import notificationsRouter from "./modules/users/notifications.router"; // Notif
 import { commentsRouter } from "./modules/comments/comments.router";
 import { otaRouter } from "./addons/ota/router";
 import { aiRouter } from "./modules/ai/ai.router";
+import { webhooksRouter } from "./modules/webhooks/webhooks.router";
 
 // AUTH MIDDLEWARE
 import { authMiddleware, adminOnlyMiddleware } from "./middleware/auth";
@@ -76,8 +77,10 @@ app.use("/api/*", async (c, next) => {
   const method = c.req.method;
   const isWhitelisted =
     path.includes("/login") ||
+    path === "/api/users/register" ||
     path.startsWith("/api/public") ||
     path.startsWith("/api/users/sso") ||
+    path.startsWith("/api/webhooks/incoming/") ||
     // OTA: Hanya izinkan manifest publik dan endpoint telemetri GET
     path === "/api/ota/manifest" ||
     (method === "GET" && path.startsWith("/api/addons/ota")) ||
@@ -159,6 +162,7 @@ app.route("/api/posts", postsRouter);
 app.route("/api/pages", pagesRouter); // Route API Pages
 app.route("/api/theme-editor", themeEditorRouter); // Endpoint Editor Puck
 app.route("/api/ai", aiRouter);
+app.route("/api/webhooks", webhooksRouter);
 
 // Catch-all admin view (setelah spesifik routes)
 app.get("/admin/:view", c =>

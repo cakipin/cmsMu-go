@@ -59,7 +59,7 @@ export const sidebarBlock = `
       </div>
 
       <!-- LOOP MENU GRUP -->
-      <template x-for="groupName in ['Content', 'Appearance', 'System', 'Plugins']">
+      <template x-for="groupName in ['Content', 'Appearance', 'System']">
         <div x-show="(window.adminMenus || []).some(m => m.group === groupName && (!m.role || m.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && m.role.includes('admin'))) && (!m.pluginId || isPluginActive(m.pluginId)))">
           <!-- Label Grup Saat Expanded -->
           <h3 class="mb-1 ml-2 mt-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-text="groupName" x-show="sidebarOpen"></h3>
@@ -68,7 +68,7 @@ export const sidebarBlock = `
           
           <ul class="mb-1.5 flex flex-col gap-0.5">
             <template x-for="menu in (window.adminMenus || []).filter(m => m.group === groupName)">
-              <template x-if="(!menu.role || menu.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && menu.role.includes('admin'))) && (!menu.pluginId || isPluginActive(m.pluginId))">
+              <template x-if="(!menu.role || menu.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && menu.role.includes('admin'))) && (!menu.pluginId || isPluginActive(menu.pluginId))">
                 <li class="relative group">
                   <template x-if="!menu.href">
                     <a class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 

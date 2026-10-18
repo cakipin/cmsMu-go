@@ -4,11 +4,14 @@ export const usersPage = `
   <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
     <div>
         <h2 class="text-xl font-bold text-slate-800 m-0">Users</h2>
-        <p class="text-xs text-slate-500 m-0 mt-0.5">Kelola tim redaksi dan hak akses pengguna.</p>
+        <p class="text-xs text-slate-500 m-0 mt-0.5">Kelola tim redaksi, masa aktif langganan, dan kustomisasi nama role pengguna.</p>
     </div>
     <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
         <button @click="loadUsers()" class="btn min-h-[38px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300" title="Refresh Data">
             <i class="fas fa-sync" :class="isLoadingUsers ? 'fa-spin' : ''"></i>
+        </button>
+        <button @click="openRoleManager()" class="btn min-h-[38px] px-3.5 py-2 bg-slate-800 hover:bg-slate-900 text-white font-semibold rounded-md shadow-sm text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 transition-all">
+          <i class="fas fa-user-tag"></i> <span>Kelola Role</span>
         </button>
         <button @click="openAddUser()" class="btn min-h-[38px] px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-md shadow-sm text-xs sm:text-sm flex items-center gap-1.5 active:scale-95 transition-all">
           <i class="fas fa-plus"></i> <span>Add User</span>
@@ -17,29 +20,28 @@ export const usersPage = `
   </div>
 
   <!-- TOOLBAR: FILTER ROLE & PENCARIAN RESPONSIF -->
-  <div class="bg-white p-3 rounded-lg border border-slate-200 mb-4 space-y-2.5 shadow-sm">
-    <div class="relative w-full">
+  <div class="bg-white p-3 rounded-lg border border-slate-200 mb-4 shadow-sm flex flex-col md:flex-row md:items-center gap-2.5 md:gap-3">
+    <!-- Input Pencarian (Fleksibel) -->
+    <div class="relative flex-1">
       <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-xs"></i>
-      <input type="text" x-model="searchUser" @input="userPage = 1" placeholder="Cari nama, username, email..." 
+      <input type="text" x-model="searchUser" @input="userPage = 1" placeholder="Cari nama, username, email, atau role..." 
              class="input w-full pl-8 pr-3 py-2 text-xs sm:text-sm rounded-md border border-slate-300 focus:border-blue-500 outline-none">
     </div>
 
-    <div class="flex items-center justify-between gap-2">
-      <div class="flex items-center gap-2 flex-1">
+    <!-- Filter Role Dinamis & Tombol Reset (Sejajar di Desktop) -->
+    <div class="flex items-center justify-between md:justify-end gap-2 shrink-0">
+      <div class="flex items-center gap-2">
         <label class="text-xs font-semibold text-slate-600 shrink-0">Role:</label>
         <select x-model="filterUserRole" @change="userPage = 1" 
-                class="input flex-1 sm:flex-initial py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white">
+                class="input py-2 px-2.5 text-xs sm:text-sm rounded-md border border-slate-300 bg-white min-w-[150px] md:min-w-[180px] focus:border-blue-500 outline-none">
             <option value="all">Semua Role</option>
-            <option value="superadmin">Superadmin</option>
-            <option value="admin">Administrator</option>
-            <option value="editor">Editor</option>
-            <option value="penulis">Penulis</option>
-            <option value="subscriber">Subscriber (Biasa)</option>
-            <option value="subscriber_pro">⭐ Subscriber Pro</option>
+            <template x-for="r in rolesList" :key="'filter_' + r.slug">
+                <option :value="r.slug" x-text="r.label"></option>
+            </template>
         </select>
       </div>
       <button x-show="searchUser || filterUserRole !== 'all'" @click="searchUser=''; filterUserRole='all'; userPage=1" 
-              class="btn py-1.5 px-3 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md font-medium active:scale-95 transition-all">
+              class="btn py-2 px-3 text-xs sm:text-sm bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded-md font-medium active:scale-95 transition-all shrink-0">
           Reset
       </button>
     </div>
@@ -78,12 +80,11 @@ export const usersPage = `
               <td>
                   <div>
                       <span class="badge" 
-                            :style="u.role=='admin' ? 'background:#2271b1; color:#fff;' : (u.role=='editor' ? 'background:#d1e7dd; color:#0f5132;' : (['subscriber_pro', 'pro'].includes(u.role) ? 'background:#fef3c7; color:#92400e; border:1px solid #f59e0b; font-weight:700;' : (['subscriber', 'subscribe'].includes(u.role) ? 'background:#e2e8f0; color:#475569;' : 'background:#fff3cd; color:#664d03;')))"
+                            :style="getRoleBadgeStyle(u.role)"
                             style="padding:4px 8px; border-radius:4px; font-size:11px; text-transform:uppercase; display:inline-flex; align-items:center; gap:4px;">
-                          <span x-show="['subscriber_pro', 'pro'].includes(u.role)">⭐</span>
-                          <span x-text="['subscriber_pro', 'pro'].includes(u.role) ? 'SUBSCRIBER PRO' : u.role"></span>
+                          <span x-text="getRoleLabel(u.role)"></span>
                       </span>
-                      <template x-if="['subscriber_pro', 'pro'].includes(u.role) && u.subscription_expires_at">
+                      <template x-if="isQuotaRole(u.role) && u.subscription_expires_at">
                           <div style="font-size:10px; font-weight:600; margin-top:3px;"
                                :style="new Date(u.subscription_expires_at) < new Date() ? 'color:#dc2626;' : 'color:#059669;'"
                                x-text="new Date(u.subscription_expires_at) < new Date() ? 'Kedaluwarsa' : ('s.d. ' + new Date(u.subscription_expires_at).toLocaleDateString('id-ID'))"></div>
@@ -95,8 +96,8 @@ export const usersPage = `
               </td>
               <td style="text-align:center;">
                 <div style="display:flex; justify-content:center; gap:5px;">
-                  <button @click="editUser(u)" class="btn-icon" style="color:#f39c12;"><i class="fas fa-pencil-alt"></i></button>
-                  <button @click="deleteUser(u.id)" class="btn-icon" style="color:#e74c3c;"><i class="fas fa-trash-alt"></i></button>
+                  <button @click="editUser(u)" class="btn-icon" style="color:#f39c12;" title="Edit User"><i class="fas fa-pencil-alt"></i></button>
+                  <button @click="deleteUser(u.id)" class="btn-icon" style="color:#e74c3c;" title="Hapus User"><i class="fas fa-trash-alt"></i></button>
                 </div>
               </td>
             </tr>
@@ -129,10 +130,9 @@ export const usersPage = `
             </div>
             <div>
               <span class="badge" 
-                    :style="u.role=='admin' ? 'background:#2271b1; color:#fff;' : (u.role=='editor' ? 'background:#d1e7dd; color:#0f5132;' : (['subscriber_pro', 'pro'].includes(u.role) ? 'background:#fef3c7; color:#92400e; border:1px solid #f59e0b; font-weight:700;' : (['subscriber', 'subscribe'].includes(u.role) ? 'background:#e2e8f0; color:#475569;' : 'background:#fff3cd; color:#664d03;')))"
+                    :style="getRoleBadgeStyle(u.role)"
                     style="padding:3px 6px; border-radius:4px; font-size:10px; text-transform:uppercase; display:inline-flex; align-items:center; gap:3px;">
-                <span x-show="['subscriber_pro', 'pro'].includes(u.role)">⭐</span>
-                <span x-text="['subscriber_pro', 'pro'].includes(u.role) ? 'PRO' : u.role"></span>
+                <span x-text="getRoleLabel(u.role)"></span>
               </span>
             </div>
           </div>
@@ -142,7 +142,7 @@ export const usersPage = `
             <span class="text-[11px] text-slate-400" x-text="u.created_at ? ('Reg: ' + new Date(u.created_at).toLocaleDateString('id-ID')) : ''"></span>
           </div>
 
-          <template x-if="['subscriber_pro', 'pro'].includes(u.role) && u.subscription_expires_at">
+          <template x-if="isQuotaRole(u.role) && u.subscription_expires_at">
             <div class="text-[11px] font-semibold bg-amber-50 text-amber-800 px-2 py-0.5 rounded border border-amber-200 w-fit"
                  :style="new Date(u.subscription_expires_at) < new Date() ? 'color:#dc2626;' : 'color:#059669;'"
                  x-text="new Date(u.subscription_expires_at) < new Date() ? 'Kedaluwarsa' : ('Masa Aktif s.d. ' + new Date(u.subscription_expires_at).toLocaleDateString('id-ID'))"></div>
@@ -193,7 +193,7 @@ export const usersPage = `
     </div>
   </div>
 
-
+  <!-- MODAL 1: ADD / EDIT USER -->
   <div class="modal-overlay" x-show="showUserModal" x-transition.opacity>
     <div class="modal-box" style="max-width:500px; height:auto; overflow:visible;" @click.away="showUserModal=false">
         <div class="modal-header">
@@ -207,22 +207,20 @@ export const usersPage = `
                     <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Username</label>
                     <input x-model="userForm.username" class="input" :disabled="editingUserId" placeholder="Login username...">
                 </div>
-                 <div>
+                <div>
                     <label style="font-weight:bold; font-size:12px; display:block; margin-bottom:5px;">Role</label>
-                    <select x-model="userForm.role" class="input" style="height:38px;">
-                        <option value="admin">Administrator</option>
-                        <option value="editor">Editor</option>
-                        <option value="penulis">Penulis</option>
-                        <option value="subscriber">Subscriber (Biasa)</option>
-                        <option value="subscriber_pro">⭐ Subscriber Pro (Berbayar)</option>
+                    <select x-model="userForm.role" @change="if(isQuotaRole(userForm.role) && !userForm.subscription_expires_date) applyPlanDuration()" class="input" style="height:38px;">
+                        <template x-for="r in rolesList" :key="'form_role_' + r.slug">
+                            <option :value="r.slug" x-text="r.label"></option>
+                        </template>
                     </select>
                 </div>
             </div>
 
-            <!-- Bagian Kuota Berlangganan jika Subscriber Pro -->
-            <div x-show="userForm.role === 'subscriber_pro'" style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 14px; border-radius:8px; margin-bottom:15px;" x-transition>
+            <!-- Bagian Kuota Berlangganan jika Role memiliki Kuota (Subscriber Pro / Custom VIP) -->
+            <div x-show="isQuotaRole(userForm.role)" style="background:#f8fafc; border:1px solid #e2e8f0; padding:12px 14px; border-radius:8px; margin-bottom:15px;" x-transition>
                 <label style="font-weight:bold; font-size:12px; color:#0f172a; display:block; margin-bottom:6px;">
-                    <i class="fas fa-crown" style="color:#f59e0b;"></i> Kuota Berlangganan (Subscriber Pro)
+                    <i class="fas fa-crown" style="color:#f59e0b;"></i> Kuota Masa Aktif (<span x-text="getRoleLabel(userForm.role)"></span>)
                 </label>
                 <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px;">
                     <div>
@@ -255,6 +253,96 @@ export const usersPage = `
             <div style="margin-top:25px; display:flex; justify-content:flex-end; gap:10px;">
                 <button @click="showUserModal=false" class="btn" style="background:#fff; color:#333; border-color:#ccc;">Cancel</button>
                 <button @click="saveUser()" class="btn btn-primary">Simpan User</button>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <!-- MODAL 2: KELOLA & RENAME ROLE PENGGUNA (DYNAMIC CUSTOM ROLES) -->
+  <div class="modal-overlay" x-show="showRoleModal" x-transition.opacity>
+    <div class="modal-box" style="max-width:600px; height:auto; max-height:90vh; overflow-y:auto;" @click.away="showRoleModal=false">
+        <div class="modal-header" style="display:flex; justify-content:space-between; align-items:center; padding:16px 20px; border-bottom:1px solid #e2e8f0;">
+            <div>
+                <h3 style="margin:0; font-size:16px; font-weight:700; color:#0f172a;">Kelola & Rename Role Pengguna</h3>
+                <p style="margin:2px 0 0 0; font-size:11px; color:#64748b;">Ubah nama tampilan (label) role atau tambahkan role baru sesuai kebutuhan organisasi.</p>
+            </div>
+            <button @click="showRoleModal=false" style="background:none; border:none; font-size:22px; color:#64748b; cursor:pointer;">&times;</button>
+        </div>
+
+        <div style="padding:20px;">
+            <!-- Daftar Role Saat Ini (Editable Label) -->
+            <div style="margin-bottom:18px;">
+                <label style="font-weight:700; font-size:12px; color:#334155; display:block; margin-bottom:8px;">Daftar Role Aktif (Ubah Nama Label di Kolom Kanan)</label>
+                <div style="border:1px solid #e2e8f0; border-radius:8px; overflow:hidden;">
+                    <table style="width:100%; border-collapse:collapse; font-size:12px;">
+                        <thead>
+                            <tr style="background:#f8fafc; border-bottom:1px solid #e2e8f0; text-align:left; color:#475569;">
+                                <th style="padding:8px 10px; width:130px;">Kode Role (Slug)</th>
+                                <th style="padding:8px 10px;">Nama Tampilan (Label Role)</th>
+                                <th style="padding:8px 10px; text-align:center; width:95px;">Masa Aktif?</th>
+                                <th style="padding:8px 10px; text-align:center; width:50px;">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <template x-for="(r, idx) in rolesList" :key="r.slug">
+                                <tr style="border-bottom:1px solid #f1f5f9;">
+                                    <td style="padding:8px 10px;">
+                                        <code style="background:#f1f5f9; color:#334155; padding:2px 6px; border-radius:4px; font-size:11px;" x-text="r.slug"></code>
+                                    </td>
+                                    <td style="padding:6px 10px;">
+                                        <input type="text" x-model="r.label" class="input" style="margin:0; height:32px; font-size:12px; padding:4px 8px;" placeholder="Nama role...">
+                                    </td>
+                                    <td style="padding:6px 10px; text-align:center;">
+                                        <input type="checkbox" x-model="r.hasQuota" :disabled="r.slug === 'superadmin' || r.slug === 'admin'" title="Aktifkan pengaturan tanggal kedaluwarsa untuk role ini">
+                                    </td>
+                                    <td style="padding:6px 10px; text-align:center;">
+                                        <button type="button" x-show="!r.isSystem && r.slug !== 'superadmin' && r.slug !== 'admin'" 
+                                                @click="removeCustomRole(r.slug)" 
+                                                style="background:none; border:none; color:#ef4444; cursor:pointer; padding:4px;" title="Hapus Role">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                        <span x-show="r.isSystem || r.slug === 'superadmin' || r.slug === 'admin'" style="font-size:10px; color:#94a3b8;" title="Role Inti Sistem">🔒</span>
+                                    </td>
+                                </tr>
+                            </template>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Form Tambah Role Kustom Baru -->
+            <div style="background:#f8fafc; border:1px solid #e2e8f0; border-radius:8px; padding:14px;">
+                <label style="font-weight:700; font-size:12px; color:#0f172a; display:block; margin-bottom:10px;">
+                    <i class="fas fa-plus-circle" style="color:#2563eb;"></i> Tambah Role Kustom Baru
+                </label>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:10px;">
+                    <div>
+                        <label style="font-size:11px; color:#475569; display:block; margin-bottom:4px;">Nama Tampilan Role</label>
+                        <input type="text" x-model="newRoleForm.label" @input="makeRoleSlug()" class="input" style="margin:0; height:34px; font-size:12px;" placeholder="Misal: Redaktur / Member VIP">
+                    </div>
+                    <div>
+                        <label style="font-size:11px; color:#475569; display:block; margin-bottom:4px;">Kode Role (Slug Sistem)</label>
+                        <input type="text" x-model="newRoleForm.slug" class="input" style="margin:0; height:34px; font-size:12px;" placeholder="Misal: redaktur / member_vip">
+                    </div>
+                </div>
+                <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+                    <label style="display:flex; align-items:center; gap:6px; font-size:12px; color:#334155; cursor:pointer; margin:0;">
+                        <input type="checkbox" x-model="newRoleForm.hasQuota">
+                        <span>Role ini memiliki batas masa aktif / kuota tanggal berlangganan</span>
+                    </label>
+                    <button type="button" @click="addCustomRole()" class="btn" style="background:#0f172a; color:#fff; padding:6px 12px; font-size:12px; border-radius:6px;">
+                        <i class="fas fa-plus"></i> Tambah ke Daftar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer Modal -->
+            <div style="margin-top:20px; display:flex; justify-content:flex-end; gap:10px; border-top:1px solid #e2e8f0; padding-top:14px;">
+                <button type="button" @click="showRoleModal=false" class="btn" style="background:#fff; color:#333; border:1px solid #cbd5e1;">Batal</button>
+                <button type="button" @click="saveRolesConfig()" :disabled="isSavingRoles" class="btn btn-primary" style="display:flex; align-items:center; gap:6px;">
+                    <i class="fas" :class="isSavingRoles ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                    <span x-text="isSavingRoles ? 'Menyimpan...' : 'Simpan Perubahan Role'"></span>
+                </button>
             </div>
         </div>
     </div>

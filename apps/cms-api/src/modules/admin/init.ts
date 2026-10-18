@@ -25,13 +25,5 @@
     view: "themes",
     icon: "fas fa-paint-brush",
   },
-  // Menu Plugins
-  {
-    group: "Plugins",
-    title: "All Plugins",
-    view: "plugins",
-    icon: "fas fa-plug",
-    action: () => (window as any).loadPlugins?.(),
-  },
 ];
 export {};

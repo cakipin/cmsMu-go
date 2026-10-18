@@ -13,7 +13,7 @@ export default function registerStarterPlugin(app: Hono<{ Bindings: Bindings }>)
 
   // 2. Register Admin Menu (Muncul di Sidebar Dashboard Pengelola)
   registerPluginMenu({
-    group: "Plugins",
+    group: "System",
     title: "Starter Plugin",
     view: "starter-plugin",
     icon: "fas fa-cube",

@@ -723,3 +723,172 @@ Kembalikan HANYA kode HTML murni tanpa markdown.`;
     return c.json({ error: err.message || "Gagal optimasi SEO" }, 500);
   }
 });
+
+// =====================================================================
+// 5. UNIVERSAL AI SSE STREAMING (POST & GET /api/ai/stream)
+// Mendukung Server-Sent Events (`text/event-stream`) untuk:
+// - Cloudflare Workers AI (`stream: true`)
+// - Heuristic Chunked Streaming Fallback (selalu 100% reliabel)
+// =====================================================================
+async function handleAiSseStream(
+  c: any,
+  params: {
+    task: string;
+    prompt: string;
+    title: string;
+    content: string;
+    systemPrompt?: string;
+  }
+) {
+  const encoder = new TextEncoder();
+  const { task, prompt, title, content, systemPrompt } = params;
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const sendEvent = (event: string, dataObj: any) => {
+        const dataStr =
+          typeof dataObj === "string" ? dataObj : JSON.stringify(dataObj);
+        controller.enqueue(
+          encoder.encode(`event: ${event}\ndata: ${dataStr}\n\n`)
+        );
+      };
+
+      try {
+        sendEvent("meta", {
+          status: "streaming",
+          task,
+          timestamp: new Date().toISOString(),
+        });
+
+        let streamedViaWorkersAi = false;
+
+        // 1. Coba gunakan Cloudflare Workers AI dengan native stream: true
+        if (c.env?.AI && typeof c.env.AI.run === "function") {
+          try {
+            const defaultSys =
+              systemPrompt ||
+              (task === "tidy-content"
+                ? "Anda adalah editor berita profesional. Rapikan paragraf HTML tanpa mengarang isi baru."
+                : task === "seo-metadata"
+                  ? "Anda adalah pakar SEO Google. Berikan analisis dan metadata SEO terbaik."
+                  : "Anda adalah asisten AI redaksi dan penulis konten profesional cmsMu.");
+
+            const userMessage =
+              prompt ||
+              `Judul: "${title}"\n\nKonten:\n${content || "(Kosong)"}`;
+
+            const aiStream = await c.env.AI.run(
+              "@cf/meta/llama-3.2-3b-instruct",
+              {
+                messages: [
+                  { role: "system", content: defaultSys },
+                  { role: "user", content: userMessage },
+                ],
+                stream: true,
+                max_tokens: 2048,
+                temperature: 0.2,
+              }
+            );
+
+            if (aiStream && typeof aiStream.getReader === "function") {
+              streamedViaWorkersAi = true;
+              const reader = aiStream.getReader();
+              const decoder = new TextDecoder();
+              while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+                const chunkText = decoder.decode(value, { stream: true });
+                // Parse baris SSE dari Workers AI (`data: {"response":"..."}`)
+                const lines = chunkText.split("\n");
+                for (const line of lines) {
+                  const trimmed = line.trim();
+                  if (trimmed.startsWith("data:")) {
+                    const rawData = trimmed.slice(5).trim();
+                    if (rawData === "[DONE]") continue;
+                    try {
+                      const parsed = JSON.parse(rawData);
+                      if (parsed.response) {
+                        sendEvent("token", {
+                          chunk: parsed.response,
+                          source: "workers-ai",
+                        });
+                      }
+                    } catch (_) {
+                      sendEvent("token", {
+                        chunk: rawData,
+                        source: "workers-ai",
+                      });
+                    }
+                  }
+                }
+              }
+            }
+          } catch (aiStreamErr: any) {
+            console.warn("[AI SSE Workers-AI Fallback]:", aiStreamErr?.message);
+          }
+        }
+
+        // 2. Fallback Heuristik Cerdas jika Workers AI tidak aktif di environment
+        if (!streamedViaWorkersAi) {
+          let finalOutput = "";
+          if (task === "tidy-content") {
+            finalOutput = heuristicTidyContent(content || prompt);
+          } else if (task === "seo-metadata") {
+            finalOutput = JSON.stringify(
+              heuristicGenerateSeo(title || prompt, content || prompt)
+            );
+          } else {
+            finalOutput = heuristicTidyContent(
+              content || prompt || title || "Konten siap diproses."
+            );
+          }
+
+          // Pecah menjadi potongan token bertahap agar klien SSE menerima stream yang mulus
+          const chunkSize = 48;
+          for (let i = 0; i < finalOutput.length; i += chunkSize) {
+            const part = finalOutput.slice(i, i + chunkSize);
+            sendEvent("token", { chunk: part, source: "heuristic" });
+          }
+        }
+
+        sendEvent("done", "[DONE]");
+      } catch (err: any) {
+        sendEvent("error", {
+          error: err?.message || "Stream interrupted",
+        });
+      } finally {
+        controller.close();
+      }
+    },
+  });
+
+  return new Response(stream, {
+    headers: {
+      "Content-Type": "text/event-stream; charset=utf-8",
+      "Cache-Control": "no-cache, no-transform",
+      Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
+    },
+  });
+}
+
+aiRouter.post("/stream", async c => {
+  const body = await c.req.json().catch(() => ({}));
+  return handleAiSseStream(c, {
+    task: String(body.task || "chat"),
+    prompt: String(body.prompt || ""),
+    title: String(body.title || ""),
+    content: String(body.content || ""),
+    systemPrompt: body.systemPrompt ? String(body.systemPrompt) : undefined,
+  });
+});
+
+aiRouter.get("/stream", async c => {
+  return handleAiSseStream(c, {
+    task: String(c.req.query("task") || "chat"),
+    prompt: String(c.req.query("prompt") || ""),
+    title: String(c.req.query("title") || ""),
+    content: String(c.req.query("content") || ""),
+  });
+});
+
