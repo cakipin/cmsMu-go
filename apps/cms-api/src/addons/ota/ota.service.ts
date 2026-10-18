@@ -3,8 +3,8 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = "0.1.7";
-export const CORE_BUILD_DATE = "2026-10-18";
+export const CORE_VERSION = "0.1.8";
+export const CORE_BUILD_DATE = "2026-10-19";
 export const MIN_COMPATIBLE_SCHEMA_VERSION = "0.1.0";
 
 export interface OtaUpdatedComponent {
@@ -128,7 +128,7 @@ export const otaAddonService = {
     const cleanBase = baseUrl.replace(/\/+$/, "");
     let version = CORE_VERSION;
     let buildDate = CORE_BUILD_DATE;
-    let changelog = `Rilis stabil CMSMu Core Framework v${CORE_VERSION} (OTA Engine Addon).`;
+    let changelog = `Rilis stabil CMSMu Core Framework v${CORE_VERSION} (100% Core System Clean, In-System Modal/Toast SOP 16, Modernisasi UI Themes, & Zero 404 Permalink).`;
     let channel: "stable" | "beta" = "stable";
 
     if (db) {
@@ -138,7 +138,11 @@ export const otaAddonService = {
             "SELECT version, build_date, changelog, channel FROM ota_releases WHERE is_active = 1 ORDER BY created_at DESC LIMIT 1"
           )
           .first();
-        if (latestRelease && latestRelease.version) {
+        if (
+          latestRelease &&
+          latestRelease.version &&
+          this.compareVersions(latestRelease.version, CORE_VERSION) >= 0
+        ) {
           version = latestRelease.version;
           buildDate = latestRelease.build_date || CORE_BUILD_DATE;
           changelog = latestRelease.changelog || changelog;

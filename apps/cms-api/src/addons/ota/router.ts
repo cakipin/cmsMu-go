@@ -149,7 +149,36 @@ otaRouter.get("/mode", async c => {
 otaRouter.get("/check-update", async c => {
   try {
     const db = c.env?.DB;
-    const migrationInfo = await getMigrationStatus(db);
+    const reqUrl = new URL(c.req.url);
+    const activeIds = [
+      "2026_01_01_001_core_tables",
+      "2026_02_15_002_plugins_and_addons",
+      "2026_09_21_003_ota_and_comments",
+      "2026_09_23_004_pages_schema_alignment",
+      "2026_10_18_005_pages_views_column",
+    ];
+    let migrationInfo = await getMigrationStatus(db);
+    const countActiveApplied = (info: any) =>
+      Array.isArray(info?.history)
+        ? info.history.filter((h: any) => activeIds.includes(h.id)).length
+        : 0;
+    if (
+      db &&
+      isHubMode(reqUrl.host) &&
+      countActiveApplied(migrationInfo) < migrationInfo.totalMigrations
+    ) {
+      try {
+        await runAutoMigration(db);
+        migrationInfo = await getMigrationStatus(db);
+      } catch (_) {}
+    }
+    const matchedApplied = countActiveApplied(migrationInfo);
+    migrationInfo = {
+      ...migrationInfo,
+      appliedCount: matchedApplied,
+      status:
+        matchedApplied >= migrationInfo.totalMigrations ? "synced" : "pending",
+    };
 
     let currentInstalledVersion = CORE_VERSION;
     if (db) {
@@ -1105,11 +1134,21 @@ otaRouter.post("/trigger-deploy", async c => {
 // 8. GET /status - Status engine OTA
 otaRouter.get("/status", async c => {
   const db = c.env?.DB;
-  const migrationInfo = await getMigrationStatus(db);
   const url = new URL(c.req.url);
   const baseUrl = `${url.protocol}//${url.host}`;
-  const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
   const isHub = isHubMode(url.host);
+  let migrationInfo = await getMigrationStatus(db);
+  if (
+    db &&
+    isHub &&
+    migrationInfo.appliedCount < migrationInfo.totalMigrations
+  ) {
+    try {
+      await runAutoMigration(db);
+      migrationInfo = await getMigrationStatus(db);
+    } catch (_) {}
+  }
+  const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
 
   let currentCoreVersion = CORE_VERSION;
   if (db && !isHub) {
@@ -1147,6 +1186,19 @@ otaRouter.get("/status", async c => {
     } catch (_) {}
   }
 
+  const activeMigrationIds = new Set([
+    "2026_01_01_001_core_tables",
+    "2026_02_15_002_plugins_and_addons",
+    "2026_09_21_003_ota_and_comments",
+    "2026_09_23_004_pages_schema_alignment",
+    "2026_10_18_005_pages_views_column",
+  ]);
+  const matchedAppliedCount = Array.isArray(migrationInfo.history)
+    ? migrationInfo.history.filter((h: any) => activeMigrationIds.has(h.id))
+        .length
+    : Math.min(migrationInfo.appliedCount, migrationInfo.totalMigrations);
+  const isDbSynced = matchedAppliedCount >= migrationInfo.totalMigrations;
+
   return c.json({
     success: true,
     data: {
@@ -1157,12 +1209,11 @@ otaRouter.get("/status", async c => {
       activeManifestVersion: manifest.version,
       buildDate: CORE_BUILD_DATE,
       databaseIntegrity: {
-        schemaVersion: migrationInfo.currentSchemaVersion,
-        status:
-          migrationInfo.appliedCount === migrationInfo.totalMigrations
-            ? "synced"
-            : "pending",
-        appliedMigrations: migrationInfo.appliedCount,
+        schemaVersion: isDbSynced
+          ? CORE_VERSION
+          : migrationInfo.currentSchemaVersion,
+        status: isDbSynced ? "synced" : "pending",
+        appliedMigrations: matchedAppliedCount,
         totalMigrations: migrationInfo.totalMigrations,
       },
     },

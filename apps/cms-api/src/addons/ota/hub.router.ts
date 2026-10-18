@@ -317,8 +317,24 @@ otaHubRouter.get("/git-status", async c => {
     const manifest = await otaAddonService.getDynamicManifest(db, baseUrl);
     const hubVersion = manifest.version || CORE_VERSION;
 
-    let latestGitTag = "0.1.2";
+    let latestGitTag = CORE_VERSION;
     let lastPushedAt = null;
+
+    // Cek manifest langsung di GitHub cakipin/cmsMu-go agar versi Tag Git Terakhir selalu akurat
+    let ghVersion: string | null = null;
+    try {
+      const ghRes = await fetch(
+        `https://raw.githubusercontent.com/cakipin/cmsMu-go/main/ota-manifest.json?t=${Date.now()}`,
+        { headers: { Accept: "application/json" } }
+      );
+      if (ghRes.ok) {
+        const ghJson: any = await ghRes.json();
+        if (ghJson && ghJson.version) {
+          ghVersion = String(ghJson.version).trim().replace(/^v/, "");
+        }
+      }
+    } catch (_) {}
+
     if (db) {
       try {
         await db
@@ -332,7 +348,32 @@ otaHubRouter.get("/git-status", async c => {
             "SELECT value FROM settings WHERE key = 'latest_git_pushed_version' LIMIT 1"
           )
           .first();
-        if (row?.value) latestGitTag = row.value.trim();
+        if (row?.value) latestGitTag = row.value.trim().replace(/^v/, "");
+
+        if (
+          ghVersion &&
+          otaAddonService.compareVersions(ghVersion, latestGitTag) > 0
+        ) {
+          latestGitTag = ghVersion;
+          const nowStr = new Date()
+            .toISOString()
+            .replace("T", " ")
+            .substring(0, 19);
+          await db
+            .prepare(
+              `INSERT INTO settings (key, value) VALUES ('latest_git_pushed_version', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+            )
+            .bind(latestGitTag)
+            .run()
+            .catch(() => {});
+          await db
+            .prepare(
+              `INSERT INTO settings (key, value) VALUES ('latest_git_pushed_at', ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value`
+            )
+            .bind(nowStr)
+            .run()
+            .catch(() => {});
+        }
 
         const timeRow: any = await db
           .prepare(
@@ -341,6 +382,8 @@ otaHubRouter.get("/git-status", async c => {
           .first();
         if (timeRow?.value) lastPushedAt = timeRow.value.trim();
       } catch (_) {}
+    } else if (ghVersion) {
+      latestGitTag = ghVersion;
     }
 
     const isSynced =

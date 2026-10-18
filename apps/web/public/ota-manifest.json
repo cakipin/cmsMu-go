@@ -1,8 +1,8 @@
 {
   "name": "CMSMu Core Framework",
-  "version": "0.1.6",
-  "buildDate": "2026-10-09",
-  "changelog": "Rilis pembaruan Core CMSMu v0.1.6 (Standardisasi Monorepo Turborepo, Image Cropper Module, Alpine Collision-Proof Unique IDs, & Pemulihan Tema Beranda)",
+  "version": "0.1.8",
+  "buildDate": "2026-10-19",
+  "changelog": "Rilis pembaruan Core CMSMu v0.1.8 (100% Core System Clean, In-System Modal/Toast SOP 16, Modernisasi UI Themes, & Zero Client Leaks)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
   "capabilities": [
@@ -24,8 +24,17 @@
   "updateUrl": "https://cms.labmu.dev/api/addons/ota/manifest",
   "bundleUrl": "https://cms.labmu.dev/api/addons/ota/bundle/admin.js",
   "repository": "https://github.com/cakipin/cmsMu-go",
-  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.7.zip",
+  "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.8.zip",
   "updatedComponents": [
+    {
+      "name": "Overhaul Mobile Responsive 17 Modul Admin & Editor",
+      "type": "admin-ui",
+      "paths": [
+        "apps/cms-api/src/modules/admin/ui/blocks/"
+      ],
+      "description": "Dual-view kartu responsif mobile + tabel desktop pada 17 modul admin, toolbar kustom mobile-friendly, ukuran tap target 44px, dan perbaikan strict type safety.",
+      "updatedAt": "2026-10-13T03:00:00.000Z"
+    },
     {
       "name": "Image Cropper Module & Modal WYSIWYG",
       "type": "editor",
