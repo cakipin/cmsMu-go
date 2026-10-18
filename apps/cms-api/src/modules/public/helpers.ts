@@ -35,6 +35,8 @@ export function formatPostForFrontend(post: any) {
   const finalImage = customImg || getYoutubeThumbnail(videoUrl) || "";
   return {
     ...post,
+    body: post.body || post.content || "",
+    content: post.body || post.content || "",
     featured_image: finalImage,
     created_at: post.created_at || post.createdAt || new Date().toISOString(),
     updated_at: post.updated_at || post.updatedAt || new Date().toISOString(),

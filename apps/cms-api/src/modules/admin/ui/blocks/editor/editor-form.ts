@@ -98,7 +98,7 @@ export const editorForm = `
                 <span class="text-slate-400 font-medium shrink-0 flex items-center gap-1">
                     <i class="fas fa-link text-[10px] text-slate-400"></i>
                     <span class="text-slate-600 font-semibold">Permalink:</span>
-                    <span class="text-slate-400 hidden sm:inline">https://suaraaisyiyah.id/</span>
+                    <span class="text-slate-400 hidden sm:inline" x-text="(typeof window !== 'undefined' ? window.location.origin : '') + '/'"></span>
                     <span class="text-slate-400 sm:hidden">.../</span>
                 </span>
 

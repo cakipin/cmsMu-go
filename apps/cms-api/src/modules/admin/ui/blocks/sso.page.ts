@@ -77,11 +77,11 @@ export const ssoPage = `
                 });
                 
                 if(res.ok) {
-                    alert('✅ Konfigurasi SSO Berhasil Disimpan!');
+                    if (window.showToast) window.showToast('Konfigurasi SSO Berhasil Disimpan!', 'success');
                 } else {
-                    alert('❌ Gagal menyimpan.');
+                    if (window.showToast) window.showToast('Gagal menyimpan konfigurasi SSO.', 'error');
                 }
-            } catch(e) { alert('Error: ' + e.message); }
+            } catch(e) { if (window.showToast) window.showToast('Error: ' + e.message, 'error'); }
             finally { this.isSaving = false; }
         }
      }">

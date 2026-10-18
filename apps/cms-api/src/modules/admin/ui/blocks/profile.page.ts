@@ -54,7 +54,7 @@ export const profilePage = `
                     isSavingPwd: false,
                     async changePassword() {
                         if (!this.pwdForm.currentPassword || !this.pwdForm.newPassword) {
-                            alert('Password saat ini dan password baru harus diisi.');
+                            if (window.showToast) window.showToast('Password saat ini dan password baru harus diisi.', 'warning');
                             return;
                         }
                         this.isSavingPwd = true;
@@ -69,14 +69,14 @@ export const profilePage = `
                             });
                             const data = await res.json();
                             if (res.ok && data.success) {
-                                alert('✅ Password berhasil diubah!');
+                                if (window.showToast) window.showToast('Password berhasil diubah!', 'success');
                                 this.pwdForm.currentPassword = '';
                                 this.pwdForm.newPassword = '';
                             } else {
-                                alert('❌ Gagal: ' + (data.error || 'Terjadi kesalahan'));
+                                if (window.showToast) window.showToast('Gagal: ' + (data.error || 'Terjadi kesalahan'), 'error');
                             }
                         } catch (e) {
-                            alert('❌ Gagal terhubung ke server');
+                            if (window.showToast) window.showToast('Gagal terhubung ke server', 'error');
                         } finally {
                             this.isSavingPwd = false;
                         }

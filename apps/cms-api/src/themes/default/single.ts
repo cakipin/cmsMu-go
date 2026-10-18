@@ -14,12 +14,21 @@ export function renderSingle(ctx: ThemeContext): string {
   const title = escapeHtml(post.title || "Artikel");
   const authorName = escapeHtml(post.author || "Redaksi");
   const categoryName = getCategory(post);
-  const categorySlug = escapeHtml(post.categorySlug || post.category || "berita");
+  const categorySlug = escapeHtml(
+    (post.categorySlug || post.category || "berita")
+      .toLowerCase()
+      .replace(/\s+/g, "-")
+  );
   const publishedDate = formatDate(post.createdAt || post.created_at);
-  const readingTime = estimateReadingTime(post.content);
+  const rawBody = post.body || post.content || "";
+  const readingTime = estimateReadingTime(rawBody);
   const featuredImg = getImage(post, 0);
-  const bodyContent = cleanArticleContent(post.content);
-  const tagsList = Array.isArray(post.tags) ? post.tags : [];
+  const bodyContent = cleanArticleContent(rawBody);
+  const tagsList = Array.isArray(post.tags)
+    ? post.tags
+    : typeof post.tags === "string" && post.tags.trim() !== ""
+    ? post.tags.split(",").map((t: string) => t.trim()).filter(Boolean)
+    : [];
   const relatedPosts = Array.isArray(ctx?.sidebarPosts)
     ? ctx.sidebarPosts
     : Array.isArray((ctx as any)?.relatedPosts)
@@ -35,14 +44,14 @@ export function renderSingle(ctx: ThemeContext): string {
     <nav style="display:flex; align-items:center; gap:0.5rem; font-size:0.8125rem; color:var(--text-muted); margin-bottom:1.5rem; flex-wrap:wrap;">
       <a href="/" style="color:var(--text-secondary);"><i class="fas fa-home"></i> Beranda</a>
       <span>/</span>
-      <a href="/category/${categorySlug}" style="color:var(--accent-primary); font-weight:600;">${categoryName}</a>
+      <a href="/${categorySlug}" style="color:var(--accent-primary); font-weight:600;">${categoryName}</a>
       <span>/</span>
       <span style="color:var(--text-muted); max-width:250px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${title}</span>
     </nav>
 
     <!-- ARTICLE HEADER -->
     <header style="margin-bottom: 2rem;">
-      <a href="/category/${categorySlug}" class="badge" style="margin-bottom: 1rem;">
+      <a href="/${categorySlug}" class="badge" style="margin-bottom: 1rem;">
         ${categoryName}
       </a>
       <h1 style="font-size: clamp(1.75rem, 3.5vw, 2.5rem); font-weight: 900; line-height: 1.25; color: var(--text-primary); margin-bottom: 1.25rem;">
@@ -125,7 +134,7 @@ export function renderSingle(ctx: ThemeContext): string {
         <a href="https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(postUrl)}" target="_blank" rel="noopener" style="background: #1877f2; color: #fff; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 1rem;" title="Bagikan ke Facebook">
           <i class="fab fa-facebook-f"></i>
         </a>
-        <button type="button" onclick="navigator.clipboard.writeText(window.location.href); alert('Tautan artikel disalin ke papan klip!');" style="background: var(--border-subtle); color: var(--text-primary); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;" title="Salin Tautan">
+        <button type="button" onclick="var b=this; navigator.clipboard.writeText(window.location.href).then(function(){ b.innerHTML='<i class=\'fas fa-check\'></i>'; b.style.background='#0d9488'; b.style.color='#fff'; setTimeout(function(){ b.innerHTML='<i class=\'fas fa-link\'></i>'; b.style.background='var(--border-subtle)'; b.style.color='var(--text-primary)'; }, 2000); });" style="background: var(--border-subtle); color: var(--text-primary); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s;" title="Salin Tautan">
           <i class="fas fa-link"></i>
         </button>
       </div>

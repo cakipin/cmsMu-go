@@ -19,7 +19,7 @@ export const editorPage = `
          saveError: '',      
          
          mediaList: [],
-         uniqueCategories: ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'], 
+         uniqueCategories: [], 
          uniqueTags: [],        
          managerItems: [],
          allPosts: [],          
@@ -68,8 +68,8 @@ export const editorPage = `
         async loadGlobalData() {
             // 1. Tampilkan cache lokal seketika (0 ms) jika tersedia
             try {
-                const cachedCats = sessionStorage.getItem('sa_cms_cats');
-                const cachedTags = sessionStorage.getItem('sa_cms_tags');
+                const cachedCats = sessionStorage.getItem('cmsmu_cats');
+                const cachedTags = sessionStorage.getItem('cmsmu_tags');
                 if (cachedCats) this.uniqueCategories = JSON.parse(cachedCats);
                 if (cachedTags) this.uniqueTags = JSON.parse(cachedTags);
             } catch (_) {}
@@ -84,9 +84,8 @@ export const editorPage = `
                     fetch('/api/posts?limit=30', { headers }).catch(() => null)
                 ]);
 
-                // Proses kategori dari endpoint ringan
-                const defaultCategories = ['Berita', 'Berita Daerah', 'Opini & Berita', 'Warta Persyarikatan', 'Kesehatan', 'PTMA', 'Pendidikan Dasar'];
-                let mergedCats = [...defaultCategories];
+                // Proses kategori dinamis dari database (Zero Hardcode SOP 13)
+                let mergedCats = [];
 
                 if (catsRes && catsRes.ok) {
                     const dbCats = await catsRes.json();
@@ -103,7 +102,7 @@ export const editorPage = `
                     mergedCats.unshift(this.form.category);
                 }
                 this.uniqueCategories = mergedCats;
-                try { sessionStorage.setItem('sa_cms_cats', JSON.stringify(mergedCats)); } catch (_) {}
+                try { sessionStorage.setItem('cmsmu_cats', JSON.stringify(mergedCats)); } catch (_) {}
 
                 // Proses posts & tags dari 30 post terbaru (ringan & cepat)
                 if (postsRes && postsRes.ok) {
@@ -118,7 +117,7 @@ export const editorPage = `
                     const sortedTags = Object.keys(tagCounts).sort((a,b) => tagCounts[b] - tagCounts[a]);
                     if (sortedTags.length > 0) {
                         this.uniqueTags = sortedTags;
-                        try { sessionStorage.setItem('sa_cms_tags', JSON.stringify(sortedTags)); } catch (_) {}
+                        try { sessionStorage.setItem('cmsmu_tags', JSON.stringify(sortedTags)); } catch (_) {}
                     }
                 }
             } catch(e) { console.error('Load Error', e); }
@@ -628,7 +627,7 @@ export const editorPage = `
 
           async copyPermalink() {
               if (!this.form.slug) return;
-              const base = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? window.location.origin : 'https://suaraaisyiyah.id';
+              const base = typeof window !== 'undefined' ? window.location.origin : '';
               const url = base + '/' + this.form.slug;
               try {
                   await navigator.clipboard.writeText(url);
@@ -636,7 +635,7 @@ export const editorPage = `
                   if (window.showToast) window.showToast('Tautan berhasil disalin!', 'success');
                   setTimeout(() => { this.slugCopied = false; }, 2000);
               } catch (_) {
-                  prompt('Salin link berikut:', url);
+                  if (window.showToast) window.showToast('Permalink: ' + url, 'info');
               }
           },
 

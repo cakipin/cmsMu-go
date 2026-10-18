@@ -62,12 +62,12 @@ export const themesPage = `
                     body: JSON.stringify(this.themeColors)
                 });
                 if (res.ok) {
-                    alert('✅ Pengaturan tema berhasil disimpan!');
+                    if (window.showToast) window.showToast('Pengaturan tema berhasil disimpan!', 'success');
                     this.themeEditorOpen = false;
                 } else {
-                    alert('❌ Gagal menyimpan.');
+                    if (window.showToast) window.showToast('Gagal menyimpan pengaturan tema.', 'error');
                 }
-            } catch(e) { alert('Error: ' + e.message); }
+            } catch(e) { if (window.showToast) window.showToast('Error: ' + e.message, 'error'); }
             finally { this.isSavingTheme = false; }
         },
 
@@ -91,41 +91,73 @@ export const themesPage = `
                 landing_image_3: ''
             };
         }
-     }">
+     }" class="space-y-6">
 
-  <!-- Header -->
-  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-    <h2>Themes</h2>
-    <button class="btn" style="background:#f0f0f1; color:#333; border:1px solid #ccc;">Upload Theme (Pro)</button>
+  <!-- Header Page Responsif -->
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-slate-100 shadow-[0_1px_3px_rgba(0,0,0,0.02)]">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-teal-50 text-teal-600 flex items-center justify-center font-bold text-lg shrink-0">
+        <i class="fas fa-palette"></i>
+      </div>
+      <div>
+        <h2 class="text-lg sm:text-xl font-bold text-slate-800 tracking-tight m-0">Kelola Tema & Tampilan</h2>
+        <p class="text-xs text-slate-500 mt-0.5">Pilih, aktifkan, atau kustomisasi tema publik Core CMSMu.</p>
+      </div>
+    </div>
+    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+      <button @click="loadThemes()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors active:scale-95 cursor-pointer">
+        <i class="fas fa-sync-alt"></i> Segarkan
+      </button>
+      <button @click="openThemeEditor()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors active:scale-95 cursor-pointer">
+        <i class="fas fa-sliders-h"></i> Kustomisasi Tema Aktif
+      </button>
+    </div>
   </div>
 
   <!-- Theme Grid -->
-  <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap:25px;">
-     <template x-for="t in availableThemes">
-        <div class="card" style="padding:0; overflow:hidden; border:1px solid #dcdcde; box-shadow:0 1px 2px rgba(0,0,0,0.05); position:relative;">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+     <template x-for="t in availableThemes" :key="t.id">
+        <div class="bg-white rounded-2xl overflow-hidden border transition-all duration-200 flex flex-col justify-between shadow-[0_1px_3px_rgba(0,0,0,0.02)]"
+             :class="t.active ? 'border-teal-300 ring-2 ring-teal-500/15' : 'border-slate-200 hover:border-slate-300'">
            
-           <div style="aspect-ratio: 4/3; background:#eee; position:relative; border-bottom:1px solid #eee;">
-               <img :src="t.thumbnail || 'https://placehold.co/600x400/eee/ccc?text=No+Preview'" style="width:100%; height:100%; object-fit:cover;">
-               
-               <div x-show="t.active" style="position:absolute; top:10px; right:10px; background:#2271b1; color:#fff; padding:4px 10px; font-size:12px; font-weight:bold; border-radius:3px; box-shadow:0 2px 5px rgba(0,0,0,0.2);">
-                  Active
-               </div>
+           <div>
+             <div class="aspect-[16/10] bg-slate-100 relative border-b border-slate-100 overflow-hidden">
+                 <img :src="t.thumbnail || 'https://placehold.co/600x400/0d9488/ffffff?text=' + encodeURIComponent(t.name || 'Theme')" class="w-full h-full object-cover" loading="lazy">
+                 
+                 <div x-show="t.active" class="absolute top-3 right-3 inline-flex items-center gap-1.5 bg-emerald-600 text-white px-3 py-1 text-[11px] font-bold rounded-full shadow-md">
+                    <span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Aktif
+                 </div>
+             </div>
+
+             <div class="p-5 pb-3">
+                 <div class="flex items-start justify-between gap-2 mb-1">
+                   <h3 x-text="t.name" class="m-0 text-base font-bold text-slate-800 tracking-tight"></h3>
+                   <span class="text-[11px] font-mono text-slate-400 bg-slate-100 px-2 py-0.5 rounded" x-text="'v' + (t.version || '1.0.0')"></span>
+                 </div>
+                 <div class="text-xs text-slate-400 mb-2.5">
+                     Oleh <span class="font-semibold text-slate-600" x-text="t.author || 'CMSMu Team'"></span> &bull; ID: <code class="text-[11px] text-teal-600" x-text="t.id"></code>
+                 </div>
+                 <p x-text="t.description || 'Tema standar responsif CMSMu.'" class="text-xs text-slate-600 leading-relaxed line-clamp-2 m-0"></p>
+             </div>
            </div>
 
-           <div style="padding:15px;">
-               <h3 x-text="t.name" style="margin:0 0 5px 0; font-size:16px;"></h3>
-               <div style="font-size:12px; color:#666; margin-bottom:10px;">
-                   By <span x-text="t.author"></span> &bull; v<span x-text="t.version"></span>
-               </div>
-               <p x-text="t.description" style="font-size:13px; color:#555; margin-bottom:15px; line-height:1.4; height:36px; overflow:hidden;"></p>
-               
-               <div style="display:flex; gap:10px;">
-                   <button x-show="!t.active" @click="activateTheme(t.id)" class="btn" style="flex:1;">Activate</button>
-                   <button x-show="!t.active" @click="deleteTheme(t.id)" class="btn" style="flex:1; background:#f6f7f7; color:#d63638; border:1px solid #dcdcde;">Delete</button>
-                   <button x-show="t.active" @click="openThemeEditor()" class="btn" style="flex:1; background:#2271b1; color:#fff; border:none; cursor:pointer;">
-                       🎨 Customize
-                   </button>
-               </div>
+           <div class="px-5 py-3.5 border-t border-slate-100 flex items-center gap-2.5">
+               <button x-show="!t.active" @click="activateTheme(t.id, t.name)" class="flex-1 min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                   <i class="fas fa-check-circle"></i> Aktifkan
+               </button>
+               <template x-if="!t.active && t.id !== 'default'">
+                 <button @click="deleteTheme(t.id, t.name)" class="min-h-[38px] px-3.5 py-2 rounded-xl text-xs font-semibold text-rose-600 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer active:scale-95" title="Hapus Tema">
+                     <i class="fas fa-trash-alt"></i> Hapus
+                 </button>
+               </template>
+               <template x-if="!t.active && t.id === 'default'">
+                 <span class="inline-flex items-center gap-1 px-3 py-2 rounded-xl text-[11px] font-semibold bg-slate-100 text-slate-500 border border-slate-200" title="Tema inti sistem terproteksi">
+                   <i class="fas fa-lock text-[10px] text-slate-400"></i> Core Theme
+                 </span>
+               </template>
+               <button x-show="t.active" @click="openThemeEditor()" class="flex-1 min-h-[38px] px-4 py-2 rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 transition-colors flex items-center justify-center gap-2 cursor-pointer active:scale-95 shadow-xs">
+                   <i class="fas fa-paint-brush"></i> Customize Tema
+               </button>
            </div>
 
         </div>

@@ -184,7 +184,16 @@ export const postLogic: Record<string, any> & ThisType<any> = {
 
   async deletePost(id: string) {
     if (!id) return;
-    if (!confirm("Hapus post ini permanen?")) return;
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
+          title: "Hapus Artikel Permanen",
+          message: "Apakah Anda yakin ingin menghapus artikel ini secara permanen?",
+          type: "danger",
+          confirmText: "Ya, Hapus Permanen",
+        })
+      : false;
+    if (!confirmed) return;
 
     try {
       const token =
@@ -198,14 +207,15 @@ export const postLogic: Record<string, any> & ThisType<any> = {
 
       if (res.ok) {
         this.posts = this.posts.filter((p: any) => p.id !== id);
+        if (win.showToast) win.showToast("Artikel berhasil dihapus", "success");
         await this.loadPosts();
       } else {
-        if ((window as any).showToast)
-          (window as any).showToast("Gagal menghapus.", "error");
+        if (win.showToast)
+          win.showToast("Gagal menghapus.", "error");
       }
     } catch (e) {
-      if ((window as any).showToast)
-        (window as any).showToast("Gagal koneksi.", "error");
+      if (win.showToast)
+        win.showToast("Gagal koneksi.", "error");
     }
   },
 

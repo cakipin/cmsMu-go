@@ -126,7 +126,7 @@ if (typeof window !== 'undefined') {
                         type: 'warning',
                         confirmText: 'Ya, Bersihkan'
                     })
-                    : confirm('Apakah Anda yakin ingin membersihkan semua cache sistem (KV & Cloudflare)?');
+                    : false;
                 if (!confirmed) return;
                 this.isPurgingCache = true;
                 try {

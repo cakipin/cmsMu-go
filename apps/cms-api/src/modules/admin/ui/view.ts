@@ -278,7 +278,7 @@ export function renderAdmin(data: any): string {
                         var iconEl = document.getElementById('cms-confirm-icon');
                         
                         if (!modal) {
-                            resolve(confirm(options.message || 'Apakah Anda yakin?'));
+                            resolve(false);
                             return;
                         }
                         

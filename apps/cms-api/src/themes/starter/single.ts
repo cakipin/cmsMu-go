@@ -29,7 +29,7 @@ export function renderSingle(ctx: ThemeContext): string {
     }
 
     <div style="font-size: 1.1rem; line-height: 1.8; color: var(--text);">
-      ${post.content || ""}
+      ${post.content || post.body || ""}
     </div>
   </div>
   `;

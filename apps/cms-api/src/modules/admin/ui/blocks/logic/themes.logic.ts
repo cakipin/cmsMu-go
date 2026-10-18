@@ -21,28 +21,67 @@ export const themesLogic: Record<string, any> & ThisType<any> = {
     }
   },
 
-  async activateTheme(id: string) {
-    if (!confirm("Aktifkan tema?")) return;
+  async activateTheme(id: string, name?: string) {
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
+          title: "Aktifkan Tema",
+          message: `Apakah Anda yakin ingin mengaktifkan tema "${name || id}" sebagai tampilan utama situs?`,
+          type: "info",
+          confirmText: "Ya, Aktifkan",
+        })
+      : false;
+    if (!confirmed) return;
     try {
       const res = await this._fetch("/api/theme/activate", {
         method: "POST",
         body: JSON.stringify({ themeId: id }),
       });
-      if (res.ok) location.reload();
+      if (res.ok) {
+        if (win.showToast)
+          win.showToast("Tema berhasil diaktifkan!", "success");
+        await this.loadThemes();
+      } else {
+        const err: any = await res.json().catch(() => ({}));
+        if (win.showToast)
+          win.showToast(err.message || err.error || "Gagal mengaktifkan tema", "error");
+      }
     } catch (e) {
-      if ((window as any).showToast)
-        (window as any).showToast("Gagal ganti tema", "error");
+      if (win.showToast)
+        win.showToast("Gagal mengganti tema", "error");
     }
   },
 
-  async deleteTheme(id: string) {
-    if (!confirm("Are you sure you want to delete this theme?")) return;
-    try {
-      await this._fetch(`/api/theme/${id}`, { method: "DELETE" });
-      this.loadThemes();
-    } catch (e) {
+  async deleteTheme(id: string, name?: string) {
+    if (id === "default") {
       if ((window as any).showToast)
-        (window as any).showToast("Failed to delete theme", "error");
+        (window as any).showToast("Tema bawaan sistem (default) tidak dapat dihapus.", "warning");
+      return;
+    }
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
+          title: "Hapus Tema",
+          message: `Apakah Anda yakin ingin menghapus tema "${name || id}" dari daftar tema?`,
+          type: "danger",
+          confirmText: "Ya, Hapus Tema",
+        })
+      : false;
+    if (!confirmed) return;
+    try {
+      const res = await this._fetch(`/api/theme/${id}`, { method: "DELETE" });
+      const json: any = await res.json().catch(() => ({}));
+      if (res.ok && json.success !== false) {
+        if (win.showToast)
+          win.showToast(json.message || "Tema berhasil dihapus", "success");
+        await this.loadThemes();
+      } else {
+        if (win.showToast)
+          win.showToast(json.message || json.error || "Gagal menghapus tema", "error");
+      }
+    } catch (e) {
+      if (win.showToast)
+        win.showToast("Gagal menghapus tema", "error");
     }
   },
 };

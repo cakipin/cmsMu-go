@@ -299,7 +299,16 @@ export default function cmsStore(): Record<string, any> & ThisType<any> {
       else this.selectedItems = this.posts.map((p: any) => p.id);
     },
     async bulkAction(_action: any) {
-      if (!confirm("Hapus?")) return;
+      const win = typeof window !== "undefined" ? (window as any) : null;
+      const confirmed = win?.showConfirmDialog
+        ? await win.showConfirmDialog({
+            title: "Hapus Item Terpilih",
+            message: "Apakah Anda yakin ingin menghapus item terpilih?",
+            type: "danger",
+            confirmText: "Ya, Hapus",
+          })
+        : false;
+      if (!confirmed) return;
       // ... logika bulk action ...
       this.selectedItems = [];
     },

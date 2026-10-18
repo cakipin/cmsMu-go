@@ -88,7 +88,15 @@ export const postsPage = `
 
         /* 5. DELETE SINGLE */
         async deletePost(id) {
-            if(!confirm('Hapus post ini secara permanen?')) return;
+            const confirmed = window.showConfirmDialog
+                ? await window.showConfirmDialog({
+                    title: 'Hapus Artikel Permanen',
+                    message: 'Apakah Anda yakin ingin menghapus artikel ini secara permanen?',
+                    type: 'danger',
+                    confirmText: 'Ya, Hapus'
+                })
+                : false;
+            if(!confirmed) return;
             try {
                 const token = localStorage.getItem('labmu_token');
                 const res = await fetch('/api/posts/' + id, {
@@ -98,20 +106,28 @@ export const postsPage = `
                 if(res.ok) {
                     this.posts = this.posts.filter(p => p.id !== id);
                     this.selectedIds = this.selectedIds.filter(sid => sid !== id);
-                    
+                    if (window.showToast) window.showToast('Artikel berhasil dihapus', 'success');
                     if(this.paginatedPosts.length === 0 && this.currentPage > 1) {
                         this.currentPage--;
                     }
                 } else {
-                    alert('Gagal menghapus data.');
+                    if (window.showToast) window.showToast('Gagal menghapus data.', 'error');
                 }
-            } catch(e) { alert('Gagal koneksi hapus'); }
+            } catch(e) { if (window.showToast) window.showToast('Gagal koneksi hapus', 'error'); }
         },
 
         /* 6. BULK DELETE */
         async applyBulkAction() {
             if (this.bulkAction === 'delete' && this.selectedIds.length > 0) {
-                if(confirm('Hapus item terpilih?')) {
+                const confirmed = window.showConfirmDialog
+                    ? await window.showConfirmDialog({
+                        title: 'Hapus Artikel Terpilih',
+                        message: 'Apakah Anda yakin ingin menghapus ' + this.selectedIds.length + ' artikel terpilih?',
+                        type: 'danger',
+                        confirmText: 'Ya, Hapus Semua'
+                    })
+                    : false;
+                if(confirmed) {
                     const token = localStorage.getItem('labmu_token');
                     await fetch('/api/posts/' + this.selectedIds.join(','), { 
                         method: 'DELETE',
@@ -120,13 +136,17 @@ export const postsPage = `
                     
                     this.selectedIds = [];
                     this.selectAll = false;
+                    if (window.showToast) window.showToast('Artikel terpilih berhasil dihapus', 'success');
                     await this.loadData();
                 }
             }
         },
 
         viewPost(slug) {
-            if(!slug) return alert('Slug tidak valid');
+            if(!slug) {
+                if (window.showToast) window.showToast('Slug tidak valid', 'warning');
+                return;
+            }
             window.open('/' + slug, '_blank');
         },
 

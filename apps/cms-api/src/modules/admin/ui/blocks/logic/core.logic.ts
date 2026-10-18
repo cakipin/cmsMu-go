@@ -47,9 +47,7 @@ export const coreLogic: Record<string, any> & ThisType<any> = {
             type: "warning",
             confirmText: "Ya, Bersihkan",
           })
-        : confirm(
-            "Apakah Anda yakin ingin membersihkan seluruh cache sistem (KV & Cloudflare)?"
-          );
+        : false;
     if (!confirmed) return;
     this.isPurgingCache = true;
     try {

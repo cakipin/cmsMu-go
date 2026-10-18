@@ -178,7 +178,7 @@ export const pluginsLogic: Record<string, any> & ThisType<any> = {
           type: "danger",
           confirmText: "Ya, Hapus Plugin",
         })
-      : confirm(`Hapus plugin ${name || id}?`);
+      : false;
     if (!confirmed) return;
 
     try {

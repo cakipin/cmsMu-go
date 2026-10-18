@@ -42,7 +42,10 @@ export const authLogic = `
 
     // --- ACTIONS ---
     async doLogin() { 
-        if(!this.loginForm.username || !this.loginForm.password) return alert('Isi data!'); 
+        if(!this.loginForm.username || !this.loginForm.password) {
+            if (window.showToast) window.showToast('Harap isi username dan password!', 'warning');
+            return;
+        }
         this.isLoggingIn = true; 
         try { 
             let res = await fetch('/api/users/login', { 
@@ -58,9 +61,9 @@ export const authLogic = `
                 this.init(); 
                 window.location.reload(); 
             } else { 
-                alert('Gagal: ' + (json.error)); 
+                if (window.showToast) window.showToast('Gagal: ' + (json.error || 'Login gagal'), 'error'); 
             } 
-        } catch(e) { alert('Error Network'); } finally { this.isLoggingIn = false; } 
+        } catch(e) { if (window.showToast) window.showToast('Error Network', 'error'); } finally { this.isLoggingIn = false; } 
     },
     
     logout(){ 

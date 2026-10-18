@@ -453,7 +453,7 @@ export const usersLogic: Record<string, any> & ThisType<any> = {
           type: "danger",
           confirmText: "Ya, Hapus",
         })
-      : confirm("Hapus user?");
+      : false;
     if (!confirmed) return;
     try {
       const res = await this._fetch("/api/users/" + id, { method: "DELETE" });

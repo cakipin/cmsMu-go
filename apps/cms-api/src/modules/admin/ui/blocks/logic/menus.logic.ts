@@ -75,10 +75,22 @@ export const menusLogic: Record<string, any> & ThisType<any> = {
   },
 
   async deleteMenu(id: string) {
-    if (!confirm("Hapus menu?")) return;
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
+          title: "Hapus Menu Navigasi",
+          message: "Apakah Anda yakin ingin menghapus item menu ini?",
+          type: "danger",
+          confirmText: "Ya, Hapus Menu",
+        })
+      : false;
+    if (!confirmed) return;
     try {
       const res = await this._fetch("/api/menus/" + id, { method: "DELETE" });
-      if (res.ok) this.loadMenus();
+      if (res.ok) {
+        if (win.showToast) win.showToast("Menu berhasil dihapus", "success");
+        this.loadMenus();
+      }
     } catch (e) {
       console.error(e);
     }

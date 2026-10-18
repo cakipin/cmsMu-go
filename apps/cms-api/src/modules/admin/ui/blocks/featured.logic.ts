@@ -44,9 +44,9 @@ export const featuredImageLogic = `
             this.activeMediaItem.title = this.activeMediaMeta.title;
             this.activeMediaItem.description = this.activeMediaMeta.description; 
             
-            alert('✅ Info gambar tersimpan!'); 
+            if (window.showToast) window.showToast('Info gambar tersimpan!', 'success'); 
         } catch(e) { 
-            alert('Error saving meta'); 
+            if (window.showToast) window.showToast('Error saving meta', 'error'); 
         } finally {
             this.isSavingMeta = false;
         }
@@ -88,10 +88,10 @@ export const featuredImageLogic = `
                 
                 e.target.value = ''; 
             } else {
-                alert('Upload Gagal: ' + json.error);
+                if (window.showToast) window.showToast('Upload Gagal: ' + json.error, 'error');
             }
         } catch(err) {
-            alert('Error saat upload gambar');
+            if (window.showToast) window.showToast('Error saat upload gambar', 'error');
         } finally {
             this.isUploadingFeatured = false;
         }

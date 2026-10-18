@@ -126,12 +126,16 @@ export const mediaLogic: Record<string, any> & ThisType<any> = {
 
   async deleteSelected() {
     if (this.selectedItems.length === 0) return;
-    if (
-      !confirm(
-        `Yakin ingin menghapus ${this.selectedItems.length} file terpilih?`
-      )
-    )
-      return;
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
+          title: "Hapus Media Terpilih",
+          message: `Apakah Anda yakin ingin menghapus ${this.selectedItems.length} file media terpilih?`,
+          type: "danger",
+          confirmText: "Ya, Hapus Media",
+        })
+      : false;
+    if (!confirmed) return;
 
     this.isDeleting = true;
     const token = localStorage.getItem("labmu_token");
@@ -148,6 +152,7 @@ export const mediaLogic: Record<string, any> & ThisType<any> = {
     }
 
     this.isDeleting = false;
+    if (win.showToast) win.showToast("Media terpilih berhasil dihapus", "success");
     await this.loadMedia();
   },
 

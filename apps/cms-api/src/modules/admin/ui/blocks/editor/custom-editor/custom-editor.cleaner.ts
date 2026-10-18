@@ -308,8 +308,6 @@ export const customEditorCleanerMethods = `
             if (!plainText || plainText.length < 25) {
                 if (window.showToast) {
                     window.showToast('Tulis minimal 1-2 kalimat terlebih dahulu sebelum merapikan dengan AI!', 'warning');
-                } else {
-                    alert('Tulis minimal 1-2 kalimat terlebih dahulu sebelum merapikan dengan AI!');
                 }
                 return;
             }
@@ -349,8 +347,6 @@ export const customEditorCleanerMethods = `
                 console.error('[AI Tidy Error]', err);
                 if (window.showToast) {
                     window.showToast('Gagal merapikan konten: ' + (err.message || 'Terjadi kesalahan sistem'), 'error');
-                } else {
-                    alert('Gagal merapikan konten: ' + (err.message || 'Terjadi kesalahan sistem'));
                 }
             } finally {
                 this.isAiTidying = false;

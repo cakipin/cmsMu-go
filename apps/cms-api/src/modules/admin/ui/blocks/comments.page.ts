@@ -52,9 +52,20 @@ export const commentsPage = `
     },
 
     async deleteComment(id) {
-        if (!confirm('Yakin ingin menghapus komentar ini?')) return;
+        const confirmed = window.showConfirmDialog
+            ? await window.showConfirmDialog({
+                title: 'Hapus Komentar',
+                message: 'Apakah Anda yakin ingin menghapus komentar ini?',
+                type: 'danger',
+                confirmText: 'Ya, Hapus'
+            })
+            : false;
+        if (!confirmed) return;
         const res = await fetch('/api/comments/' + id, { method: 'DELETE', headers: { Authorization: 'Bearer ' + this.getToken() } });
-        if (res.ok) this.allComments = this.allComments.filter(c => c.id !== id);
+        if (res.ok) {
+            this.allComments = this.allComments.filter(c => c.id !== id);
+            if (window.showToast) window.showToast('Komentar berhasil dihapus', 'success');
+        }
     },
 
     openEdit(c) { this.editingComment = c; this.editContent = c.content; },

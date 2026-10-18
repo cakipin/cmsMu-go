@@ -81,7 +81,7 @@ export const loginPage = `
                 const config = json.data || json;
 
                 if (config.sso_enabled === 'false') {
-                    alert('SSO Muhammadiyah ID sedang dinonaktifkan oleh Administrator.');
+                    this.errorMsg = 'SSO Muhammadiyah ID sedang dinonaktifkan oleh Administrator.';
                     this.isLoading = false;
                     return;
                 }
@@ -89,7 +89,7 @@ export const loginPage = `
                 const clientId = config.sso_client_id ? config.sso_client_id.trim() : '';
 
                 if (!clientId) {
-                    alert('SSO Muhammadiyah ID belum dikonfigurasi oleh Admin (Client ID kosong).');
+                    this.errorMsg = 'SSO Muhammadiyah ID belum dikonfigurasi oleh Admin (Client ID kosong).';
                     this.isLoading = false;
                     return;
                 }
@@ -112,7 +112,7 @@ export const loginPage = `
                 const authorizeUrl = \`\${authBase}?client_id=\${encodeURIComponent(clientId)}&redirect_uri=\${encodeURIComponent(redirectUri)}&response_type=code\`;
                 window.location.href = authorizeUrl;
             } catch(e) {
-                alert('Gagal inisialisasi SSO: ' + e.message);
+                this.errorMsg = 'Gagal inisialisasi SSO: ' + e.message;
                 this.isLoading = false;
             }
         }

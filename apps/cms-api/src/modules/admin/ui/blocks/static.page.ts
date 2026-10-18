@@ -69,7 +69,15 @@ export const staticPage = `
 
          async deletePages() {
              if (this.selectedItems.length === 0) return;
-             if (!confirm('Hapus ' + this.selectedItems.length + ' item terpilih?')) return;
+             const confirmed = window.showConfirmDialog
+                 ? await window.showConfirmDialog({
+                     title: 'Hapus Halaman Terpilih',
+                     message: 'Apakah Anda yakin ingin menghapus ' + this.selectedItems.length + ' halaman terpilih?',
+                     type: 'danger',
+                     confirmText: 'Ya, Hapus'
+                 })
+                 : false;
+             if (!confirmed) return;
              const token = localStorage.getItem('labmu_token');
              for (const id of this.selectedItems) {
                  await fetch('/api/pages', { 
@@ -79,11 +87,20 @@ export const staticPage = `
                  });
              }
              this.selectedItems = [];
+             if (window.showToast) window.showToast('Halaman terpilih berhasil dihapus', 'success');
              await this.loadPages();
          },
 
          async deleteSinglePage(p) {
-             if (!confirm('Hapus halaman ' + p.title + '?')) return;
+             const confirmed = window.showConfirmDialog
+                 ? await window.showConfirmDialog({
+                     title: 'Hapus Halaman',
+                     message: 'Apakah Anda yakin ingin menghapus halaman "' + p.title + '"?',
+                     type: 'danger',
+                     confirmText: 'Ya, Hapus'
+                 })
+                 : false;
+             if (!confirmed) return;
              const token = localStorage.getItem('labmu_token');
              try {
                  const res = await fetch('/api/pages', { 
@@ -92,6 +109,7 @@ export const staticPage = `
                      body: JSON.stringify({ id: p.id })
                  });
                  if (res.ok) {
+                     if(window.showToast) window.showToast('Halaman berhasil dihapus', 'success');
                      await this.loadPages();
                  } else {
                      if(window.showToast) window.showToast('Gagal menghapus halaman.', 'error');

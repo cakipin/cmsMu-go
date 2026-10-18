@@ -109,9 +109,9 @@ export const globalModals = `
                 const newImg = this.mediaList.find(m => m.url === newUrl);
                 if(newImg) this.selectItem(newImg);
             } else {
-                alert('Gagal upload.');
+                if (window.showToast) window.showToast('Gagal upload file.', 'error');
             }
-        } catch(e) { alert('Error upload.'); }
+        } catch(e) { if (window.showToast) window.showToast('Error upload.', 'error'); }
         finally { this.isUploading = false; }
     },
 
@@ -138,7 +138,7 @@ export const globalModals = `
                     ...this.mediaForm
                 })
             });
-            alert('Info tersimpan.');
+            if (window.showToast) window.showToast('Info media tersimpan.', 'success');
         } catch(e) { console.warn('Meta save error (mungkin backend belum siap)'); }
         finally { this.isSavingMeta = false; }
     },
