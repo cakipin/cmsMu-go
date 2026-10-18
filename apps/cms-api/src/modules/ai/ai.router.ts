@@ -554,7 +554,7 @@ Berdasarkan judul dan isi tulisan yang diberikan, buatkan metadata SEO optimal d
 1. "meta_title": Judul halaman untuk Google Search (panjang 50-60 karakter, memuat keyword utama, menarik perhatian).
 2. "meta_description": Deskripsi meta informatif (panjang 125-155 karakter, memuat rangkuman inti dan ajakan membaca).
 3. "excerpt": Ringkasan singkat 1-2 kalimat untuk kartu berita (maksimal 160 karakter).
-4. "tags": Maksimal 3 tag paling relevan dipisahkan koma (setiap tag MAKSIMAL 3 kata, misal: "Griya Lansia, Pengajian Aisyiyah, Berita Daerah").
+4. "tags": Maksimal 3 tag paling relevan dipisahkan koma (setiap tag MAKSIMAL 3 kata, misal: "Teknologi Web, Transformasi Digital, Berita Utama").
 
 Format Output WAJIB JSON murni tanpa markdown code block:
 {"meta_title": "...", "meta_description": "...", "excerpt": "...", "tags": "..."}`;

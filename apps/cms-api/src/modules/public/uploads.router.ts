@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import type { D1Database, R2Bucket } from "@cloudflare/workers-types";
 import { getStorageBucket } from "../../storage/r2-adapter";
 
 type Bindings = {
@@ -114,7 +115,7 @@ uploadsRouter.get("*", async c => {
             const obj = await bucket.get(key);
             if (obj) {
               const headers = new Headers();
-              obj.writeHttpMetadata(headers);
+              obj.writeHttpMetadata(headers as any);
               headers.set("etag", obj.httpEtag);
               headers.set(
                 "Cache-Control",
@@ -128,7 +129,7 @@ uploadsRouter.get("*", async c => {
               ) {
                 headers.set("Content-Type", getContentType(cand));
               }
-              return new Response(obj.body, { headers });
+              return new Response(obj.body as any, { headers });
             }
           }
         }
@@ -255,7 +256,7 @@ uploadsRouter.get("*", async c => {
         const obj = await bucket.get(key);
         if (obj) {
           const headers = new Headers();
-          obj.writeHttpMetadata(headers);
+          obj.writeHttpMetadata(headers as any);
           headers.set("etag", obj.httpEtag);
           headers.set("Cache-Control", "public, max-age=31536000, immutable");
           headers.set("Access-Control-Allow-Origin", "*");
@@ -266,7 +267,7 @@ uploadsRouter.get("*", async c => {
           ) {
             headers.set("Content-Type", getContentType(decodedSubpath));
           }
-          return new Response(obj.body, { headers });
+          return new Response(obj.body as any, { headers });
         }
       }
     }

@@ -210,7 +210,15 @@ usersRouter.post("/login", async c => {
         .catch(() => {});
     }
 
-    const token = await generateUserToken(user, getJwtSecret(c.env));
+    const token = await generateUserToken(
+      {
+        id: user.id,
+        username: user.username || "",
+        name: user.name || "",
+        role: user.role || "subscriber",
+      },
+      getJwtSecret(c.env)
+    );
 
     return c.json({
       success: true,
@@ -286,7 +294,7 @@ usersRouter.post("/register", async c => {
       .get();
 
     if (existing) {
-      if (existing.username.toLowerCase() === username) {
+      if ((existing.username || "").toLowerCase() === username) {
         return c.json(
           {
             success: false,
@@ -342,7 +350,15 @@ usersRouter.post("/register", async c => {
       );
     }
 
-    const token = await generateUserToken(createdUser, getJwtSecret(c.env));
+    const token = await generateUserToken(
+      {
+        id: createdUser.id,
+        username: createdUser.username || "",
+        name: createdUser.name || "",
+        role: createdUser.role || "subscriber",
+      },
+      getJwtSecret(c.env)
+    );
 
     return c.json({
       success: true,
@@ -379,7 +395,7 @@ usersRouter.post("/sso", async c => {
     const result = await processSsoLogin(c, db, body);
 
     if (result.error) {
-      return c.json({ error: result.error }, result.status || 500);
+      return c.json({ error: result.error }, (result.status || 500) as any);
     }
 
     return c.json(result);

@@ -48,7 +48,7 @@ export function renderAdmin(data: any): string {
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-            <title>Portal Redaksi Dashboard</title>
+            <title>cmsMu Dashboard</title>
             <link rel="icon" id="admin-favicon" href="/favicon.svg">
             <script>
                 window.updateFavicon = function(url) {
@@ -191,7 +191,7 @@ export function renderAdmin(data: any): string {
                 };
 
                 // Helper sanitasi konten berita dari link dan iklan (menggunakan DOM browser langsung)
-                window.cleanEditorContent = window.cleanNewsroomContent = function(html) {
+                window.cleanEditorContent = function(html) {
                     if (!html) return '';
                     try {
                         var doc = new DOMParser().parseFromString(html, 'text/html');
@@ -375,13 +375,10 @@ export function renderAdmin(data: any): string {
                     { group: 'Appearance', title: 'Menus', view: 'menus', icon: 'fas fa-bars', role: ['admin', 'editor'] },
                     
                     { group: 'System', title: 'Users', view: 'users', icon: 'fas fa-users', role: ['admin'], action: () => typeof loadUsers === 'function' && loadUsers() },
-                    { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] },
-                    { group: 'System', title: 'SEO & Analytics', view: 'seo', icon: 'fas fa-chart-pie', role: ['admin'] },
-                    { group: 'Plugins', title: 'Kelola Plugins', view: 'plugins', icon: 'fas fa-puzzle-piece', role: ['admin'], action: () => typeof loadPlugins === 'function' && loadPlugins() },
-                    { group: 'Plugins', title: 'SSO Setup', view: 'sso-setup', icon: 'fas fa-shield-alt', role: ['admin'], pluginId: 'sso-muhammadiyah' }
+                    { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] }
                 ];
 
-                const plugins = [${injectedPlugins}]; 
+                const plugins = [${injectedPlugins}].filter(p => p && p.view !== 'ota'); 
                 window.adminMenus = window.adminMenus.concat(plugins);
                 window.__CMS_CORE_VERSION = '${CORE_VERSION}';
                 window.__CMS_OTA_ENDPOINT = '/api/addons/ota';
@@ -565,7 +562,7 @@ export function renderAdmin(data: any): string {
                                                     </a>
                                                 </li>
                                                 <li>
-                                                    <a href="#" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
+                                                    <a href="#" @click.prevent="view = 'settings'; dropdownOpen = false;" class="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-colors">
                                                         <i class="fas fa-cog w-4 text-center"></i> Pengaturan
                                                     </a>
                                                 </li>
@@ -585,6 +582,58 @@ export function renderAdmin(data: any): string {
                         <!-- ===== Main Content Start ===== -->
                         <main class="flex-grow pb-10">
                             <div class="mx-auto max-w-screen-2xl p-4 md:p-6 2xl:p-8">
+                                <!-- Unified 4-Tab System & Settings Menu Bar (Tab 1: Setting, Tab 2: SEO, Tab 3: Plugin, Tab 4: OTA) -->
+                                <div x-show="['settings', 'seo', 'plugins', 'sso-setup', 'ota'].includes(view)" class="mb-5 bg-white rounded-2xl border border-slate-200/80 p-1.5 shadow-sm flex flex-wrap items-center justify-between gap-2">
+                                    <div class="flex flex-wrap items-center gap-1.5 w-full sm:w-auto">
+                                        <!-- Tab 1: Setting -->
+                                        <button type="button"
+                                                @click="view = 'settings'"
+                                                :class="view === 'settings' ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+                                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition-all cursor-pointer">
+                                            <i class="fas fa-cog text-xs"></i>
+                                            <span>Setting</span>
+                                        </button>
+
+                                        <!-- Tab 2: SEO -->
+                                        <button type="button"
+                                                @click="view = 'seo'"
+                                                :class="view === 'seo' ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+                                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition-all cursor-pointer">
+                                            <i class="fas fa-chart-pie text-xs"></i>
+                                            <span>SEO</span>
+                                        </button>
+
+                                        <!-- Tab 3: Plugin -->
+                                        <button type="button"
+                                                @click="view = 'plugins'; if (typeof loadPlugins === 'function') loadPlugins();"
+                                                :class="(view === 'plugins' || view === 'sso-setup') ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+                                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition-all cursor-pointer">
+                                            <i class="fas fa-puzzle-piece text-xs"></i>
+                                            <span>Plugin</span>
+                                        </button>
+
+                                        <!-- Tab 4: OTA -->
+                                        <button type="button"
+                                                x-show="isPluginActive('ota')"
+                                                @click="view = 'ota'"
+                                                :class="view === 'ota' ? 'bg-teal-600 text-white shadow-sm' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'"
+                                                class="flex-1 sm:flex-initial inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[38px] rounded-xl text-xs font-bold transition-all cursor-pointer">
+                                            <i class="fas fa-cloud-upload-alt text-xs"></i>
+                                            <span>OTA</span>
+                                        </button>
+                                    </div>
+
+                                    <!-- Quick Return Pill when inside SSO Setup -->
+                                    <template x-if="view === 'sso-setup'">
+                                        <button type="button"
+                                                @click="view = 'plugins'; if (typeof loadPlugins === 'function') loadPlugins();"
+                                                class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors cursor-pointer">
+                                            <i class="fas fa-arrow-left text-[10px]"></i>
+                                            <span>Kembali ke Daftar Plugin</span>
+                                        </button>
+                                    </template>
+                                </div>
+
                                 ${dashboardPage}
                                 ${pagesBlock}
                                 <template x-if="view === 'menus'"><div class="exclusive-wrapper">${menusPage}</div></template>
@@ -602,7 +651,7 @@ export function renderAdmin(data: any): string {
                         <footer class="sticky bottom-0 z-40 w-full py-4 px-4 md:px-6 2xl:px-8 border-t border-slate-200 bg-white/90 backdrop-blur-md shadow-[0_-1px_3px_rgba(0,0,0,0.02)]">
                             <div class="flex flex-col sm:flex-row items-center justify-between gap-2">
                                 <p class="text-xs font-medium text-slate-500 text-center sm:text-left">
-                                    &copy; <span x-text="new Date().getFullYear()"></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Portal Redaksi'"></span>. All rights reserved.
+                                    &copy; <span x-text="new Date().getFullYear()"></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'cmsMu'"></span>. All rights reserved.
                                 </p>
                                 <p class="text-xs font-medium text-slate-500 flex items-center gap-1">
                                     Built with <span class="text-rose-500"><i class="fas fa-heart"></i></span> <span x-text="(settings && settings.site_title) ? settings.site_title : 'Cloud Native'"></span>

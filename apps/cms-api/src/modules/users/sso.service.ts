@@ -144,7 +144,7 @@ export async function processSsoLogin(
         }
 
         if (resp.ok) {
-          const data = await resp.json();
+          const data: any = await resp.json();
           if (data && data.access_token) {
             return { success: true, tokenData: data, activeProvider: provider };
           }

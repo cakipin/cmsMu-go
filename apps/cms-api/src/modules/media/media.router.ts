@@ -131,7 +131,7 @@ mediaRouter.post("/", async c => {
     const month = String(date.getMonth() + 1).padStart(2, "0");
     const folder = `${sourceFolder}/${year}/${month}`;
 
-    let fileBuffer = Buffer.from(await file.arrayBuffer());
+    let fileBuffer: Uint8Array = new Uint8Array(await file.arrayBuffer());
     let mimeType = file.type;
     let baseName =
       file.name
@@ -216,7 +216,7 @@ mediaRouter.get("/file/*", async c => {
   if (!obj) return c.text("Not found", 404);
 
   const headers = new Headers();
-  obj.writeHttpMetadata(headers);
+  obj.writeHttpMetadata(headers as any);
   headers.set("etag", obj.httpEtag);
   headers.set("Cache-Control", "public, max-age=31536000");
 
@@ -227,7 +227,7 @@ mediaRouter.get("/file/*", async c => {
     else if (key.match(/\.webp$/i)) headers.set("Content-Type", "image/webp");
   }
 
-  return new Response(obj.body, { headers });
+  return new Response(obj.body as any, { headers });
 });
 
 // 6. DELETE

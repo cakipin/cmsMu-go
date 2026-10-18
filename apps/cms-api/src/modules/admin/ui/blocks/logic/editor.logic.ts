@@ -42,7 +42,7 @@ window.cmsApi = {
                 body: JSON.stringify(payload)
             });
             return res.ok;
-        } catch (e) { alert('Gagal koneksi'); return false; }
+        } catch (e) { if (window.showToast) window.showToast('Gagal koneksi', 'error'); return false; }
     }
 };
 

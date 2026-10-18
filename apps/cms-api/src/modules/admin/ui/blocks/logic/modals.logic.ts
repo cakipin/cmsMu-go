@@ -1,4 +1,4 @@
-export const modalsLogic = {
+export const modalsLogic: Record<string, any> & ThisType<any> = {
   // ============================================
   // 1. STATE VARIABLES
   // ============================================
@@ -65,7 +65,7 @@ export const modalsLogic = {
       if (res.status === 401 && typeof this.logout === "function")
         return this.logout();
 
-      const json = await res.json();
+      const json: any = await res.json();
       this.mediaList = Array.isArray(json) ? json : json.results || [];
     } catch (e) {
       console.error("Gagal load media", e);
@@ -113,7 +113,7 @@ export const modalsLogic = {
     const file = e ? e.target.files[0] : this.uploadFile;
 
     if (!file) {
-      alert("Pilih file terlebih dahulu.");
+      if ((window as any).showToast) (window as any).showToast("Pilih file terlebih dahulu.", "warning");
       return;
     }
 
@@ -135,7 +135,7 @@ export const modalsLogic = {
       });
 
       if (res.ok) {
-        const result = await res.json();
+        const result: any = await res.json();
         await this.loadMedia(); // Refresh grid
 
         // Pindah ke tab library & pilih gambar baru
@@ -148,10 +148,10 @@ export const modalsLogic = {
         this.uploadFile = null;
         this.uploadPreview = null;
       } else {
-        alert("Gagal upload gambar.");
+        if ((window as any).showToast) (window as any).showToast("Gagal upload gambar.", "error");
       }
     } catch (err) {
-      alert("Error koneksi saat upload.");
+      if ((window as any).showToast) (window as any).showToast("Error koneksi saat upload.", "error");
     } finally {
       this.isUploadingFeatured = false;
     }
@@ -185,7 +185,7 @@ export const modalsLogic = {
         body: JSON.stringify(payload),
       });
 
-      alert("✅ Info gambar tersimpan!");
+      if ((window as any).showToast) (window as any).showToast("Info gambar tersimpan!", "success");
     } catch (e) {
       console.warn("Backend save meta error (UI Updated Locally)", e);
       // Tidak perlu alert error keras jika backend belum siap sepenuhnya, cukup log

@@ -20,14 +20,16 @@ export const ImageField = ({ value, onChange, name }: any) => {
         },
         body: formData
       });
-      const data = await res.json();
+      const data: any = await res.json();
       if (data.url) {
         onChange(data.url);
       } else {
-        alert("Upload gagal: " + (data.error || "Unknown error"));
+        const msg = "Upload gagal: " + (data.error || "Unknown error");
+        if (typeof window !== "undefined" && (window as any).showToast) (window as any).showToast(msg, "error");
       }
     } catch (err: any) {
-      alert("Error upload: " + err.message);
+      const msg = "Error upload: " + err.message;
+      if (typeof window !== "undefined" && (window as any).showToast) (window as any).showToast(msg, "error");
     } finally {
       setIsUploading(false);
     }

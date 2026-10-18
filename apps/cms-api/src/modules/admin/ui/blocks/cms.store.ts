@@ -1,18 +1,19 @@
 // Simpan helper di luar object agar tidak berat
-const startSunEditor = (id, content, onChange) => {
+const startSunEditor = (id: string, content: string, onChange: (c: string) => void) => {
   // ... (Kode SunEditor Om yang sudah fix sebelumnya) ...
   // Pastikan pakai logika retry interval yang tadi
   const build = () => {
-    if (typeof window["SUNEDITOR"] === "undefined") return false;
+    const win = window as any;
+    if (typeof win["SUNEDITOR"] === "undefined") return false;
     const target = document.getElementById(id);
     if (!target) return false;
     try {
-      if (window["sunEditorInstance"]) {
+      if (win["sunEditorInstance"]) {
         try {
-          window["sunEditorInstance"].destroy();
+          win["sunEditorInstance"].destroy();
         } catch (e) {}
       }
-      const editor = window["SUNEDITOR"].create(id, {
+      const editor = win["SUNEDITOR"].create(id, {
         display: "block",
         width: "100%",
         height: "500px",
@@ -26,7 +27,7 @@ const startSunEditor = (id, content, onChange) => {
           ["table", "link", "image", "video"],
           ["fullScreen", "codeView"],
         ],
-        lang: window["SUNEDITOR_LANG"] ? window["SUNEDITOR_LANG"]["en"] : "en",
+        lang: win["SUNEDITOR_LANG"] ? win["SUNEDITOR_LANG"]["en"] : "en",
       });
       editor.onload = () => {
         if (content) editor.setContents(content);
@@ -34,10 +35,10 @@ const startSunEditor = (id, content, onChange) => {
       editor.onBlur = () => {
         onChange(editor.getContents());
       };
-      editor.onChange = c => {
+      editor.onChange = (c: string) => {
         onChange(c);
       };
-      window["sunEditorInstance"] = editor;
+      win["sunEditorInstance"] = editor;
       return true;
     } catch (e) {
       return false;
@@ -50,7 +51,7 @@ const startSunEditor = (id, content, onChange) => {
   }, 100);
 };
 
-const slugify = text => {
+const slugify = (text: any) => {
   if (!text) return "";
   return text
     .toString()
@@ -64,7 +65,7 @@ const slugify = text => {
 };
 
 // EXPORT DEFAULT FUNCTION (Tanpa window.cms =)
-export default function cmsStore() {
+export default function cmsStore(): Record<string, any> & ThisType<any> {
   return {
     // --- CORE STATE ---
     token: "",
@@ -148,8 +149,8 @@ export default function cmsStore() {
       this.initRouter();
     },
 
-    parsePostData(p) {
-      let attr = {};
+    parsePostData(p: any) {
+      let attr: any = {};
       try {
         attr =
           typeof p.attributes === "string"
@@ -172,8 +173,8 @@ export default function cmsStore() {
         let res = await fetch("/api/contents?type=post", {
           headers: { Authorization: this.token },
         });
-        let json = await res.json();
-        this.posts = (json.data || []).map(item => this.parsePostData(item));
+        let json: any = await res.json();
+        this.posts = (json.data || []).map((item: any) => this.parsePostData(item));
       } catch (e) {
       } finally {
         this.isLoadingPosts = false;
@@ -199,12 +200,12 @@ export default function cmsStore() {
         tags: "",
         featured_image: "",
       };
-      startSunEditor("editor", this.token, "", c => {
+      startSunEditor("editor", "", (c: string) => {
         this.form.body = c;
       });
     },
 
-    loadPost(post) {
+    loadPost(post: any) {
       this.quickEditId = null;
       this.editingId = post.id;
       this.view = "add";
@@ -215,15 +216,19 @@ export default function cmsStore() {
           ? new Date(p.created_at).toISOString().slice(0, 16)
           : "",
       };
-      startSunEditor("editor", this.token, p.body, c => {
+      startSunEditor("editor", p.body, (c: string) => {
         this.form.body = c;
       });
     },
 
     async save() {
-      if (window["sunEditorInstance"])
-        this.form.body = window["sunEditorInstance"].getContents();
-      if (!this.form.title) return alert("Judul wajib!");
+      const win = window as any;
+      if (win["sunEditorInstance"])
+        this.form.body = win["sunEditorInstance"].getContents();
+      if (!this.form.title) {
+        if (win.showToast) win.showToast("Judul wajib diisi!", "warning");
+        return;
+      }
       if (!this.form.slug) this.form.slug = slugify(this.form.title);
 
       const attr = {
@@ -252,16 +257,18 @@ export default function cmsStore() {
           body: JSON.stringify(payload),
         });
         if (res.ok) {
-          alert("Tersimpan!");
+          if (win.showToast) win.showToast("Tersimpan!", "success");
           this.view = "posts";
           this.loadPosts();
-        } else alert("Gagal Simpan");
+        } else {
+          if (win.showToast) win.showToast("Gagal Simpan", "error");
+        }
       } catch (e) {
-        alert("Error Network");
+        if (win.showToast) win.showToast("Error Network", "error");
       }
     },
 
-    openQuickEdit(post) {
+    openQuickEdit(post: any) {
       if (this.quickEditId === post.id) {
         this.quickEditId = null;
         return;
@@ -289,15 +296,15 @@ export default function cmsStore() {
     toggleSelectAll() {
       if (this.selectedItems.length === this.posts.length)
         this.selectedItems = [];
-      else this.selectedItems = this.posts.map(p => p.id);
+      else this.selectedItems = this.posts.map((p: any) => p.id);
     },
-    async bulkAction(action) {
+    async bulkAction(_action: any) {
       if (!confirm("Hapus?")) return;
       // ... logika bulk action ...
       this.selectedItems = [];
     },
 
-    formatDate(input) {
+    formatDate(input: any) {
       if (!input) return "-";
       try {
         return new Date(input).toLocaleDateString("id-ID", {

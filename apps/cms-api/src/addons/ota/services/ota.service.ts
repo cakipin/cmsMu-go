@@ -3,8 +3,8 @@
  * Mengelola distribusi manifest versi, rilis baru, dan semver checking untuk Core CMSMu.
  */
 
-export const CORE_VERSION = "0.1.6";
-export const CORE_BUILD_DATE = "2026-10-09";
+export const CORE_VERSION = "0.1.7";
+export const CORE_BUILD_DATE = "2026-10-18";
 export const MIN_COMPATIBLE_SCHEMA_VERSION = "0.1.0";
 
 export interface OtaUpdatedComponent {
@@ -468,4 +468,96 @@ export const otaAddonService = {
       return { success: false, error: err.message };
     }
   },
+
+  async getDeployHook(db: any): Promise<{
+    configured: boolean;
+    hookUrl: string;
+    masked: string;
+  }> {
+    if (!db) return { configured: false, hookUrl: "", masked: "" };
+    try {
+      const row: any = await db
+        .prepare(
+          "SELECT value FROM settings WHERE key = 'ota_deploy_hook_url' LIMIT 1"
+        )
+        .first();
+      const hookUrl = row?.value ? row.value.trim() : "";
+      const configured = isValidDeployHookUrl(hookUrl);
+      const masked = configured
+        ? hookUrl.substring(0, 20) +
+          "..." +
+          hookUrl.substring(hookUrl.length - 8)
+        : "";
+      return { configured, hookUrl, masked };
+    } catch (_) {
+      return { configured: false, hookUrl: "", masked: "" };
+    }
+  },
+
+  async triggerDeployHook(
+    hookUrl: string,
+    executionCtx?: any
+  ): Promise<{ success: boolean; status?: number; error?: string }> {
+    if (!isValidDeployHookUrl(hookUrl)) {
+      return {
+        success: false,
+        error: "URL Cloudflare Deploy Hook tidak valid atau belum diatur.",
+      };
+    }
+
+    const triggerPromise = fetch(hookUrl.trim(), { method: "POST" })
+      .then(async res => {
+        if (!res.ok) {
+          console.warn(`[OTA] Deploy Hook returned HTTP ${res.status}`);
+          return {
+            success: false,
+            status: res.status,
+            error: `Deploy Hook gagal merespons (HTTP ${res.status})`,
+          };
+        }
+        return { success: true, status: res.status };
+      })
+      .catch((err: any) => {
+        console.error("[OTA] Deploy Hook fetch error:", err);
+        return {
+          success: false,
+          error: err.message || "Gagal menghubungi Deploy Hook Cloudflare",
+        };
+      });
+
+    if (executionCtx && typeof executionCtx.waitUntil === "function") {
+      executionCtx.waitUntil(triggerPromise);
+      return { success: true };
+    } else {
+      return await triggerPromise;
+    }
+  },
+
+  createRolloutPayload(
+    clientUrl: string,
+    siteName: string,
+    installedVersion: string,
+    targetVersion: string,
+    status: "updated" | "received" | "failed" | "pending",
+    errorReason: string | null = null
+  ) {
+    return {
+      client_url: clientUrl,
+      site_name: siteName,
+      installed_version: installedVersion,
+      target_version: targetVersion,
+      rollout_status: status,
+      error_reason: errorReason,
+    };
+  },
 };
+
+export function isValidDeployHookUrl(url?: string): boolean {
+  if (!url || typeof url !== "string") return false;
+  try {
+    const parsed = new URL(url.trim());
+    return parsed.protocol === "https:" || parsed.protocol === "http:";
+  } catch (_) {
+    return false;
+  }
+}

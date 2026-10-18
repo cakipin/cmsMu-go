@@ -291,7 +291,7 @@ export const SiteHeader: ComponentConfig<Props["SiteHeader"]> = {
                 />
               )}
               {/* Fallback avatar letter jika mode text atau logo image kosong */}
-              {(!showImg || logoType === "text") && (
+              {!showImg && (
                 <div
                   className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-xl text-lg font-bold text-white shadow-sm"
                   style={{ backgroundColor: highlightColor || "#16a34a" }}

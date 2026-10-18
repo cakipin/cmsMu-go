@@ -7,7 +7,7 @@ import { mediaLogic } from "./logic/media.logic";
  */
 
 // 1. HELPER PEMBERSIH KOMA & KURUNG (Sangat Aman)
-const clean = (s: string) => {
+const clean = (s: any) => {
   if (!s || typeof s !== "string") return "";
   let code = s.trim();
   // Buang wrapper object { ... } jika ada
@@ -31,17 +31,17 @@ const mainLogic = `
 
     // --- DATA STORE ---
     posts: [], pages: [], mediaList: [], usersList: [], 
-    menuList: [], availableThemes: [], quranList: [],
+    menuList: [], availableThemes: [],
     
     // --- UI FLAGS ---
     selectedItems: [], 
-    isLoadingPosts: false, isLoadingPages: false, isLoadingUsers: false, isLoadingThemes: false, loadingQuran: false,
+    isLoadingPosts: false, isLoadingPages: false, isLoadingUsers: false, isLoadingThemes: false,
     isUploading: false, isUploadingFeatured: false, 
     isSavingMeta: false, isSavingMenu: false, isSavingSettings: false,
     showMediaSelector: false, showUserModal: false,
     
     // --- HELPER VARIABLES ---
-    mediaSearchQuery: '', activeSurat: null, mediaSelectorTarget: null, targetLogoField: null,
+    mediaSearchQuery: '', mediaSelectorTarget: null, targetLogoField: null,
     activeMediaItem: null, 
     activeMediaMeta: { alt: '', title: '', description: '' },
 
@@ -112,7 +112,7 @@ const mainLogic = `
 
     async savePost() {
         if(window.sunEditor) this.form.body = window.sunEditor.getContents();
-        if(!this.form.title) return alert('Isi Judul!');
+        if(!this.form.title) { if(window.showToast) window.showToast('Isi Judul!', 'warning'); return; }
         if(!this.form.slug) this.makeSlug();
         
         const url = this.editingId ? '/api/contents/' + this.editingId : '/api/contents';
@@ -120,10 +120,10 @@ const mainLogic = `
         
         try {
             await fetch(url, { method, headers: {'Content-Type':'application/json','Authorization':this.token}, body:JSON.stringify(this.form) });
-            alert('Sukses!');
+            if(window.showToast) window.showToast('Sukses!', 'success');
             this.form.type === 'page' ? this.loadPages() : this.loadPosts();
             this.view = this.form.type === 'page' ? 'pages' : 'posts';
-        } catch(e) { alert('Gagal'); }
+        } catch(e) { if(window.showToast) window.showToast('Gagal menyimpan', 'error'); }
     },
 
     makeSlug() { if(!this.editingId && this.form.title) this.form.slug = window.slugify(this.form.title); },
@@ -137,7 +137,7 @@ const mainLogic = `
     formatDate(i) { return i ? new Date(i).toLocaleDateString('id-ID') : '-'; },
     logout() { localStorage.removeItem('labmu_token'); window.location.reload(); },
     getPageTitle() {
-        const map = { dash:'Dashboard', posts:'Artikel', pages:'Halaman', quran:'Quran Pro', themes:'Tampilan', media:'Media', menus:'Menus', users:'Users', settings:'Settings', add:'Editor' };
+        const map = { dash:'Dashboard', posts:'Artikel', pages:'Halaman', themes:'Tampilan', media:'Media', menus:'Menus', users:'Users', settings:'Settings', add:'Editor' };
         return map[this.view] || 'Admin';
     }
 `;

@@ -58,7 +58,7 @@ settings.post("/", authMiddleware, async c => {
     const body = await c.req.json();
 
     const db = getDb(c.env.DB);
-    const batchData = [];
+    const batchData: { key: string; value: string }[] = [];
 
     for (const key in body) {
       let val = body[key];
@@ -104,7 +104,7 @@ settings.post("/purge-cache", authMiddleware, async c => {
     if (kv && typeof kv.list === "function") {
       let cursor: string | undefined = undefined;
       do {
-        const listResult = await kv.list({ cursor });
+        const listResult: any = await kv.list({ cursor });
         cursor = listResult.list_complete ? undefined : listResult.cursor;
         for (const key of listResult.keys) {
           await kv.delete(key.name);

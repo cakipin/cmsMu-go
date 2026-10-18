@@ -1,6 +1,5 @@
-import { getDb } from "@cmsmu/db";
-import { ayat } from "@cmsmu/db";
-import { like } from "drizzle-orm";
+import { getDb, posts } from "@cmsmu/db";
+import { like, or } from "drizzle-orm";
 
 export async function handleTematikSearch(
   request: Request,
@@ -16,8 +15,8 @@ export async function handleTematikSearch(
   const db = getDb(env.DB);
   const results = await db
     .select()
-    .from(ayat)
-    .where(like(ayat.teksIndonesia, `%${q}%`))
+    .from(posts)
+    .where(or(like(posts.title, `%${q}%`), like(posts.body, `%${q}%`)))
     .limit(50);
 
   const html = theme.renderSearch(results, q, context);

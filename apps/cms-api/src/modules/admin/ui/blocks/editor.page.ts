@@ -1,6 +1,6 @@
-import { editorForm } from "./editor/editor-form.ts";
-import { editorMediaModal } from "./editor/editor-media-modal.ts";
-import { editorTaxonomyModal } from "./editor/editor-taxonomy-modal.ts";
+import { editorForm } from "./editor/editor-form";
+import { editorMediaModal } from "./editor/editor-media-modal";
+import { editorTaxonomyModal } from "./editor/editor-taxonomy-modal";
 
 export const editorPage = `
 <div x-show="view === 'add' || view === 'edit'" class="animate-fade"

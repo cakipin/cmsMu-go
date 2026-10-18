@@ -28,7 +28,7 @@ export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
     highlightColor: { type: "text" },
   },
   defaultProps: {
-    siteName: "Portal Redaksi",
+    siteName: "cmsMu",
     copyrightText: "© 2026 Hak Cipta Dilindungi.",
     logoType: "both",
     logoImage: "",
@@ -37,7 +37,7 @@ export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
     highlightColor: "#059669",
   },
   render: ({
-    siteName = "Portal Redaksi",
+    siteName = "cmsMu",
     copyrightText = "© 2026 Hak Cipta Dilindungi.",
     logoType = "both",
     logoImage = "",
@@ -64,7 +64,7 @@ export const SiteFooter: ComponentConfig<Props["SiteFooter"]> = {
                 }}
               />
             )}
-            {(!showImg || logoType === "text") && (
+            {!showImg && (
               <div
                 className="flex h-8 w-8 items-center justify-center rounded-full text-sm font-bold text-white"
                 style={{ backgroundColor: highlightColor || "#059669" }}

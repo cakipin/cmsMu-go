@@ -5,6 +5,7 @@ import { posts as postsTable, pages as pagesTable } from "@cmsmu/db";
 import { eq, desc, asc, and, or, like, sql } from "drizzle-orm";
 import { translateTextWithAI } from "../../services/ai-translate";
 import { getGlobalData, getRenderer, formatPostForFrontend } from "./helpers";
+import { isPuckJson, renderPuckHtml } from "../theme-builder/render";
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
 import profileRouter, { handleUserProfile } from "./routes/profile.router";
@@ -26,6 +27,7 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
 
     const db = getDb(c.env.DB);
     const page = Math.max(1, parseInt(c.req.query("page") || "1"));
+    const regionParam = c.req.query("region") || "all";
     const limit = 12; // 12 artikel per halaman reguler
 
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);

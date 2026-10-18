@@ -1,4 +1,4 @@
-export const mediaLogic = {
+export const mediaLogic: Record<string, any> & ThisType<any> = {
   mediaList: [],
   selectedItems: [],
   activeMediaItem: null,
@@ -14,10 +14,11 @@ export const mediaLogic = {
   uploadFile: null,
   isCropModalOpen: false,
 
-  initImageCropper(imageElement, ratio = 16/9) {
+  initImageCropper(imageElement: any, ratio = 16/9) {
       if (this.cropperInstance) this.cropperInstance.destroy();
-      if (window.Cropper) {
-          this.cropperInstance = new Cropper(imageElement, {
+      const win = window as any;
+      if (win.Cropper) {
+          this.cropperInstance = new win.Cropper(imageElement, {
               aspectRatio: ratio,
               viewMode: 1,
               autoCropArea: 0.9,
@@ -33,14 +34,14 @@ export const mediaLogic = {
       }
   },
 
-  setCropRatio(ratio) {
+  setCropRatio(ratio: number) {
       this.cropRatio = ratio;
       if (this.cropperInstance) {
           this.cropperInstance.setAspectRatio(ratio);
       }
   },
 
-  rotateCropper(degree) {
+  rotateCropper(degree: number) {
       if (this.cropperInstance) this.cropperInstance.rotate(degree);
   },
 
@@ -55,7 +56,7 @@ export const mediaLogic = {
       if (this.cropperInstance) this.cropperInstance.reset();
   },
 
-  async getCroppedBlob(maxWidth = 1600, quality = 0.8) {
+  async getCroppedBlob(maxWidth = 1600, quality = 0.8): Promise<Blob | null> {
       if (!this.cropperInstance) return null;
       const canvas = this.cropperInstance.getCroppedCanvas({
           maxWidth: maxWidth,
@@ -63,7 +64,7 @@ export const mediaLogic = {
           imageSmoothingQuality: 'high'
       });
       return new Promise(resolve => {
-          canvas.toBlob(blob => resolve(blob), 'image/webp', quality);
+          canvas.toBlob((blob: Blob | null) => resolve(blob), 'image/webp', quality);
       });
   },
 
@@ -74,11 +75,11 @@ export const mediaLogic = {
       let res = await fetch("/api/media?t=" + Date.now(), {
         headers: { Authorization: "Bearer " + token },
       });
-      let json = await res.json();
+      let json: any = await res.json();
       let rawData = Array.isArray(json)
         ? json
         : json.data || json.results || [];
-      this.mediaList = rawData.filter(m => !m.key.endsWith("/"));
+      this.mediaList = rawData.filter((m: any) => !m.key.endsWith("/"));
       this.selectedItems = [];
       this.activeMediaItem = null;
     } catch (e) {
@@ -87,8 +88,8 @@ export const mediaLogic = {
     }
   },
 
-  toggleSelection(item) {
-    const index = this.selectedItems.findIndex(i => i.id === item.id);
+  toggleSelection(item: any) {
+    const index = this.selectedItems.findIndex((i: any) => i.id === item.id);
     if (index > -1) {
       this.selectedItems.splice(index, 1);
     } else {
@@ -112,7 +113,7 @@ export const mediaLogic = {
     }
   },
 
-  setActiveItem(m) {
+  setActiveItem(m: any) {
     this.activeMediaItem = m;
     const currentFilename = m.key ? m.key.split("/").pop() : "";
     this.activeMediaMeta = {
@@ -170,15 +171,15 @@ export const mediaLogic = {
       });
 
       if (res.ok) {
-        alert("Tersimpan!");
+        if ((window as any).showToast) (window as any).showToast("Tersimpan!", "success");
         this.activeMediaItem = null;
         await this.loadMedia();
       } else {
-        alert("Gagal simpan");
+        if ((window as any).showToast) (window as any).showToast("Gagal simpan", "error");
       }
     } catch (e) {
       console.error("Save Error:", e);
-      alert("Terjadi kesalahan saat menyimpan.");
+      if ((window as any).showToast) (window as any).showToast("Terjadi kesalahan saat menyimpan.", "error");
     } finally {
       this.isSavingMeta = false;
     }
@@ -186,13 +187,13 @@ export const mediaLogic = {
 
   // --- FITUR AUTO COMPRESS ---
   // Fungsi bantuan untuk menekan ukuran gambar
-  async compressImage(file, quality = 0.7, maxWidth = 1600) {
+  async compressImage(file: File, quality = 0.7, maxWidth = 1600): Promise<File> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.readAsDataURL(file);
-      reader.onload = event => {
+      reader.onload = (event: any) => {
         const img = new Image();
-        img.src = event.target.result;
+        img.src = event.target?.result;
         img.onload = () => {
           const canvas = document.createElement("canvas");
           let width = img.width;
@@ -207,7 +208,7 @@ export const mediaLogic = {
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext("2d");
-          ctx.drawImage(img, 0, 0, width, height);
+          if (ctx) ctx.drawImage(img, 0, 0, width, height);
 
           // Konversi ke Blob
           // Pertahankan format PNG dan WebP agar transparansi (alpha channel) tidak hilang jadi putih/hitam
@@ -237,7 +238,7 @@ export const mediaLogic = {
   },
 
   // UPDATE PADA FUNGSI UPLOAD
-  async uploadMedia(e) {
+  async uploadMedia(e: any) {
     const files = e.target.files;
     if (!files.length) return;
 
@@ -292,7 +293,7 @@ export const mediaLogic = {
     e.target.value = "";
   },
 
-  async processSingleUpload(useCrop) {
+  async processSingleUpload(useCrop: boolean) {
       if (!this.uploadFile) return;
       this.isCropModalOpen = false;
       this.isUploading = true;
@@ -339,14 +340,14 @@ export const mediaLogic = {
   },
 
   get filteredMedia() {
-    return (this.mediaList || []).filter(m =>
+    return (this.mediaList || []).filter((m: any) =>
       (m.key || "")
         .toLowerCase()
         .includes((this.mediaSearchQuery || "").toLowerCase())
     );
   },
 
-  isSelected(item) {
-    return this.selectedItems.some(i => i.id === item.id);
+  isSelected(item: any) {
+    return this.selectedItems.some((i: any) => i.id === item.id);
   },
 };

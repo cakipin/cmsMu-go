@@ -3,7 +3,7 @@
  * Menangani Hapus, View, dan Edit agar konten muncul.
  */
 
-export const postLogic = {
+export const postLogic: Record<string, any> & ThisType<any> = {
   posts: [],
   isLoading: false,
 
@@ -76,7 +76,7 @@ export const postLogic = {
 
       if (!res.ok) throw new Error("Failed");
 
-      const json = await res.json();
+      const json: any = await res.json();
       const rawData = Array.isArray(json) ? json : json.results || [];
 
       this.posts = rawData.map((p: any) => ({
@@ -113,21 +113,21 @@ export const postLogic = {
         body: JSON.stringify(payload),
       });
 
-      const result = await res.json();
+      const result: any = await res.json();
 
       if (res.ok) {
-        alert("Berhasil disimpan!");
+        if ((window as any).showToast) (window as any).showToast("Berhasil disimpan!", "success");
         if (!isEdit) {
           this.view = "posts";
         }
         await this.loadPosts();
         return true;
       } else {
-        alert("Gagal: " + (result.error || "Database Error"));
+        if ((window as any).showToast) (window as any).showToast("Gagal: " + (result.error || "Database Error"), "error");
         return false;
       }
     } catch (e) {
-      alert("Kesalahan koneksi.");
+      if ((window as any).showToast) (window as any).showToast("Kesalahan koneksi.", "error");
       return false;
     } finally {
       this.isLoading = false;
@@ -152,10 +152,10 @@ export const postLogic = {
         // Sinkronisasi ulang
         await this.loadPosts();
       } else {
-        alert("Gagal menghapus.");
+        if ((window as any).showToast) (window as any).showToast("Gagal menghapus.", "error");
       }
     } catch (e) {
-      alert("Gagal koneksi.");
+      if ((window as any).showToast) (window as any).showToast("Gagal koneksi.", "error");
     }
   },
 
@@ -182,7 +182,7 @@ export const postLogic = {
   },
 
   // --- UPDATE: Saat buka editor, load data dulu biar dropdown muncul ---
-  openEditor(type: string) {
+  openEditor(_type: string) {
     this.view = "add";
     this.editingId = null;
     // Reset Form
@@ -201,8 +201,8 @@ export const postLogic = {
 
     // Init Editor
     setTimeout(() => {
-      if (window.initCmsEditor)
-        window.initCmsEditor("editor_id", "", (c: any) => (this.form.body = c));
+      if ((window as any).initCmsEditor)
+        (window as any).initCmsEditor("editor_id", "", (c: any) => (this.form.body = c));
     }, 100);
   },
 
@@ -238,9 +238,9 @@ export const postLogic = {
     // Init Editor dengan Content
     // Kita beri delay sedikit agar View 'add' selesai render dulu
     setTimeout(() => {
-      if (window.initCmsEditor) {
+      if ((window as any).initCmsEditor) {
         // Panggil init editor dan masukkan form.body
-        window.initCmsEditor("editor_id", item.body || "", (c: string) => {
+        (window as any).initCmsEditor("editor_id", item.body || "", (c: string) => {
           this.form.body = c;
         });
       }
@@ -250,7 +250,7 @@ export const postLogic = {
   // --- BARU: FITUR VIEW POST ---
   viewPost(slug: string) {
     if (!slug) {
-      alert("Slug belum ada.");
+      if ((window as any).showToast) (window as any).showToast("Slug belum ada.", "warning");
       return;
     }
     // Buka tab baru ke URL post (Sesuaikan domain jika perlu)

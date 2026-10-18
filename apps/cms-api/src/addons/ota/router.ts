@@ -15,7 +15,7 @@ import {
 export const otaRouter = new Hono<{ Bindings: any }>();
 
 // 0. OPTIONS /* - Handle CORS preflight requests
-otaRouter.options("*", c => c.text("", 204));
+otaRouter.options("*", c => c.body(null, 204));
 
 // 1. GET /manifest - Manifest publik versi Core CMSMu
 otaRouter.get("/manifest", async c => {
@@ -1157,7 +1157,7 @@ otaRouter.get("/status", async c => {
       activeManifestVersion: manifest.version,
       buildDate: CORE_BUILD_DATE,
       databaseIntegrity: {
-        schemaVersion: migrationInfo.currentVersion,
+        schemaVersion: migrationInfo.currentSchemaVersion,
         status:
           migrationInfo.appliedCount === migrationInfo.totalMigrations
             ? "synced"

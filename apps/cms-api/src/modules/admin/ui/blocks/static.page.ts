@@ -1,4 +1,4 @@
-import { customEditorTemplate } from './custom-editor.ts';
+import { customEditorTemplate } from "./custom-editor";
 
 export const staticPage = `
 <div x-show="view === 'pages' || view === 'add-page'" 
@@ -63,7 +63,7 @@ export const staticPage = `
          },
 
          previewPage(slug) {
-             if(!slug) return alert('Halaman belum memiliki link.');
+             if(!slug) return window.showToast && window.showToast('Halaman belum memiliki link.', 'warning');
              window.open('/' + slug, '_blank');
          },
 
@@ -94,7 +94,7 @@ export const staticPage = `
                  if (res.ok) {
                      await this.loadPages();
                  } else {
-                     alert('Gagal menghapus halaman.');
+                     if(window.showToast) window.showToast('Gagal menghapus halaman.', 'error');
                  }
              } catch(e) { console.error(e); }
          },
@@ -125,7 +125,7 @@ export const staticPage = `
                  const token = localStorage.getItem('labmu_token');
                  const res = await fetch('/api/pages/' + id, { headers: { 'Authorization': 'Bearer ' + token } });
                  if(res.ok) this.form = await res.json();
-             } catch(e) { alert('Gagal load data'); }
+             } catch(e) { if(window.showToast) window.showToast('Gagal load data', 'error'); }
          },
 
          async savePage() {
@@ -207,7 +207,7 @@ export const staticPage = `
          },
 
          confirmMediaSelection() {
-             if (!this.selectedMedia || !this.selectedMedia.url) return alert('Pilih gambar dulu!');
+             if (!this.selectedMedia || !this.selectedMedia.url) return window.showToast && window.showToast('Pilih gambar dulu!', 'warning');
              
              if (this.mediaSelectorTarget === 'custom-editor') {
                  // Trigger event untuk insert media ke dalam editor
@@ -228,7 +228,7 @@ export const staticPage = `
          },
 
          async uploadMediaAction() {
-             if (!this.uploadFile) return alert('Pilih file dulu');
+             if (!this.uploadFile) return window.showToast && window.showToast('Pilih file dulu', 'warning');
              const fd = new FormData();
              fd.append('file', this.uploadFile);
              fd.append('title', this.mediaForm.title);
@@ -247,8 +247,8 @@ export const staticPage = `
                      const newImg = this.mediaList.find(m => m.url === newUrl);
                      if (newImg) this.selectMediaItem(newImg);
                      this.uploadFile = null; this.uploadPreview = null;
-                 } else { alert('Gagal upload.'); }
-             } catch(e) { alert('Error upload'); }
+                 } else { if(window.showToast) window.showToast('Gagal upload.', 'error'); }
+             } catch(e) { if(window.showToast) window.showToast('Error upload', 'error'); }
          },
 
          async updateMediaDetails() {
@@ -260,7 +260,7 @@ export const staticPage = `
                      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
                      body: JSON.stringify({ key: this.selectedMedia.key, ...this.mediaForm })
                  });
-                 alert('Info media tersimpan!');
+                 if(window.showToast) window.showToast('Info media tersimpan!', 'success');
              } catch(e) { console.log('Saved locally'); }
          },
      }"

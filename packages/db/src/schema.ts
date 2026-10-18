@@ -67,6 +67,7 @@ export const pages = sqliteTable("pages", {
   status: text("status").default("publish"),
   featuredImage: text("featured_image"),
   layout: text("layout").default("standard"),
+  views: integer("views").default(0),
   authorId: integer("author_id").references(() => users.id),
   createdAt: text("created_at").default(String(Date.now())),
   updatedAt: text("updated_at").default(String(Date.now())),

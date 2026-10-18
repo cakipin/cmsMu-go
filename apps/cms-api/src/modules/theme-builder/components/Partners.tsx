@@ -17,10 +17,10 @@ export const Partners: ComponentConfig<Props["Partners"]> = {
   defaultProps: {
     title: "Dipercaya & Berkolaborasi Dengan",
     partners: [
-      { name: "SatuMu", logoUrl: "" },
-      { name: "Suara Muhammadiyah", logoUrl: "" },
-      { name: "BTM", logoUrl: "" },
-      { name: "Lazismu", logoUrl: "" }
+      { name: "cmsMu Core", logoUrl: "" },
+      { name: "Cloudflare Edge", logoUrl: "" },
+      { name: "Drizzle ORM", logoUrl: "" },
+      { name: "Astro SSR", logoUrl: "" }
     ]
   },
   render: ({ title, partners }) => (

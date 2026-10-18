@@ -14,7 +14,7 @@ export class MediaService {
   }
 
   async upload(key: string, file: File | Blob) {
-    await this.bucket.put(key, file, {
+    await this.bucket.put(key, file as any, {
       httpMetadata: { contentType: file.type },
     });
     return { key };

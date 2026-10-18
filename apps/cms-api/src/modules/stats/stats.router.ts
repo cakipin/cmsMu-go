@@ -103,21 +103,12 @@ statsRouter.get("/dashboard", async c => {
       .from(posts)
       .get();
 
-    let sourcesCount = 0;
-    try {
-      const srcRes: any = await c.env.DB.prepare(
-        "SELECT COUNT(*) as c FROM media_sources WHERE is_active = 1"
-      ).first();
-      sourcesCount = srcRes?.c || 0;
-    } catch (e) {}
-
     return c.json({
       posts: postsCount?.c || 0,
       pages: pagesCount?.c || 0,
       media: mediaCount?.c || 0,
       users: usersCount?.c || 0,
       totalViews: viewsResult?.total || 0,
-      sources: sourcesCount || 0,
     });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);

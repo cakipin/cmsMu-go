@@ -50,7 +50,7 @@ export function isPuckJson(contentStr: string | null | undefined): boolean {
 export function renderPuckHtml(options: PuckRenderOptions): string {
   const { site, page, canonical, latestPosts, menus } = options;
   const siteTitle = escapeHtml(
-    site?.site_title || site?.title || "Portal Redaksi"
+    site?.site_title || site?.title || "cmsMu"
   );
   const siteTagline = escapeHtml(site?.site_desc || site?.site_tagline || "");
   const pageTitle = page?.title

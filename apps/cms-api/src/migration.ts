@@ -5,13 +5,14 @@ const migration = new Hono<{ Bindings: Bindings }>();
 
 migration.get("/", async c => {
   try {
-    const logs = [];
+    const logs: string[] = [];
 
     // DAFTAR PERUBAHAN STRUKTUR DATABASE
     const alterations = [
       // 1. Konten & Media
       "ALTER TABLE contents ADD COLUMN featured_image_caption TEXT",
       "ALTER TABLE media_meta ADD COLUMN caption TEXT",
+      "ALTER TABLE pages ADD COLUMN views INTEGER DEFAULT 0",
 
       // 2. User Update
       "ALTER TABLE users ADD COLUMN name TEXT",
@@ -49,19 +50,19 @@ migration.get("/", async c => {
 
     // SEED DATA DEFAULT (Jika Settings Masih Kosong)
     try {
-      const check = await c.env.DB.prepare(
+      const check: any = await c.env.DB.prepare(
         "SELECT count(*) as count FROM settings"
       ).first();
       if (check && check.count === 0) {
         await c.env.DB.prepare(
           "INSERT INTO settings (key, value) VALUES (?, ?)"
         )
-          .bind("site_title", "LabMu CMS")
+          .bind("site_title", "cmsMu Core")
           .run();
         await c.env.DB.prepare(
           "INSERT INTO settings (key, value) VALUES (?, ?)"
         )
-          .bind("site_desc", "Just another CMS site")
+          .bind("site_desc", "Powered by cmsMu Core Engine")
           .run();
         logs.push("✅ Seed Default Settings");
       }

@@ -56,7 +56,7 @@ export const MIGRATIONS: MigrationStep[] = [
   {
     id: "2026_02_15_002_plugins_and_addons",
     version: "0.1.0",
-    name: "Addons & Plugins System (plugins, media_sources, curation_queue)",
+    name: "Addons & Plugins System (plugins)",
     up: async (db: any) => {
       // Plugins Table
       await db
@@ -94,27 +94,10 @@ export const MIGRATIONS: MigrationStep[] = [
     },
   },
   {
-    id: "2026_09_21_003_ota_and_subscribers",
+    id: "2026_09_21_003_ota_and_comments",
     version: "0.1.0",
-    name: "OTA Update Tracking & System Subscriptions",
+    name: "OTA Update Tracking, Comments & Notifications",
     up: async (db: any) => {
-      // Subscribers, Subscriptions & Agens
-      await db
-        .prepare(
-          `CREATE TABLE IF NOT EXISTS subscribers (id INTEGER PRIMARY KEY AUTOINCREMENT, email TEXT UNIQUE NOT NULL, name TEXT, is_active INTEGER DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP);`
-        )
-        .run();
-      await db
-        .prepare(
-          `CREATE TABLE IF NOT EXISTS subscriptions (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, email TEXT, plan TEXT, duration_months INTEGER DEFAULT 1, amount INTEGER, payment_proof TEXT, notes TEXT, status TEXT DEFAULT 'active', expires_at TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME);`
-        )
-        .run();
-      await db
-        .prepare(
-          `CREATE TABLE IF NOT EXISTS agens (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, phone TEXT, whatsapp TEXT, address TEXT, area TEXT, map_link TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP);`
-        )
-        .run();
-
       // Comments & Notifications
       await db
         .prepare(
@@ -155,20 +138,6 @@ export const MIGRATIONS: MigrationStep[] = [
       try {
         await db.prepare("ALTER TABLE users ADD COLUMN avatar TEXT;").run();
       } catch (e) {}
-      try {
-        await db
-          .prepare(
-            "ALTER TABLE media_sources ADD COLUMN auto_publish INTEGER DEFAULT 0;"
-          )
-          .run();
-      } catch (e) {}
-      try {
-        await db
-          .prepare(
-            "ALTER TABLE curation_queue ADD COLUMN default_category TEXT DEFAULT 'Berita Daerah';"
-          )
-          .run();
-      } catch (e) {}
     },
   },
   {
@@ -194,6 +163,18 @@ export const MIGRATIONS: MigrationStep[] = [
       } catch (e) {}
     },
   },
+  {
+    id: "2026_10_18_005_pages_views_column",
+    version: "0.1.7",
+    name: "Add views counter column to pages table",
+    up: async (db: any) => {
+      try {
+        await db
+          .prepare("ALTER TABLE pages ADD COLUMN views INTEGER DEFAULT 0;")
+          .run();
+      } catch (e) {}
+    },
+  },
 ];
 
 export async function ensureMigrationTable(db: any) {
@@ -211,11 +192,23 @@ export async function ensureMigrationTable(db: any) {
     .run();
 }
 
-export async function runAutoMigration(
-  db: any
-): Promise<{ applied: string[]; total: number; latestVersion: string }> {
+export async function runAutoMigration(db: any): Promise<{
+  applied: string[];
+  appliedCount: number;
+  total: number;
+  latestVersion: string;
+  currentVersion: string;
+  history: any[];
+}> {
   if (!db) {
-    return { applied: [], total: 0, latestVersion: "0.0.0" };
+    return {
+      applied: [],
+      appliedCount: 0,
+      total: 0,
+      latestVersion: "0.0.0",
+      currentVersion: "0.0.0",
+      history: [],
+    };
   }
 
   await ensureMigrationTable(db);
@@ -247,31 +240,63 @@ export async function runAutoMigration(
     }
   }
 
+  const historyRows = await db
+    .prepare("SELECT * FROM system_migrations ORDER BY applied_at DESC")
+    .all()
+    .catch(() => ({ results: [] }));
+  const history = historyRows?.results || [];
   const latest = MIGRATIONS[MIGRATIONS.length - 1];
+  const latestVer = latest ? latest.version : "0.1.0";
+
   return {
     applied,
+    appliedCount: applied.length,
     total: MIGRATIONS.length,
-    latestVersion: latest ? latest.version : "0.1.0",
+    latestVersion: latestVer,
+    currentVersion: latestVer,
+    history,
   };
 }
 
-export async function getMigrationStatus(db: any) {
-  if (!db)
-    return { status: "no_database", appliedCount: 0, latestVersion: "0.0.0" };
+export async function getMigrationStatus(db: any): Promise<{
+  status?: string;
+  currentSchemaVersion: string;
+  targetSchemaVersion: string;
+  appliedCount: number;
+  totalMigrations: number;
+  latestVersion: string;
+  history: any[];
+}> {
+  const latest = MIGRATIONS[MIGRATIONS.length - 1];
+  const targetVer = latest ? latest.version : "0.1.0";
+
+  if (!db) {
+    return {
+      status: "no_database",
+      currentSchemaVersion: "0.0.0",
+      targetSchemaVersion: targetVer,
+      appliedCount: 0,
+      totalMigrations: MIGRATIONS.length,
+      latestVersion: "0.0.0",
+      history: [],
+    };
+  }
 
   await ensureMigrationTable(db);
   const appliedRows = await db
     .prepare("SELECT * FROM system_migrations ORDER BY applied_at DESC")
     .all();
   const applied = appliedRows.results || [];
-  const latest = MIGRATIONS[MIGRATIONS.length - 1];
+  const currentVer =
+    applied.length > 0 ? (applied[0] as any).version : "0.1.0";
 
   return {
-    currentSchemaVersion:
-      applied.length > 0 ? (applied[0] as any).version : "0.1.0",
-    targetSchemaVersion: latest.version,
+    status: applied.length === MIGRATIONS.length ? "synced" : "pending",
+    currentSchemaVersion: currentVer,
+    targetSchemaVersion: targetVer,
     appliedCount: applied.length,
     totalMigrations: MIGRATIONS.length,
+    latestVersion: currentVer,
     history: applied,
   };
 }

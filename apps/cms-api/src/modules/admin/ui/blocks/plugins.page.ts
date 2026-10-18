@@ -13,11 +13,14 @@ export const pluginsPage = `
         </div>
       </div>
     </div>
-    <div class="flex items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
-      <button @click="loadPlugins()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors active:scale-95">
+    <div class="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full sm:w-auto">
+      <button x-show="isPluginActive('sso-muhammadiyah')" @click="view = 'sso-setup'" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors active:scale-95">
+        <i class="fas fa-shield-alt"></i> SSO Setup
+      </button>
+      <button @click="loadPlugins()" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-3.5 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-colors active:scale-95">
         <i class="fas fa-sync-alt"></i> Segarkan
       </button>
-      <button @click="showAddPluginModal = true" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2.5 min-h-[40px] rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors active:scale-95">
+      <button @click="showAddPluginModal = true" class="flex-1 sm:flex-initial flex items-center justify-center gap-2 px-4 py-2 min-h-[40px] rounded-xl text-xs font-semibold text-white bg-teal-600 hover:bg-teal-700 shadow-xs transition-colors active:scale-95">
         <i class="fas fa-plus"></i> Tambah Plugin
       </button>
     </div>
@@ -35,7 +38,7 @@ export const pluginsPage = `
             <div class="flex items-center gap-3">
               <div class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 font-bold"
                    :class="p.active ? 'bg-teal-50 text-teal-600' : 'bg-slate-100 text-slate-400'">
-                <i class="fas" :class="p.id === 'ota' ? 'fa-cloud-upload-alt' : 'fa-plug'"></i>
+                <i class="fas" :class="p.id === 'ota' ? 'fa-cloud-upload-alt' : (p.id === 'sso-muhammadiyah' ? 'fa-shield-alt' : 'fa-plug')"></i>
               </div>
               <div>
                 <h3 class="text-sm font-bold text-slate-800 tracking-tight" x-text="p.name"></h3>
@@ -66,6 +69,20 @@ export const pluginsPage = `
           </div>
 
           <div class="flex items-center gap-2">
+            <!-- Quick Config Button for SSO / OTA -->
+            <template x-if="p.id === 'sso-muhammadiyah' && p.active">
+              <button @click="view = 'sso-setup'"
+                      class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors flex items-center gap-1.5">
+                <i class="fas fa-cog text-slate-500"></i> Konfigurasi
+              </button>
+            </template>
+            <template x-if="p.id === 'ota' && p.active">
+              <button @click="view = 'ota'"
+                      class="px-3 py-1.5 rounded-xl text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 transition-colors flex items-center gap-1.5">
+                <i class="fas fa-sliders-h text-slate-500"></i> Buka OTA
+              </button>
+            </template>
+
             <!-- Toggle Button -->
             <button x-show="!p.active" @click="togglePlugin(p.id, true)"
                     class="px-3.5 py-1.5 rounded-xl text-xs font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition-colors flex items-center gap-1.5">

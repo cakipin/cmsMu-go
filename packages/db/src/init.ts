@@ -151,6 +151,15 @@ export const updateSchema = async (db: D1Database) => {
       // Kolom mungkin sudah ada
     }
 
+    try {
+      await db
+        .prepare("ALTER TABLE pages ADD COLUMN views INTEGER DEFAULT 0;")
+        .run();
+      logs.push("✅ Added 'views' column to 'pages' table.");
+    } catch (e: any) {
+      // Kolom mungkin sudah ada
+    }
+
     // 3C. TABEL MEDIA_META
     await db
       .prepare(

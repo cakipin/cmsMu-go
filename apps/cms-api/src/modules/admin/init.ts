@@ -1,10 +1,10 @@
-window.adminMenus = [
+(window as any).adminMenus = [
   {
     group: "Content",
     title: "All Posts",
     view: "posts",
     icon: "fas fa-thumbtack",
-    action: () => loadPosts(),
+    action: () => (window as any).loadPosts?.(),
   },
   {
     group: "Content",
@@ -17,7 +17,7 @@ window.adminMenus = [
     title: "Pages",
     view: "pages",
     icon: "fas fa-copy",
-    action: () => loadPages(),
+    action: () => (window as any).loadPages?.(),
   },
   {
     group: "Appearance",
@@ -31,12 +31,7 @@ window.adminMenus = [
     title: "All Plugins",
     view: "plugins",
     icon: "fas fa-plug",
-    action: () => loadPlugins(),
-  },
-  {
-    group: "Plugins",
-    title: "Sync Tarjih",
-    href: "/admin/tarjih-sync",
-    icon: "fas fa-sync-alt",
+    action: () => (window as any).loadPlugins?.(),
   },
 ];
+export {};

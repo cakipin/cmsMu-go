@@ -87,22 +87,8 @@ export async function handleUserProfile(c: any, rawUsername: string) {
         .limit(30);
     } catch (e) {}
 
-    // 2. Antrean Kurasi (untuk kurator / editor / redaksi)
+    // 2. Antrean Kurasi (opsional jika plugin terpasang)
     let curationList: any[] = [];
-    try {
-      const qRes = await db
-        .prepare(
-          `
-        SELECT q.*, s.name as source_name, s.slug as source_slug 
-        FROM curation_queue q
-        LEFT JOIN media_sources s ON q.source_id = s.id
-        ORDER BY q.created_at DESC
-        LIMIT 30
-      `
-        )
-        .all();
-      curationList = qRes?.results || [];
-    } catch (e) {}
 
     // 3. Artikel Favorit / Bookmark / Bacaan Tersimpan (Subscriber)
     let savedPostsList: any[] = [];
@@ -148,7 +134,7 @@ export async function handleUserProfile(c: any, rawUsername: string) {
 }
 
 profileRouter.get("/@:username", async c =>
-  handleUserProfile(c, c.req.param("username"))
+  handleUserProfile(c, c.req.param("username") || "")
 );
 
 // Endpoint Upload Avatar Pengguna Publik (Maksimal 1MB)

@@ -99,8 +99,6 @@ if (typeof window !== 'undefined') {
                     if(res.ok) {
                         if (window.showToast) {
                             window.showToast('Pengaturan berhasil disimpan!', 'success');
-                        } else {
-                            alert('Pengaturan Berhasil Disimpan!');
                         }
                         if(this.settings.site_title) document.title = this.settings.site_title + ' - Admin';
                         if (this.settings.site_favicon && window.updateFavicon) {
@@ -110,15 +108,11 @@ if (typeof window !== 'undefined') {
                     } else {
                         if (window.showToast) {
                             window.showToast('Gagal menyimpan pengaturan', 'error');
-                        } else {
-                            alert('Gagal menyimpan.');
                         }
                     }
                 } catch(e) { 
                     if (window.showToast) {
                         window.showToast('Error: ' + e.message, 'error');
-                    } else {
-                        alert('Error: ' + e.message); 
                     }
                 }
                 finally { this.isSaving = false; }
@@ -147,15 +141,12 @@ if (typeof window !== 'undefined') {
                     const json = await res.json().catch(function() { return {}; });
                     if (res.ok && json.success) {
                         if (window.showToast) window.showToast(json.message || 'Cache berhasil dibersihkan!', 'success');
-                        else alert('✅ ' + (json.message || 'Cache berhasil dibersihkan!'));
                     } else {
                         const errMsg = json.error || 'Gagal membersihkan cache.';
                         if (window.showToast) window.showToast(errMsg, 'error');
-                        else alert('❌ ' + errMsg);
                     }
                 } catch(e) {
                     if (window.showToast) window.showToast('Gagal: ' + e.message, 'error');
-                    else alert('Gagal: ' + e.message);
                 } finally {
                     this.isPurgingCache = false;
                 }
@@ -239,7 +230,6 @@ if (typeof window !== 'undefined') {
             confirmMediaSelection() {
                 if (!this.selectedMedia || !this.selectedMedia.url) {
                     if (window.showToast) window.showToast('Pilih salah satu gambar terlebih dahulu!', 'warning');
-                    else alert('Pilih gambar dulu!');
                     return;
                 }
                 if (this.mediaTarget === 'logo') {
@@ -262,7 +252,6 @@ if (typeof window !== 'undefined') {
             async uploadMediaAction() {
                 if (!this.uploadFile) {
                     if (window.showToast) window.showToast('Pilih file dari komputer terlebih dahulu!', 'warning');
-                    else alert('Pilih file dulu');
                     return;
                 }
                 this.isUploading = true;
@@ -296,11 +285,9 @@ if (typeof window !== 'undefined') {
                     } else { 
                         const err = await res.json().catch(function() { return {}; });
                         if (window.showToast) window.showToast(err.error || 'Gagal mengunggah media.', 'error');
-                        else alert('Gagal upload: ' + (err.error || ''));
                     }
                 } catch(e) { 
                     if (window.showToast) window.showToast('Error upload: ' + e.message, 'error');
-                    else alert('Error upload: ' + e.message); 
                 }
                 finally { this.isUploading = false; }
             }

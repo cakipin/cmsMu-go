@@ -1,10 +1,9 @@
-// FIX: Tambahkan ekstensi .ts pada SEMUA import agar konsisten dan terbaca loader
-import { coreLogic } from "./logic/core.logic.ts";
-import { mediaLogic } from "./logic/media.logic.ts";
-import { postLogic } from "./logic/post.logic.ts";
-import { settingsLogic } from "./logic/settings.logic.ts";
-import { globalModals } from "./modals.ts";
-import { customEditorLogicScript } from "./custom-editor.ts";
+import { coreLogic } from "./logic/core.logic";
+import { mediaLogic } from "./logic/media.logic";
+import { postLogic } from "./logic/post.logic";
+import { settingsLogic } from "./logic/settings.logic";
+import { globalModals } from "./modals";
+import { customEditorLogicScript } from "./custom-editor";
 import { CORE_VERSION } from "../../../../addons/ota/services/ota.service";
 
 /**
@@ -14,7 +13,7 @@ import { CORE_VERSION } from "../../../../addons/ota/services/ota.service";
 
 // --- 1. ROBUST SERIALIZER ---
 const serializeToScript = (obj: any) => {
-  let props = [];
+  let props: string[] = [];
   for (let key in obj) {
     let val = obj[key];
     if (typeof val === "function") {

@@ -15,7 +15,7 @@ const admin = new Hono<{ Bindings: Bindings }>();
 
 // 1. DASHBOARD UTAMA
 admin.get("/", c => {
-  return c.html(renderAdmin());
+  return c.html(renderAdmin({ view: "dash" }));
 });
 
 // 1b. SSO CALLBACK

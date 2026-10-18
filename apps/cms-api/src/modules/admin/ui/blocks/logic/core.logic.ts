@@ -3,7 +3,7 @@
  * Didesain agar independen dari konteks `this` yang ketat.
  */
 
-export const coreLogic = {
+export const coreLogic: Record<string, any> & ThisType<any> = {
   // Helper Internal: Wrapper Fetch yang Aman
   async _fetch(url: string, options: any = {}) {
     const token =
@@ -21,9 +21,7 @@ export const coreLogic = {
     }
 
     // Cek jika ada fungsi apiFetch global dari CMS wrapper
-    // @ts-ignore
     if (typeof this.apiFetch === "function") {
-      // @ts-ignore
       return this.apiFetch(url, { ...options, headers });
     }
 
@@ -54,30 +52,25 @@ export const coreLogic = {
     if (!confirmed) return;
     this.isPurgingCache = true;
     try {
-      // @ts-ignore
       const res = await this._fetch("/api/settings/purge-cache", {
         method: "POST",
       });
-      const json = await res.json().catch(() => ({}));
+      const json: any = await res.json().catch(() => ({}));
       if (res.ok && json.success) {
         if ((window as any).showToast)
           (window as any).showToast(
             json.message || "Cache berhasil dibersihkan!",
             "success"
           );
-        else alert("✅ " + (json.message || "Cache berhasil dibersihkan!"));
       } else {
         const errMsg = json.error || "Gagal membersihkan cache.";
         if ((window as any).showToast)
           (window as any).showToast(errMsg, "error");
-        else alert("❌ " + errMsg);
       }
     } catch (e: any) {
       if ((window as any).showToast)
         (window as any).showToast("Gagal: " + e.message, "error");
-      else alert("Gagal: " + e.message);
     } finally {
-      // @ts-ignore
       this.isPurgingCache = false;
     }
   },
@@ -94,7 +87,6 @@ export const coreLogic = {
       (window as any).__SETTINGS_LISTENER_BOUND = true;
       window.addEventListener("settings-updated", (e: any) => {
         if (e.detail) {
-          // @ts-ignore
           this.settings = { ...(this.settings || {}), ...e.detail };
         }
       });
@@ -105,7 +97,7 @@ export const coreLogic = {
     this.initSettingsListener();
     try {
       const res = await this._fetch("/api/settings");
-      const json = await res.json();
+      const json: any = await res.json();
       // Merge agar tidak menimpa state lokal jika API partial
       this.settings = { ...this.settings, ...(json.data || json || {}) };
     } catch (e) {
@@ -120,9 +112,11 @@ export const coreLogic = {
         method: "POST",
         body: JSON.stringify(this.settings),
       });
-      if (res.ok) alert("Pengaturan berhasil disimpan!");
+      if (res.ok && (window as any).showToast)
+        (window as any).showToast("Pengaturan berhasil disimpan!", "success");
     } catch (e: any) {
-      alert("Gagal menyimpan pengaturan: " + e.message);
+      if ((window as any).showToast)
+        (window as any).showToast("Gagal menyimpan pengaturan: " + e.message, "error");
     } finally {
       this.isSavingSettings = false;
     }
@@ -147,7 +141,7 @@ export const coreLogic = {
   async loadThemes() {
     try {
       const res = await this._fetch("/api/theme");
-      const json = await res.json();
+      const json: any = await res.json();
       this.availableThemes = Array.isArray(json?.data)
         ? json.data
         : Array.isArray(json)
@@ -167,7 +161,7 @@ export const coreLogic = {
       });
       if (res.ok) location.reload();
     } catch (e) {
-      alert("Gagal ganti tema");
+      if ((window as any).showToast) (window as any).showToast("Gagal ganti tema", "error");
     }
   },
 
@@ -177,7 +171,7 @@ export const coreLogic = {
       await this._fetch(`/api/theme/${id}`, { method: "DELETE" });
       this.loadThemes();
     } catch (e) {
-      alert("Failed to delete theme");
+      if ((window as any).showToast) (window as any).showToast("Failed to delete theme", "error");
     }
   },
 
@@ -187,7 +181,7 @@ export const coreLogic = {
   async loadPages() {
     try {
       const res = await this._fetch("/api/pages");
-      const json = await res.json();
+      const json: any = await res.json();
       this.pages = Array.isArray(json) ? json : json.results || [];
     } catch (e) {
       this.pages = [];
@@ -201,7 +195,7 @@ export const coreLogic = {
     this.isLoadingUsers = true;
     try {
       const res = await this._fetch("/api/users");
-      const json = await res.json();
+      const json: any = await res.json();
       this.usersList = json.data || json || [];
     } catch (e) {
       this.usersList = [];
@@ -245,8 +239,9 @@ export const coreLogic = {
         this.showUserModal = false;
         this.loadUsers();
       } else {
-        const err = await res.json();
-        alert("Gagal simpan user: " + (err.error || "Unknown Error"));
+        const err: any = await res.json();
+        if ((window as any).showToast)
+          (window as any).showToast("Gagal simpan user: " + (err.error || "Unknown Error"), "error");
       }
     } catch (e) {
       console.error(e);
@@ -259,7 +254,7 @@ export const coreLogic = {
       const res = await this._fetch("/api/users/" + id, { method: "DELETE" });
       if (res.ok) this.loadUsers();
     } catch (e) {
-      alert("Gagal hapus user");
+      if ((window as any).showToast) (window as any).showToast("Gagal hapus user", "error");
     }
   },
 
@@ -292,9 +287,10 @@ export const coreLogic = {
   },
 
   async submitPluginUpload() {
+    const win = window as any;
     if (!this.selectedPluginFile) {
-      if (window.showToast)
-        window.showToast(
+      if (win.showToast)
+        win.showToast(
           "Silakan pilih berkas plugin (.zip / .json) terlebih dahulu",
           "warning"
         );
@@ -310,10 +306,10 @@ export const coreLogic = {
         method: "POST",
         body: formData,
       });
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.success) {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.message || "Plugin berhasil dipasang!",
             "success"
           );
@@ -325,21 +321,22 @@ export const coreLogic = {
         if (fileInput) fileInput.value = "";
         await this.loadPlugins();
       } else {
-        if (window.showToast)
-          window.showToast(json.error || "Gagal memasang plugin", "error");
+        if (win.showToast)
+          win.showToast(json.error || "Gagal memasang plugin", "error");
       }
     } catch (err: any) {
-      if (window.showToast)
-        window.showToast("Gagal mengunggah plugin: " + err.message, "error");
+      if (win.showToast)
+        win.showToast("Gagal mengunggah plugin: " + err.message, "error");
     } finally {
       this.isUploadingPlugin = false;
     }
   },
 
   async submitPluginImportUrl() {
+    const win = window as any;
     if (!this.pluginImportUrl || !this.pluginImportUrl.trim()) {
-      if (window.showToast)
-        window.showToast(
+      if (win.showToast)
+        win.showToast(
           "Masukkan URL manifest plugin terlebih dahulu",
           "warning"
         );
@@ -352,10 +349,10 @@ export const coreLogic = {
         method: "POST",
         body: JSON.stringify({ url_source: this.pluginImportUrl.trim() }),
       });
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.success) {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.message || "Plugin berhasil diimpor & dipasang!",
             "success"
           );
@@ -363,15 +360,15 @@ export const coreLogic = {
         this.pluginImportUrl = "";
         await this.loadPlugins();
       } else {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.error || "Gagal mengimpor plugin dari URL",
             "error"
           );
       }
     } catch (err: any) {
-      if (window.showToast)
-        window.showToast("Gagal mengimpor plugin: " + err.message, "error");
+      if (win.showToast)
+        win.showToast("Gagal mengimpor plugin: " + err.message, "error");
     } finally {
       this.isUploadingPlugin = false;
     }
@@ -393,7 +390,7 @@ export const coreLogic = {
   async loadPlugins() {
     try {
       const res = await this._fetch("/api/plugins");
-      const json = await res.json();
+      const json: any = await res.json();
       this.availablePlugins = Array.isArray(json?.data)
         ? json.data
         : Array.isArray(json)
@@ -405,36 +402,38 @@ export const coreLogic = {
   },
 
   async togglePlugin(id: string, activate: boolean) {
+    const win = window as any;
     try {
       const res = await this._fetch(`/api/plugins/toggle`, {
         method: "POST",
         body: JSON.stringify({ plugin_id: id, active: activate }),
       });
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.success) {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.message ||
               `Plugin ${activate ? "diaktifkan" : "dinonaktifkan"}!`,
             "success"
           );
       } else {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.message || "Gagal mengubah status plugin",
             "error"
           );
       }
       await this.loadPlugins();
     } catch (e: any) {
-      if (window.showToast)
-        window.showToast("Gagal mengubah status plugin: " + e.message, "error");
+      if (win.showToast)
+        win.showToast("Gagal mengubah status plugin: " + e.message, "error");
     }
   },
 
   async deletePlugin(id: string, name?: string) {
-    const confirmed = window.showConfirmDialog
-      ? await window.showConfirmDialog({
+    const win = window as any;
+    const confirmed = win.showConfirmDialog
+      ? await win.showConfirmDialog({
           title: "Hapus Plugin",
           message: `Apakah Anda yakin ingin menghapus plugin "${name || id}" dari sistem?`,
           type: "danger",
@@ -445,28 +444,29 @@ export const coreLogic = {
 
     try {
       const res = await this._fetch(`/api/plugins/${id}`, { method: "DELETE" });
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.success) {
-        if (window.showToast)
-          window.showToast(
+        if (win.showToast)
+          win.showToast(
             json.message || "Plugin berhasil dihapus!",
             "success"
           );
       } else {
-        if (window.showToast)
-          window.showToast(json.error || "Gagal menghapus plugin", "error");
+        if (win.showToast)
+          win.showToast(json.error || "Gagal menghapus plugin", "error");
       }
       await this.loadPlugins();
     } catch (e: any) {
-      if (window.showToast)
-        window.showToast("Gagal menghapus plugin: " + e.message, "error");
+      if (win.showToast)
+        win.showToast("Gagal menghapus plugin: " + e.message, "error");
     }
   },
 
   async saveNewPlugin() {
+    const win = window as any;
     if (!this.newPluginForm.id || !this.newPluginForm.name) {
-      if (window.showToast)
-        window.showToast("ID dan Nama Plugin wajib diisi!", "warning");
+      if (win.showToast)
+        win.showToast("ID dan Nama Plugin wajib diisi!", "warning");
       return;
     }
     try {
@@ -474,10 +474,10 @@ export const coreLogic = {
         method: "POST",
         body: JSON.stringify(this.newPluginForm),
       });
-      const json = await res.json();
+      const json: any = await res.json();
       if (json.success) {
-        if (window.showToast)
-          window.showToast("Plugin berhasil didaftarkan!", "success");
+        if (win.showToast)
+          win.showToast("Plugin berhasil didaftarkan!", "success");
         this.showAddPluginModal = false;
         this.newPluginForm = {
           id: "",
@@ -488,11 +488,11 @@ export const coreLogic = {
         };
         await this.loadPlugins();
       } else {
-        if (window.showToast)
-          window.showToast(json.error || "Gagal menambahkan plugin", "error");
+        if (win.showToast)
+          win.showToast(json.error || "Gagal menambahkan plugin", "error");
       }
     } catch (e: any) {
-      if (window.showToast) window.showToast("Error: " + e.message, "error");
+      if (win.showToast) win.showToast("Error: " + e.message, "error");
     }
   },
 
@@ -500,18 +500,18 @@ export const coreLogic = {
   async loadMenus() {
     try {
       const res = await this._fetch("/api/menus");
-      const json = await res.json();
-      let rawList = json.data || json || [];
+      const json: any = await res.json();
+      let rawList: any[] = json.data || json || [];
 
-      let organized = [];
+      let organized: any[] = [];
       let roots = rawList
-        .filter(m => !m.parent_id)
-        .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
-      roots.forEach(r => {
+        .filter((m: any) => !m.parent_id)
+        .sort((a: any, b: any) => (a.order_num || 0) - (b.order_num || 0));
+      roots.forEach((r: any) => {
         organized.push(r);
         let children = rawList
-          .filter(m => m.parent_id === r.id)
-          .sort((a, b) => (a.order_num || 0) - (b.order_num || 0));
+          .filter((m: any) => m.parent_id === r.id)
+          .sort((a: any, b: any) => (a.order_num || 0) - (b.order_num || 0));
         organized.push(...children);
       });
       this.menuList = organized;
@@ -573,10 +573,7 @@ export const coreLogic = {
       this.loadMenus ? this.loadMenus() : Promise.resolve(),
       this.loadSettings ? this.loadSettings() : Promise.resolve(),
       this.loadThemes ? this.loadThemes() : Promise.resolve(),
-      // @ts-ignore
       this.loadPlugins ? this.loadPlugins() : Promise.resolve(),
-      this.loadAgens ? this.loadAgens() : Promise.resolve(),
-      this.loadSubscribers ? this.loadSubscribers() : Promise.resolve(),
       (async () => {
         try {
           const token =
@@ -588,10 +585,8 @@ export const coreLogic = {
             });
             if (res.ok) {
               const statsAgg = await res.json();
-              // @ts-ignore
               this.dashboardStats = statsAgg;
-              // @ts-ignore
-              window.__CMS_DASHBOARD_STATS = statsAgg;
+              (window as any).__CMS_DASHBOARD_STATS = statsAgg;
               document.dispatchEvent(
                 new CustomEvent("stats-updated", { detail: statsAgg })
               );
@@ -602,11 +597,8 @@ export const coreLogic = {
     ]);
 
     // Load Media, Posts & Pages jika modulnya tersedia (Safe check dari modul lain)
-    // @ts-ignore
     if (this.loadMedia) await this.loadMedia();
-    // @ts-ignore
     if (this.loadPosts) await this.loadPosts();
-    // @ts-ignore
     if (this.loadPages) await this.loadPages();
   },
 };

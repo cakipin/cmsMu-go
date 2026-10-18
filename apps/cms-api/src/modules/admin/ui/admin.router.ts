@@ -1,7 +1,6 @@
 import { Hono } from "hono";
-// PERBAIKAN 1: Sesuaikan nama file view (singular: view.ts)
-import { renderAdmin } from "./ui/view";
-import { renderEditor } from "./ui/editor.view";
+import { renderAdmin } from "./view";
+import { editorPage } from "./blocks/editor.page";
 import { getDb } from "@cmsmu/db";
 import { users } from "@cmsmu/db";
 import { desc } from "drizzle-orm";
@@ -27,13 +26,13 @@ admin.get("/:type/new", c => {
   if (type !== "post" && type !== "page") {
     return c.redirect("/admin");
   }
-  return c.html(renderEditor());
+  return c.html(editorPage);
 });
 
 // Route untuk edit: /admin/post/123/edit ATAU /admin/page/123/edit
 admin.get("/:type/:id/edit", c => {
   // Kita tidak perlu validasi ID di sini, biarkan UI Editor yang handle jika ID tidak ketemu
-  return c.html(renderEditor());
+  return c.html(editorPage);
 });
 
 // 3. API INTERNAL (Data Users)

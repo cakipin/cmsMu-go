@@ -8,6 +8,16 @@
  */
 
 import { AwsClient } from "aws4fetch";
+import type {
+  R2Bucket,
+  R2GetOptions,
+  R2HTTPMetadata,
+  R2ListOptions,
+  R2Object,
+  R2ObjectBody,
+  R2Objects,
+  R2PutOptions,
+} from "@cloudflare/workers-types";
 
 export interface S3R2AdapterConfig {
   accountId: string;
@@ -64,7 +74,7 @@ export class S3R2BucketAdapter {
     if (options?.range) {
       const r = options.range;
       if (typeof r === "object" && r !== null && !("append" in r)) {
-        const rangeObj = r as R2Range;
+        const rangeObj = r as { offset?: number; length?: number; suffix?: number };
         if (rangeObj.offset !== undefined && rangeObj.length !== undefined) {
           headers["Range"] = `bytes=${rangeObj.offset}-${rangeObj.offset + rangeObj.length - 1}`;
         } else if (rangeObj.offset !== undefined) {
@@ -204,24 +214,27 @@ export class S3R2BucketAdapter {
   ): Promise<R2Object | null> {
     const url = this.buildObjectUrl(key);
     const headers: Record<string, string> = {};
+    const httpMeta = (options?.httpMetadata && !("append" in options.httpMetadata)
+      ? options.httpMetadata
+      : {}) as R2HTTPMetadata;
 
-    if (options?.httpMetadata?.contentType) {
-      headers["Content-Type"] = options.httpMetadata.contentType;
+    if (httpMeta.contentType) {
+      headers["Content-Type"] = httpMeta.contentType;
     } else {
       headers["Content-Type"] = "application/octet-stream";
     }
 
-    if (options?.httpMetadata?.cacheControl) {
-      headers["Cache-Control"] = options.httpMetadata.cacheControl;
+    if (httpMeta.cacheControl) {
+      headers["Cache-Control"] = httpMeta.cacheControl;
     }
-    if (options?.httpMetadata?.contentDisposition) {
-      headers["Content-Disposition"] = options.httpMetadata.contentDisposition;
+    if (httpMeta.contentDisposition) {
+      headers["Content-Disposition"] = httpMeta.contentDisposition;
     }
-    if (options?.httpMetadata?.contentEncoding) {
-      headers["Content-Encoding"] = options.httpMetadata.contentEncoding;
+    if (httpMeta.contentEncoding) {
+      headers["Content-Encoding"] = httpMeta.contentEncoding;
     }
-    if (options?.httpMetadata?.contentLanguage) {
-      headers["Content-Language"] = options.httpMetadata.contentLanguage;
+    if (httpMeta.contentLanguage) {
+      headers["Content-Language"] = httpMeta.contentLanguage;
     }
 
     if (options?.customMetadata) {
@@ -244,7 +257,7 @@ export class S3R2BucketAdapter {
     }
 
     const etag = (res.headers.get("etag") || "").replace(/"/g, "");
-    const meta = options?.httpMetadata || {};
+    const meta = httpMeta;
 
     const obj: any = {
       key,

@@ -30,16 +30,7 @@ import { aiRouter } from "./modules/ai/ai.router";
 // AUTH MIDDLEWARE
 import { authMiddleware, adminOnlyMiddleware } from "./middleware/auth";
 import { getStorageBucket } from "./storage/r2-adapter";
-
-type Bindings = {
-  DB: D1Database;
-  MEDIA_BUCKET?: R2Bucket;
-  BUCKET?: R2Bucket;
-  R2_ACCOUNT_ID?: string;
-  R2_ACCESS_KEY_ID?: string;
-  R2_SECRET_ACCESS_KEY?: string;
-  R2_BUCKET_NAME?: string;
-};
+import type { Bindings } from "./types";
 
 const app = new Hono<{ Bindings: Bindings }>();
 
@@ -184,10 +175,10 @@ app.get("/media/*", async c => {
     const object = await bucket.get(decodeURIComponent(key));
     if (!object) return c.text("File not found", 404);
     const headers = new Headers();
-    object.writeHttpMetadata(headers);
+    object.writeHttpMetadata(headers as any);
     headers.set("etag", object.httpEtag);
     headers.set("Cache-Control", "public, max-age=31536000");
-    return new Response(object.body, { headers });
+    return new Response(object.body as any, { headers });
   } catch (e: any) {
     return c.text(e.message, 500);
   }
@@ -204,4 +195,5 @@ app.route("/wp-content/uploads", uploadsRouter);
 
 app.route("/", publicRouter);
 
+export type AppType = typeof app;
 export default app;

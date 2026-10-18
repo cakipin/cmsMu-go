@@ -1,4 +1,4 @@
-import { customEditorTemplate } from '../custom-editor.ts';
+import { customEditorTemplate } from "../custom-editor";
 
 export const editorForm = `
     <!-- Header Post Editor Responsif -->
