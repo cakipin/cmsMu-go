@@ -314,11 +314,11 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                 {pagesList.length > 0 ? (
                   pagesList.map(p => (
                     <option key={p.id} value={p.slug} className="bg-slate-900 text-slate-100">
-                      {p.title} (/{p.slug}) {p.slug === activeHomeSlug ? "⭐ [Beranda Utama]" : ""}
+                      {p.slug}
                     </option>
                   ))
                 ) : (
-                  <option value={currentSlug}>/{currentSlug}</option>
+                  <option value={currentSlug}>{currentSlug}</option>
                 )}
               </select>
 

@@ -905,6 +905,9 @@ publicRouter.get("/p/:slug", async c =>
 publicRouter.get("/posts/:slug", async c =>
   c.redirect("/" + c.req.param("slug"), 301)
 );
+publicRouter.get("/berita/:slug", async c =>
+  c.redirect("/" + c.req.param("slug"), 301)
+);
 publicRouter.get("/en/:slug", async c =>
   renderSinglePage(c, c.req.param("slug"), "en")
 );

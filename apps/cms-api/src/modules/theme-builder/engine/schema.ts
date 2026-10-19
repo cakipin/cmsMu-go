@@ -278,12 +278,10 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     icon: "fa-border-all",
     description: "Layout majalah berita dengan satu berita utama besar dan dua artikel pendamping.",
     defaultProps: {
-      title: "Top Stories",
-      categorySlug: ""
+      title: "Top Stories"
     },
     fields: {
-      title: { name: "title", label: "Judul Bagian", type: "text" },
-      categorySlug: { name: "categorySlug", label: "Slug Kategori (Opsional)", type: "text" }
+      title: { name: "title", label: "Judul Bagian", type: "text" }
     }
   },
 

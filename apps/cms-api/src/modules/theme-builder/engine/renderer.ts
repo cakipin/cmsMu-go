@@ -261,7 +261,7 @@ export function renderBlockToHtml(
             const postCategory = escapeHtml(item.category || "Berita");
             const postDate = item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "Terbaru";
             const postImg = item.featured_image || item.featuredImage || "";
-            const postUrl = item.url || `/berita/${postSlug}`;
+            const postUrl = item.url || `/${postSlug}`;
 
             return `
               <article class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md" style="border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; background-color: #ffffff; display: flex; flex-direction: column; box-sizing: border-box;">
@@ -327,7 +327,7 @@ export function renderBlockToHtml(
           <div class="md:col-span-2 bg-slate-900 rounded-2xl overflow-hidden text-white p-8 flex flex-col justify-end relative shadow-sm" style="background-color: #0f172a; border-radius: 1rem; color: #ffffff; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-end; min-height: 320px; box-sizing: border-box; ${heroPost?.featured_image ? `background-image: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.4)), url('${escapeHtml(heroPost.featured_image)}'); background-size: cover; background-position: center;` : ""}">
             <span class="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-bold w-fit mb-3" style="background-color: #059669; color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 0.25rem; width: fit-content; margin-bottom: 0.75rem;">${escapeHtml(heroPost?.category || "Sorotan Utama")}</span>
             <h3 class="text-2xl font-black" style="font-size: 1.5rem; font-weight: 900; margin: 0; line-height: 1.3;">
-              <a href="${heroPost ? `/berita/${escapeHtml(heroPost.slug)}` : "#"}" style="color: #ffffff; text-decoration: none;">
+              <a href="${heroPost ? `/${escapeHtml(heroPost.slug)}` : "#"}" style="color: #ffffff; text-decoration: none;">
                 ${escapeHtml(heroPost?.title || "Transformasi Digital & Arsitektur Headless Cloud-Native")}
               </a>
             </h3>
@@ -337,7 +337,7 @@ export function renderBlockToHtml(
               <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
                 <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">${escapeHtml(sp.category || "Berita")}</span>
                 <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">
-                  <a href="/berita/${escapeHtml(sp.slug)}" style="color: #ffffff; text-decoration: none;">
+                  <a href="/${escapeHtml(sp.slug)}" style="color: #ffffff; text-decoration: none;">
                     ${escapeHtml(sp.title || "Artikel Pendamping")}
                   </a>
                 </h4>
