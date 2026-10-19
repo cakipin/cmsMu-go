@@ -69,7 +69,16 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
         ]
       },
       ctaText: { name: "ctaText", label: "Teks Tombol Aksi", type: "text" },
-      ctaUrl: { name: "ctaUrl", label: "Link Tombol Aksi", type: "text" }
+      ctaUrl: { name: "ctaUrl", label: "Link Tombol Aksi", type: "text" },
+      menuItems: {
+        name: "menuItems",
+        label: "Menu Navigasi",
+        type: "array",
+        arrayFields: {
+          label: { name: "label", label: "Teks Menu", type: "text" },
+          url: { name: "url", label: "Tautan URL", type: "text" }
+        }
+      }
     }
   },
 
@@ -111,14 +120,23 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     defaultProps: {
       title: "Dipercaya & Berkolaborasi Dengan",
       partners: [
-        { name: "cmsMu Core" },
-        { name: "Cloudflare Edge" },
-        { name: "Drizzle ORM" },
-        { name: "Astro SSR" }
+        { name: "cmsMu Core", logoUrl: "" },
+        { name: "Cloudflare Edge", logoUrl: "" },
+        { name: "Drizzle ORM", logoUrl: "" },
+        { name: "Astro SSR", logoUrl: "" }
       ]
     },
     fields: {
-      title: { name: "title", label: "Judul Bagian", type: "text" }
+      title: { name: "title", label: "Judul Bagian", type: "text" },
+      partners: {
+        name: "partners",
+        label: "Daftar Mitra / Logo",
+        type: "array",
+        arrayFields: {
+          name: { name: "name", label: "Nama Mitra", type: "text" },
+          logoUrl: { name: "logoUrl", label: "URL Logo (Opsional)", type: "image" }
+        }
+      }
     }
   },
 
@@ -133,13 +151,37 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       description: "Solusi lengkap dan terintegrasi untuk kebutuhan publikasi modern.",
       features: [
         { title: "Cepat & Serverless", description: "Performa tinggi di edge computing Cloudflare.", svgIcon: "bolt" },
-        { title: "Keamanan Tingkat Tinggi", description: "Otorisasi role berbasis token terenkripsi.", svgIcon: "shield" },
-        { title: "Desain Responsif", description: "Tampilan optimal di perangkat ponsel, tablet, dan desktop.", svgIcon: "mobile" }
+        { title: "Keamanan Tingkat Tinggi", description: "Otorisasi role berbasis token terenkripsi.", svgIcon: "shield-alt" },
+        { title: "Desain Responsif", description: "Tampilan optimal di perangkat ponsel, tablet, dan desktop.", svgIcon: "mobile-alt" }
       ]
     },
     fields: {
       title: { name: "title", label: "Judul Bagian", type: "text" },
-      description: { name: "description", label: "Deskripsi", type: "textarea" }
+      description: { name: "description", label: "Deskripsi", type: "textarea" },
+      features: {
+        name: "features",
+        label: "Daftar Kartu Fitur",
+        type: "array",
+        arrayFields: {
+          title: { name: "title", label: "Judul Fitur", type: "text" },
+          description: { name: "description", label: "Deskripsi Singkat", type: "textarea" },
+          svgIcon: {
+            name: "svgIcon",
+            label: "Ikon (FontAwesome)",
+            type: "select",
+            options: [
+              { label: "Bolt (Petir)", value: "bolt" },
+              { label: "Shield (Keamanan)", value: "shield-alt" },
+              { label: "Mobile (Responsif)", value: "mobile-alt" },
+              { label: "Star (Bintang)", value: "star" },
+              { label: "Check (Centang)", value: "check-circle" },
+              { label: "Rocket (Roket)", value: "rocket" },
+              { label: "Gem (Permata)", value: "gem" },
+              { label: "Heart (Hati)", value: "heart" }
+            ]
+          }
+        }
+      }
     }
   },
 
@@ -158,20 +200,31 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
           author: "H. Ahmad Fauzi",
           role: "Admin Redaksi",
           initials: "AF",
-          bgColor: "bg-emerald-600"
+          bgColor: "#059669"
         },
         {
           quote: "Visual builder mandiri sangat cepat dan tidak membebani browser.",
           author: "Siti Rahmawati",
           role: "Humas & Publikasi",
           initials: "SR",
-          bgColor: "bg-emerald-500"
+          bgColor: "#10b981"
         }
       ]
     },
     fields: {
       title: { name: "title", label: "Judul Testimonial", type: "text" },
-      subtitle: { name: "subtitle", label: "Subjudul", type: "textarea" }
+      subtitle: { name: "subtitle", label: "Subjudul", type: "textarea" },
+      testimonials: {
+        name: "testimonials",
+        label: "Daftar Testimonial",
+        type: "array",
+        arrayFields: {
+          quote: { name: "quote", label: "Kutipan Ulasan", type: "textarea" },
+          author: { name: "author", label: "Nama Pengulas", type: "text" },
+          role: { name: "role", label: "Jabatan / Organisasi", type: "text" },
+          initials: { name: "initials", label: "Inisial Avatar", type: "text" }
+        }
+      }
     }
   },
 

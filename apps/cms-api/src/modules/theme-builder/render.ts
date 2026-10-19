@@ -3,6 +3,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { Render } from "@puckeditor/core";
 import { puckConfig } from "./config";
 import type { PostItem } from "./types";
+import { renderBlockToHtml } from "./engine/renderer";
 
 export function escapeHtml(str: any): string {
   if (str === null || str === undefined) return "";
@@ -199,17 +200,15 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
     }
   }
 
-  // Render Puck components to static HTML
+  // Render Puck/Canvas blocks to static HTML via pure HTML engine (100% parity with canvas builder)
   let bodyMarkup = "";
   try {
-    bodyMarkup = renderToStaticMarkup(
-      React.createElement(Render, {
-        config: puckConfig,
-        data: puckData,
-      })
-    );
+    const blocks = Array.isArray(puckData?.content) ? puckData.content : [];
+    bodyMarkup = blocks
+      .map((block: any) => renderBlockToHtml(block, { latestPosts, site }))
+      .join("\n");
   } catch (err: any) {
-    console.error("Error in Puck renderToStaticMarkup:", err);
+    console.error("Error in pure HTML renderBlockToHtml:", err);
     bodyMarkup = `<div class="p-8 text-center text-red-500">Gagal merender halaman visual: ${escapeHtml(err?.message || "")}</div>`;
   }
 

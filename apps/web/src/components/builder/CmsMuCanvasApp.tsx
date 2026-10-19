@@ -33,6 +33,7 @@ interface CmsMuCanvasAppProps {
 export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
   const [blocks, setBlocks] = useState<any[]>([]);
   const [selectedBlockIdx, setSelectedBlockIdx] = useState<number | null>(0);
+  const [realPosts, setRealPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -54,6 +55,24 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
       try {
         const token = getAuthToken();
         const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+        // 1. Muat artikel riil untuk hidrasi RecentPosts dan MagazineBigGrid
+        try {
+          const postsRes = await fetch(`/api/posts?limit=9&t=${Date.now()}`, {
+            headers: authHeader,
+            credentials: "include",
+          });
+          if (postsRes.ok) {
+            const postsData = await postsRes.json();
+            if (Array.isArray(postsData)) {
+              setRealPosts(postsData);
+            }
+          }
+        } catch (e) {
+          console.warn("Gagal fetch real posts untuk canvas preview:", e);
+        }
+
+        // 2. Muat data halaman builder
         const res = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, {
           headers: authHeader,
           credentials: "include",
@@ -421,7 +440,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
             ) : (
               blocks.map((blk, idx) => {
                 const isSelected = selectedBlockIdx === idx;
-                const htmlMarkup = renderBlockToHtml(blk);
+                const htmlMarkup = renderBlockToHtml(blk, { latestPosts: realPosts });
                 return (
                   <div
                     key={blk.props?.id || idx}
@@ -478,6 +497,126 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
               Object.keys(selectedManifest.fields).map(fieldKey => {
                 const field = selectedManifest.fields[fieldKey];
                 const curVal = selectedBlock.props?.[fieldKey] ?? "";
+
+                if (field.type === "array") {
+                  const arrVal = Array.isArray(curVal) ? curVal : [];
+                  return (
+                    <div key={fieldKey} className="space-y-3 pt-2 border-t border-slate-800">
+                      <div className="flex items-center justify-between">
+                        <label className="text-xs font-bold text-slate-300 block">
+                          {field.label} ({arrVal.length})
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newItem: Record<string, any> = {};
+                            if (field.arrayFields) {
+                              Object.keys(field.arrayFields).forEach(subKey => {
+                                newItem[subKey] = field.arrayFields![subKey].defaultValue || "";
+                              });
+                            }
+                            handlePropChange(fieldKey, [...arrVal, newItem]);
+                          }}
+                          className="px-2.5 py-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold flex items-center gap-1 shadow-sm transition-all"
+                        >
+                          <i className="fas fa-plus text-[9px]"></i>
+                          <span>Tambah</span>
+                        </button>
+                      </div>
+
+                      {arrVal.length > 0 ? (
+                        <div className="space-y-2.5">
+                          {arrVal.map((item: any, itemIdx: number) => {
+                            const itemTitle = item.name || item.title || item.label || item.author || `Item #${itemIdx + 1}`;
+                            return (
+                              <div
+                                key={itemIdx}
+                                className="p-3 rounded-lg bg-slate-900 border border-slate-800 space-y-2.5 shadow-sm"
+                              >
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                  <span className="text-[11px] font-bold text-emerald-400 truncate max-w-[180px]">
+                                    #{itemIdx + 1}: {itemTitle}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const nextArr = [...arrVal];
+                                      nextArr.splice(itemIdx, 1);
+                                      handlePropChange(fieldKey, nextArr);
+                                    }}
+                                    className="text-slate-500 hover:text-rose-400 text-xs p-1 transition-colors"
+                                    title="Hapus sub-item ini"
+                                  >
+                                    <i className="fas fa-trash-alt text-[10px]"></i>
+                                  </button>
+                                </div>
+
+                                {field.arrayFields &&
+                                  Object.keys(field.arrayFields).map(subKey => {
+                                    const subField = field.arrayFields![subKey];
+                                    const subVal = item[subKey] ?? "";
+
+                                    return (
+                                      <div key={subKey} className="space-y-1">
+                                        <label className="text-[10px] font-medium text-slate-400 block">
+                                          {subField.label}
+                                        </label>
+
+                                        {subField.type === "textarea" ? (
+                                          <textarea
+                                            rows={2}
+                                            value={subVal}
+                                            onChange={e => {
+                                              const nextArr = [...arrVal];
+                                              nextArr[itemIdx] = { ...nextArr[itemIdx], [subKey]: e.target.value };
+                                              handlePropChange(fieldKey, nextArr);
+                                            }}
+                                            className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
+                                          />
+                                        ) : subField.type === "select" ? (
+                                          <select
+                                            value={subVal}
+                                            onChange={e => {
+                                              const nextArr = [...arrVal];
+                                              nextArr[itemIdx] = { ...nextArr[itemIdx], [subKey]: e.target.value };
+                                              handlePropChange(fieldKey, nextArr);
+                                            }}
+                                            className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
+                                          >
+                                            {(subField.options || []).map(opt => (
+                                              <option key={opt.value} value={opt.value}>
+                                                {opt.label}
+                                              </option>
+                                            ))}
+                                          </select>
+                                        ) : (
+                                          <input
+                                            type="text"
+                                            value={subVal}
+                                            placeholder={subField.placeholder || ""}
+                                            onChange={e => {
+                                              const nextArr = [...arrVal];
+                                              nextArr[itemIdx] = { ...nextArr[itemIdx], [subKey]: e.target.value };
+                                              handlePropChange(fieldKey, nextArr);
+                                            }}
+                                            className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
+                                          />
+                                        )}
+                                      </div>
+                                    );
+                                  })}
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ) : (
+                        <div className="p-3 text-center border border-dashed border-slate-800 rounded-lg text-slate-500 text-[11px]">
+                          Belum ada item ditambahkan.
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
 
                 return (
                   <div key={fieldKey} className="space-y-1.5">

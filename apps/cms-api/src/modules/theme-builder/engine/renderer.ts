@@ -7,7 +7,10 @@
 
 import { escapeHtml } from "../render";
 
-export function renderBlockToHtml(block: { type: string; props: Record<string, any> }): string {
+export function renderBlockToHtml(
+  block: { type: string; props: Record<string, any> },
+  context?: { latestPosts?: any[]; site?: any }
+): string {
   if (!block || !block.type) return "";
   const { type, props } = block;
   const p = props || {};
@@ -46,7 +49,9 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
                 ? `<img src="${escapeHtml(p.logoImage)}" alt="${escapeHtml(p.siteTitle || "Logo")}" class="h-10 w-auto object-contain" style="max-height: 44px; height: 44px; width: auto; object-fit: contain; display: block;">`
                 : `<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold flex items-center justify-center text-lg" style="width: 40px; height: 40px; border-radius: 12px; background-color: #059669; color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.125rem;">${escapeHtml((p.siteTitle || "C").charAt(0))}</div>`
             }
-            <span class="text-xl font-black text-slate-900 tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -0.025em;">${escapeHtml(p.siteTitle || "cmsMu")}</span>
+            <span class="text-xl font-black text-slate-900 tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -0.025em;">
+              ${escapeHtml(p.siteTitle || "cmsMu")}${p.siteTitleHighlight ? `<span style="color: #059669; margin-left: 0.25rem;">${escapeHtml(p.siteTitleHighlight)}</span>` : ""}
+            </span>
           </div>
           <nav class="hidden md:flex items-center gap-6" style="display: flex; align-items: center; gap: 1.5rem;">
             ${menuHtml || `<span class="text-xs text-slate-400 italic" style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Menu Navigasi</span>`}
@@ -208,6 +213,11 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
     }
 
     case "RecentPosts": {
+      const postsList = Array.isArray(p.posts) && p.posts.length > 0
+        ? p.posts
+        : (Array.isArray(context?.latestPosts) && context!.latestPosts.length > 0 ? context!.latestPosts : null);
+
+      const postsLimit = parseInt(p.postsCount, 10) || 3;
       const sampleCards = `
         <article class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md" style="border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; background-color: #ffffff; display: flex; flex-direction: column; box-sizing: border-box;">
           <div class="relative aspect-video w-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-400" style="position: relative; width: 100%; aspect-ratio: 16/9; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
@@ -229,6 +239,39 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
         </article>
       `;
 
+      const cardsHtml = postsList
+        ? postsList.slice(0, postsLimit).map((item: any) => {
+            const postTitle = escapeHtml(item.title || "Tanpa Judul");
+            const postSlug = escapeHtml(item.slug || "#");
+            const postExcerpt = escapeHtml(item.excerpt || item.meta_description || "Klik tautan untuk membaca selengkapnya.");
+            const postCategory = escapeHtml(item.category || "Berita");
+            const postDate = item.created_at ? new Date(item.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short", year: "numeric" }) : "Terbaru";
+            const postImg = item.featured_image || item.featuredImage || "";
+            const postUrl = item.url || `/berita/${postSlug}`;
+
+            return `
+              <article class="group flex flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition-all hover:shadow-md" style="border: 1px solid #e2e8f0; border-radius: 1rem; overflow: hidden; background-color: #ffffff; display: flex; flex-direction: column; box-sizing: border-box;">
+                <div class="relative aspect-video w-full overflow-hidden bg-slate-100 flex items-center justify-center text-slate-400" style="position: relative; width: 100%; aspect-ratio: 16/9; background-color: #f1f5f9; display: flex; align-items: center; justify-content: center; color: #94a3b8;">
+                  ${postImg ? `<img src="${escapeHtml(postImg)}" alt="${postTitle}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" style="width: 100%; height: 100%; object-fit: cover;">` : `<i class="fas fa-newspaper text-3xl opacity-40" style="font-size: 1.875rem; opacity: 0.4;"></i>`}
+                  <span class="absolute top-3 left-3 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-semibold text-emerald-800" style="position: absolute; top: 0.75rem; left: 0.75rem; border-radius: 9999px; background-color: #d1fae5; padding: 0.25rem 0.625rem; font-size: 0.75rem; font-weight: 600; color: #065f46;">${postCategory}</span>
+                </div>
+                <div class="flex flex-1 flex-col justify-between p-6" style="padding: 1.5rem; display: flex; flex-direction: column; justify-content: space-between; flex: 1;">
+                  <div>
+                    <div class="mb-2 text-xs font-medium text-slate-400" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">${postDate}</div>
+                    <h3 class="mb-3 text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors" style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; line-height: 1.4;">
+                      ${postTitle}
+                    </h3>
+                    <p class="mb-4 text-sm text-slate-600 leading-relaxed line-clamp-2" style="font-size: 0.875rem; color: #475569; line-height: 1.5; margin-bottom: 1rem;">${postExcerpt}</p>
+                  </div>
+                  <div class="pt-2" style="padding-top: 0.5rem;">
+                    <a href="${postUrl}" class="inline-flex items-center gap-1 text-sm font-semibold text-emerald-600 hover:text-emerald-700" style="font-size: 0.875rem; font-weight: 600; color: #059669; text-decoration: none;">Baca Selengkapnya &rarr;</a>
+                  </div>
+                </div>
+              </article>
+            `;
+          }).join("")
+        : sampleCards;
+
       return `
       <section id="berita" class="bg-white py-20 border-b border-slate-200" style="background-color: #ffffff; padding: 4.5rem 1.5rem; border-bottom: 1px solid #e2e8f0; box-sizing: border-box;">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8" style="max-width: 1280px; margin: 0 auto;">
@@ -244,7 +287,7 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
             </div>
           </div>
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 2rem;">
-            ${sampleCards}
+            ${cardsHtml}
           </div>
         </div>
       </section>
@@ -252,6 +295,13 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
     }
 
     case "MagazineBigGrid": {
+      const postsList = Array.isArray(p.posts) && p.posts.length > 0
+        ? p.posts
+        : (Array.isArray(context?.latestPosts) && context!.latestPosts.length > 0 ? context!.latestPosts : null);
+
+      const heroPost = postsList && postsList[0] ? postsList[0] : null;
+      const sidePosts = postsList && postsList.length > 1 ? postsList.slice(1, 3) : [];
+
       return `
       <section class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 border-b border-slate-200" style="max-width: 1280px; margin: 0 auto; padding: 4rem 1.5rem; border-bottom: 1px solid #e2e8f0; box-sizing: border-box;">
         <div class="mb-8 border-b-2 border-slate-900 pb-2" style="border-bottom: 2px solid #0f172a; padding-bottom: 0.5rem; margin-bottom: 2rem;">
@@ -260,19 +310,34 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
           </span>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; min-height: 380px;">
-          <div class="md:col-span-2 bg-slate-900 rounded-2xl overflow-hidden text-white p-8 flex flex-col justify-end relative shadow-sm" style="background-color: #0f172a; border-radius: 1rem; color: #ffffff; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-end; min-height: 320px; box-sizing: border-box;">
-            <span class="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-bold w-fit mb-3" style="background-color: #059669; color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 0.25rem; width: fit-content; margin-bottom: 0.75rem;">Sorotan Utama</span>
-            <h3 class="text-2xl font-black" style="font-size: 1.5rem; font-weight: 900; margin: 0; line-height: 1.3;">Transformasi Digital & Arsitektur Headless Cloud-Native</h3>
+          <div class="md:col-span-2 bg-slate-900 rounded-2xl overflow-hidden text-white p-8 flex flex-col justify-end relative shadow-sm" style="background-color: #0f172a; border-radius: 1rem; color: #ffffff; padding: 2rem; display: flex; flex-direction: column; justify-content: flex-end; min-height: 320px; box-sizing: border-box; ${heroPost?.featured_image ? `background-image: linear-gradient(to top, rgba(15,23,42,0.95), rgba(15,23,42,0.4)), url('${escapeHtml(heroPost.featured_image)}'); background-size: cover; background-position: center;` : ""}">
+            <span class="px-3 py-1 rounded bg-emerald-600 text-white text-xs font-bold w-fit mb-3" style="background-color: #059669; color: #ffffff; font-size: 0.75rem; font-weight: 700; padding: 0.25rem 0.75rem; border-radius: 0.25rem; width: fit-content; margin-bottom: 0.75rem;">${escapeHtml(heroPost?.category || "Sorotan Utama")}</span>
+            <h3 class="text-2xl font-black" style="font-size: 1.5rem; font-weight: 900; margin: 0; line-height: 1.3;">
+              <a href="${heroPost ? `/berita/${escapeHtml(heroPost.slug)}` : "#"}" style="color: #ffffff; text-decoration: none;">
+                ${escapeHtml(heroPost?.title || "Transformasi Digital & Arsitektur Headless Cloud-Native")}
+              </a>
+            </h3>
           </div>
           <div class="flex flex-col gap-6 h-full" style="display: flex; flex-direction: column; gap: 1.5rem;">
-            <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
-              <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">Berita Pendamping</span>
-              <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">Inovasi Layanan Pendidikan & Kesehatan Berkelanjutan</h4>
-            </div>
-            <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
-              <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">Wawasan Dakwah</span>
-              <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">Pemberdayaan Ekonomi Umat Berbasis Ekosistem Digital</h4>
-            </div>
+            ${sidePosts.length > 0 ? sidePosts.map((sp: any) => `
+              <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
+                <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">${escapeHtml(sp.category || "Berita")}</span>
+                <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">
+                  <a href="/berita/${escapeHtml(sp.slug)}" style="color: #ffffff; text-decoration: none;">
+                    ${escapeHtml(sp.title || "Artikel Pendamping")}
+                  </a>
+                </h4>
+              </div>
+            `).join("") : `
+              <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
+                <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">Berita Pendamping</span>
+                <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">Inovasi Layanan Pendidikan & Kesehatan Berkelanjutan</h4>
+              </div>
+              <div class="flex-1 bg-slate-800 rounded-2xl text-white p-6 flex flex-col justify-end" style="background-color: #1e293b; border-radius: 1rem; color: #ffffff; padding: 1.5rem; display: flex; flex-direction: column; justify-content: flex-end; flex: 1; box-sizing: border-box;">
+                <span class="text-xs text-slate-400 mb-1" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.25rem;">Wawasan Dakwah</span>
+                <h4 class="font-bold text-base" style="font-size: 1rem; font-weight: 700; margin: 0;">Pemberdayaan Ekonomi Umat Berbasis Ekosistem Digital</h4>
+              </div>
+            `}
           </div>
         </div>
       </section>
