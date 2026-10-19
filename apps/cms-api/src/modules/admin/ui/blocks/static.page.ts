@@ -95,7 +95,7 @@ export const staticPage = `
              const confirmed = window.showConfirmDialog
                  ? await window.showConfirmDialog({
                      title: 'Hapus Halaman',
-                     message: 'Apakah Anda yakin ingin menghapus halaman "' + p.title + '"?',
+                     message: 'Apakah Anda yakin ingin menghapus halaman: ' + p.title + '?',
                      type: 'danger',
                      confirmText: 'Ya, Hapus'
                  })
