@@ -111,7 +111,10 @@ export function renderBlockToHtml(block: { type: string; props: Record<string, a
           <div class="flex justify-center items-center flex-wrap gap-8 md:gap-16 opacity-60" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 2rem; opacity: 0.7;">
             ${partnersList.map((pt: any) => `
               <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-                ${pt.logoUrl ? `<img src="${escapeHtml(pt.logoUrl)}" alt="${escapeHtml(pt.name)}" class="h-8 object-contain" style="max-height: 32px; height: 32px; width: auto; object-fit: contain;">` : `<span class="text-lg font-extrabold text-slate-700 tracking-tight" style="font-size: 1.125rem; font-weight: 800; color: #334155; letter-spacing: -0.02em;">${escapeHtml(pt.name)}</span>`}
+                ${pt.logoUrl ? `
+                  <img src="${escapeHtml(pt.logoUrl)}" alt="${escapeHtml(pt.name)}" class="h-8 object-contain" style="max-height: 32px; height: 32px; width: auto; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                  <span class="text-sm font-bold text-slate-700 tracking-tight" style="display: none; padding: 0.25rem 0.75rem; border-radius: 0.375rem; background-color: #f1f5f9; border: 1px solid #e2e8f0;">${escapeHtml(pt.name)}</span>
+                ` : `<span class="text-lg font-extrabold text-slate-700 tracking-tight" style="font-size: 1.125rem; font-weight: 800; color: #334155; letter-spacing: -0.02em;">${escapeHtml(pt.name)}</span>`}
               </div>
             `).join("")}
           </div>

@@ -68,12 +68,16 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                 // Normalisasi setiap blok dengan menggabungkan defaultProps dari schema jika prop kosong
                 const normalized = parsed.content.map((blk: any) => {
                   const catalog = BLOCK_CATALOG[blk.type];
+                  const mergedProps = {
+                    ...(catalog?.defaultProps || {}),
+                    ...(blk.props || {}),
+                  };
+                  if (blk.type === "SiteHeader" && (mergedProps.siteTitle?.includes("CMS Teruji") || !mergedProps.siteTitle)) {
+                    mergedProps.siteTitle = "cmsMu";
+                  }
                   return {
                     ...blk,
-                    props: {
-                      ...(catalog?.defaultProps || {}),
-                      ...(blk.props || {}),
-                    },
+                    props: mergedProps,
                   };
                 });
                 setBlocks(normalized);
@@ -94,6 +98,16 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
 
     fetchData();
   }, [slug]);
+
+  // Auto-scroll halus ke blok yang sedang aktif di canvas
+  useEffect(() => {
+    if (selectedBlockIdx !== null) {
+      const el = document.getElementById(`canvas-block-${selectedBlockIdx}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
+  }, [selectedBlockIdx]);
 
   // Aksi Penyimpanan ke D1
   const handleSave = async () => {
@@ -173,9 +187,12 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
       const copy = [...prev];
       const target = copy[selectedBlockIdx];
       if (target) {
-        target.props = {
-          ...target.props,
-          [field]: val,
+        copy[selectedBlockIdx] = {
+          ...target,
+          props: {
+            ...target.props,
+            [field]: val,
+          },
         };
       }
       return copy;
@@ -347,7 +364,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
         </aside>
 
         {/* 🖥️ PANEL TENGAH: LIVE CANVAS PREVIEW */}
-        <main className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-6 relative">
+        <main className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-6 relative scroll-smooth">
           {/* Scoped CSS Injector for Canvas Content */}
           <style dangerouslySetInnerHTML={{ __html: `
             .cmsmu-canvas-content {
@@ -408,21 +425,29 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                 return (
                   <div
                     key={blk.props?.id || idx}
+                    id={`canvas-block-${idx}`}
                     onClick={() => setSelectedBlockIdx(idx)}
-                    className={`relative group cursor-pointer transition-all ${
-                      isSelected ? "ring-2 ring-emerald-500 ring-offset-2 z-10" : "hover:ring-1 hover:ring-slate-300"
+                    className={`relative group cursor-pointer transition-all duration-200 ${
+                      isSelected
+                        ? "ring-4 ring-emerald-500 ring-offset-4 ring-offset-white z-20 shadow-2xl scale-[1.005]"
+                        : "hover:ring-2 hover:ring-slate-300"
                     }`}
                   >
                     {/* Badge Label Blok */}
                     <div
                       className={`absolute top-2 left-2 z-20 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-md transition-all flex items-center gap-1.5 ${
                         isSelected
-                          ? "bg-emerald-600 text-white opacity-100"
+                          ? "bg-emerald-600 text-white opacity-100 shadow-emerald-600/40"
                           : "bg-slate-900/80 text-white opacity-0 group-hover:opacity-100"
                       }`}
                     >
                       <i className={`fas ${BLOCK_CATALOG[blk.type]?.icon || "fa-cube"} text-[9px]`}></i>
                       <span>{BLOCK_CATALOG[blk.type]?.name || blk.type}</span>
+                      {isSelected && (
+                        <span className="ml-1 px-1.5 py-0.5 rounded bg-emerald-800 text-[9px] uppercase tracking-wider font-mono">
+                          Aktif
+                        </span>
+                      )}
                     </div>
 
                     {/* Preview HTML */}
