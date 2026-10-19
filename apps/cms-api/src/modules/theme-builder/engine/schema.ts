@@ -35,6 +35,7 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       siteTitle: "cmsMu",
       siteTitleHighlight: "",
       logoImage: "/logo-cmsmu.webp",
+      headerScope: "all",
       headerPosition: "static",
       showCta: "yes",
       ctaText: "Mulai Sekarang",
@@ -49,6 +50,16 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       siteTitle: { name: "siteTitle", label: "Judul Situs", type: "text" },
       siteTitleHighlight: { name: "siteTitleHighlight", label: "Teks Sorotan", type: "text" },
       logoImage: { name: "logoImage", label: "URL Logo", type: "image" },
+      headerScope: {
+        name: "headerScope",
+        label: "Cakupan Header Aktif",
+        type: "select",
+        options: [
+          { label: "Semua Halaman & Artikel (Global)", value: "all" },
+          { label: "Hanya Halaman Beranda (Home Only)", value: "home_only" },
+          { label: "Halaman Statis & Artikel Saja (Post/Page)", value: "pages_posts" }
+        ]
+      },
       headerPosition: {
         name: "headerPosition",
         label: "Posisi Header di Canvas",
@@ -120,10 +131,10 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     defaultProps: {
       title: "Dipercaya & Berkolaborasi Dengan",
       partners: [
-        { name: "cmsMu Core", logoUrl: "" },
-        { name: "Cloudflare Edge", logoUrl: "" },
-        { name: "Drizzle ORM", logoUrl: "" },
-        { name: "Astro SSR", logoUrl: "" }
+        { name: "cmsMu Core", logoUrl: "", url: "" },
+        { name: "Cloudflare Edge", logoUrl: "", url: "" },
+        { name: "Drizzle ORM", logoUrl: "", url: "" },
+        { name: "Astro SSR", logoUrl: "", url: "" }
       ]
     },
     fields: {
@@ -134,7 +145,8 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
         type: "array",
         arrayFields: {
           name: { name: "name", label: "Nama Mitra", type: "text" },
-          logoUrl: { name: "logoUrl", label: "URL Logo (Opsional)", type: "image" }
+          logoUrl: { name: "logoUrl", label: "URL Logo (Opsional)", type: "image" },
+          url: { name: "url", label: "Tautan Link Mitra (Opsional)", type: "text", placeholder: "https://..." }
         }
       }
     }

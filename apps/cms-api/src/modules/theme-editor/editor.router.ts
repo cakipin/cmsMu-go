@@ -2,12 +2,34 @@ import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
 import { pages, settings } from "@cmsmu/db";
 import { eq, asc } from "drizzle-orm";
+import { clearGlobalDataCache } from "../public/helpers";
 
 type Bindings = {
   DB: D1Database;
+  WIKIMU_CACHE?: any;
 };
 
 const themeEditorRouter = new Hono<{ Bindings: Bindings }>();
+
+async function upsertSetting(db: any, key: string, value: string) {
+  const existing = await db
+    .select({ key: settings.key })
+    .from(settings)
+    .where(eq(settings.key, key))
+    .get();
+  if (existing) {
+    await db
+      .update(settings)
+      .set({ value })
+      .where(eq(settings.key, key))
+      .run();
+  } else {
+    await db
+      .insert(settings)
+      .values({ key, value })
+      .run();
+  }
+}
 
 // GET /api/theme-editor/page?slug=about
 themeEditorRouter.get("/page", async c => {
@@ -73,11 +95,28 @@ themeEditorRouter.get("/pages", async c => {
   }
 });
 
+// POST /api/theme-editor/set-homepage
+themeEditorRouter.post("/set-homepage", async c => {
+  try {
+    const { slug } = await c.req.json();
+    if (!slug) return c.json({ error: "Slug required" }, 400);
+
+    const db = getDb(c.env.DB);
+    await upsertSetting(db, "site_homepage_slug", slug);
+    await upsertSetting(db, "global_header_source_slug", slug);
+    clearGlobalDataCache(c.env.WIKIMU_CACHE);
+
+    return c.json({ success: true, homeSlug: slug });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 // POST /api/theme-editor/page
 themeEditorRouter.post("/page", async c => {
   try {
     const body = await c.req.json();
-    const { slug, body: content } = body;
+    const { slug, body: content, setAsHome } = body;
     if (!slug) return c.json({ error: "Slug required" }, 400);
 
     const db = getDb(c.env.DB);
@@ -120,6 +159,26 @@ themeEditorRouter.post("/page", async c => {
         .run();
     }
 
+    // Sinkronisasi global_header_props jika terdapat blok SiteHeader
+    try {
+      const parsed = typeof content === "string" ? JSON.parse(content) : content;
+      if (parsed && Array.isArray(parsed.content)) {
+        const headerBlock = parsed.content.find((b: any) => b.type === "SiteHeader");
+        if (headerBlock && headerBlock.props) {
+          await upsertSetting(db, "global_header_props", JSON.stringify(headerBlock.props));
+          await upsertSetting(db, "global_header_source_slug", slug);
+        }
+      }
+    } catch (e) {}
+
+    // Jika setAsHome diaktifkan atau slug === 'home', sinkronkan sebagai homepage aktif
+    if (setAsHome || slug === "home") {
+      await upsertSetting(db, "site_homepage_slug", slug);
+    }
+
+    // Bersihkan cache Edge & In-Memory agar perubahan langsung tampil di halaman live
+    clearGlobalDataCache(c.env.WIKIMU_CACHE);
+
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -127,3 +186,4 @@ themeEditorRouter.post("/page", async c => {
 });
 
 export default themeEditorRouter;
+

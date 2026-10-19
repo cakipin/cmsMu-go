@@ -30,7 +30,11 @@ interface CmsMuCanvasAppProps {
   slug: string;
 }
 
-export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
+export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProps) {
+  const [currentSlug, setCurrentSlug] = useState<string>(initialSlug || "home");
+  const [pagesList, setPagesList] = useState<Array<{ id: number; title: string; slug: string }>>([]);
+  const [activeHomeSlug, setActiveHomeSlug] = useState<string>("home");
+  const [isSettingHome, setIsSettingHome] = useState<boolean>(false);
   const [blocks, setBlocks] = useState<any[]>([]);
   const [selectedBlockIdx, setSelectedBlockIdx] = useState<number | null>(0);
   const [realPosts, setRealPosts] = useState<any[]>([]);
@@ -48,13 +52,32 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
     setTimeout(() => setToast(prev => ({ ...prev, show: false })), 4000);
   };
 
-  // Muat data halaman dari endpoint yang ada
+  // Muat daftar halaman & data halaman aktif dari endpoint
   useEffect(() => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
         const token = getAuthToken();
         const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+        // 0. Muat daftar seluruh halaman untuk Dropdown Page Switcher
+        try {
+          const pagesRes = await fetch(`/api/theme-editor/pages?t=${Date.now()}`, {
+            headers: authHeader,
+            credentials: "include",
+          });
+          if (pagesRes.ok) {
+            const pagesJson = await pagesRes.json();
+            if (Array.isArray(pagesJson.data)) {
+              setPagesList(pagesJson.data);
+            }
+            if (pagesJson.activeHomeSlug) {
+              setActiveHomeSlug(pagesJson.activeHomeSlug);
+            }
+          }
+        } catch (e) {
+          console.warn("Gagal memuat daftar halaman:", e);
+        }
 
         // 1. Muat artikel riil untuk hidrasi RecentPosts dan MagazineBigGrid
         try {
@@ -73,7 +96,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
         }
 
         // 2. Muat data halaman builder
-        const res = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(slug)}&t=${Date.now()}`, {
+        const res = await fetch(`/api/theme-editor/page?slug=${encodeURIComponent(currentSlug)}&t=${Date.now()}`, {
           headers: authHeader,
           credentials: "include",
         });
@@ -101,10 +124,15 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                 });
                 setBlocks(normalized);
                 if (normalized.length > 0) setSelectedBlockIdx(0);
+              } else {
+                setBlocks([]);
               }
             } catch (e) {
               console.error("Gagal parse body JSON:", e);
+              setBlocks([]);
             }
+          } else {
+            setBlocks([]);
           }
         }
       } catch (err) {
@@ -116,7 +144,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
     };
 
     fetchData();
-  }, [slug]);
+  }, [currentSlug]);
 
   // Auto-scroll halus ke blok yang sedang aktif di canvas
   useEffect(() => {
@@ -128,12 +156,51 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
     }
   }, [selectedBlockIdx]);
 
+  // Aksi ganti halaman dari dropdown
+  const handleSwitchPage = (newSlug: string) => {
+    if (!newSlug || newSlug === currentSlug) return;
+    setCurrentSlug(newSlug);
+    if (typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.set("slug", newSlug);
+      window.history.pushState({}, "", url.toString());
+    }
+  };
+
+  // Aksi Jadikan Beranda Utama (set_homepage)
+  const handleSetAsHomepage = async () => {
+    setIsSettingHome(true);
+    try {
+      const token = getAuthToken();
+      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      const res = await fetch("/api/theme-editor/set-homepage", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...authHeader,
+        },
+        credentials: "include",
+        body: JSON.stringify({ slug: currentSlug }),
+      });
+      if (res.ok) {
+        setActiveHomeSlug(currentSlug);
+        triggerToast(`Halaman '/${currentSlug}' resmi dijadikan Beranda Utama (/)!`, "success");
+      } else {
+        triggerToast("Gagal mengatur Beranda Utama.", "error");
+      }
+    } catch (e) {
+      triggerToast("Koneksi gagal saat mengatur Beranda.", "error");
+    } finally {
+      setIsSettingHome(false);
+    }
+  };
+
   // Aksi Penyimpanan ke D1
   const handleSave = async () => {
     setIsSaving(true);
     try {
       const payload = {
-        slug,
+        slug: currentSlug,
         body: JSON.stringify({
           content: blocks,
           root: {},
@@ -154,7 +221,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
       });
 
       if (res.ok) {
-        triggerToast("Halaman berhasil disimpan ke database!", "success");
+        triggerToast("Halaman berhasil disimpan & disinkronkan ke Live!", "success");
       } else {
         triggerToast("Gagal menyimpan halaman.", "error");
       }
@@ -235,9 +302,46 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
           </a>
           <div className="flex items-center gap-2">
             <span className="font-bold text-sm text-white">cmsMu Canvas</span>
-            <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
-              /{slug}
-            </span>
+            {/* Dropdown Pilih Halaman */}
+            <div className="flex items-center gap-1.5">
+              <select
+                id="page-switcher-select"
+                value={currentSlug}
+                onChange={e => handleSwitchPage(e.target.value)}
+                className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-900 text-emerald-400 border border-emerald-500/40 focus:outline-none focus:border-emerald-400 cursor-pointer"
+                title="Pilih Halaman untuk Diedit"
+              >
+                {pagesList.length > 0 ? (
+                  pagesList.map(p => (
+                    <option key={p.id} value={p.slug} className="bg-slate-900 text-slate-100">
+                      {p.title} (/{p.slug}) {p.slug === activeHomeSlug ? "⭐ [Beranda Utama]" : ""}
+                    </option>
+                  ))
+                ) : (
+                  <option value={currentSlug}>/{currentSlug}</option>
+                )}
+              </select>
+
+              {currentSlug === activeHomeSlug ? (
+                <span
+                  className="px-2 py-1 rounded-md text-[10px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1"
+                  title="Halaman ini sedang aktif sebagai Beranda Utama (/)"
+                >
+                  <i className="fas fa-home text-[10px]"></i> Beranda Aktif
+                </span>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleSetAsHomepage}
+                  disabled={isSettingHome}
+                  className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 transition-colors cursor-pointer flex items-center gap-1"
+                  title="Jadikan halaman ini sebagai Beranda Utama (/)"
+                >
+                  <i className="fas fa-home text-[10px]"></i>
+                  <span>{isSettingHome ? "Mengatur..." : "Jadikan Beranda"}</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
@@ -275,7 +379,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
         {/* Action Buttons */}
         <div className="flex items-center gap-2">
           <a
-            href={slug === "home" ? "/" : `/${slug}`}
+            href={currentSlug === activeHomeSlug ? "/" : `/${currentSlug}`}
             target="_blank"
             rel="noreferrer"
             className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg transition-colors flex items-center gap-1.5"

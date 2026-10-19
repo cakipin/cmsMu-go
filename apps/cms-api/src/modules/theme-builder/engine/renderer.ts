@@ -102,26 +102,34 @@ export function renderBlockToHtml(
     }
 
     case "Partners": {
-      const partnersList = Array.isArray(p.partners) ? p.partners : [
-        { name: "cmsMu Core" },
-        { name: "Cloudflare Edge" },
-        { name: "Drizzle ORM" },
-        { name: "Astro SSR" }
+      const partnersList = Array.isArray(p.partners) && p.partners.length > 0 ? p.partners : [
+        { name: "cmsMu Core", logoUrl: "", url: "" },
+        { name: "Cloudflare Edge", logoUrl: "", url: "" },
+        { name: "Drizzle ORM", logoUrl: "", url: "" },
+        { name: "Astro SSR", logoUrl: "", url: "" }
       ];
 
       return `
       <section class="bg-white py-12 border-b border-slate-200" style="background-color: #ffffff; padding: 3rem 1.5rem; border-bottom: 1px solid #e2e8f0; text-align: center; box-sizing: border-box;">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center" style="max-width: 1280px; margin: 0 auto;">
           <p class="text-xs text-slate-400 font-bold mb-8 uppercase tracking-wider" style="font-size: 0.75rem; color: #94a3b8; font-weight: 700; margin-bottom: 2rem; text-transform: uppercase; letter-spacing: 0.05em;">${escapeHtml(p.title || "Dipercaya & Berkolaborasi Dengan")}</p>
-          <div class="flex justify-center items-center flex-wrap gap-8 md:gap-16 opacity-60" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 2rem; opacity: 0.7;">
-            ${partnersList.map((pt: any) => `
-              <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
-                ${pt.logoUrl ? `
-                  <img src="${escapeHtml(pt.logoUrl)}" alt="${escapeHtml(pt.name)}" class="h-8 object-contain" style="max-height: 32px; height: 32px; width: auto; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
-                  <span class="text-sm font-bold text-slate-700 tracking-tight" style="display: none; padding: 0.25rem 0.75rem; border-radius: 0.375rem; background-color: #f1f5f9; border: 1px solid #e2e8f0;">${escapeHtml(pt.name)}</span>
-                ` : `<span class="text-lg font-extrabold text-slate-700 tracking-tight" style="font-size: 1.125rem; font-weight: 800; color: #334155; letter-spacing: -0.02em;">${escapeHtml(pt.name)}</span>`}
-              </div>
-            `).join("")}
+          <div class="flex justify-center items-center flex-wrap gap-8 md:gap-16 opacity-60" style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap; gap: 2rem; opacity: 0.75;">
+            ${partnersList.map((pt: any) => {
+              const innerHtml = pt.logoUrl ? `
+                <img src="${escapeHtml(pt.logoUrl)}" alt="${escapeHtml(pt.name)}" class="h-8 object-contain" style="max-height: 32px; height: 32px; width: auto; object-fit: contain;" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='inline-block';">
+                <span class="text-sm font-bold text-slate-700 tracking-tight" style="display: none; padding: 0.25rem 0.75rem; border-radius: 0.375rem; background-color: #f1f5f9; border: 1px solid #e2e8f0;">${escapeHtml(pt.name)}</span>
+              ` : `<span class="text-lg font-extrabold text-slate-700 tracking-tight" style="font-size: 1.125rem; font-weight: 800; color: #334155; letter-spacing: -0.02em;">${escapeHtml(pt.name)}</span>`;
+
+              return pt.url ? `
+                <a href="${escapeHtml(pt.url)}" target="_blank" rel="noopener noreferrer" class="flex items-center justify-center hover:opacity-100 transition-opacity" style="display: flex; align-items: center; justify-content: center; text-decoration: none;" title="Kunjungi ${escapeHtml(pt.name)}">
+                  ${innerHtml}
+                </a>
+              ` : `
+                <div class="flex items-center justify-center" style="display: flex; align-items: center; justify-content: center;">
+                  ${innerHtml}
+                </div>
+              `;
+            }).join("")}
           </div>
         </div>
       </section>
@@ -137,15 +145,18 @@ export function renderBlockToHtml(
 
       const featureItems = features
         .map(
-          (f: any) => `
+          (f: any) => {
+            const iconName = String(f.svgIcon || "star").replace(/^fa-/, "");
+            return `
         <div class="p-8 rounded-2xl bg-slate-50 border border-slate-100 hover:border-emerald-200 transition-all hover:shadow-xs" style="padding: 2rem; border-radius: 1rem; background-color: #f8fafc; border: 1px solid #e2e8f0; box-sizing: border-box;">
           <div class="w-12 h-12 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center text-xl mb-6" style="width: 48px; height: 48px; border-radius: 12px; background-color: #d1fae5; color: #059669; display: flex; align-items: center; justify-content: center; font-size: 1.25rem; margin-bottom: 1.5rem;">
-            <i class="fas fa-${escapeHtml(f.svgIcon || "star")}"></i>
+            <i class="fas fa-${escapeHtml(iconName)}"></i>
           </div>
           <h3 class="text-xl font-bold text-slate-900 mb-3" style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem;">${escapeHtml(f.title || "")}</h3>
           <p class="text-sm text-slate-600 leading-relaxed" style="font-size: 0.875rem; color: #475569; line-height: 1.625; margin: 0;">${escapeHtml(f.description || "")}</p>
         </div>
-      `
+      `;
+          }
         )
         .join("");
 
@@ -182,11 +193,13 @@ export function renderBlockToHtml(
         }
       ];
 
-      const cards = testimonials.map((t: any) => `
+      const cards = testimonials.map((t: any) => {
+        const bgHex = t.bgColor && String(t.bgColor).startsWith("#") ? t.bgColor : "#059669";
+        return `
         <div class="p-8 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between" style="padding: 2rem; border-radius: 1rem; background-color: #ffffff; border: 1px solid #e2e8f0; display: flex; flex-direction: column; justify-content: space-between; box-sizing: border-box;">
           <p class="text-sm text-slate-600 italic mb-6 leading-relaxed" style="font-size: 0.875rem; color: #475569; font-style: italic; margin-bottom: 1.5rem; line-height: 1.625;">"${escapeHtml(t.quote || "")}"</p>
           <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
-            <div class="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center text-sm" style="width: 40px; height: 40px; border-radius: 9999px; background-color: ${t.bgColor || "#059669"}; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
+            <div class="w-10 h-10 rounded-full text-white font-bold flex items-center justify-center text-sm" style="width: 40px; height: 40px; border-radius: 9999px; background-color: ${escapeHtml(bgHex)}; color: #ffffff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 0.875rem;">
               ${escapeHtml(t.initials || "U")}
             </div>
             <div>
@@ -195,7 +208,8 @@ export function renderBlockToHtml(
             </div>
           </div>
         </div>
-      `).join("");
+      `;
+      }).join("");
 
       return `
       <section class="bg-slate-50 py-20 border-b border-slate-200" style="background-color: #f8fafc; padding: 4.5rem 1.5rem; border-bottom: 1px solid #e2e8f0; box-sizing: border-box;">
@@ -259,7 +273,7 @@ export function renderBlockToHtml(
                   <div>
                     <div class="mb-2 text-xs font-medium text-slate-400" style="font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.5rem;">${postDate}</div>
                     <h3 class="mb-3 text-lg font-bold text-slate-900 group-hover:text-emerald-600 transition-colors" style="font-size: 1.125rem; font-weight: 700; color: #0f172a; margin-bottom: 0.75rem; line-height: 1.4;">
-                      ${postTitle}
+                      <a href="${postUrl}" style="color: inherit; text-decoration: none;">${postTitle}</a>
                     </h3>
                     <p class="mb-4 text-sm text-slate-600 leading-relaxed line-clamp-2" style="font-size: 0.875rem; color: #475569; line-height: 1.5; margin-bottom: 1rem;">${postExcerpt}</p>
                   </div>
