@@ -168,11 +168,22 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
     };
   };
 
+  const homeSlug = site?.site_homepage_slug || "home";
+  const isHomePage = page?.slug === homeSlug || !page?.slug || page?.slug === "home";
+
   if (puckData && Array.isArray(puckData.content)) {
-    const hasHeader = puckData.content.some(
-      (c: any) => c.type === "SiteHeader"
-    );
-    if (!hasHeader && site?.global_header_enabled === "true") {
+    // 1. Evaluasi blok SiteHeader yang ada di halaman ini
+    puckData.content = puckData.content.filter((c: any) => {
+      if (c.type !== "SiteHeader") return true;
+      const scope = c.props?.headerScope || "all";
+      if (scope === "home_only" && !isHomePage) return false;
+      if (scope === "pages_posts" && isHomePage) return false;
+      return true;
+    });
+
+    // 2. Jika halaman tidak memiliki SiteHeader, cek apakah perlu injeksi global header
+    const hasHeader = puckData.content.some((c: any) => c.type === "SiteHeader");
+    if (!hasHeader && (site?.global_header_enabled === "true" || site?.global_header_props)) {
       let rawHeaderProps: any = {};
       if (site.global_header_props) {
         try {
@@ -182,13 +193,21 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
               : site.global_header_props;
         } catch (e) {}
       }
-      puckData.content.unshift({
-        type: "SiteHeader",
-        props: {
-          id: "global-header-auto",
-          ...rawHeaderProps,
-        },
-      });
+      const globalScope = rawHeaderProps.headerScope || "all";
+      const shouldInject =
+        globalScope === "all" ||
+        (globalScope === "home_only" && isHomePage) ||
+        (globalScope === "pages_posts" && !isHomePage);
+
+      if (shouldInject && Object.keys(rawHeaderProps).length > 0) {
+        puckData.content.unshift({
+          type: "SiteHeader",
+          props: {
+            id: "global-header-auto",
+            ...rawHeaderProps,
+          },
+        });
+      }
     }
     puckData.content = puckData.content.map(normalizeBlock);
   }
@@ -233,7 +252,7 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
   
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">

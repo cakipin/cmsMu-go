@@ -745,6 +745,23 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                           </option>
                         ))}
                       </select>
+                    ) : field.type === "color" ? (
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="color"
+                          value={typeof curVal === "string" && curVal.startsWith("#") && curVal.length === 7 ? curVal : "#ffffff"}
+                          onChange={e => handlePropChange(fieldKey, e.target.value)}
+                          className="w-8 h-8 rounded border border-slate-700 bg-slate-900 cursor-pointer p-0.5 shrink-0"
+                          title="Pilih Warna"
+                        />
+                        <input
+                          type="text"
+                          value={curVal}
+                          placeholder="#ffffff"
+                          onChange={e => handlePropChange(fieldKey, e.target.value)}
+                          className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
+                        />
+                      </div>
                     ) : (
                       <input
                         type={field.type === "number" ? "number" : "text"}

@@ -17,7 +17,28 @@ export function renderBlockToHtml(
 
   switch (type) {
     case "SiteHeader": {
-      const positionClass = "relative";
+      const positionClass = p.headerPosition === "sticky" ? "sticky top-0 z-40" : p.headerPosition === "fixed" ? "fixed top-0 left-0 right-0 z-50" : "relative";
+      const bgColor = p.headerBgColor || "#ffffff";
+      const borderColor = p.headerBorderColor || "#e2e8f0";
+      const borderWidth = p.headerBorderWidth || "1px";
+      const isContained = p.headerWidth === "contained";
+      const fontFamily = p.headerFontFamily && p.headerFontFamily !== "sans-serif" ? `'${escapeHtml(p.headerFontFamily)}', sans-serif` : "inherit";
+
+      // Radius mapping
+      let radiusValue = "0px";
+      let containerShadow = "none";
+      if (p.headerRadius === "sm") radiusValue = "8px";
+      else if (p.headerRadius === "md") radiusValue = "16px";
+      else if (p.headerRadius === "lg") radiusValue = "24px";
+      else if (p.headerRadius === "full") {
+        radiusValue = "9999px";
+        containerShadow = "0 10px 25px -5px rgba(0,0,0,0.06), 0 8px 10px -6px rgba(0,0,0,0.04)";
+      }
+
+      // Height mapping
+      let heightPx = "72px";
+      if (p.headerSize === "compact") heightPx = "56px";
+      else if (p.headerSize === "large") heightPx = "88px";
 
       const menuHtml = Array.isArray(p.menuItems)
         ? p.menuItems
@@ -31,36 +52,109 @@ export function renderBlockToHtml(
             .join("")
         : "";
 
-      const ctaHtml =
+      const rawCtaHtml =
         p.showCta !== "no" && p.ctaText
           ? `
-        <a href="${escapeHtml(p.ctaUrl || "/admin")}" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: #ffffff; background-color: #059669; border-radius: 0.5rem; text-decoration: none; transition: background 0.2s;" class="hover:bg-emerald-700 shadow-sm">
+        <a href="${escapeHtml(p.ctaUrl || "/admin")}" class="cmsmu-guest-cta-btn hover:bg-emerald-700 shadow-sm" style="display: inline-flex; align-items: center; justify-content: center; padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 700; color: #ffffff; background-color: #059669; border-radius: 0.5rem; text-decoration: none; transition: background 0.2s;">
           ${escapeHtml(p.ctaText)}
         </a>
       `
           : "";
 
-      return `
-      <header class="${positionClass} w-full bg-white border-b border-slate-200" style="position: relative; width: 100%; background-color: #ffffff; border-bottom: 1px solid #e2e8f0; box-sizing: border-box;">
-        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4" style="max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; height: 80px; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-sizing: border-box;">
-          <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
-            ${
-              p.logoImage
-                ? `<img src="${escapeHtml(p.logoImage)}" alt="${escapeHtml(p.siteTitle || "Logo")}" class="h-10 w-auto object-contain" style="max-height: 44px; height: 44px; width: auto; object-fit: contain; display: block;">`
-                : `<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold flex items-center justify-center text-lg" style="width: 40px; height: 40px; border-radius: 12px; background-color: #059669; color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.125rem;">${escapeHtml((p.siteTitle || "C").charAt(0))}</div>`
-            }
-            <span class="text-xl font-black text-slate-900 tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -0.025em;">
-              ${escapeHtml(p.siteTitle || "cmsMu")}${p.siteTitleHighlight ? `<span style="color: #059669; margin-left: 0.25rem;">${escapeHtml(p.siteTitleHighlight)}</span>` : ""}
-            </span>
-          </div>
-          <nav class="hidden md:flex items-center gap-6" style="display: flex; align-items: center; gap: 1.5rem;">
-            ${menuHtml || `<span class="text-xs text-slate-400 italic" style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Menu Navigasi</span>`}
-          </nav>
-          <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
-            ${ctaHtml}
+      const userDropdownHtml = p.enableUserDropdown !== "no" ? `
+        <div class="cmsmu-user-nav-dropdown" style="display: none; position: relative;">
+          <button type="button" class="cmsmu-user-toggle-btn" onclick="var m=this.nextElementSibling; m.style.display=(m.style.display==='flex'?'none':'flex'); event.stopPropagation();" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #1e293b; cursor: pointer; transition: all 0.2s;">
+            <div style="width: 22px; height: 22px; border-radius: 50%; background: #059669; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 10px;">
+              <i class="fas fa-user"></i>
+            </div>
+            <span class="cmsmu-user-label" style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Akun Saya</span>
+            <i class="fas fa-chevron-down" style="font-size: 8px; color: #64748b;"></i>
+          </button>
+          <div class="cmsmu-user-menu" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding: 0.35rem; z-index: 9999; flex-direction: column; gap: 0.15rem; box-sizing: border-box;">
+            <a href="/admin#profile" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1e293b; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <i class="fas fa-user-circle" style="color: #3b82f6; width: 14px;"></i>
+              <span>Profil Pengguna</span>
+            </a>
+            <a href="/admin" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1e293b; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <i class="fas fa-th-large" style="color: #059669; width: 14px;"></i>
+              <span>Dasbor Admin</span>
+            </a>
+            <a href="/theme-editor?slug=home" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1e293b; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
+              <i class="fas fa-paint-brush" style="color: #f59e0b; width: 14px;"></i>
+              <span>Theme Editor</span>
+            </a>
+            <div style="height: 1px; background: #f1f5f9; margin: 0.2rem 0;"></div>
+            <a href="/login" onclick="event.preventDefault(); document.cookie='labmu_token=; path=/; max-age=0;'; try{localStorage.removeItem('labmu_token'); localStorage.removeItem('admin_token');}catch(e){} window.location.href='/login';" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #e11d48; text-decoration: none;" onmouseover="this.style.background='#fff1f2'" onmouseout="this.style.background='transparent'">
+              <i class="fas fa-sign-out-alt" style="width: 14px;"></i>
+              <span>Keluar (Logout)</span>
+            </a>
           </div>
         </div>
-      </header>
+        <script>
+          (function(){
+            try {
+              var hasToken = false;
+              if (document.cookie.indexOf('labmu_token=') !== -1) hasToken = true;
+              else if (typeof localStorage !== 'undefined' && (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token'))) hasToken = true;
+              if (hasToken) {
+                var ctas = document.querySelectorAll('.cmsmu-guest-cta-btn');
+                for (var i = 0; i < ctas.length; i++) ctas[i].style.display = 'none';
+                var dds = document.querySelectorAll('.cmsmu-user-nav-dropdown');
+                for (var j = 0; j < dds.length; j++) dds[j].style.display = 'inline-block';
+              }
+              document.addEventListener('click', function(){
+                var menus = document.querySelectorAll('.cmsmu-user-menu');
+                for (var k = 0; k < menus.length; k++) menus[k].style.display = 'none';
+              });
+            } catch(e){}
+          })();
+        </script>
+      ` : "";
+
+      const headerContainerStyle = isContained
+        ? `max-width: 1280px; margin: 0.75rem auto; padding: 0 1rem; box-sizing: border-box;`
+        : `width: 100%; box-sizing: border-box;`;
+
+      const isCard = isContained || (p.headerRadius && p.headerRadius !== "none");
+      const borderRule = isCard
+        ? `border: ${borderWidth} solid ${borderColor};`
+        : `border-bottom: ${borderWidth} solid ${borderColor};`;
+
+      const headerBoxStyle = `
+        position: relative;
+        width: 100%;
+        background-color: ${bgColor};
+        ${borderRule}
+        border-radius: ${radiusValue};
+        box-shadow: ${containerShadow};
+        font-family: ${fontFamily};
+        box-sizing: border-box;
+      `;
+
+      return `
+      <div class="${positionClass} w-full" style="${headerContainerStyle}">
+        <header class="w-full" style="${headerBoxStyle}">
+          <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4" style="max-width: 1280px; margin: 0 auto; padding: 0 1.5rem; height: ${heightPx}; display: flex; align-items: center; justify-content: space-between; gap: 1rem; box-sizing: border-box;">
+            <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+              ${
+                p.logoImage
+                  ? `<img src="${escapeHtml(p.logoImage)}" alt="${escapeHtml(p.siteTitle || "Logo")}" class="h-10 w-auto object-contain" style="max-height: 44px; height: 44px; width: auto; object-fit: contain; display: block;">`
+                  : `<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold flex items-center justify-center text-lg" style="width: 40px; height: 40px; border-radius: 12px; background-color: #059669; color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.125rem;">${escapeHtml((p.siteTitle || "C").charAt(0))}</div>`
+              }
+              <span class="text-xl font-black text-slate-900 tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -0.025em;">
+                ${escapeHtml(p.siteTitle || "cmsMu")}${p.siteTitleHighlight ? `<span style="color: #059669; margin-left: 0.25rem;">${escapeHtml(p.siteTitleHighlight)}</span>` : ""}
+              </span>
+            </div>
+            <nav class="hidden md:flex items-center gap-6" style="display: flex; align-items: center; gap: 1.5rem;">
+              ${menuHtml || `<span class="text-xs text-slate-400 italic" style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Menu Navigasi</span>`}
+            </nav>
+            <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+              ${rawCtaHtml}
+              ${userDropdownHtml}
+            </div>
+          </div>
+        </header>
+      </div>
       `;
     }
 

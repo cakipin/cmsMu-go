@@ -37,7 +37,15 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       logoImage: "/logo-cmsmu.webp",
       headerScope: "all",
       headerPosition: "static",
+      headerBgColor: "#ffffff",
+      headerBorderColor: "#e2e8f0",
+      headerBorderWidth: "1px",
+      headerRadius: "none",
+      headerSize: "normal",
+      headerWidth: "full",
+      headerFontFamily: "Plus Jakarta Sans",
       showCta: "yes",
+      enableUserDropdown: "yes",
       ctaText: "Mulai Sekarang",
       ctaUrl: "/admin",
       menuItems: [
@@ -70,6 +78,64 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
           { label: "Fixed (Melayang)", value: "fixed" }
         ]
       },
+      headerBgColor: { name: "headerBgColor", label: "Warna Latar Header", type: "color", defaultValue: "#ffffff" },
+      headerBorderColor: { name: "headerBorderColor", label: "Warna Garis (Line) Header", type: "color", defaultValue: "#e2e8f0" },
+      headerBorderWidth: {
+        name: "headerBorderWidth",
+        label: "Ketebalan Garis Header",
+        type: "select",
+        options: [
+          { label: "Tanpa Garis (0px)", value: "0px" },
+          { label: "Tipis (1px)", value: "1px" },
+          { label: "Sedang (2px)", value: "2px" },
+          { label: "Tebal (3px)", value: "3px" },
+          { label: "Sangat Tebal (4px)", value: "4px" }
+        ]
+      },
+      headerRadius: {
+        name: "headerRadius",
+        label: "Kelengkungan (Rounded) Header",
+        type: "select",
+        options: [
+          { label: "Persegi Penuh (0px)", value: "none" },
+          { label: "Melengkung Halus (8px)", value: "sm" },
+          { label: "Melengkung Sedang (16px)", value: "md" },
+          { label: "Melengkung Tegas (24px)", value: "lg" },
+          { label: "Kapsul Melayang (Pill Floating)", value: "full" }
+        ]
+      },
+      headerSize: {
+        name: "headerSize",
+        label: "Ukuran Tinggi Header",
+        type: "select",
+        options: [
+          { label: "Ringkas (56px)", value: "compact" },
+          { label: "Standar (72px)", value: "normal" },
+          { label: "Tinggi / Lega (88px)", value: "large" }
+        ]
+      },
+      headerWidth: {
+        name: "headerWidth",
+        label: "Lebar Kontainer Header",
+        type: "select",
+        options: [
+          { label: "Lebar Penuh Layar (Full Width)", value: "full" },
+          { label: "Terpusat dalam Kontainer (Contained Card)", value: "contained" }
+        ]
+      },
+      headerFontFamily: {
+        name: "headerFontFamily",
+        label: "Jenis Font Header",
+        type: "select",
+        options: [
+          { label: "Plus Jakarta Sans (Modern Clean)", value: "Plus Jakarta Sans" },
+          { label: "Inter (Neutral Tech)", value: "Inter" },
+          { label: "Poppins (Friendly Geometric)", value: "Poppins" },
+          { label: "Outfit (Modern Minimalist)", value: "Outfit" },
+          { label: "Playfair Display (Serif Elegan)", value: "Playfair Display" },
+          { label: "System Default (Bawaan OS)", value: "sans-serif" }
+        ]
+      },
       showCta: {
         name: "showCta",
         label: "Tampilkan Tombol Aksi",
@@ -79,8 +145,17 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
           { label: "Tidak", value: "no" }
         ]
       },
-      ctaText: { name: "ctaText", label: "Teks Tombol Aksi", type: "text" },
-      ctaUrl: { name: "ctaUrl", label: "Link Tombol Aksi", type: "text" },
+      enableUserDropdown: {
+        name: "enableUserDropdown",
+        label: "Dropdown Pengguna Setelah Login",
+        type: "select",
+        options: [
+          { label: "Ya (Dropdown Profil, Dasbor & Logout Otomatis saat Login)", value: "yes" },
+          { label: "Tidak (Selalu Tampilkan Tombol Biasa)", value: "no" }
+        ]
+      },
+      ctaText: { name: "ctaText", label: "Teks Tombol Aksi (Tamu / Guest)", type: "text" },
+      ctaUrl: { name: "ctaUrl", label: "Link Tombol Aksi (Tamu / Guest)", type: "text" },
       menuItems: {
         name: "menuItems",
         label: "Menu Navigasi",

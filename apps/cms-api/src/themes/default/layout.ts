@@ -1,5 +1,6 @@
 import type { ThemeContext } from "../types";
 import { escapeHtml } from "./utils";
+import { renderBlockToHtml } from "../../modules/theme-builder/engine/renderer";
 
 export function _layout(
   content: string,
@@ -63,6 +64,23 @@ export function _layout(
             { title: "Berita & Artikel", url: "/berita" },
           ];
 
+  let customHeaderHtml = "";
+  if (site.global_header_props) {
+    try {
+      const gProps =
+        typeof site.global_header_props === "string"
+          ? JSON.parse(site.global_header_props)
+          : site.global_header_props;
+      const gScope = gProps?.headerScope || "all";
+      if (gScope === "all" || gScope === "pages_posts") {
+        customHeaderHtml = renderBlockToHtml(
+          { type: "SiteHeader", props: gProps },
+          { site }
+        );
+      }
+    } catch (e) {}
+  }
+
   return `<!DOCTYPE html>
 <html lang="id">
 <head>
@@ -86,6 +104,11 @@ export function _layout(
   <!-- Favicon & Feed -->
   <link rel="icon" type="image/x-icon" href="/favicon.ico">
   <link rel="sitemap" type="application/xml" title="Sitemap" href="/sitemap.xml">
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Outfit:wght@400;600;700;800&family=Playfair+Display:ital,wght@0,600;0,700;1,400&family=Plus+Jakarta+Sans:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400;1,600&family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
@@ -550,6 +573,9 @@ export function _layout(
 <body class="safe-area-bottom">
 
   <!-- HEADER -->
+  ${
+    customHeaderHtml ||
+    `
   <header class="site-header">
     <div class="container header-inner">
       <div class="brand-wrap">
@@ -590,6 +616,8 @@ export function _layout(
       </div>
     </div>
   </header>
+  `
+  }
 
   <!-- MOBILE MENU DRAWER -->
   <div class="mobile-drawer" id="mobileDrawer">
