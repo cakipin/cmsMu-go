@@ -1,8 +1,7 @@
 ---
-// Halaman ini khusus untuk editor Puck (hanya diakses admin atau user dengan token jika butuh keamanan)
-import ThemeEditorApp from "../components/ThemeEditorApp";
+// Halaman Visual Page Builder cmsMu Canvas (Zero External Dependency)
+import CmsMuCanvasApp from "../components/builder/CmsMuCanvasApp";
 
-// Kita tidak ingin halaman ini diserap oleh SSG, jadi matikan prerender jika diperlukan (tapi Astro default di sini mungkin SSR karena Hono)
 export const prerender = false;
 
 import "@/styles/global.css";
@@ -16,7 +15,7 @@ const slug = Astro.url.searchParams.get("slug") || "home";
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Theme Visual Editor - {slug}</title>
+    <title>cmsMu Canvas Visual Builder - {slug}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -29,8 +28,8 @@ const slug = Astro.url.searchParams.get("slug") || "home";
     />
     <script src="https://cdn.tailwindcss.com"></script>
   </head>
-  <body>
-    <!-- Render aplikasi React Puck Editor -->
-    <ThemeEditorApp client:only="react" slug={slug} />
+  <body class="bg-slate-900 m-0 p-0 overflow-hidden">
+    <!-- Render aplikasi cmsMu Native Canvas Visual Builder -->
+    <CmsMuCanvasApp client:only="react" slug={slug} />
   </body>
 </html>
