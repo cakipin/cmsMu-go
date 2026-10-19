@@ -38,7 +38,7 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       headerScope: "all",
       headerPosition: "static",
       headerBgColor: "#ffffff",
-      headerTextColor: "#334155",
+      headerTextColor: "",
       headerBorderColor: "#e2e8f0",
       headerBorderWidth: "1px",
       headerRadius: "none",
@@ -81,7 +81,7 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
         ]
       },
       headerBgColor: { name: "headerBgColor", label: "Warna Latar Header", type: "color", defaultValue: "#ffffff" },
-      headerTextColor: { name: "headerTextColor", label: "Warna Teks Menu Header", type: "color", defaultValue: "#334155" },
+      headerTextColor: { name: "headerTextColor", label: "Warna Teks Menu Header (Otomatis jika kosong)", type: "color", defaultValue: "" },
       headerBorderColor: { name: "headerBorderColor", label: "Warna Garis (Line) Header", type: "color", defaultValue: "#e2e8f0" },
       headerBorderWidth: {
         name: "headerBorderWidth",

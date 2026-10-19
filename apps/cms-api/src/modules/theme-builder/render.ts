@@ -4,6 +4,7 @@ import { Render } from "@puckeditor/core";
 import { puckConfig } from "./config";
 import type { PostItem } from "./types";
 import { renderBlockToHtml } from "./engine/renderer";
+import { BLOCK_CATALOG } from "./engine/schema";
 
 export function escapeHtml(str: any): string {
   if (str === null || str === undefined) return "";
@@ -72,11 +73,12 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
     console.error("Error parsing Puck JSON:", e);
   }
 
-  // Normalisasi puckData dengan menggabungkan defaultProps untuk mencegah TypeError undefined
+  // Normalisasi puckData dengan menggabungkan defaultProps dari BLOCK_CATALOG
   const normalizeBlock = (item: any) => {
     if (!item || !item.type) return item;
+    const catalogEntry = BLOCK_CATALOG[item.type];
     const compConfig = (puckConfig.components as any)?.[item.type];
-    const defaults = compConfig?.defaultProps || {};
+    const defaults = catalogEntry?.defaultProps || compConfig?.defaultProps || {};
     const mergedProps = {
       ...defaults,
       ...(item.props || {}),
@@ -103,6 +105,16 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
       // Bersihkan hardcode 'Mu' warisan data lama di database
       if (mergedProps.siteTitleHighlight === "Mu") {
         mergedProps.siteTitleHighlight = "";
+      }
+      if (
+        (!Array.isArray(mergedProps.menuItems) || mergedProps.menuItems.length === 0) &&
+        Array.isArray(menus) &&
+        menus.length > 0
+      ) {
+        mergedProps.menuItems = menus.map((m: any) => ({
+          label: m.label || m.title || m.name || "Menu",
+          url: m.url || "/",
+        }));
       }
     }
 
@@ -169,7 +181,7 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   };
 
   const homeSlug = site?.site_homepage_slug || "home";
-  const isHomePage = page?.slug === homeSlug || !page?.slug || page?.slug === "home";
+  const isHomePage = page?.slug === homeSlug || !page?.slug;
 
   if (puckData && Array.isArray(puckData.content)) {
     // 1. Evaluasi blok SiteHeader yang ada di halaman ini
@@ -249,6 +261,17 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   <meta name="twitter:title" content="${pageTitle}">
   <meta name="twitter:description" content="${metaDesc}">
   
+  <!-- Anti-FOUC Theme Initializer -->
+  <script>
+    (function() {
+      try {
+        var t = localStorage.getItem('cmsmu_theme') || 'light';
+        document.documentElement.setAttribute('data-theme', t);
+        if (t === 'dark') document.documentElement.classList.add('dark');
+      } catch(e) {}
+    })();
+  </script>
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -261,6 +284,7 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
+      darkMode: ['selector', '[data-theme="dark"]'],
       theme: {
         extend: {
           fontFamily: {
@@ -272,16 +296,41 @@ export function renderPuckHtml(options: PuckRenderOptions): string {
   </script>
 
   <style>
+    :root {
+      --bg-canvas: #ffffff;
+      --bg-surface: #f8fafc;
+      --bg-card: #ffffff;
+      --border-subtle: #e2e8f0;
+      --text-primary: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+    }
+    [data-theme="dark"] {
+      --bg-canvas: #090d16;
+      --bg-surface: #0f172a;
+      --bg-card: #111827;
+      --border-subtle: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+    }
     body {
       font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-canvas);
+      color: var(--text-primary);
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       margin: 0;
       padding: 0;
+      transition: background-color 0.25s ease, color 0.25s ease;
+    }
+    [data-theme="dark"] body {
+      background-color: #090d16 !important;
+      color: #f8fafc !important;
     }
   </style>
 </head>
-<body class="bg-white text-slate-900 min-h-screen flex flex-col">
+<body class="min-h-screen flex flex-col">
   <div id="puck-root" class="flex-1 w-full">
     ${bodyMarkup}
   </div>
@@ -299,7 +348,7 @@ export function renderGlobalHeaderHtml(
   site: any,
   menus: any[] = []
 ): GlobalHeaderResult | null {
-  if (!site || site.global_header_enabled !== "true") {
+  if (!site || (site.global_header_enabled !== "true" && !site.global_header_props)) {
     return null;
   }
 
@@ -315,8 +364,7 @@ export function renderGlobalHeaderHtml(
     }
   }
 
-  const siteHeaderConfig = (puckConfig.components as any)?.SiteHeader;
-  const defaultProps = siteHeaderConfig?.defaultProps || {};
+  const defaultProps = BLOCK_CATALOG.SiteHeader?.defaultProps || {};
 
   const mergedProps: any = {
     ...defaultProps,
@@ -340,53 +388,34 @@ export function renderGlobalHeaderHtml(
       mergedProps.siteTitle = site.site_title;
     }
   }
-  // Bersihkan hardcode 'Mu' warisan lama (Zero Hardcode Policy)
   if (mergedProps.siteTitleHighlight === "Mu") {
     mergedProps.siteTitleHighlight = "";
   }
 
-  // 2. Hidrasi menu dinamis dari database jika menuItems kosong atau masih default dummy hash
-  const isDefaultDummyMenu =
-    Array.isArray(mergedProps.menuItems) &&
-    mergedProps.menuItems.length > 0 &&
-    mergedProps.menuItems.every(
-      (item: any) => item.url && item.url.startsWith("#")
-    );
-
+  // 2. Hidrasi menu dinamis dari database jika menuItems kosong
   if (
     (!mergedProps.menuItems ||
       !Array.isArray(mergedProps.menuItems) ||
-      mergedProps.menuItems.length === 0 ||
-      isDefaultDummyMenu) &&
+      mergedProps.menuItems.length === 0) &&
     Array.isArray(menus) &&
     menus.length > 0
   ) {
     mergedProps.menuItems = menus.map((m: any) => ({
-      label: m.label || "",
+      label: m.label || m.title || m.name || "",
       url: m.url || "/",
     }));
-  } else if (Array.isArray(mergedProps.menuItems)) {
-    // Pastikan URL jangkar seperti #fitur diubah menjadi /#fitur agar berfungsi saat diklik dari halaman selain beranda
-    mergedProps.menuItems = mergedProps.menuItems.map((item: any) => {
-      const url = String(item.url || "").trim();
-      if (url.startsWith("#") && url.length > 1) {
-        return { ...item, url: "/" + url };
-      }
-      return item;
-    });
   }
 
   try {
-    const headerElement = React.createElement(
-      siteHeaderConfig.render,
-      mergedProps
+    const html = renderBlockToHtml(
+      { type: "SiteHeader", props: mergedProps },
+      { site }
     );
-    const html = renderToStaticMarkup(headerElement);
-    const isFixed = mergedProps.headerPosition !== "static";
+    const isFixed = mergedProps.headerPosition === "fixed";
     return {
       html,
       isFixed,
-      headerPadding: mergedProps.headerPadding || "h-20",
+      headerPadding: mergedProps.headerSize === "compact" ? "h-14" : mergedProps.headerSize === "large" ? "h-22" : "h-18",
     };
   } catch (err) {
     console.error("Error rendering Global Header:", err);

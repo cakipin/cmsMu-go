@@ -89,7 +89,12 @@ themeEditorRouter.get("/pages", async c => {
       .get();
     const homeSlug = settingRow ? settingRow.value : "home";
 
-    return c.json({ success: true, data: results || [], homeSlug: homeSlug });
+    return c.json({
+      success: true,
+      data: results || [],
+      homeSlug: homeSlug,
+      activeHomeSlug: homeSlug,
+    });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
@@ -104,9 +109,28 @@ themeEditorRouter.post("/set-homepage", async c => {
     const db = getDb(c.env.DB);
     await upsertSetting(db, "site_homepage_slug", slug);
     await upsertSetting(db, "global_header_source_slug", slug);
+
+    // Sinkronkan juga global_header_props dari halaman yang dijadikan Beranda Utama
+    try {
+      const targetPage = await db
+        .select({ body: pages.body })
+        .from(pages)
+        .where(eq(pages.slug, slug))
+        .get();
+      if (targetPage && targetPage.body) {
+        const parsed = JSON.parse(targetPage.body);
+        if (parsed && Array.isArray(parsed.content)) {
+          const headerBlock = parsed.content.find((b: any) => b.type === "SiteHeader");
+          if (headerBlock && headerBlock.props) {
+            await upsertSetting(db, "global_header_props", JSON.stringify(headerBlock.props));
+          }
+        }
+      }
+    } catch (e) {}
+
     clearGlobalDataCache(c.env.WIKIMU_CACHE);
 
-    return c.json({ success: true, homeSlug: slug });
+    return c.json({ success: true, homeSlug: slug, activeHomeSlug: slug });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
@@ -171,9 +195,18 @@ themeEditorRouter.post("/page", async c => {
       }
     } catch (e) {}
 
-    // Jika setAsHome diaktifkan atau slug === 'home', sinkronkan sebagai homepage aktif
-    if (setAsHome || slug === "home") {
+    // Hanya ubah site_homepage_slug jika diminta secara eksplisit (setAsHome) atau belum ada setting sama sekali
+    if (setAsHome) {
       await upsertSetting(db, "site_homepage_slug", slug);
+    } else {
+      const existingHome = await db
+        .select({ value: settings.value })
+        .from(settings)
+        .where(eq(settings.key, "site_homepage_slug"))
+        .get();
+      if (!existingHome || !existingHome.value) {
+        await upsertSetting(db, "site_homepage_slug", slug);
+      }
     }
 
     // Bersihkan cache Edge & In-Memory agar perubahan langsung tampil di halaman live

@@ -71,8 +71,8 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
             if (Array.isArray(pagesJson.data)) {
               setPagesList(pagesJson.data);
             }
-            if (pagesJson.activeHomeSlug) {
-              setActiveHomeSlug(pagesJson.activeHomeSlug);
+            if (pagesJson.activeHomeSlug || pagesJson.homeSlug) {
+              setActiveHomeSlug(pagesJson.activeHomeSlug || pagesJson.homeSlug);
             }
           }
         } catch (e) {
@@ -114,8 +114,13 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                     ...(catalog?.defaultProps || {}),
                     ...(blk.props || {}),
                   };
-                  if (blk.type === "SiteHeader" && (mergedProps.siteTitle?.includes("CMS Teruji") || !mergedProps.siteTitle)) {
-                    mergedProps.siteTitle = "cmsMu";
+                  if (blk.type === "SiteHeader") {
+                    if (mergedProps.siteTitle?.includes("CMS Teruji") || !mergedProps.siteTitle) {
+                      mergedProps.siteTitle = "cmsMu";
+                    }
+                    if (mergedProps.headerTextColor === "#334155") {
+                      mergedProps.headerTextColor = "";
+                    }
                   }
                   return {
                     ...blk,
@@ -515,6 +520,19 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
               object-fit: contain !important;
               display: block !important;
             }
+            .cmsmu-canvas-content .cmsmu-header-outer {
+              position: relative !important;
+              top: 0 !important;
+            }
+            .cmsmu-canvas-content .cmsmu-fixed-spacer {
+              display: none !important;
+            }
+            .cmsmu-viewport-mobile .cmsmu-nav-desktop {
+              display: none !important;
+            }
+            .cmsmu-viewport-mobile .cmsmu-mobile-btn {
+              display: inline-flex !important;
+            }
           `}} />
 
           {/* Viewport Width Indicator */}
@@ -527,7 +545,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
           <div
             className={`transition-all duration-300 bg-white text-slate-900 shadow-2xl rounded-xl border border-slate-800 overflow-hidden flex flex-col h-fit ${
-              viewport === "desktop" ? "w-full max-w-5xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px]"
+              viewport === "desktop" ? "w-full max-w-5xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px] cmsmu-viewport-mobile"
             }`}
           >
             {isLoading ? (
@@ -757,10 +775,20 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                         <input
                           type="text"
                           value={curVal}
-                          placeholder="#ffffff"
+                          placeholder={fieldKey === "headerTextColor" ? "Otomatis (Adaptif)" : "#ffffff"}
                           onChange={e => handlePropChange(fieldKey, e.target.value)}
                           className="flex-1 px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs font-mono text-white focus:outline-none focus:border-emerald-500"
                         />
+                        {fieldKey === "headerTextColor" && curVal && (
+                          <button
+                            type="button"
+                            onClick={() => handlePropChange(fieldKey, "")}
+                            className="px-2 py-1.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-bold text-emerald-400 border border-slate-700 cursor-pointer shrink-0"
+                            title="Kembalikan ke Warna Kontras Otomatis"
+                          >
+                            Auto
+                          </button>
+                        )}
                       </div>
                     ) : (
                       <input

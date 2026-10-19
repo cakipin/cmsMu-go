@@ -1,6 +1,7 @@
 import type { ThemeContext } from "../types";
 import { escapeHtml } from "./utils";
 import { renderBlockToHtml } from "../../modules/theme-builder/engine/renderer";
+import { BLOCK_CATALOG } from "../../modules/theme-builder/engine/schema";
 
 export function _layout(
   content: string,
@@ -67,11 +68,30 @@ export function _layout(
   let customHeaderHtml = "";
   if (site.global_header_props) {
     try {
-      const gProps =
+      const rawGProps =
         typeof site.global_header_props === "string"
           ? JSON.parse(site.global_header_props)
           : site.global_header_props;
-      const gScope = gProps?.headerScope || "all";
+      const gProps: Record<string, any> = {
+        ...(BLOCK_CATALOG.SiteHeader?.defaultProps || {}),
+        ...(rawGProps || {}),
+      };
+      if (siteLogo && (!gProps.logoImage || gProps.logoImage === "/logo-cmsmu.webp")) {
+        gProps.logoImage = siteLogo;
+      }
+      if (site.site_title && (!gProps.siteTitle || gProps.siteTitle === "CMS" || gProps.siteTitle === "CMSMu")) {
+        gProps.siteTitle = site.site_title;
+      }
+      if (gProps.siteTitleHighlight === "Mu") {
+        gProps.siteTitleHighlight = "";
+      }
+      if ((!Array.isArray(gProps.menuItems) || gProps.menuItems.length === 0) && headerMenus.length > 0) {
+        gProps.menuItems = headerMenus.map((m: any) => ({
+          label: m.title || m.label || "Menu",
+          url: m.url || "/",
+        }));
+      }
+      const gScope = gProps.headerScope || "all";
       if (gScope === "all" || gScope === "pages_posts") {
         customHeaderHtml = renderBlockToHtml(
           { type: "SiteHeader", props: gProps },
