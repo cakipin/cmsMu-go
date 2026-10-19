@@ -32,10 +32,10 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     icon: "fa-heading",
     description: "Header navigasi utama dengan logo, menu dinamis, dan tombol aksi.",
     defaultProps: {
-      siteTitle: "CMS",
+      siteTitle: "cmsMu",
       siteTitleHighlight: "",
-      logoImage: "",
-      headerPosition: "fixed",
+      logoImage: "/logo-cmsmu.webp",
+      headerPosition: "static",
       showCta: "yes",
       ctaText: "Mulai Sekarang",
       ctaUrl: "/admin",
@@ -51,12 +51,12 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       logoImage: { name: "logoImage", label: "URL Logo", type: "image" },
       headerPosition: {
         name: "headerPosition",
-        label: "Posisi Header",
+        label: "Posisi Header di Canvas",
         type: "select",
         options: [
-          { label: "Fixed (Melayang di atas)", value: "fixed" },
-          { label: "Sticky", value: "sticky" },
-          { label: "Static (Normal)", value: "static" }
+          { label: "Static (Normal - Disarankan di Canvas)", value: "static" },
+          { label: "Sticky (Menempel saat Scroll)", value: "sticky" },
+          { label: "Fixed (Melayang)", value: "fixed" }
         ]
       },
       showCta: {
@@ -81,8 +81,8 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     description: "Banner pembuka utama dengan judul besar, deskripsi, dan tombol CTA ganda.",
     defaultProps: {
       badgeText: "🚀 Platform Content Management System Muhammadiyah",
-      title: "Satu Fondasi CMS Terpadu untuk Website & Media",
-      description: "Platform CMS modern, tangguh, dan fleksibel untuk mengelola publikasi dan konten secara mudah.",
+      title: "Satu Fondasi CMS Terpadu untuk Website & Media Muhammadiyah",
+      description: "Platform Content Management System modern, tangguh, dan fleksibel untuk membangun website resmi secara mudah dan terstruktur.",
       primaryButtonText: "Jelajahi Fitur",
       primaryButtonLink: "#fitur",
       secondaryButtonText: "Masuk Dashboard",
@@ -99,6 +99,79 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       secondaryButtonText: { name: "secondaryButtonText", label: "Teks Tombol Kedua", type: "text" },
       secondaryButtonLink: { name: "secondaryButtonLink", label: "Tautan Tombol Kedua", type: "text" },
       backgroundImage: { name: "backgroundImage", label: "Gambar Latar (Opsional)", type: "image" }
+    }
+  },
+
+  Partners: {
+    type: "Partners",
+    name: "Logo Mitra (Partners)",
+    category: "media",
+    icon: "fa-handshake",
+    description: "Daftar logo institusi, mitra sinergi, atau jaringan organisasi.",
+    defaultProps: {
+      title: "Dipercaya & Berkolaborasi Dengan",
+      partners: [
+        { name: "cmsMu Core" },
+        { name: "Cloudflare Edge" },
+        { name: "Drizzle ORM" },
+        { name: "Astro SSR" }
+      ]
+    },
+    fields: {
+      title: { name: "title", label: "Judul Bagian", type: "text" }
+    }
+  },
+
+  FeatureGrid: {
+    type: "FeatureGrid",
+    name: "Feature Grid (Daftar Fitur)",
+    category: "content",
+    icon: "fa-th-large",
+    description: "Grid fitur unggulan dengan ikon, judul, dan penjelasan ringkas.",
+    defaultProps: {
+      title: "Fitur Unggulan Platform",
+      description: "Solusi lengkap dan terintegrasi untuk kebutuhan publikasi modern.",
+      features: [
+        { title: "Cepat & Serverless", description: "Performa tinggi di edge computing Cloudflare.", svgIcon: "bolt" },
+        { title: "Keamanan Tingkat Tinggi", description: "Otorisasi role berbasis token terenkripsi.", svgIcon: "shield" },
+        { title: "Desain Responsif", description: "Tampilan optimal di perangkat ponsel, tablet, dan desktop.", svgIcon: "mobile" }
+      ]
+    },
+    fields: {
+      title: { name: "title", label: "Judul Bagian", type: "text" },
+      description: { name: "description", label: "Deskripsi", type: "textarea" }
+    }
+  },
+
+  Testimonial: {
+    type: "Testimonial",
+    name: "Testimonial",
+    category: "content",
+    icon: "fa-comments",
+    description: "Ulasan dan testimonial dari pengguna atau pembaca.",
+    defaultProps: {
+      title: "Dipercaya Pengelola Website & Media",
+      subtitle: "Pengalaman para administrator dan redaktur dalam mengelola publikasi.",
+      testimonials: [
+        {
+          quote: "Pengelolaan artikel dan halaman portal kami jadi sangat mudah dan terstruktur.",
+          author: "H. Ahmad Fauzi",
+          role: "Admin Redaksi",
+          initials: "AF",
+          bgColor: "bg-emerald-600"
+        },
+        {
+          quote: "Visual builder mandiri sangat cepat dan tidak membebani browser.",
+          author: "Siti Rahmawati",
+          role: "Humas & Publikasi",
+          initials: "SR",
+          bgColor: "bg-emerald-500"
+        }
+      ]
+    },
+    fields: {
+      title: { name: "title", label: "Judul Testimonial", type: "text" },
+      subtitle: { name: "subtitle", label: "Subjudul", type: "textarea" }
     }
   },
 
@@ -133,24 +206,19 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
     }
   },
 
-  FeatureGrid: {
-    type: "FeatureGrid",
-    name: "Feature Grid (Daftar Fitur)",
+  MagazineBigGrid: {
+    type: "MagazineBigGrid",
+    name: "Magazine Big Grid",
     category: "content",
-    icon: "fa-th-large",
-    description: "Grid fitur unggulan dengan ikon, judul, dan penjelasan ringkas.",
+    icon: "fa-border-all",
+    description: "Layout majalah berita dengan satu berita utama besar dan dua artikel pendamping.",
     defaultProps: {
-      title: "Fitur Unggulan Platform",
-      description: "Solusi lengkap dan terintegrasi untuk kebutuhan publikasi modern.",
-      features: [
-        { title: "Cepat & Serverless", description: "Performa tinggi di edge computing Cloudflare.", svgIcon: "bolt" },
-        { title: "Keamanan Tingkat Tinggi", description: "Otorisasi role berbasis token terenkripsi.", svgIcon: "shield" },
-        { title: "Desain Responsif", description: "Tampilan optimal di perangkat ponsel, tablet, dan desktop.", svgIcon: "mobile" }
-      ]
+      title: "Top Stories",
+      categorySlug: ""
     },
     fields: {
       title: { name: "title", label: "Judul Bagian", type: "text" },
-      description: { name: "description", label: "Deskripsi", type: "textarea" }
+      categorySlug: { name: "categorySlug", label: "Slug Kategori (Opsional)", type: "text" }
     }
   },
 

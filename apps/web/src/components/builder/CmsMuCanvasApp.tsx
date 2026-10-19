@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { BLOCK_CATALOG, type BlockManifest } from "@cmsmu/cms-api/modules/theme-builder/engine/schema";
+import { BLOCK_CATALOG } from "@cmsmu/cms-api/modules/theme-builder/engine/schema";
 import { renderBlockToHtml } from "@cmsmu/cms-api/modules/theme-builder/engine/renderer";
 
 function getAuthToken(): string {
@@ -32,7 +32,7 @@ interface CmsMuCanvasAppProps {
 
 export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
   const [blocks, setBlocks] = useState<any[]>([]);
-  const [selectedBlockIdx, setSelectedBlockIdx] = useState<number | null>(null);
+  const [selectedBlockIdx, setSelectedBlockIdx] = useState<number | null>(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
@@ -65,10 +65,23 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
             try {
               const parsed = JSON.parse(result.data.body);
               if (Array.isArray(parsed.content)) {
-                setBlocks(parsed.content);
-                if (parsed.content.length > 0) setSelectedBlockIdx(0);
+                // Normalisasi setiap blok dengan menggabungkan defaultProps dari schema jika prop kosong
+                const normalized = parsed.content.map((blk: any) => {
+                  const catalog = BLOCK_CATALOG[blk.type];
+                  return {
+                    ...blk,
+                    props: {
+                      ...(catalog?.defaultProps || {}),
+                      ...(blk.props || {}),
+                    },
+                  };
+                });
+                setBlocks(normalized);
+                if (normalized.length > 0) setSelectedBlockIdx(0);
               }
-            } catch (e) {}
+            } catch (e) {
+              console.error("Gagal parse body JSON:", e);
+            }
           }
         }
       } catch (err) {
@@ -197,7 +210,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
           <button
             type="button"
             onClick={() => setViewport("desktop")}
-            className={`px-3 py-1 text-xs font-semibold rounded ${
+            className={`px-3 py-1 text-xs font-semibold rounded cursor-pointer transition-all ${
               viewport === "desktop" ? "bg-slate-800 text-white shadow-xs" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -206,7 +219,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
           <button
             type="button"
             onClick={() => setViewport("tablet")}
-            className={`px-3 py-1 text-xs font-semibold rounded ${
+            className={`px-3 py-1 text-xs font-semibold rounded cursor-pointer transition-all ${
               viewport === "tablet" ? "bg-slate-800 text-white shadow-xs" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -215,7 +228,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
           <button
             type="button"
             onClick={() => setViewport("mobile")}
-            className={`px-3 py-1 text-xs font-semibold rounded ${
+            className={`px-3 py-1 text-xs font-semibold rounded cursor-pointer transition-all ${
               viewport === "mobile" ? "bg-slate-800 text-white shadow-xs" : "text-slate-400 hover:text-slate-200"
             }`}
           >
@@ -276,7 +289,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                     type="button"
                     onClick={() => handleMoveBlock(idx, "up")}
                     disabled={idx === 0}
-                    className="w-5 h-5 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center disabled:opacity-20"
+                    className="w-5 h-5 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center disabled:opacity-20 cursor-pointer"
                     title="Geser ke atas"
                   >
                     <i className="fas fa-chevron-up text-[10px]"></i>
@@ -285,7 +298,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                     type="button"
                     onClick={() => handleMoveBlock(idx, "down")}
                     disabled={idx === blocks.length - 1}
-                    className="w-5 h-5 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center disabled:opacity-20"
+                    className="w-5 h-5 rounded hover:bg-slate-800 text-slate-400 hover:text-white flex items-center justify-center disabled:opacity-20 cursor-pointer"
                     title="Geser ke bawah"
                   >
                     <i className="fas fa-chevron-down text-[10px]"></i>
@@ -293,7 +306,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                   <button
                     type="button"
                     onClick={() => handleDeleteBlock(idx)}
-                    className="w-5 h-5 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 flex items-center justify-center"
+                    className="w-5 h-5 rounded hover:bg-rose-500/20 text-slate-500 hover:text-rose-400 flex items-center justify-center cursor-pointer"
                     title="Hapus blok"
                   >
                     <i className="fas fa-trash-alt text-[10px]"></i>
@@ -308,7 +321,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
               Tambah Blok Baru
             </span>
-            <div className="grid grid-cols-2 gap-1.5">
+            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
               {Object.keys(BLOCK_CATALOG).map(bType => {
                 const item = BLOCK_CATALOG[bType];
                 return (
@@ -328,10 +341,10 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
         </aside>
 
         {/* 🖥️ PANEL TENGAH: LIVE CANVAS PREVIEW */}
-        <main className="flex-1 bg-slate-900 overflow-y-auto flex justify-center p-4">
+        <main className="flex-1 bg-slate-900 overflow-y-auto flex justify-center p-6">
           <div
             className={`transition-all duration-300 bg-white text-slate-900 shadow-2xl rounded-lg overflow-hidden flex flex-col h-fit ${
-              viewport === "desktop" ? "w-full max-w-6xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px]"
+              viewport === "desktop" ? "w-full max-w-5xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px]"
             }`}
           >
             {isLoading ? (
@@ -359,13 +372,14 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                   >
                     {/* Badge Label Blok */}
                     <div
-                      className={`absolute top-2 left-2 z-20 px-2 py-0.5 rounded text-[10px] font-bold shadow-xs transition-opacity ${
+                      className={`absolute top-2 left-2 z-20 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-md transition-all flex items-center gap-1.5 ${
                         isSelected
                           ? "bg-emerald-600 text-white opacity-100"
                           : "bg-slate-900/80 text-white opacity-0 group-hover:opacity-100"
                       }`}
                     >
-                      {BLOCK_CATALOG[blk.type]?.name || blk.type}
+                      <i className={`fas ${BLOCK_CATALOG[blk.type]?.icon || "fa-cube"} text-[9px]`}></i>
+                      <span>{BLOCK_CATALOG[blk.type]?.name || blk.type}</span>
                     </div>
 
                     {/* Preview HTML */}
@@ -382,7 +396,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
           <div className="p-3 border-b border-slate-800 flex items-center justify-between">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Pengaturan Blok</span>
             {selectedManifest && (
-              <span className="text-[11px] font-mono text-emerald-400">{selectedManifest.name}</span>
+              <span className="text-[11px] font-mono text-emerald-400 font-bold">{selectedManifest.name}</span>
             )}
           </div>
 
