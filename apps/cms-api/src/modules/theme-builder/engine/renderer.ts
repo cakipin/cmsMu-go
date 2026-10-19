@@ -7,6 +7,22 @@
 
 import { escapeHtml } from "../render";
 
+function isDarkColor(colorStr: string): boolean {
+  if (!colorStr) return false;
+  let c = colorStr.trim();
+  if (c.startsWith("#")) {
+    c = c.substring(1);
+    if (c.length === 3) c = c.split("").map(x => x + x).join("");
+    if (c.length === 6) {
+      const r = parseInt(c.substring(0, 2), 16);
+      const g = parseInt(c.substring(2, 4), 16);
+      const b = parseInt(c.substring(4, 6), 16);
+      return (r * 299 + g * 587 + b * 114) / 1000 < 140;
+    }
+  }
+  return false;
+}
+
 export function renderBlockToHtml(
   block: { type: string; props: Record<string, any> },
   context?: { latestPosts?: any[]; site?: any }
@@ -19,7 +35,14 @@ export function renderBlockToHtml(
     case "SiteHeader": {
       const positionClass = p.headerPosition === "sticky" ? "sticky top-0 z-40" : p.headerPosition === "fixed" ? "fixed top-0 left-0 right-0 z-50" : "relative";
       const bgColor = p.headerBgColor || "#ffffff";
-      const borderColor = p.headerBorderColor || "#e2e8f0";
+      const isBgDark = isDarkColor(bgColor);
+      const defaultTextColor = isBgDark ? "#ffffff" : "#334155";
+      const textColor = p.headerTextColor || defaultTextColor;
+      const titleColor = p.headerTextColor ? p.headerTextColor : (isBgDark ? "#ffffff" : "#0f172a");
+      const iconBg = isBgDark ? "rgba(255,255,255,0.18)" : "#f8fafc";
+      const iconBorder = isBgDark ? "rgba(255,255,255,0.28)" : "#cbd5e1";
+      const iconColor = isBgDark ? "#ffffff" : "#1e293b";
+      const borderColor = p.headerBorderColor || (isBgDark ? "rgba(255,255,255,0.2)" : "#e2e8f0");
       const borderWidth = p.headerBorderWidth || "1px";
       const isContained = p.headerWidth === "contained";
       const fontFamily = p.headerFontFamily && p.headerFontFamily !== "sans-serif" ? `'${escapeHtml(p.headerFontFamily)}', sans-serif` : "inherit";
@@ -44,7 +67,7 @@ export function renderBlockToHtml(
         ? p.menuItems
             .map(
               (m: any) => `
-          <a href="${escapeHtml(m.url || "/")}" style="font-size: 0.875rem; font-weight: 600; color: #334155; text-decoration: none; padding: 0.25rem 0.5rem;" class="hover:text-emerald-600 transition-colors">
+          <a href="${escapeHtml(m.url || "/")}" style="font-size: 0.875rem; font-weight: 600; color: ${textColor}; text-decoration: none; padding: 0.25rem 0.5rem;" class="hover:opacity-80 transition-opacity">
             ${escapeHtml(m.label || "")}
           </a>
         `
@@ -61,14 +84,29 @@ export function renderBlockToHtml(
       `
           : "";
 
+      const showThemeToggle = p.showThemeToggle !== "no";
+      const themeToggleHtml = showThemeToggle
+        ? `
+        <button type="button" class="cmsmu-theme-toggle-btn hover:opacity-85 shadow-sm" onclick="var d=document.documentElement; var next=d.getAttribute('data-theme')==='dark'?'light':'dark'; d.setAttribute('data-theme',next); localStorage.setItem('cmsmu_theme',next); var is=document.querySelectorAll('.cmsmu-theme-icon'); for(var i=0;i<is.length;i++) is[i].className=next==='dark'?'fas fa-sun cmsmu-theme-icon':'fas fa-moon cmsmu-theme-icon';" style="width: 36px; height: 36px; border-radius: 50%; background: ${iconBg}; border: 1px solid ${iconBorder}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: ${iconColor}; transition: all 0.2s;" title="Ganti Mode Malam/Siang" aria-label="Ganti Mode Malam/Siang">
+          <i class="fas fa-moon cmsmu-theme-icon" style="font-size: 14px;"></i>
+        </button>
+      `
+        : "";
+
+      const mobileMenuBtnHtml = `
+        <button type="button" class="md:hidden hover:opacity-85 shadow-sm" onclick="var d=document.getElementById('mobileDrawer'); if(d) d.classList.toggle('open');" style="width: 36px; height: 36px; border-radius: 0.5rem; background: ${iconBg}; border: 1px solid ${iconBorder}; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; color: ${iconColor};" title="Buka Menu" aria-label="Buka Menu Navigasi">
+          <i class="fas fa-bars" style="font-size: 14px;"></i>
+        </button>
+      `;
+
       const userDropdownHtml = p.enableUserDropdown !== "no" ? `
         <div class="cmsmu-user-nav-dropdown" style="display: none; position: relative;">
-          <button type="button" class="cmsmu-user-toggle-btn" onclick="var m=this.nextElementSibling; m.style.display=(m.style.display==='flex'?'none':'flex'); event.stopPropagation();" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: #1e293b; cursor: pointer; transition: all 0.2s;">
+          <button type="button" class="cmsmu-user-toggle-btn" onclick="var m=this.nextElementSibling; m.style.display=(m.style.display==='flex'?'none':'flex'); event.stopPropagation();" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.75rem; background: ${iconBg}; border: 1px solid ${iconBorder}; border-radius: 9999px; font-size: 0.75rem; font-weight: 700; color: ${iconColor}; cursor: pointer; transition: all 0.2s;">
             <div style="width: 22px; height: 22px; border-radius: 50%; background: #059669; color: #ffffff; display: flex; align-items: center; justify-content: center; font-size: 10px;">
               <i class="fas fa-user"></i>
             </div>
-            <span class="cmsmu-user-label" style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">Akun Saya</span>
-            <i class="fas fa-chevron-down" style="font-size: 8px; color: #64748b;"></i>
+            <span class="cmsmu-user-label" style="max-width: 110px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: ${iconColor};">Akun Saya</span>
+            <i class="fas fa-chevron-down" style="font-size: 8px; color: ${iconColor}; opacity: 0.8;"></i>
           </button>
           <div class="cmsmu-user-menu" style="display: none; position: absolute; right: 0; top: calc(100% + 8px); width: 190px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 0.75rem; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1); padding: 0.35rem; z-index: 9999; flex-direction: column; gap: 0.15rem; box-sizing: border-box;">
             <a href="/admin#profile" style="display: flex; align-items: center; gap: 0.6rem; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #1e293b; text-decoration: none;" onmouseover="this.style.background='#f8fafc'" onmouseout="this.style.background='transparent'">
@@ -90,25 +128,6 @@ export function renderBlockToHtml(
             </a>
           </div>
         </div>
-        <script>
-          (function(){
-            try {
-              var hasToken = false;
-              if (document.cookie.indexOf('labmu_token=') !== -1) hasToken = true;
-              else if (typeof localStorage !== 'undefined' && (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token'))) hasToken = true;
-              if (hasToken) {
-                var ctas = document.querySelectorAll('.cmsmu-guest-cta-btn');
-                for (var i = 0; i < ctas.length; i++) ctas[i].style.display = 'none';
-                var dds = document.querySelectorAll('.cmsmu-user-nav-dropdown');
-                for (var j = 0; j < dds.length; j++) dds[j].style.display = 'inline-block';
-              }
-              document.addEventListener('click', function(){
-                var menus = document.querySelectorAll('.cmsmu-user-menu');
-                for (var k = 0; k < menus.length; k++) menus[k].style.display = 'none';
-              });
-            } catch(e){}
-          })();
-        </script>
       ` : "";
 
       const headerContainerStyle = isContained
@@ -141,19 +160,49 @@ export function renderBlockToHtml(
                   ? `<img src="${escapeHtml(p.logoImage)}" alt="${escapeHtml(p.siteTitle || "Logo")}" class="h-10 w-auto object-contain" style="max-height: 44px; height: 44px; width: auto; object-fit: contain; display: block;">`
                   : `<div class="w-10 h-10 rounded-xl bg-emerald-600 text-white font-extrabold flex items-center justify-center text-lg" style="width: 40px; height: 40px; border-radius: 12px; background-color: #059669; color: #ffffff; font-weight: 800; display: flex; align-items: center; justify-content: center; font-size: 1.125rem;">${escapeHtml((p.siteTitle || "C").charAt(0))}</div>`
               }
-              <span class="text-xl font-black text-slate-900 tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: #0f172a; letter-spacing: -0.025em;">
+              <span class="text-xl font-black tracking-tight" style="font-size: 1.25rem; font-weight: 900; color: ${textColor === '#334155' ? '#0f172a' : textColor}; letter-spacing: -0.025em;">
                 ${escapeHtml(p.siteTitle || "cmsMu")}${p.siteTitleHighlight ? `<span style="color: #059669; margin-left: 0.25rem;">${escapeHtml(p.siteTitleHighlight)}</span>` : ""}
               </span>
             </div>
             <nav class="hidden md:flex items-center gap-6" style="display: flex; align-items: center; gap: 1.5rem;">
-              ${menuHtml || `<span class="text-xs text-slate-400 italic" style="font-size: 0.75rem; color: #94a3b8; font-style: italic;">Menu Navigasi</span>`}
+              ${menuHtml || `<span class="text-xs italic" style="font-size: 0.75rem; color: ${textColor}; opacity: 0.6; font-style: italic;">Menu Navigasi</span>`}
             </nav>
-            <div class="flex items-center gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+            <div class="flex items-center gap-2 sm:gap-3" style="display: flex; align-items: center; gap: 0.75rem;">
+              ${themeToggleHtml}
               ${rawCtaHtml}
               ${userDropdownHtml}
+              ${mobileMenuBtnHtml}
             </div>
           </div>
         </header>
+        <script>
+          (function(){
+            try {
+              // 1. Sinkronisasi Ikon Mode Malam/Siang
+              var curTheme = localStorage.getItem('cmsmu_theme') || document.documentElement.getAttribute('data-theme') || (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+              document.documentElement.setAttribute('data-theme', curTheme);
+              var icons = document.querySelectorAll('.cmsmu-theme-icon');
+              for (var k = 0; k < icons.length; k++) {
+                icons[k].className = curTheme === 'dark' ? 'fas fa-sun cmsmu-theme-icon' : 'fas fa-moon cmsmu-theme-icon';
+              }
+
+              // 2. Deteksi Sesi Login Pengguna
+              var hasToken = false;
+              if (document.cookie.indexOf('labmu_token=') !== -1) hasToken = true;
+              else if (typeof localStorage !== 'undefined' && (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token'))) hasToken = true;
+              if (hasToken) {
+                var ctas = document.querySelectorAll('.cmsmu-guest-cta-btn');
+                for (var i = 0; i < ctas.length; i++) ctas[i].style.display = 'none';
+                var dds = document.querySelectorAll('.cmsmu-user-nav-dropdown');
+                for (var j = 0; j < dds.length; j++) dds[j].style.display = 'inline-block';
+              }
+              document.addEventListener('click', function(){
+                var menus = document.querySelectorAll('.cmsmu-user-menu');
+                for (var m = 0; m < menus.length; m++) menus[m].style.display = 'none';
+              });
+            } catch(e){}
+          })();
+        </script>
       </div>
       `;
     }

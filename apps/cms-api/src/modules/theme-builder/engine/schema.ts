@@ -38,12 +38,14 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
       headerScope: "all",
       headerPosition: "static",
       headerBgColor: "#ffffff",
+      headerTextColor: "#334155",
       headerBorderColor: "#e2e8f0",
       headerBorderWidth: "1px",
       headerRadius: "none",
       headerSize: "normal",
       headerWidth: "full",
       headerFontFamily: "Plus Jakarta Sans",
+      showThemeToggle: "yes",
       showCta: "yes",
       enableUserDropdown: "yes",
       ctaText: "Mulai Sekarang",
@@ -79,6 +81,7 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
         ]
       },
       headerBgColor: { name: "headerBgColor", label: "Warna Latar Header", type: "color", defaultValue: "#ffffff" },
+      headerTextColor: { name: "headerTextColor", label: "Warna Teks Menu Header", type: "color", defaultValue: "#334155" },
       headerBorderColor: { name: "headerBorderColor", label: "Warna Garis (Line) Header", type: "color", defaultValue: "#e2e8f0" },
       headerBorderWidth: {
         name: "headerBorderWidth",
@@ -134,6 +137,15 @@ export const BLOCK_CATALOG: Record<string, BlockManifest> = {
           { label: "Outfit (Modern Minimalist)", value: "Outfit" },
           { label: "Playfair Display (Serif Elegan)", value: "Playfair Display" },
           { label: "System Default (Bawaan OS)", value: "sans-serif" }
+        ]
+      },
+      showThemeToggle: {
+        name: "showThemeToggle",
+        label: "Tombol Mode Malam/Siang",
+        type: "select",
+        options: [
+          { label: "Tampilkan (Icon Sun/Moon)", value: "yes" },
+          { label: "Sembunyikan", value: "no" }
         ]
       },
       showCta: {

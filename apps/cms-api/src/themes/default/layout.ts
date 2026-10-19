@@ -698,10 +698,12 @@ export function _layout(
       
       function applyTheme(theme) {
         document.documentElement.setAttribute('data-theme', theme);
-        if (theme === 'dark') {
-          themeIcon.className = 'fas fa-sun';
-        } else {
-          themeIcon.className = 'fas fa-moon';
+        if (themeIcon) {
+          themeIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+        }
+        var cmsmuIcons = document.querySelectorAll('.cmsmu-theme-icon');
+        for (var i = 0; i < cmsmuIcons.length; i++) {
+          cmsmuIcons[i].className = theme === 'dark' ? 'fas fa-sun cmsmu-theme-icon' : 'fas fa-moon cmsmu-theme-icon';
         }
         localStorage.setItem('cmsmu_theme', theme);
       }
