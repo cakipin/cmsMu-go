@@ -321,7 +321,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block mb-2">
               Tambah Blok Baru
             </span>
-            <div className="grid grid-cols-2 gap-1.5 max-h-48 overflow-y-auto">
+            <div className="grid grid-cols-1 gap-1.5 max-h-52 overflow-y-auto pr-1">
               {Object.keys(BLOCK_CATALOG).map(bType => {
                 const item = BLOCK_CATALOG[bType];
                 return (
@@ -329,10 +329,16 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                     key={bType}
                     type="button"
                     onClick={() => handleAddBlock(bType)}
-                    className="p-2 rounded bg-slate-900 hover:bg-slate-800 border border-slate-800 text-[11px] text-slate-300 hover:text-white text-left flex items-center gap-2 transition-colors cursor-pointer"
+                    className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-850 border border-slate-800/80 hover:border-emerald-500/40 text-[11px] text-slate-200 hover:text-white text-left flex items-center justify-between transition-all cursor-pointer group"
+                    title={`Tambah ${item.name}`}
                   >
-                    <i className={`fas ${item.icon} text-emerald-400 text-xs shrink-0`}></i>
-                    <span className="truncate">{item.name.split(" ")[0]}</span>
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-6 h-6 rounded bg-slate-800 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0 transition-colors">
+                        <i className={`fas ${item.icon} text-[10px]`}></i>
+                      </div>
+                      <span className="truncate font-medium">{item.name}</span>
+                    </div>
+                    <i className="fas fa-plus text-[10px] text-slate-500 group-hover:text-emerald-400 shrink-0"></i>
                   </button>
                 );
               })}
@@ -341,9 +347,46 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
         </aside>
 
         {/* 🖥️ PANEL TENGAH: LIVE CANVAS PREVIEW */}
-        <main className="flex-1 bg-slate-900 overflow-y-auto flex justify-center p-6">
+        <main className="flex-1 bg-slate-950 overflow-y-auto flex flex-col items-center p-6 relative">
+          {/* Scoped CSS Injector for Canvas Content */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            .cmsmu-canvas-content {
+              box-sizing: border-box;
+              font-family: inherit;
+              width: 100%;
+            }
+            .cmsmu-canvas-content * {
+              box-sizing: border-box;
+            }
+            .cmsmu-canvas-content img {
+              max-width: 100%;
+            }
+            .cmsmu-canvas-content header img {
+              max-height: 44px !important;
+              height: 44px !important;
+              width: auto !important;
+              object-fit: contain !important;
+              display: block !important;
+            }
+            .cmsmu-canvas-content footer img {
+              max-height: 32px !important;
+              height: 32px !important;
+              width: auto !important;
+              object-fit: contain !important;
+              display: block !important;
+            }
+          `}} />
+
+          {/* Viewport Width Indicator */}
+          <div className="mb-3 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-mono flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span>
+              {viewport === "desktop" ? "Desktop (Full Width / 1024px+)" : viewport === "tablet" ? "Tablet Frame (768px)" : "Mobile Frame (375px)"}
+            </span>
+          </div>
+
           <div
-            className={`transition-all duration-300 bg-white text-slate-900 shadow-2xl rounded-lg overflow-hidden flex flex-col h-fit ${
+            className={`transition-all duration-300 bg-white text-slate-900 shadow-2xl rounded-xl border border-slate-800 overflow-hidden flex flex-col h-fit ${
               viewport === "desktop" ? "w-full max-w-5xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px]"
             }`}
           >
@@ -383,7 +426,7 @@ export default function CmsMuCanvasApp({ slug }: CmsMuCanvasAppProps) {
                     </div>
 
                     {/* Preview HTML */}
-                    <div dangerouslySetInnerHTML={{ __html: htmlMarkup }} />
+                    <div className="cmsmu-canvas-content" dangerouslySetInnerHTML={{ __html: htmlMarkup }} />
                   </div>
                 );
               })
