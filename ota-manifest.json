@@ -1,7 +1,7 @@
 {
   "name": "CMSMu Core Framework",
   "version": "0.1.8",
-  "buildDate": "2026-10-19",
+  "buildDate": "2026-10-20",
   "changelog": "Rilis pembaruan Core CMSMu v0.1.8 (100% Core System Clean, In-System Modal/Toast SOP 16, Modernisasi UI Themes, & Zero Client Leaks)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
@@ -26,6 +26,17 @@
   "repository": "https://github.com/cakipin/cmsMu-go",
   "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.8.zip",
   "updatedComponents": [
+    {
+      "name": "Theme Builder & Header Customizer Patch",
+      "type": "theme-builder",
+      "paths": [
+        "apps/cms-api/src/modules/theme-builder/",
+        "apps/cms-api/src/modules/theme-editor/",
+        "apps/web/src/components/builder/CmsMuCanvasApp.tsx"
+      ],
+      "description": "Auto-Adaptive Header Text Contrast, Dark/Light Mode Canvas & Block Sections, Mobile Hamburger Drawer, Sticky/Fixed positioning, dan sinkronisasi otomatis Header antar-Homepage.",
+      "updatedAt": "2026-10-20T00:00:00.000Z"
+    },
     {
       "name": "Overhaul Mobile Responsive 17 Modul Admin & Editor",
       "type": "admin-ui",
