@@ -47,8 +47,8 @@ export const profilePage = `
                 } else {
                     if (window.showToast) window.showToast('Gagal: ' + (data.error || 'Terjadi kesalahan saat unggah'), 'error');
                 }
-            } catch (err: any) {
-                if (window.showToast) window.showToast('Gagal mengunggah: ' + err.message, 'error');
+            } catch (err) {
+                if (window.showToast) window.showToast('Gagal mengunggah: ' + (err.message || err), 'error');
             } finally {
                 this.isUploadingAvatar = false;
                 event.target.value = '';

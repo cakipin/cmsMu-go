@@ -89,7 +89,7 @@ if (typeof window !== 'undefined') {
             userAvatar: '',
             userEmail: '',
             view: 'dash',
-            sidebarOpen: true,
+            sidebarOpen: (typeof window !== 'undefined' ? window.innerWidth >= 1024 : true),
             activeThemeId: localStorage.getItem('labmu_active_theme') || 'default',
             logoType: 'site_logo',
             isLoggingIn: false,
@@ -156,6 +156,9 @@ if (typeof window !== 'undefined') {
             init() {
                 if (typeof window !== 'undefined' && window.location.pathname.includes('/login')) {
                     return;
+                }
+                if (typeof window !== 'undefined' && window.innerWidth < 1024) {
+                    this.sidebarOpen = false;
                 }
                 this.posts = []; this.pages = []; this.mediaList = []; this.usersList = [];
                 this.initRouter();
