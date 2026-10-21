@@ -58,7 +58,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
       setIsLoading(true);
       try {
         const token = getAuthToken();
-        const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+        const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
 
         // 0. Muat daftar seluruh halaman untuk Dropdown Page Switcher
         try {
@@ -177,7 +177,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
     setIsSettingHome(true);
     try {
       const token = getAuthToken();
-      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch("/api/theme-editor/set-homepage", {
         method: "POST",
         headers: {
@@ -214,7 +214,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
       };
 
       const token = getAuthToken();
-      const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+      const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
       const res = await fetch("/api/theme-editor/page", {
         method: "POST",
         headers: {
@@ -705,7 +705,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                                             }}
                                             className="w-full px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
                                           >
-                                            {(subField.options || []).map(opt => (
+                                            {(subField.options || []).map((opt: { label: string; value: string }) => (
                                               <option key={opt.value} value={opt.value}>
                                                 {opt.label}
                                               </option>
@@ -757,7 +757,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                         onChange={e => handlePropChange(fieldKey, e.target.value)}
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
                       >
-                        {(field.options || []).map(opt => (
+                        {(field.options || []).map((opt: { label: string; value: string }) => (
                           <option key={opt.value} value={opt.value}>
                             {opt.label}
                           </option>

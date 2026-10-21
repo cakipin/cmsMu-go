@@ -3,6 +3,8 @@ import { getDb } from "@cmsmu/db";
 import { pages, settings } from "@cmsmu/db";
 import { eq, asc } from "drizzle-orm";
 import { clearGlobalDataCache } from "../public/helpers";
+import { verify } from "hono/jwt";
+import { getJwtSecret } from "../users/auth.helper";
 
 type Bindings = {
   DB: D1Database;
@@ -10,6 +12,37 @@ type Bindings = {
 };
 
 const themeEditorRouter = new Hono<{ Bindings: Bindings }>();
+
+const THEME_EDITOR_ROLES = ["superadmin", "admin", "editor"];
+
+/** Ambil role dari JWT (Authorization Bearer / cookie labmu_token). Null jika tidak valid. */
+async function getEditorRole(c: any): Promise<string | null> {
+  const authHeader = c.req.header("Authorization");
+  let token = authHeader ? authHeader.replace(/^Bearer\s+/i, "").trim() : "";
+  if (!token) {
+    const parts = (c.req.header("Cookie") || "").split(";");
+    for (const raw of parts) {
+      const p = raw.trim();
+      if (p.indexOf("labmu_token=") === 0) {
+        token = decodeURIComponent(p.substring(12));
+        break;
+      }
+    }
+  }
+  if (!token) return null;
+  try {
+    const payload: any = await verify(token, getJwtSecret(c.env), "HS256");
+    if (!payload || !payload.id) return null;
+    return String(payload.role || "").toLowerCase();
+  } catch {
+    return null;
+  }
+}
+
+async function canEditTheme(c: any): Promise<boolean> {
+  const role = await getEditorRole(c);
+  return !!role && THEME_EDITOR_ROLES.includes(role);
+}
 
 async function upsertSetting(db: any, key: string, value: string) {
   const existing = await db
@@ -39,12 +72,16 @@ themeEditorRouter.get("/page", async c => {
   try {
     const db = getDb(c.env.DB);
     const page = await db
-      .select({ body: pages.body })
+      .select({ body: pages.body, status: pages.status })
       .from(pages)
       .where(eq(pages.slug, slug))
       .get();
     if (page) {
-      return c.json({ success: true, data: page });
+      const isPublished = !page.status || page.status === "publish" || page.status === "published";
+      if (!isPublished && !(await canEditTheme(c))) {
+        return c.json({ success: true, data: null });
+      }
+      return c.json({ success: true, data: { body: page.body } });
     } else {
       if (slug === "home") {
         const defaultHomePuck = {
@@ -102,6 +139,9 @@ themeEditorRouter.get("/pages", async c => {
 
 // POST /api/theme-editor/set-homepage
 themeEditorRouter.post("/set-homepage", async c => {
+  if (!(await canEditTheme(c))) {
+    return c.json({ error: "Akses Ditolak: Memerlukan role superadmin/admin/editor" }, 403);
+  }
   try {
     const { slug } = await c.req.json();
     if (!slug) return c.json({ error: "Slug required" }, 400);
@@ -138,6 +178,9 @@ themeEditorRouter.post("/set-homepage", async c => {
 
 // POST /api/theme-editor/page
 themeEditorRouter.post("/page", async c => {
+  if (!(await canEditTheme(c))) {
+    return c.json({ error: "Akses Ditolak: Memerlukan role superadmin/admin/editor" }, 403);
+  }
   try {
     const body = await c.req.json();
     const { slug, body: content, setAsHome } = body;

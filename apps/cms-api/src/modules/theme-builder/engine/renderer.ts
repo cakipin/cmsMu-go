@@ -7,6 +7,22 @@
 
 import { escapeHtml } from "../render";
 
+/** Hanya izinkan #hex, rgb()/rgba(), hsl()/hsla(), atau nama warna. Selain itu → fallback. */
+function safeCssColor(value: unknown, fallback: string): string {
+  const v = String(value ?? "").trim();
+  if (!v) return fallback;
+  if (/^#[0-9a-fA-F]{3,8}$/.test(v)) return v;
+  if (/^(rgb|rgba|hsl|hsla)\(\s*[\d.%\s,/]+\)$/i.test(v)) return v;
+  if (/^[a-zA-Z]{3,20}$/.test(v)) return v;
+  return fallback;
+}
+
+/** Hanya izinkan panjang numerik px/rem/em. */
+function safeCssLength(value: unknown, fallback: string): string {
+  const v = String(value ?? "").trim();
+  return /^\d+(\.\d+)?(px|rem|em)$/.test(v) ? v : fallback;
+}
+
 function isDarkColor(colorStr: string): boolean {
   if (!colorStr) return false;
   let c = colorStr.trim();
@@ -35,12 +51,12 @@ export function renderBlockToHtml(
     case "SiteHeader": {
       const posMode = p.headerPosition || "static";
       const positionClass = posMode === "sticky" ? "sticky top-0 z-50" : posMode === "fixed" ? "fixed top-0 left-0 right-0 z-50" : "relative z-40";
-      const bgColor = (p.headerBgColor || "#ffffff").trim();
+      const bgColor = safeCssColor(p.headerBgColor, "#ffffff");
       const isBgDark = isDarkColor(bgColor);
       const isLightDefaultBg = !isBgDark && (bgColor.toLowerCase() === "#ffffff" || bgColor.toLowerCase() === "#f8fafc" || bgColor.toLowerCase() === "#fff");
 
       // Smart Auto-Adaptive Contrast: cegah teks gelap (#334155 / #0f172a) tenggelam di atas background gelap (#0a6134)
-      const rawTextColor = (p.headerTextColor || "").trim();
+      const rawTextColor = safeCssColor(p.headerTextColor, "");
       const isRawTextDark = rawTextColor ? isDarkColor(rawTextColor) : true;
       const isDefaultSlateText = rawTextColor.toLowerCase() === "#334155" || rawTextColor.toLowerCase() === "#0f172a" || rawTextColor.toLowerCase() === "#1e293b";
 
@@ -51,17 +67,17 @@ export function renderBlockToHtml(
         textColor = (!rawTextColor || isDefaultSlateText || isRawTextDark) ? "#ffffff" : rawTextColor;
         titleColor = (!rawTextColor || isDefaultSlateText || isRawTextDark) ? "#ffffff" : rawTextColor;
       } else {
-        // Jika background terang, pastikan teks tidak putih di atas putih
-        const isRawWhite = rawTextColor.toLowerCase() === "#ffffff" || rawTextColor.toLowerCase() === "#fff";
-        textColor = (!rawTextColor || isRawWhite) ? "#334155" : rawTextColor;
-        titleColor = (!rawTextColor || isRawWhite || isDefaultSlateText) ? "#0f172a" : rawTextColor;
+        // Jika background terang, cegah teks terang (hex non-gelap, termasuk putih) tenggelam
+        const isRawLight = rawTextColor.startsWith("#") && !isDarkColor(rawTextColor);
+        textColor = (!rawTextColor || isRawLight) ? "#334155" : rawTextColor;
+        titleColor = (!rawTextColor || isRawLight || isDefaultSlateText) ? "#0f172a" : rawTextColor;
       }
 
       const iconBg = isBgDark ? "rgba(255,255,255,0.18)" : "#f8fafc";
       const iconBorder = isBgDark ? "rgba(255,255,255,0.28)" : "#cbd5e1";
       const iconColor = isBgDark ? "#ffffff" : "#1e293b";
-      const borderColor = p.headerBorderColor || (isBgDark ? "rgba(255,255,255,0.2)" : "#e2e8f0");
-      const borderWidth = p.headerBorderWidth || "1px";
+      const borderColor = safeCssColor(p.headerBorderColor, isBgDark ? "rgba(255,255,255,0.2)" : "#e2e8f0");
+      const borderWidth = safeCssLength(p.headerBorderWidth, "1px");
       const isContained = p.headerWidth === "contained";
       const fontFamily = p.headerFontFamily && p.headerFontFamily !== "sans-serif" ? `'${escapeHtml(p.headerFontFamily)}', sans-serif` : "inherit";
 
