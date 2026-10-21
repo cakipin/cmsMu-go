@@ -625,7 +625,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
   return (
     <div className="flex flex-col h-screen w-screen overflow-hidden bg-slate-900 text-slate-100 font-sans select-none">
       {/* 🔝 TOP NAVIGATION BAR */}
-      <header className="h-14 bg-slate-950 border-b border-slate-800 px-3 sm:px-4 flex items-center justify-between z-20 shrink-0">
+      <header className="h-14 bg-slate-950 border-b border-slate-800 px-3 sm:px-4 flex items-center justify-between relative z-40 shrink-0">
         {/* Left: Brand & Page Switcher */}
         <div className="flex items-center gap-2 sm:gap-3">
           <a
@@ -865,7 +865,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
       {/* 💻 MODE LIVE CODE JSON STUDIO */}
       {editorMode === "code" ? (
-        <div className="flex flex-1 overflow-hidden relative bg-slate-950">
+        <div className="flex flex-1 overflow-hidden relative z-0 isolate bg-slate-950">
           {/* Quick Block Reference Palette */}
           <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
             <div className="p-3 border-b border-slate-800 flex items-center justify-between">
@@ -967,7 +967,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
         </div>
       ) : (
         /* WORKSPACE 3-PANEL LAYOUT */
-        <div className="flex flex-1 overflow-hidden relative">
+        <div className="flex flex-1 overflow-hidden relative z-0 isolate">
           {/* 📦 PANEL KIRI: KATALOG BLOK & STRUKTUR HALAMAN */}
           <aside className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
             <div className="p-3 border-b border-slate-800 flex items-center justify-between">
@@ -1085,6 +1085,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
             .cmsmu-canvas-content .cmsmu-header-outer {
               position: relative !important;
               top: 0 !important;
+              z-index: 10 !important;
             }
             .cmsmu-canvas-content .cmsmu-fixed-spacer {
               display: none !important;
@@ -1376,7 +1377,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
       {/* ⬆️ MODAL IMPORT JSON TEMPLATE */}
       {isImportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div
             className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -1512,7 +1513,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
       {/* ⬇️ MODAL EXPORT JSON TEMPLATE */}
       {isExportModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
           <div
             className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
             onClick={e => e.stopPropagation()}
@@ -1601,7 +1602,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
       {/* 📁 MODAL PUSTAKA TEMPLATE RESMI CMSMU */}
       {isPresetModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100] bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
           <div
             className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
@@ -1680,7 +1681,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
       {/* Floating Toast Notification */}
       {toast.show && (
         <div
-          className={`fixed bottom-4 right-4 z-50 px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xl flex items-center gap-2 border transition-all ${
+          className={`fixed bottom-4 right-4 z-[100] px-4 py-2.5 rounded-xl text-xs font-semibold shadow-xl flex items-center gap-2 border transition-all ${
             toast.type === "error"
               ? "bg-rose-900/90 text-rose-100 border-rose-700"
               : toast.type === "info"
