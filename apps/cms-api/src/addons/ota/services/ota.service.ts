@@ -4,7 +4,7 @@
  */
 
 export const CORE_VERSION = "0.1.8";
-export const CORE_BUILD_DATE = "2026-10-20";
+export const CORE_BUILD_DATE = "2026-10-21";
 export const MIN_COMPATIBLE_SCHEMA_VERSION = "0.1.0";
 
 export interface OtaUpdatedComponent {

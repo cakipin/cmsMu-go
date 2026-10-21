@@ -1,7 +1,7 @@
 {
   "name": "CMSMu Core Framework",
   "version": "0.1.8",
-  "buildDate": "2026-10-20",
+  "buildDate": "2026-10-21",
   "changelog": "Rilis pembaruan Core CMSMu v0.1.8 (100% Core System Clean, In-System Modal/Toast SOP 16, Modernisasi UI Themes, & Zero Client Leaks)",
   "minCompatibleSchema": "0.1.0",
   "channel": "stable",
@@ -26,6 +26,17 @@
   "repository": "https://github.com/cakipin/cmsMu-go",
   "downloadUrl": "https://github.com/cakipin/cmsMu-go/archive/refs/tags/v0.1.8.zip",
   "updatedComponents": [
+    {
+      "name": "User Profile Avatar & Admin Mobile Overhaul Patch",
+      "type": "admin-ui",
+      "paths": [
+        "apps/cms-api/src/modules/users/users.router.ts",
+        "apps/cms-api/src/modules/admin/ui/blocks/profile.page.ts",
+        "apps/cms-api/src/modules/admin/ui/blocks/cms.logic.ts"
+      ],
+      "description": "Upload foto profil interaktif ke Cloudflare R2, responsive mobile sidebar default (tertutup di mobile), anti-flicker login guard, dan role guard keamanan.",
+      "updatedAt": "2026-10-21T00:00:00.000Z"
+    },
     {
       "name": "Theme Builder & Header Customizer Patch",
       "type": "theme-builder",
