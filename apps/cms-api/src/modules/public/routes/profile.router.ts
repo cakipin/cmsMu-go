@@ -147,7 +147,11 @@ profileRouter.post("/api/public/profile/upload-avatar", async c => {
     const token = authHeader.replace("Bearer ", "").trim();
     let decoded: any = null;
     try {
-      decoded = JSON.parse(atob(token));
+      let b64 = token;
+      if (token.includes(".")) {
+        b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      }
+      decoded = JSON.parse(atob(b64));
     } catch (e) {
       return c.json({ error: "Token tidak valid" }, 401);
     }
@@ -265,7 +269,11 @@ profileRouter.post("/api/public/profile/update", async c => {
     const token = authHeader.replace("Bearer ", "").trim();
     let decoded: any = null;
     try {
-      decoded = JSON.parse(atob(token));
+      let b64 = token;
+      if (token.includes(".")) {
+        b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      }
+      decoded = JSON.parse(atob(b64));
     } catch (e) {
       return c.json({ error: "Token tidak valid" }, 401);
     }
@@ -387,7 +395,11 @@ profileRouter.post("/api/public/profile/change-password", async c => {
     const token = authHeader.replace("Bearer ", "").trim();
     let decoded: any = null;
     try {
-      decoded = JSON.parse(atob(token));
+      let b64 = token;
+      if (token.includes(".")) {
+        b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+      }
+      decoded = JSON.parse(atob(b64));
     } catch (e) {
       return c.json({ error: "Token tidak valid" }, 401);
     }

@@ -5,9 +5,65 @@ export const profilePage = `
 
 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <!-- Card Profil (Kiri) -->
-    <div class="md:col-span-1">
+    <div class="md:col-span-1" x-data="{
+        isUploadingAvatar: false,
+        async uploadAvatar(event) {
+            const file = event.target.files && event.target.files[0];
+            if (!file) return;
+
+            // Validasi ukuran client-side: maks 2MB
+            if (file.size > 2 * 1024 * 1024) {
+                if (window.showToast) window.showToast('Ukuran foto profil maksimal 2MB!', 'warning');
+                event.target.value = '';
+                return;
+            }
+
+            this.isUploadingAvatar = true;
+            try {
+                const formData = new FormData();
+                formData.append('avatar', file);
+
+                const token = (typeof window !== 'undefined' && window.getCmsToken ? window.getCmsToken() : '') ||
+                              (typeof document !== 'undefined' && document.cookie.match(/labmu_token=([^;]+)/)?.[1] || '') ||
+                              (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token') || '');
+
+                const res = await fetch('/api/users/profile-avatar', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    body: formData
+                });
+
+                const data = await res.json();
+                if (res.ok && data.success) {
+                    // Update reactive Alpine state (mengubah avatar di profil, topbar, dan sidebar sekaligus)
+                    userAvatar = data.url;
+                    if (data.token) {
+                        localStorage.setItem('labmu_token', data.token);
+                        document.cookie = 'labmu_token=' + encodeURIComponent(data.token) + '; path=/; max-age=2592000; SameSite=Lax';
+                    }
+                    if (window.showToast) window.showToast(data.message || 'Foto profil berhasil diperbarui!', 'success');
+                } else {
+                    if (window.showToast) window.showToast('Gagal: ' + (data.error || 'Terjadi kesalahan saat unggah'), 'error');
+                }
+            } catch (err: any) {
+                if (window.showToast) window.showToast('Gagal mengunggah: ' + err.message, 'error');
+            } finally {
+                this.isUploadingAvatar = false;
+                event.target.value = '';
+            }
+        }
+    }">
         <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden text-center p-6 flex flex-col items-center">
-            <div class="h-32 w-32 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold shadow-md border-4 border-white overflow-hidden mb-4 relative group">
+            <!-- Hidden file input -->
+            <input type="file" x-ref="avatarInput" @change="uploadAvatar($event)" accept="image/jpeg,image/png,image/webp,image/gif" class="hidden">
+
+            <div @click="!isUploadingAvatar && $refs.avatarInput.click()" 
+                 :class="{ 'opacity-60 cursor-wait': isUploadingAvatar, 'cursor-pointer hover:ring-4 hover:ring-primary/20': !isUploadingAvatar }"
+                 class="h-32 w-32 rounded-full bg-slate-100 text-slate-400 flex items-center justify-center font-bold shadow-md border-4 border-white overflow-hidden mb-3 relative group transition-all"
+                 title="Klik untuk ganti foto profil">
+                
                 <template x-if="userAvatar">
                     <img :src="userAvatar" alt="Avatar" class="h-full w-full object-cover">
                 </template>
@@ -15,11 +71,27 @@ export const profilePage = `
                     <i class="fas fa-user-astronaut text-4xl"></i>
                 </template>
                 
-                <!-- Overlay (Visual Feedback, tidak bisa diganti di sini jika SSO) -->
-                <div class="absolute inset-0 bg-black/40 hidden group-hover:flex items-center justify-center transition-all opacity-0 group-hover:opacity-100">
-                    <i class="fas fa-camera text-white text-xl"></i>
+                <!-- Overlay Hover Feedback -->
+                <div x-show="!isUploadingAvatar" class="absolute inset-0 bg-black/50 hidden group-hover:flex flex-col items-center justify-center transition-all opacity-0 group-hover:opacity-100 text-white">
+                    <i class="fas fa-camera text-xl mb-1"></i>
+                    <span class="text-[10px] font-semibold tracking-wider uppercase">Ganti Foto</span>
+                </div>
+
+                <!-- Loading Spinner Overlay -->
+                <div x-show="isUploadingAvatar" class="absolute inset-0 bg-black/60 flex flex-col items-center justify-center text-white" style="display: none;">
+                    <i class="fas fa-spinner fa-spin text-2xl mb-1"></i>
+                    <span class="text-[10px] font-semibold uppercase">Mengunggah...</span>
                 </div>
             </div>
+
+            <!-- Tombol Aksi Tambahan di Bawah Avatar -->
+            <button type="button" 
+                    @click="!isUploadingAvatar && $refs.avatarInput.click()" 
+                    :disabled="isUploadingAvatar"
+                    class="mb-4 inline-flex items-center gap-1.5 px-3 py-1 text-xs font-semibold text-primary hover:text-primary-dark hover:bg-primary/5 rounded-full transition-colors border border-primary/20">
+                <i class="fas" :class="isUploadingAvatar ? 'fa-spinner fa-spin' : 'fa-camera'"></i>
+                <span x-text="isUploadingAvatar ? 'Mengunggah...' : 'Ganti Foto Profil'"></span>
+            </button>
             
             <h3 class="text-xl font-bold text-slate-800" x-text="userName || (userRole === 'admin' ? 'Administrator' : 'Pengelola')"></h3>
             <p class="text-sm font-medium text-slate-500 mb-4" x-text="userEmail || 'Tidak ada email'"></p>

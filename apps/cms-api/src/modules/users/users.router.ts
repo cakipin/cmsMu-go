@@ -1,7 +1,8 @@
 import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
-import { users as usersTable } from "@cmsmu/db";
+import { users as usersTable, mediaMeta } from "@cmsmu/db";
 import { eq, or, desc, and, sql } from "drizzle-orm";
+import { getStorageBucket } from "../../storage/r2-adapter";
 import {
   sha256,
   generateUserToken,
@@ -167,6 +168,133 @@ usersRouter.put("/profile-password", async c => {
     return c.json({ error: e.message || "Gagal memperbarui password" }, 500);
   }
 });
+
+// ---------------------------------------------------------------------
+// 2C. UPLOAD PROFILE AVATAR (POST /profile-avatar)
+// ---------------------------------------------------------------------
+usersRouter.post("/profile-avatar", async c => {
+  try {
+    const authHeader = c.req.header("Authorization");
+    let token = authHeader ? authHeader.replace(/^Bearer\s+/i, "").trim() : "";
+
+    if (!token) {
+      const cookieHeader = c.req.header("Cookie") || "";
+      const match = cookieHeader.match(/labmu_token=([^;]+)/);
+      if (match) token = decodeURIComponent(match[1]);
+    }
+
+    if (!token) {
+      return c.json({ error: "Autentikasi diperlukan" }, 401);
+    }
+
+    let payload: any = null;
+    try {
+      payload = await verifyUserToken(token, getJwtSecret(c.env));
+    } catch (_) {
+      try {
+        let b64 = token;
+        if (token.includes(".")) {
+          b64 = token.split(".")[1].replace(/-/g, "+").replace(/_/g, "/");
+        }
+        payload = JSON.parse(atob(b64));
+      } catch (err) {}
+    }
+
+    if (!payload || !payload.id) {
+      return c.json({ error: "Token pengguna tidak valid" }, 401);
+    }
+
+    const userId = Number(payload.id);
+    const body = await c.req.parseBody().catch(() => null);
+    const file = (body?.["avatar"] || body?.["file"]) as File | undefined;
+
+    if (!file || typeof file === "string") {
+      return c.json({ error: "Berkas foto wajib diunggah" }, 400);
+    }
+
+    // Maksimal 2MB
+    const MAX_SIZE = 2 * 1024 * 1024;
+    if (file.size > MAX_SIZE) {
+      return c.json({ error: "Ukuran foto melebihi batas maksimal 2MB" }, 400);
+    }
+
+    const allowedMime = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (file.type && !allowedMime.includes(file.type.toLowerCase())) {
+      return c.json(
+        { error: "Format berkas tidak didukung! Gunakan format JPG, PNG, atau WebP" },
+        400
+      );
+    }
+
+    const r2 = getStorageBucket(c);
+    if (!r2) {
+      return c.json({ error: "Penyimpanan media (R2) tidak terhubung di server" }, 500);
+    }
+
+    const date = new Date();
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const folder = `avatars/${year}/${month}`;
+    const extMatch = (file.name || "").match(/\.([a-zA-Z0-9]+)$/);
+    const ext = extMatch ? extMatch[1].toLowerCase() : "jpg";
+    const key = `${folder}/user-${userId}-${Date.now()}.${ext}`;
+
+    const fileBuffer = await file.arrayBuffer();
+    await r2.put(key, fileBuffer, {
+      httpMetadata: { contentType: file.type || "image/jpeg" },
+    });
+    const url = `/${key}`;
+
+    const db = getDb(c.env.DB);
+    try {
+      await db
+        .insert(mediaMeta)
+        .values({
+          key,
+          url,
+          type: file.type || "image/jpeg",
+          size: file.size,
+          title: `Avatar User #${userId}`,
+          alt: `Avatar ${payload.name || payload.username || "User"}`,
+          createdAt: new Date().toISOString(),
+        })
+        .run();
+    } catch (_) {}
+
+    await db
+      .update(usersTable)
+      .set({ avatar: url })
+      .where(eq(usersTable.id, userId))
+      .run();
+
+    const updatedUser = await db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.id, userId))
+      .get();
+
+    const newToken = await generateUserToken(
+      {
+        id: userId,
+        username: updatedUser?.username || payload.username,
+        name: updatedUser?.name || payload.name,
+        role: updatedUser?.role || payload.role,
+        avatar: url,
+      },
+      getJwtSecret(c.env)
+    );
+
+    return c.json({
+      success: true,
+      url,
+      token: newToken,
+      message: "Foto profil berhasil diperbarui!",
+    });
+  } catch (e: any) {
+    return c.json({ error: "Gagal mengunggah foto: " + (e.message || "Terjadi kesalahan") }, 500);
+  }
+});
+
 
 // ---------------------------------------------------------------------
 // 3. UPDATE USER (ADMIN ONLY - PUT /:id)
