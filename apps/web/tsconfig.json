@@ -10,6 +10,9 @@
       "@/astro-paper.config": ["./astro-paper.config"],
       "@cmsmu/cms-api/modules/theme-builder": [
         "../cms-api/src/modules/theme-builder/index.ts"
+      ],
+      "@cmsmu/cms-api/modules/theme-builder/*": [
+        "../cms-api/src/modules/theme-builder/*"
       ]
     },
     "jsx": "react-jsx",
