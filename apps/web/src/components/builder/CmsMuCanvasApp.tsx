@@ -1,6 +1,108 @@
 import React, { useState, useEffect } from "react";
-import { BLOCK_CATALOG } from "@cmsmu/cms-api/modules/theme-builder/engine/schema";
+import {
+  BLOCK_CATALOG,
+  validateCanvasPageData,
+  BUILTIN_CANVAS_PRESETS,
+  type CanvasPresetItem
+} from "@cmsmu/cms-api/modules/theme-builder/engine/schema";
 import { renderBlockToHtml } from "@cmsmu/cms-api/modules/theme-builder/engine/renderer";
+
+// 🏛️ Clean Bespoke SVG Icons - Ciri Khas cmsMu (Zero Keyboard Emoji)
+function IconVisualMode({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+      <line x1="3" y1="9" x2="21" y2="9" />
+      <line x1="9" y1="21" x2="9" y2="9" />
+    </svg>
+  );
+}
+
+function IconCodeMode({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="16 18 22 12 16 6" />
+      <polyline points="8 6 2 12 8 18" />
+    </svg>
+  );
+}
+
+function IconTemplates({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  );
+}
+
+function IconImport({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="7 10 12 15 17 10" />
+      <line x1="12" y1="15" x2="12" y2="3" />
+    </svg>
+  );
+}
+
+function IconExport({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+      <polyline points="17 8 12 3 7 8" />
+      <line x1="12" y1="3" x2="12" y2="15" />
+    </svg>
+  );
+}
+
+function IconCopy({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </svg>
+  );
+}
+
+function IconDownload({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M4 20h16" />
+      <path d="M12 4v12" />
+      <path d="m6 10 6 6 6-6" />
+    </svg>
+  );
+}
+
+function IconCheck({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  );
+}
+
+function IconClose({ className = "w-3.5 h-3.5" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="18" y1="6" x2="6" y2="18" />
+      <line x1="6" y1="6" x2="18" y2="18" />
+    </svg>
+  );
+}
+
+function IconUploadFile({ className = "w-6 h-6" }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="12" y1="18" x2="12" y2="12" />
+      <polyline points="9 15 12 12 15 15" />
+    </svg>
+  );
+}
 
 function getAuthToken(): string {
   if (typeof window === "undefined") return "";
@@ -46,6 +148,20 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
     message: "",
     type: "success",
   });
+
+  // 🎛️ Mode Editor: Visual Canvas vs Code JSON
+  const [editorMode, setEditorMode] = useState<"visual" | "code">("visual");
+  const [rawJsonText, setRawJsonText] = useState<string>("");
+  const [jsonParseError, setJsonParseError] = useState<string | null>(null);
+
+  // 🗂️ Modal & Template States
+  const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
+  const [isExportModalOpen, setIsExportModalOpen] = useState<boolean>(false);
+  const [isPresetDropdownOpen, setIsPresetDropdownOpen] = useState<boolean>(false);
+  const [importTab, setImportTab] = useState<"file" | "paste">("file");
+  const [importInputText, setImportInputText] = useState<string>("");
+  const [importError, setImportError] = useState<string | null>(null);
+  const [copySuccess, setCopySuccess] = useState<boolean>(false);
 
   const triggerToast = (message: string, type: "success" | "error" | "info" = "success") => {
     setToast({ show: true, message, type });
@@ -200,8 +316,188 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
     }
   };
 
+  // 🔄 Beralih ke Mode Code JSON
+  const handleSwitchToCode = () => {
+    const fullPayload = {
+      content: blocks,
+      root: { props: { title: currentSlug } },
+      zones: {},
+    };
+    setRawJsonText(JSON.stringify(fullPayload, null, 2));
+    setJsonParseError(null);
+    setEditorMode("code");
+  };
+
+  // 🎨 Terapkan Perubahan Code JSON ke Canvas Visual
+  const handleApplyCodeToVisual = (): boolean => {
+    try {
+      const parsed = JSON.parse(rawJsonText);
+      const validation = validateCanvasPageData(parsed);
+      if (!validation.valid || !validation.cleanData) {
+        setJsonParseError(validation.error || "Validasi format JSON gagal.");
+        triggerToast(validation.error || "Format JSON tidak valid.", "error");
+        return false;
+      }
+      setBlocks(validation.cleanData.content);
+      setSelectedBlockIdx(validation.cleanData.content.length > 0 ? 0 : null);
+      setJsonParseError(null);
+      setEditorMode("visual");
+      triggerToast("Perubahan JSON berhasil diterapkan ke canvas visual!", "success");
+      return true;
+    } catch (e: any) {
+      const msg = `Sintaks JSON tidak valid: ${e.message}`;
+      setJsonParseError(msg);
+      triggerToast(msg, "error");
+      return false;
+    }
+  };
+
+  // 🧹 Format Indentasi Teks JSON
+  const handleFormatJson = () => {
+    try {
+      const parsed = JSON.parse(rawJsonText);
+      setRawJsonText(JSON.stringify(parsed, null, 2));
+      setJsonParseError(null);
+      triggerToast("Format JSON dirapikan", "info");
+    } catch (e: any) {
+      setJsonParseError(`Gagal merapikan: ${e.message}`);
+    }
+  };
+
+  // ➕ Sisipkan Snippet Blok Baru di Code Mode
+  const handleInsertBlockSnippet = (blockType: string) => {
+    const catalog = BLOCK_CATALOG[blockType];
+    if (!catalog) return;
+    try {
+      const parsed = JSON.parse(rawJsonText);
+      if (!Array.isArray(parsed.content)) {
+        parsed.content = [];
+      }
+      const newBlock = {
+        type: blockType,
+        props: {
+          id: `${blockType}-${Date.now()}`,
+          ...catalog.defaultProps,
+        },
+      };
+      parsed.content.push(newBlock);
+      setRawJsonText(JSON.stringify(parsed, null, 2));
+      setJsonParseError(null);
+      triggerToast(`Blok '${catalog.name}' disisipkan ke JSON`, "info");
+    } catch (e: any) {
+      triggerToast("Perbaiki error sintaks JSON terlebih dahulu sebelum menyisipkan blok.", "error");
+    }
+  };
+
+  // 📁 Pilih Template Preset Bawaan
+  const handleSelectPreset = (preset: CanvasPresetItem) => {
+    const validation = validateCanvasPageData(preset.data);
+    if (!validation.valid || !validation.cleanData) {
+      triggerToast("Gagal memuat template: Data tidak valid.", "error");
+      return;
+    }
+    setBlocks(validation.cleanData.content);
+    setSelectedBlockIdx(0);
+    setIsPresetDropdownOpen(false);
+    triggerToast(`Template '${preset.name}' berhasil dimuat!`, "success");
+  };
+
+  // ⬆️ Handler Upload Berkas .json
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files && e.target.files[0];
+    if (!file) return;
+    if (!file.name.endsWith(".json")) {
+      setImportError("Berkas harus berformat .json");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = event => {
+      try {
+        const text = event.target?.result as string;
+        setImportInputText(text);
+        const parsed = JSON.parse(text);
+        const validation = validateCanvasPageData(parsed);
+        if (!validation.valid) {
+          setImportError(validation.error || "Struktur JSON tidak valid.");
+        } else {
+          setImportError(null);
+        }
+      } catch (err: any) {
+        setImportError(`Berkas JSON rusak: ${err.message}`);
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = "";
+  };
+
+  // ⬆️ Terapkan Import JSON ke Canvas
+  const handleApplyImport = () => {
+    try {
+      if (!importInputText.trim()) {
+        setImportError("Teks atau berkas JSON belum dimasukkan.");
+        return;
+      }
+      const parsed = JSON.parse(importInputText);
+      const validation = validateCanvasPageData(parsed);
+      if (!validation.valid || !validation.cleanData) {
+        setImportError(validation.error || "Validasi JSON gagal.");
+        return;
+      }
+      setBlocks(validation.cleanData.content);
+      setSelectedBlockIdx(validation.cleanData.content.length > 0 ? 0 : null);
+      setIsImportModalOpen(false);
+      setImportInputText("");
+      setImportError(null);
+      triggerToast("Template JSON berhasil diimpor ke canvas!", "success");
+    } catch (err: any) {
+      setImportError(`Sintaks JSON tidak valid: ${err.message}`);
+    }
+  };
+
+  // ⬇️ Unduh Berkas JSON Halaman
+  const handleDownloadExportJson = () => {
+    const exportData = {
+      generator: "cmsMu Native Canvas Studio",
+      exportedAt: new Date().toISOString(),
+      slug: currentSlug,
+      content: blocks,
+      root: { props: { title: currentSlug } },
+      zones: {},
+    };
+    const jsonStr = JSON.stringify(exportData, null, 2);
+    const blob = new Blob([jsonStr], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `cmsmu-template-${currentSlug}-${new Date().toISOString().slice(0, 10)}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    triggerToast("Berkas JSON berhasil diunduh!", "success");
+  };
+
+  // 📋 Salin JSON ke Clipboard
+  const handleCopyExportJson = () => {
+    const exportData = {
+      content: blocks,
+      root: { props: { title: currentSlug } },
+      zones: {},
+    };
+    navigator.clipboard.writeText(JSON.stringify(exportData, null, 2));
+    setCopySuccess(true);
+    triggerToast("JSON berhasil disalin ke clipboard!", "success");
+    setTimeout(() => setCopySuccess(false), 2500);
+  };
+
   // Aksi Penyimpanan ke D1
   const handleSave = async () => {
+    // Jika sedang di Code mode, sinkronkan kode terlebih dahulu
+    if (editorMode === "code") {
+      const ok = handleApplyCodeToVisual();
+      if (!ok) return;
+    }
+
     setIsSaving(true);
     try {
       const payload = {
@@ -350,6 +646,124 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
           </div>
         </div>
 
+        {/* 🎛️ STUDIO CONTROLS: DUAL-MODE & TEMPLATES & JSON */}
+        <div className="flex items-center gap-2">
+          {/* Dual-Mode Switcher */}
+          <div className="flex items-center bg-slate-900 p-0.5 rounded-lg border border-slate-800">
+            <button
+              type="button"
+              onClick={() => {
+                if (editorMode === "code") {
+                  handleApplyCodeToVisual();
+                } else {
+                  setEditorMode("visual");
+                }
+              }}
+              className={`px-2.5 py-1 text-xs font-semibold rounded cursor-pointer transition-all flex items-center gap-1.5 ${
+                editorMode === "visual"
+                  ? "bg-emerald-600 text-white shadow-xs"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Beralih ke Pratinjau Visual Canvas"
+            >
+              <IconVisualMode className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Visual</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSwitchToCode}
+              className={`px-2.5 py-1 text-xs font-semibold rounded cursor-pointer transition-all flex items-center gap-1.5 ${
+                editorMode === "code"
+                  ? "bg-cyan-600 text-white shadow-xs"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Beralih ke Live JSON Code Editor"
+            >
+              <IconCodeMode className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Code JSON</span>
+            </button>
+          </div>
+
+          {/* Pustaka Template Dropdown */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setIsPresetDropdownOpen(prev => !prev)}
+              className="px-2.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Pilih Template Bawaan cmsMu"
+            >
+              <IconTemplates className="w-3.5 h-3.5 text-amber-400" />
+              <span className="hidden md:inline">Pustaka Template</span>
+              <i className="fas fa-chevron-down text-[9px] text-slate-400"></i>
+            </button>
+
+            {isPresetDropdownOpen && (
+              <div
+                className="absolute left-0 mt-2 w-80 bg-slate-900 border border-slate-800 rounded-xl shadow-2xl p-2 z-50"
+                onClick={e => e.stopPropagation()}
+              >
+                <div className="px-2.5 py-1.5 border-b border-slate-800 mb-1 flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+                    Template Resmi cmsMu
+                  </span>
+                  <span className="text-[10px] text-amber-400 font-mono">Standar Bernas</span>
+                </div>
+                <div className="space-y-1">
+                  {BUILTIN_CANVAS_PRESETS.map(preset => (
+                    <button
+                      key={preset.id}
+                      type="button"
+                      onClick={() => handleSelectPreset(preset)}
+                      className="w-full text-left p-2.5 rounded-lg hover:bg-slate-800/80 border border-transparent hover:border-slate-700 transition-all cursor-pointer group"
+                    >
+                      <div className="flex items-center justify-between gap-2 mb-1">
+                        <span className="text-xs font-bold text-white group-hover:text-amber-300">
+                          {preset.name}
+                        </span>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
+                          {preset.badge}
+                        </span>
+                      </div>
+                      <p className="text-[11px] text-slate-400 line-clamp-2 leading-relaxed">
+                        {preset.description}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Import JSON Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setImportInputText("");
+              setImportError(null);
+              setIsImportModalOpen(true);
+            }}
+            className="px-2.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="Upload atau Tempel (Paste) JSON Template"
+          >
+            <IconImport className="w-3.5 h-3.5 text-cyan-400" />
+            <span className="hidden md:inline">Import JSON</span>
+          </button>
+
+          {/* Export JSON Button */}
+          <button
+            type="button"
+            onClick={() => {
+              setCopySuccess(false);
+              setIsExportModalOpen(true);
+            }}
+            className="px-2.5 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700/80 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="Unduh atau Salin Blueprint JSON"
+          >
+            <IconExport className="w-3.5 h-3.5 text-emerald-400" />
+            <span className="hidden md:inline">Export JSON</span>
+          </button>
+        </div>
+
         {/* Viewport Switcher */}
         <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800">
           <button
@@ -404,14 +818,117 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
         </div>
       </header>
 
-      {/* WORKSPACE 3-PANEL LAYOUT */}
-      <div className="flex flex-1 overflow-hidden relative">
-        {/* 📦 PANEL KIRI: KATALOG BLOK & STRUKTUR HALAMAN */}
-        <aside className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
-          <div className="p-3 border-b border-slate-800 flex items-center justify-between">
-            <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Susunan Blok</span>
-            <span className="text-[11px] font-mono text-slate-500">{blocks.length} blok</span>
-          </div>
+      {/* 💻 MODE LIVE CODE JSON STUDIO */}
+      {editorMode === "code" ? (
+        <div className="flex flex-1 overflow-hidden relative bg-slate-950">
+          {/* Quick Block Reference Palette */}
+          <aside className="w-64 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
+            <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Kamus Blok cmsMu</span>
+              <span className="text-[10px] text-cyan-400 font-mono">1-Click Insert</span>
+            </div>
+            <div className="flex-1 overflow-y-auto p-2 space-y-1">
+              {Object.keys(BLOCK_CATALOG).map(bType => {
+                const b = BLOCK_CATALOG[bType];
+                return (
+                  <button
+                    key={bType}
+                    type="button"
+                    onClick={() => handleInsertBlockSnippet(bType)}
+                    className="w-full p-2.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-800/80 hover:border-cyan-500/40 text-left transition-all cursor-pointer group flex items-center justify-between"
+                    title={`Sisipkan cuplikan blok ${b.name} ke JSON`}
+                  >
+                    <div className="truncate">
+                      <div className="text-xs font-semibold text-slate-200 group-hover:text-cyan-300 truncate">
+                        {b.name}
+                      </div>
+                      <div className="text-[10px] text-slate-500 font-mono">{bType}</div>
+                    </div>
+                    <i className="fas fa-plus text-[10px] text-slate-500 group-hover:text-cyan-400 shrink-0"></i>
+                  </button>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* Main JSON Editor Panel */}
+          <main className="flex-1 flex flex-col overflow-hidden bg-slate-950">
+            {/* Editor Subheader Bar */}
+            <div className="h-11 bg-slate-900 border-b border-slate-800 px-4 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-3">
+                <span className="text-xs font-mono font-bold text-cyan-400 flex items-center gap-1.5">
+                  <IconCodeMode className="w-3.5 h-3.5" />
+                  Live JSON Blueprint Studio
+                </span>
+                {jsonParseError ? (
+                  <span className="text-[11px] text-rose-400 font-medium flex items-center gap-1 bg-rose-500/10 px-2 py-0.5 rounded border border-rose-500/20">
+                    <i className="fas fa-times-circle text-[10px]"></i> Sintaks Invalid
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-emerald-400 font-medium flex items-center gap-1 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+                    <IconCheck className="w-3 h-3" /> Format Valid
+                  </span>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleFormatJson}
+                  className="px-2.5 py-1 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Rapikan Indentasi Teks JSON"
+                >
+                  <i className="fas fa-align-left text-[10px]"></i>
+                  <span>Format Indent</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleApplyCodeToVisual}
+                  className="px-3 py-1 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white rounded-md shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                  title="Terapkan JSON dan kembali ke Visual Canvas"
+                >
+                  <IconVisualMode className="w-3.5 h-3.5" />
+                  <span>Terapkan ke Visual</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Error Banner */}
+            {jsonParseError && (
+              <div className="bg-rose-950/80 border-b border-rose-800/80 px-4 py-2 text-xs text-rose-200 flex items-center gap-2 shrink-0">
+                <i className="fas fa-exclamation-triangle text-rose-400 text-sm"></i>
+                <span className="font-mono">{jsonParseError}</span>
+              </div>
+            )}
+
+            {/* Code Textarea Area */}
+            <div className="flex-1 relative overflow-hidden p-3 bg-slate-950">
+              <textarea
+                value={rawJsonText}
+                onChange={e => {
+                  setRawJsonText(e.target.value);
+                  try {
+                    JSON.parse(e.target.value);
+                    setJsonParseError(null);
+                  } catch (err: any) {
+                    setJsonParseError(err.message);
+                  }
+                }}
+                spellCheck={false}
+                className="w-full h-full bg-slate-900/95 text-emerald-300 font-mono text-xs p-4 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500/80 resize-none leading-relaxed shadow-inner"
+                placeholder="Tempel atau ketik kode JSON blueprint halaman di sini..."
+              />
+            </div>
+          </main>
+        </div>
+      ) : (
+        /* WORKSPACE 3-PANEL LAYOUT */
+        <div className="flex flex-1 overflow-hidden relative">
+          {/* 📦 PANEL KIRI: KATALOG BLOK & STRUKTUR HALAMAN */}
+          <aside className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
+            <div className="p-3 border-b border-slate-800 flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Susunan Blok</span>
+              <span className="text-[11px] font-mono text-slate-500">{blocks.length} blok</span>
+            </div>
 
           {/* List Blok Aktif */}
           <div className="flex-1 overflow-y-auto p-2 space-y-1">
@@ -810,7 +1327,232 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
           </div>
         </aside>
       </div>
+      )}
 
+      {/* ⬆️ MODAL IMPORT JSON TEMPLATE */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                  <IconImport className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Import Template JSON</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Muat tata letak halaman dari berkas atau teks JSON standar cmsMu.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <IconClose className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Modal Tabs */}
+            <div className="flex border-b border-slate-800 bg-slate-950/60 px-4 pt-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setImportTab("file")}
+                className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+                  importTab === "file"
+                    ? "border-cyan-500 text-cyan-400"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Unggah Berkas (.json)
+              </button>
+              <button
+                type="button"
+                onClick={() => setImportTab("paste")}
+                className={`pb-2 px-3 text-xs font-semibold border-b-2 transition-all cursor-pointer ${
+                  importTab === "paste"
+                    ? "border-cyan-500 text-cyan-400"
+                    : "border-transparent text-slate-400 hover:text-slate-200"
+                }`}
+              >
+                Tempel Teks JSON
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 space-y-3">
+              {importTab === "file" ? (
+                <div>
+                  <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500/60 rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer transition-colors bg-slate-950/50 group">
+                    <IconUploadFile className="w-9 h-9 text-slate-500 group-hover:text-cyan-400 mb-2 transition-colors" />
+                    <span className="text-xs font-bold text-white mb-0.5">
+                      Klik untuk memilih berkas .json
+                    </span>
+                    <span className="text-[11px] text-slate-400">
+                      Format standar cmsMu (berkas template hasil export)
+                    </span>
+                    <input
+                      type="file"
+                      accept=".json,application/json"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+                  </label>
+                  {importInputText && !importError && (
+                    <div className="mt-2.5 p-2.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs flex items-center justify-between">
+                      <span className="flex items-center gap-1.5 font-mono">
+                        <IconCheck className="w-3.5 h-3.5" /> Berkas JSON terbaca ({importInputText.length} karakter)
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setImportInputText("")}
+                        className="text-slate-400 hover:text-white text-[11px] cursor-pointer"
+                      >
+                        Hapus
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <textarea
+                    rows={8}
+                    value={importInputText}
+                    onChange={e => {
+                      setImportInputText(e.target.value);
+                      setImportError(null);
+                    }}
+                    placeholder={`{\n  "content": [\n    { "type": "SiteHeader", "props": { ... } }\n  ]\n}`}
+                    className="w-full bg-slate-950 text-emerald-300 font-mono text-xs p-3 rounded-xl border border-slate-800 focus:outline-none focus:border-cyan-500 resize-none leading-relaxed"
+                  />
+                </div>
+              )}
+
+              {/* Error Message */}
+              {importError && (
+                <div className="p-2.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-start gap-2">
+                  <i className="fas fa-exclamation-triangle text-rose-400 text-xs mt-0.5 shrink-0"></i>
+                  <span>{importError}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportModalOpen(false)}
+                className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-lg transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleApplyImport}
+                disabled={!importInputText.trim()}
+                className="px-4 py-1.5 text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+              >
+                <IconCheck className="w-3.5 h-3.5" />
+                <span>Terapkan ke Canvas</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ⬇️ MODAL EXPORT JSON TEMPLATE */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
+          <div
+            className="w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="p-4 border-b border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center">
+                  <IconExport className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Export Template JSON Halaman</h3>
+                  <p className="text-[11px] text-slate-400">
+                    Halaman: <span className="font-mono text-emerald-400">{currentSlug}</span> ({blocks.length} blok aktif)
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="w-7 h-7 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <IconClose className="w-3.5 h-3.5" />
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-4 space-y-2">
+              <p className="text-xs text-slate-400 leading-relaxed">
+                Salin blueprint JSON ini atau unduh sebagai berkas cadangan untuk digunakan kembali di website cabang, sekolah lain, atau lingkungan staging.
+              </p>
+              <textarea
+                readOnly
+                value={JSON.stringify(
+                  {
+                    generator: "cmsMu Native Canvas Studio",
+                    exportedAt: new Date().toISOString(),
+                    slug: currentSlug,
+                    content: blocks,
+                    root: { props: { title: currentSlug } },
+                    zones: {},
+                  },
+                  null,
+                  2
+                )}
+                className="w-full h-72 font-mono text-xs p-3.5 rounded-xl bg-slate-950 text-emerald-300 border border-slate-800 focus:outline-none resize-none leading-relaxed select-all"
+              />
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-slate-950/80 border-t border-slate-800 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 font-mono">
+                {blocks.length} Blok • Standar JSON cmsMu
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyExportJson}
+                  className="px-3 py-1.5 text-xs font-semibold bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  {copySuccess ? (
+                    <>
+                      <IconCheck className="w-3.5 h-3.5 text-emerald-400" />
+                      <span className="text-emerald-400 font-bold">Tersalin!</span>
+                    </>
+                  ) : (
+                    <>
+                      <IconCopy className="w-3.5 h-3.5" />
+                      <span>Salin JSON</span>
+                    </>
+                  )}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDownloadExportJson}
+                  className="px-4 py-1.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+                >
+                  <IconDownload className="w-3.5 h-3.5" />
+                  <span>Unduh Berkas .json</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Floating Toast Notification */}
       {toast.show && (
         <div
