@@ -3,7 +3,7 @@ import {
   users as usersTable,
   settings as settingsTable,
 } from "@cmsmu/db";
-import { generateUserToken } from "./auth.helper";
+import { generateUserToken, getJwtSecret } from "./auth.helper";
 
 export async function processSsoLogin(
   c: any,
@@ -270,13 +270,16 @@ export async function processSsoLogin(
   // 4. Generate Token
   const userRole = user.role || "subscriber";
   const finalAvatar = user.avatar || ssoAvatar || "";
-  const token = await generateUserToken({
-    id: user.id,
-    username: user.username,
-    name: user.name,
-    role: userRole,
-    avatar: finalAvatar,
-  });
+  const token = await generateUserToken(
+    {
+      id: user.id,
+      username: user.username,
+      name: user.name,
+      role: userRole,
+      avatar: finalAvatar,
+    },
+    getJwtSecret(c.env)
+  );
 
   return {
     success: true,

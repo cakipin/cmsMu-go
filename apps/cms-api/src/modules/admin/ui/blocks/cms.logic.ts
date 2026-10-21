@@ -154,10 +154,14 @@ if (typeof window !== 'undefined') {
             // 4. INIT SYSTEM & ROUTER
             // ============================
             init() {
+                if (typeof window !== 'undefined' && window.location.pathname.includes('/login')) {
+                    return;
+                }
                 this.posts = []; this.pages = []; this.mediaList = []; this.usersList = [];
                 this.initRouter();
                 this.loadSystemVersion();
                 
+                let isTokenValid = false;
                 if (this.token) {
                     try { 
                         let base64 = this.token;
@@ -165,25 +169,37 @@ if (typeof window !== 'undefined') {
                             base64 = this.token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/'); 
                         }
                         const payload = JSON.parse(window.atob(base64));
-                        this.userRole = payload.role || 'editor'; 
-                        this.userName = payload.n || '';
-                        this.userAvatar = payload.a || '';
-                        this.userEmail = payload.email || '';
-                    } catch(e) { this.userRole = 'editor'; } 
+                        const nowSec = Math.floor(Date.now() / 1000);
+                        if (payload && payload.id && (!payload.exp || payload.exp > nowSec)) {
+                            isTokenValid = true;
+                            this.userRole = payload.role || 'editor'; 
+                            this.userName = payload.n || '';
+                            this.userAvatar = payload.a || '';
+                            this.userEmail = payload.email || '';
+                        } else {
+                            if (typeof localStorage !== 'undefined') localStorage.removeItem('labmu_token');
+                            this.token = '';
+                        }
+                    } catch(e) { 
+                        this.userRole = 'editor'; 
+                        if (typeof localStorage !== 'undefined') localStorage.removeItem('labmu_token');
+                        this.token = '';
+                    } 
 
-                    const isLoginPage = window.location.pathname.includes('/login');
                     const roleLower = String(this.userRole || '').toLowerCase();
-                    if (!isLoginPage && roleLower !== 'superadmin' && roleLower !== 'admin') {
+                    if (roleLower !== 'superadmin' && roleLower !== 'admin') {
                         const u = encodeURIComponent(this.userName || 'me');
                         window.location.href = '/@' + u;
                         return;
                     }
 
-                    setTimeout(() => {
-                        if (typeof this.loadAllData === 'function') {
-                            this.loadAllData();
-                        }
-                    }, 100);
+                    if (isTokenValid) {
+                        setTimeout(() => {
+                            if (typeof this.loadAllData === 'function') {
+                                this.loadAllData();
+                            }
+                        }, 100);
+                    }
                 }
             },
 

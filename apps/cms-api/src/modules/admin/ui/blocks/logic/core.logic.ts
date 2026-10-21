@@ -30,7 +30,12 @@ export const coreLogic: Record<string, any> & ThisType<any> = {
     const res = await fetch(url, { ...options, headers });
     if (res.status === 401) {
       localStorage.removeItem("labmu_token");
-      window.location.href = "/admin/login";
+      if (
+        typeof window !== "undefined" &&
+        !window.location.pathname.includes("/login")
+      ) {
+        window.location.href = "/admin/login";
+      }
       throw new Error("Unauthorized");
     }
     return res;

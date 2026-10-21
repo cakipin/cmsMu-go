@@ -1,6 +1,6 @@
 {
   "description": "LOCKED CORE FILES - DILARANG KERAS mengubah berkas di daftar ini saat memperbaiki modul fitur (Konten, Users, Media, Menus, Themes, Plugins, Settings).",
-  "lockedAt": "2026-10-18T17:06:15.680Z",
+  "lockedAt": "2026-10-21T03:01:21.787Z",
   "files": {
     "apps/cms-api/src/index.ts": "a8d488e1a9c59df7721050715638cb1edd9c8682923690c984738c8bec565a8b",
     "apps/cms-api/src/core/hooks.ts": "bf24d67ab9f6b012a137eea14563dba4f27fee2470583e10915b3cd0be5317dc",
@@ -9,8 +9,8 @@
     "apps/cms-api/src/modules/webhooks/webhooks.router.ts": "9df0efbf3a5b08e2c3a7a8993debaa495716f92d5853431f82e32bb403edb141",
     "apps/cms-api/src/modules/admin/init.ts": "12a0212ab0ba3ab7c88e8a0b2e6c86f1456ff07381a842cc8b20debe68a3bcb2",
     "apps/cms-api/src/modules/admin/ui/view.ts": "f598ebe78804a3a19e89561ccfc4e24b07dffd109e4a7c5f54156801f3d2cdf1",
-    "apps/cms-api/src/modules/admin/ui/blocks/cms.logic.ts": "5e0ade819f59ac33e5ca31db3898a55623ba5eda09d7a0c77da99a6c6af76584",
-    "apps/cms-api/src/modules/admin/ui/blocks/logic/core.logic.ts": "a5cf901b7255b376d08c5ac77c8557cee4a9ac8ace680d6b55332108bf843206",
+    "apps/cms-api/src/modules/admin/ui/blocks/cms.logic.ts": "5303af9ce956cb689d15ee72191696bf72d431cb2cc3c958351a405ccaa5a81a",
+    "apps/cms-api/src/modules/admin/ui/blocks/logic/core.logic.ts": "0d3b25af72d52afcec5f457e2eef46c504901b6b329bc4d15070fd8c9761d4de",
     "apps/cms-api/src/modules/admin/ui/blocks/sidebar.ts": "fc7c60a37189699a174f01bfc942c9d3880b49c52d0da7469b4472035c0fc1ba",
     "apps/cms-api/src/modules/admin/ui/blocks/topbar.ts": "54f64c5d4a6759dfe1f84667709740f720c646b1168f2f473f4f0436d1a74380",
     "apps/cms-api/src/modules/admin/ui/blocks/custom-editor.ts": "7dda7193b730aff09be561f4a650bd2f5a4ae2d4ebf270028bc13ccd734eceb6",
