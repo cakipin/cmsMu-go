@@ -22,7 +22,7 @@ publicRouter.route("/", profileRouter);
 async function renderHomePage(c: any, lang?: "en" | "ar") {
   try {
     const { settings, menus, categories, topics, sources } =
-      await getGlobalData(c.env.DB);
+      await getGlobalData(c.env);
     const { Renderer } = await getRenderer(c.env.DB);
 
     const db = getDb(c.env.DB);
@@ -197,6 +197,7 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
       canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : "/"),
       ogImage: new URL(c.req.url).origin + "/default-og.jpg",
     };
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
     return c.html(Renderer.renderHome(context));
   } catch (e: any) {
     return c.text("Error: " + e.message, 500);
@@ -216,7 +217,7 @@ publicRouter.get("/berita", async c => {
   const offset = (page - 1) * limit;
   try {
     const db = c.env.DB;
-    const { settings, menus } = await getGlobalData(db);
+    const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
     const totalRow: any = await getDb(db)
       .select({ total: sql<number>`count(*)` })
@@ -246,6 +247,7 @@ publicRouter.get("/berita", async c => {
         baseUrl: "/berita",
       },
     };
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
     if (Renderer?.renderCategory)
       return c.html(Renderer.renderCategory(context));
     return c.html(Renderer.renderHome(context));
@@ -260,7 +262,7 @@ publicRouter.get("/kegiatan", async c => {
   const offset = (page - 1) * limit;
   try {
     const db = c.env.DB;
-    const { settings, menus } = await getGlobalData(db);
+    const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
     const totalRow: any = await getDb(db)
       .select({ total: sql<number>`count(*)` })
@@ -305,6 +307,7 @@ publicRouter.get("/kegiatan", async c => {
         hasPrev: page > 1,
       },
     };
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
     if (Renderer?.renderKegiatan)
       return c.html(Renderer.renderKegiatan(context));
     if (Renderer?.renderCategory)
@@ -327,7 +330,7 @@ publicRouter.get("/search", async c => {
 
   try {
     const db = c.env.DB;
-    const { settings, menus } = await getGlobalData(db);
+    const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
 
     if (!cleanQuery) {
@@ -434,7 +437,7 @@ publicRouter.get("/tag/:slug", async c => {
 
   try {
     const db = c.env.DB;
-    const { settings, menus } = await getGlobalData(db);
+    const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
 
     const tagWithSpaces = cleanSlug.replace(/-/g, " ");
@@ -490,6 +493,7 @@ publicRouter.get("/tag/:slug", async c => {
       },
     };
 
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
     if (Renderer && typeof Renderer.renderTag === "function") {
       return c.html(Renderer.renderTag(context));
     }
@@ -512,7 +516,7 @@ publicRouter.get("/info", async c => {
 
   try {
     const db = c.env.DB;
-    const { settings, menus } = await getGlobalData(db);
+    const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
 
     const totalRow: any = await getDb(db)
@@ -562,6 +566,7 @@ publicRouter.get("/info", async c => {
       },
     };
 
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
     if (Renderer && typeof Renderer.renderCategory === "function") {
       return c.html(Renderer.renderCategory(context));
     }
@@ -586,7 +591,7 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
 
   try {
     const { settings, menus, categories, topics, sources } =
-      await getGlobalData(c.env.DB);
+      await getGlobalData(c.env);
     const { Renderer } = await getRenderer(c.env.DB);
     const db = c.env.DB;
 
@@ -678,6 +683,7 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
           baseUrl: `/${slug}`,
         },
       };
+      c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
       if (Renderer && typeof Renderer.renderCategory === "function") {
         return c.html(Renderer.renderCategory(context));
       }
@@ -868,6 +874,7 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
               .all();
           } catch (e) {}
 
+          c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
           return c.html(
             renderPuckHtml({
               site: settings,
@@ -878,8 +885,10 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
             })
           );
         }
+        c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
         if (Renderer.renderPage) return c.html(Renderer.renderPage(context));
       }
+      c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
       if (
         (contentType === "video" ||
           (content.video_url && content.video_url.trim() !== "")) &&

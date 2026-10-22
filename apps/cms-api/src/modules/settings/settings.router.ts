@@ -26,6 +26,7 @@ settings.get("/", async c => {
         }
       });
     }
+    c.header("Cache-Control", "public, max-age=120, s-maxage=300, stale-while-revalidate=600");
     return c.json({ success: true, data });
   } catch (e: any) {
     console.error("GET Settings Error:", e);

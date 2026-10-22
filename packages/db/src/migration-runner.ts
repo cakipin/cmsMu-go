@@ -175,6 +175,165 @@ export const MIGRATIONS: MigrationStep[] = [
       } catch (e) {}
     },
   },
+  {
+    id: "2026_10_22_006_byoc_deployer_and_monitoring",
+    version: "0.2.0",
+    name: "BYOC Cloudflare Deployer & Multi-Tenant Activity Monitoring Schema",
+    up: async (db: any) => {
+      // 1. user_projects
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS user_projects (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            user_id INTEGER NOT NULL,
+            name TEXT NOT NULL,
+            slug TEXT NOT NULL UNIQUE,
+            cf_account_id TEXT NOT NULL,
+            cf_project_name TEXT NOT NULL,
+            d1_database_id TEXT NOT NULL,
+            r2_bucket_name TEXT NOT NULL,
+            kv_cache_id TEXT NOT NULL,
+            kv_session_id TEXT NOT NULL,
+            production_url TEXT NOT NULL,
+            custom_domain TEXT,
+            telemetry_api_key TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL DEFAULT 'provisioning' CHECK(status IN ('provisioning', 'active', 'suspended', 'error')),
+            last_heartbeat_at TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+          );`
+        )
+        .run();
+
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_user_projects_user ON user_projects(user_id);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_user_projects_slug ON user_projects(slug);`
+        )
+        .run();
+
+      // 2. instance_activity_logs
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS instance_activity_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            event_category TEXT NOT NULL CHECK(event_category IN ('AUTH', 'CONTENT', 'MEDIA', 'THEME', 'SETTINGS', 'SYSTEM', 'SECURITY')),
+            action TEXT NOT NULL,
+            severity TEXT NOT NULL DEFAULT 'INFO' CHECK(severity IN ('INFO', 'WARN', 'ERROR', 'CRITICAL')),
+            actor_email TEXT,
+            ip_address TEXT,
+            description TEXT NOT NULL,
+            metadata_json TEXT,
+            created_at TEXT NOT NULL,
+            FOREIGN KEY (project_id) REFERENCES user_projects(id) ON DELETE CASCADE
+          );`
+        )
+        .run();
+
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_logs_project_created ON instance_activity_logs(project_id, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_logs_category ON instance_activity_logs(event_category);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_logs_severity ON instance_activity_logs(severity);`
+        )
+        .run();
+
+      // 3. instance_heartbeats
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS instance_heartbeats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_id INTEGER NOT NULL,
+            core_version TEXT NOT NULL,
+            post_count INTEGER NOT NULL DEFAULT 0,
+            media_count INTEGER NOT NULL DEFAULT 0,
+            memory_usage_mb INTEGER,
+            response_time_ms INTEGER,
+            status TEXT NOT NULL DEFAULT 'OK',
+            recorded_at TEXT NOT NULL,
+            FOREIGN KEY (project_id) REFERENCES user_projects(id) ON DELETE CASCADE
+          );`
+        )
+        .run();
+
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_heartbeat_project ON instance_heartbeats(project_id, recorded_at DESC);`
+        )
+        .run();
+    },
+  },
+  {
+    id: "2026_10_22_007_d1_performance_indexes",
+    version: "0.1.9",
+    name: "D1 Performance Composite Indexes (Anti-Full-Scan & Zero Rows Read Exhaustion)",
+    up: async (db: any) => {
+      // 1. Composite indexes for posts queries
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts(status, category, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(`CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);`)
+        .run();
+
+      // 2. Indexes for pages, media, comments, and menus
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);`
+        )
+        .run();
+    },
+  },
 ];
 
 export async function ensureMigrationTable(db: any) {

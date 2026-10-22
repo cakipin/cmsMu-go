@@ -64,6 +64,36 @@ const MEMORY_CACHE_TTL_MS = 60 * 1000; // 60 detik RAM Worker isolate
 const KV_CACHE_TTL_SECONDS = 300; // 300 detik (5 menit) Cloudflare KV
 const GLOBAL_DATA_CACHE_KEY = "cmsmu:global_data_v1";
 
+let d1IndexesEnsured = false;
+
+/**
+ * Memastikan indeks komposit D1 SQLite terpasang secara idempoten pada runtime (1x per isolate).
+ * Melindungi pengguna existing yang belum menjalankan manual migration agar tidak mengalami full-table scan.
+ */
+export async function ensureD1PerformanceIndexes(db: any) {
+  if (d1IndexesEnsured || !db || typeof db.prepare !== "function") return;
+  d1IndexesEnsured = true;
+  try {
+    const stmts = [
+      "CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts(status, category, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);",
+      "CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);",
+      "CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);",
+      "CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);"
+    ];
+    for (const sql of stmts) {
+      await db.prepare(sql).run().catch(() => {});
+    }
+  } catch (err) {
+    console.warn("[ensureD1PerformanceIndexes warning]:", err);
+  }
+}
+
 export function clearGlobalDataCache(kv?: any) {
   memoryGlobalCache = null;
   if (kv && typeof kv.delete === "function") {
@@ -86,8 +116,13 @@ export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
   ) {
     db = dbOrEnv.DB;
     if (!kv) {
-      kv = dbOrEnv.sa_cache || dbOrEnv.cache || dbOrEnv.CACHE;
+      kv = dbOrEnv.CACHE || dbOrEnv.cache || dbOrEnv.sa_cache;
     }
+  }
+
+  // Jalankan auto-check index 1x per isolate (non-blocking) untuk memproteksi user existing
+  if (db && typeof db.prepare === "function") {
+    ensureD1PerformanceIndexes(db).catch(() => {});
   }
 
   const now = Date.now();
@@ -148,7 +183,7 @@ export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
     try {
       const catRows: any = await db
         .prepare(
-          "SELECT DISTINCT category FROM posts WHERE status = 'publish' AND category IS NOT NULL AND trim(category) != '' AND category != 'Uncategorized' ORDER BY category ASC"
+          "SELECT DISTINCT category FROM posts WHERE status = 'publish' AND category IS NOT NULL AND trim(category) != '' AND category != 'Uncategorized' ORDER BY category ASC LIMIT 50"
         )
         .all();
       if (catRows?.results) {
