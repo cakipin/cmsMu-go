@@ -17,6 +17,14 @@ export const postsPage = `
         itemsPerPage: 50,
 
         /* 2. GETTER: Filter Kategori, Status & Search */
+        get statusCounts() {
+            const all = (this.posts || []).length;
+            const published = (this.posts || []).filter(p => p.status === 'publish').length;
+            const draft = (this.posts || []).filter(p => p.status === 'draft').length;
+            const curated = (this.posts || []).filter(p => p.status === 'curated').length;
+            return { all, published, draft, curated };
+        },
+
         get filteredPosts() {
             let result = this.posts || [];
             if (this.filterCategory) {
@@ -157,7 +165,7 @@ export const postsPage = `
             if (!p) {
                 this.view = 'add';
                 this.editingId = null;
-                this.form = {title:'', slug:'', body:'', status:'draft', category:'', tags:'', featured_image:'', type:'post', video_url:'', is_premium: false, allow_comments: true};
+                this.form = {title:'', slug:'', body:'', status:'publish', category:'', tags:'', featured_image:'', type:'post', video_url:'', is_premium: false, allow_comments: true};
                 setTimeout(() => { if(window.initCmsEditor) window.initCmsEditor('editor', ''); }, 50);
                 return;
             }
@@ -220,6 +228,37 @@ export const postsPage = `
             <i class="fas fa-plus"></i> <span class="hidden xs:inline">Add New</span>
         </button>
     </div>
+  </div>
+
+  <!-- Quick Status Filter Tabs (WordPress Standard) -->
+  <div class="flex items-center gap-1 sm:gap-2 mb-3 text-xs sm:text-sm font-medium overflow-x-auto pb-1 text-slate-600">
+    <button type="button" @click="filterStatus = ''; currentPage = 1" 
+            :class="filterStatus === '' ? 'text-blue-600 font-bold border-b-2 border-blue-600 pb-0.5' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2 py-1 transition-colors cursor-pointer whitespace-nowrap">
+        Semua (<span x-text="statusCounts.all">0</span>)
+    </button>
+    <span class="text-slate-300">|</span>
+    <button type="button" @click="filterStatus = 'publish'; currentPage = 1" 
+            :class="filterStatus === 'publish' ? 'text-emerald-600 font-bold border-b-2 border-emerald-600 pb-0.5' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2 py-1 transition-colors cursor-pointer whitespace-nowrap">
+        Diterbitkan (<span x-text="statusCounts.published">0</span>)
+    </button>
+    <span class="text-slate-300">|</span>
+    <button type="button" @click="filterStatus = 'draft'; currentPage = 1" 
+            :class="filterStatus === 'draft' ? 'text-amber-600 font-bold border-b-2 border-amber-600 pb-0.5' : 'text-slate-600 hover:text-slate-900'"
+            class="px-2 py-1 transition-colors cursor-pointer whitespace-nowrap">
+        Draf (<span x-text="statusCounts.draft">0</span>)
+    </button>
+    <template x-if="statusCounts.curated > 0">
+      <span class="inline-flex items-center gap-1 sm:gap-2">
+        <span class="text-slate-300">|</span>
+        <button type="button" @click="filterStatus = 'curated'; currentPage = 1" 
+                :class="filterStatus === 'curated' ? 'text-purple-600 font-bold border-b-2 border-purple-600 pb-0.5' : 'text-slate-600 hover:text-slate-900'"
+                class="px-2 py-1 transition-colors cursor-pointer whitespace-nowrap">
+            Kurasi (<span x-text="statusCounts.curated">0</span>)
+        </button>
+      </span>
+    </template>
   </div>
 
   <!-- Filter Toolbar Responsif Mobile -->
@@ -298,6 +337,9 @@ export const postsPage = `
                     <i class="fas fa-video"></i> VIDEO
                   </span>
                   <b x-text="p.title" @click="openEditorCerdas(p)" style="color:#2271b1; font-size:14px; cursor:pointer;"></b>
+                  <span x-show="p.status === 'draft'" class="inline-flex items-center gap-1 text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200/80 px-2 py-0.5 rounded">
+                    <i class="fas fa-file-alt text-[10px]"></i> Draf
+                  </span>
                 </div>
                 <div style="font-size:11px; color:#666; font-family:monospace;" x-text="'/'+p.slug"></div>
               </td>
@@ -319,9 +361,15 @@ export const postsPage = `
               <td style="text-align:center; font-size:12px; font-weight:bold; color:#64748b;" x-text="p.views || 0"></td>
               
               <td style="text-align:center;">
-                <i x-show="p.status=='publish'" class="fas fa-check-circle" style="color:#10b981; font-size:16px;" title="Published"></i>
-                <i x-show="p.status=='draft'" class="fas fa-file-alt" style="color:#94a3b8; font-size:16px;" title="Draft"></i>
-                <i x-show="p.status=='curated'" class="fas fa-tasks" style="color:#f59e0b; font-size:16px;" title="Dalam Kurasi"></i>
+                <span x-show="p.status=='publish'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200" title="Published">
+                    <i class="fas fa-check-circle text-[11px]"></i> Publish
+                </span>
+                <span x-show="p.status=='draft'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-amber-50 text-amber-700 border border-amber-200" title="Draft">
+                    <i class="fas fa-file-alt text-[11px]"></i> Draf
+                </span>
+                <span x-show="p.status=='curated'" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-purple-50 text-purple-700 border border-purple-200" title="Dalam Kurasi">
+                    <i class="fas fa-tasks text-[11px]"></i> Kurasi
+                </span>
               </td>
               
               <td style="padding:8px; text-align:center;">
@@ -368,10 +416,10 @@ export const postsPage = `
                 <span x-show="p.status=='publish'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded">
                   <i class="fas fa-check-circle"></i> Publish
                 </span>
-                <span x-show="p.status=='draft'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-slate-100 text-slate-600 px-1.5 py-0.5 rounded">
-                  <i class="fas fa-file-alt"></i> Draft
+                <span x-show="p.status=='draft'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded">
+                  <i class="fas fa-file-alt"></i> Draf
                 </span>
-                <span x-show="p.status=='curated'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                <span x-show="p.status=='curated'" class="inline-flex items-center gap-1 text-[10px] font-semibold bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded">
                   <i class="fas fa-tasks"></i> Kurasi
                 </span>
               </div>

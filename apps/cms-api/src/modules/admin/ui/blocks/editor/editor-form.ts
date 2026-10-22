@@ -43,10 +43,10 @@ export const editorForm = `
                title="Preview Artikel">
                 <i class="fas fa-external-link-alt"></i>
             </a>
-            <button type="button" @click="save()" class="btn min-h-[40px] px-3.5 sm:px-5 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white font-semibold rounded-md shadow-sm flex items-center gap-1.5 text-xs sm:text-sm active:scale-95 transition-all" :disabled="isSaving">
+            <button type="button" @click="save('publish')" class="btn min-h-[40px] px-3.5 sm:px-5 py-2 bg-[#2271b1] hover:bg-[#135e96] text-white font-semibold rounded-md shadow-sm flex items-center gap-1.5 text-xs sm:text-sm active:scale-95 transition-all" :disabled="isSaving">
                 <i class="fas fa-spinner fa-spin" x-show="isSaving"></i>
                 <i class="fas fa-paper-plane" x-show="!isSaving"></i>
-                <span x-text="isSaving ? 'Menyimpan...' : (editingId ? 'Perbarui' : 'Terbitkan')"></span>
+                <span x-text="isSaving ? 'Menyimpan...' : ((editingId && form.status === 'publish') ? 'Perbarui' : 'Terbitkan')"></span>
             </button>
         </div>
     </div>
@@ -431,9 +431,9 @@ export const editorForm = `
                             <i class="fas fa-external-link-alt"></i>
                         </a>
                     </div>
-                    <button type="button" @click="save()" class="btn" style="width:100%; background:#2271b1; color:white; padding:10px; font-size:14px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:8px; cursor:pointer;" :disabled="isSaving">
+                    <button type="button" @click="save('publish')" class="btn" style="width:100%; background:#2271b1; color:white; padding:10px; font-size:14px; font-weight:600; border-radius:6px; display:flex; justify-content:center; align-items:center; gap:8px; cursor:pointer;" :disabled="isSaving">
                         <i class="fas fa-spinner fa-spin" x-show="isSaving"></i>
-                        <span x-text="isSaving ? 'Menyimpan...' : (editingId ? 'Perbarui Tulisan' : 'Terbitkan Sekarang')"></span>
+                        <span x-text="isSaving ? 'Menyimpan...' : ((editingId && form.status === 'publish') ? 'Perbarui Tulisan' : 'Terbitkan Sekarang')"></span>
                     </button>
                     <!-- Status Ringkas Auto-Save di Sidebar -->
                     <div class="text-[11px] text-slate-500 text-center flex items-center justify-center gap-1.5 pt-1">

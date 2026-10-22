@@ -43,6 +43,7 @@ function customEditorLogic() {
                 if (this.$refs.editor && this.$refs.editor.innerHTML !== val) {
                     this.$refs.editor.innerHTML = val || '<p><br></p>';
                 }
+                this.recalculateCounts(val);
             });
 
             setTimeout(() => {
@@ -55,6 +56,7 @@ function customEditorLogic() {
                         this.$refs.editor.innerHTML = '<p><br></p>';
                     }
                 }
+                this.recalculateCounts();
                 this.updateActiveFormats();
             }, 100);
 
@@ -176,6 +178,23 @@ function customEditorLogic() {
         
 ${customEditorCleanerMethods}
 
+        recalculateCounts(content) {
+            let text = '';
+            if (typeof content === 'string') {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = content;
+                text = (tmp.innerText || tmp.textContent || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
+            } else if (this.$refs.editor) {
+                text = (this.$refs.editor.innerText || this.$refs.editor.textContent || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
+            } else if (this.form && this.form.body) {
+                const tmp = document.createElement('div');
+                tmp.innerHTML = this.form.body;
+                text = (tmp.innerText || tmp.textContent || '').replace(/\\u00a0/g, ' ').replace(/\\s+/g, ' ').trim();
+            }
+            this.currentCharCount = text.length;
+            this.currentWordCount = text ? text.split(/\\s+/).filter(Boolean).length : 0;
+        },
+
         setMode(m) {
             if (m === 'html') {
                 this.updateContent();
@@ -186,6 +205,7 @@ ${customEditorCleanerMethods}
                     this.form.body = cleaned;
                 }
                 if (this.$refs.editor) this.$refs.editor.innerHTML = cleaned || '<p><br></p>';
+                this.recalculateCounts(cleaned);
                 this.editorMode = 'html';
                 this.$nextTick(() => {
                     if (this.$refs.htmlSource) {
@@ -203,6 +223,7 @@ ${customEditorCleanerMethods}
                         this.form.body = cleaned;
                     }
                     this.$refs.editor.innerHTML = cleaned || '<p><br></p>';
+                    this.recalculateCounts(cleaned);
                     this.$refs.editor.focus();
                 }
             }
@@ -212,6 +233,7 @@ ${customEditorCleanerMethods}
             if (this.$refs.editor) {
                 this.$refs.editor.innerHTML = this.form.body || '<p><br></p>';
             }
+            this.recalculateCounts(this.form ? this.form.body : '');
             this.autoFillSeo();
         },
 
@@ -238,10 +260,7 @@ ${customEditorCleanerMethods}
                 if (this.form) {
                     this.form.body = this.$refs.editor.innerHTML;
                 }
-                const text = (this.$refs.editor.innerText || this.$refs.editor.textContent || '')
-                    .replace(/\\s+/g, ' ').trim();
-                this.currentCharCount = text.length;
-                this.currentWordCount = text ? text.split(/\\s+/).filter(Boolean).length : 0;
+                this.recalculateCounts();
             }
             this.autoFillSeo();
             if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE && this.form) {

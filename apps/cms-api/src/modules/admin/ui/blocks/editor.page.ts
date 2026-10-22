@@ -461,9 +461,15 @@ export const editorPage = `
               this.checkLocalDraft();
           },
 
-          async save() {
+          async save(targetStatus) {
               const currentContent = this.form.body || '';
               this.form.slug = this.sanitizeSlug(this.form.slug || this.form.title || ('post-' + Date.now()));
+              
+              if (targetStatus) {
+                  this.form.status = targetStatus;
+              } else if (!this.form.status) {
+                  this.form.status = 'publish';
+              }
               
               const payload = JSON.parse(JSON.stringify({
                   id: this.editingId || undefined,
@@ -474,7 +480,7 @@ export const editorPage = `
                   meta_title: this.form.meta_title || '',
                   meta_description: this.form.meta_description || '',
                   og_image: this.form.og_image || '',
-                  status: this.form.status || 'publish',
+                  status: this.form.status,
                   category: this.form.category || 'Berita',
                   tags: this.form.tags || '',
                   featured_image: this.form.featured_image || '',
@@ -519,7 +525,8 @@ export const editorPage = `
                        }
                        
                        if (typeof window !== 'undefined' && window.showToast) {
-                           window.showToast('Artikel berhasil disimpan!', 'success', 4000);
+                           const msg = (this.form.status === 'publish') ? 'Artikel berhasil diterbitkan!' : 'Draf artikel berhasil disimpan!';
+                           window.showToast(msg, 'success', 4000);
                        }
                        if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE) {
                            window.__CMS_AUTOSAVE.clearLocal(newId || this.editingId);
