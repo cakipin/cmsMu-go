@@ -1,7 +1,6 @@
 import { customEditorTemplate } from "../custom-editor";
 
 export const editorForm = `
-    <div x-data="{ mobileTab: 'content' }">
     <!-- Header Post Editor Responsif -->
     <div class="flex items-center justify-between gap-2.5 mb-4 sticky top-0 z-20 bg-slate-100/95 backdrop-blur py-2 px-1 rounded-md sm:static sm:bg-transparent sm:py-0 sm:px-0">
         <div class="flex items-center gap-2 min-w-0">

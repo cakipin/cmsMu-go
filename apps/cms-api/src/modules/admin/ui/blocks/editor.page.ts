@@ -12,6 +12,7 @@ export const editorPage = `
          // ===============================================
          // 1. DATA & STATE
          // ===============================================
+         mobileTab: 'content',
          mediaModalOpen: false,
          manageModalOpen: false,
          manageTarget: '',      
