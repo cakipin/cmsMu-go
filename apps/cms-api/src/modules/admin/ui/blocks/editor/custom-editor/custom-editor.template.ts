@@ -124,6 +124,7 @@ export const customEditorTemplate = `
              @touchend="checkSelection"
              @keyup="checkSelection(); updateContent()"
              @input="updateContent()"
+             @blur="updateContent()"
              @keydown.enter="handleEnter($event)"
              @paste="handlePaste($event)">
         </div>

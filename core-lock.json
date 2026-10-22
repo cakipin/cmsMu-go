@@ -1,6 +1,6 @@
 {
   "description": "LOCKED CORE FILES - DILARANG KERAS mengubah berkas di daftar ini saat memperbaiki modul fitur (Konten, Users, Media, Menus, Themes, Plugins, Settings).",
-  "lockedAt": "2026-10-22T04:17:43.582Z",
+  "lockedAt": "2026-10-22T04:59:36.697Z",
   "files": {
     "apps/cms-api/src/index.ts": "a8d488e1a9c59df7721050715638cb1edd9c8682923690c984738c8bec565a8b",
     "apps/cms-api/src/core/hooks.ts": "bf24d67ab9f6b012a137eea14563dba4f27fee2470583e10915b3cd0be5317dc",
@@ -8,19 +8,19 @@
     "apps/cms-api/src/modules/ai/ai.router.ts": "b84bc734e1816fece9b0c26bd8bb6d5672fcf8eb1bc11e896d22d1aa631221b1",
     "apps/cms-api/src/modules/webhooks/webhooks.router.ts": "9df0efbf3a5b08e2c3a7a8993debaa495716f92d5853431f82e32bb403edb141",
     "apps/cms-api/src/modules/admin/init.ts": "12a0212ab0ba3ab7c88e8a0b2e6c86f1456ff07381a842cc8b20debe68a3bcb2",
-    "apps/cms-api/src/modules/admin/ui/view.ts": "f598ebe78804a3a19e89561ccfc4e24b07dffd109e4a7c5f54156801f3d2cdf1",
+    "apps/cms-api/src/modules/admin/ui/view.ts": "a09296c9dc04f402e211a02360ea1914c08cde2c6f42660556ff74150ecc6216",
     "apps/cms-api/src/modules/admin/ui/blocks/cms.logic.ts": "aa5c1c28eb3f5cb64285a7817635f37c43d1c9438675c4dc870bd6faff2f22dd",
     "apps/cms-api/src/modules/admin/ui/blocks/logic/core.logic.ts": "0d3b25af72d52afcec5f457e2eef46c504901b6b329bc4d15070fd8c9761d4de",
     "apps/cms-api/src/modules/admin/ui/blocks/sidebar.ts": "fc7c60a37189699a174f01bfc942c9d3880b49c52d0da7469b4472035c0fc1ba",
     "apps/cms-api/src/modules/admin/ui/blocks/topbar.ts": "54f64c5d4a6759dfe1f84667709740f720c646b1168f2f473f4f0436d1a74380",
     "apps/cms-api/src/modules/admin/ui/blocks/custom-editor.ts": "7dda7193b730aff09be561f4a650bd2f5a4ae2d4ebf270028bc13ccd734eceb6",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor.page.ts": "961a5fe4fafa76d4328671c43dc68fe1a6a89bbed07cbcdae8bcbe90d7a4e2ac",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-form.ts": "f2b00ba932b86b92685755ff06acc67d24611c187f55a0419b4ea3b4bd48f3c2",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor.page.ts": "54fd00df05c19cd68b42120e474c8e1475dedcda1d5e373f6973f3e962f2893d",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-form.ts": "c41a8c8050855c3739337f4c2274944b03ede5d23b74c51abe4c33ca468d8434",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-autosave.ts": "f682cc00c2b005ecff54d6692df56fe8d8d662441626a0fda88e59acba103061",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.cleaner.ts": "7daac521e87aac2c7a0c3eac11ebf1fe9698454cf633887faad59ed16025bb81",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.logic.ts": "2b7806805868690213bd7868b62cf7eea6c3968986c39e86ede67cd43fec7c99",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.styles.ts": "f0495006acee6c89dbd051dc4893e71e5ba63e6f70baf0e97b904c76afff2b01",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.template.ts": "e0d8f8cecb53100d65a8254c5580fac0184dc8502623f468ea438dcc73961211",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.cleaner.ts": "800970a735c3846658a1bee5d1b192888b13e2358e76c0084d320e9b544c868c",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.logic.ts": "b4436ef1d723d4978d6f4dead06fbcfee1e106e5f2286958d7d466b8dbff503d",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.styles.ts": "a79a8a4035a29df3b9a1793bcdb686c77b5d1d65ea97f811879a7c9c99a865b8",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.template.ts": "405a34117b0aaa92b49808f47df42b21db3a11dfd024b104c75549bb7e60089b",
     "packages/db/src/schema.ts": "94c26c5cb78ff69b8be96871f655ecf4c244d607a01043ecd60d30497eb8f5ee"
   }
 }

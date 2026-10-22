@@ -262,6 +262,9 @@ export const customEditorCleanerMethods = `
                 }
             }
             this.updateContent();
+            setTimeout(() => {
+                this.updateContent();
+            }, 10);
         },
 
         // Tombol Bersihkan Format (Sapu) di toolbar
@@ -286,6 +289,7 @@ export const customEditorCleanerMethods = `
                 this._isInternalUpdate = true;
                 this.form.body = cleaned;
             }
+            this.recalculateCounts(cleaned);
             this.autoFillSeo();
             if (window.showToast) {
                 window.showToast('Format dokumen & HTML sampah berhasil dibersihkan!', 'success');
@@ -339,6 +343,7 @@ export const customEditorCleanerMethods = `
                     this._isInternalUpdate = true;
                     this.form.body = tidied;
                 }
+                this.recalculateCounts(tidied);
                 this.autoFillSeo();
                 if (window.showToast) {
                     window.showToast('✨ Paragraf & struktur tulisan berhasil dirapikan sesuai standar SEO!', 'success');
