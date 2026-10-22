@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
-import { pages, settings } from "@cmsmu/db";
+import { pages, settings, locales } from "@cmsmu/db";
 import { eq, asc } from "drizzle-orm";
 import { clearGlobalDataCache } from "../public/helpers";
 import { verify } from "hono/jwt";
@@ -8,6 +8,8 @@ import { getJwtSecret } from "../users/auth.helper";
 
 type Bindings = {
   DB: D1Database;
+  CACHE?: any;
+  cmsmu_cache?: any;
   WIKIMU_CACHE?: any;
 };
 
@@ -63,6 +65,109 @@ async function upsertSetting(db: any, key: string, value: string) {
       .run();
   }
 }
+
+// GET /api/theme-editor/locales
+themeEditorRouter.get("/locales", async c => {
+  try {
+    const db = getDb(c.env.DB);
+    let items: any[] = [];
+    try {
+      items = await db
+        .select({
+          code: locales.code,
+          name: locales.name,
+          direction: locales.direction,
+          isDefault: locales.isDefault,
+          isActive: locales.isActive,
+        })
+        .from(locales)
+        .where(eq(locales.isActive, 1))
+        .all();
+    } catch {
+      items = [];
+    }
+
+    if (!items || items.length === 0) {
+      items = [
+        { code: "id", name: "Bahasa Indonesia", direction: "ltr", isDefault: 1, isActive: 1 },
+        { code: "en", name: "English", direction: "ltr", isDefault: 0, isActive: 1 },
+        { code: "ar", name: "العربية", direction: "rtl", isDefault: 0, isActive: 1 },
+      ];
+    }
+
+    return c.json({
+      success: true,
+      data: items,
+    });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// GET /api/theme-editor/sdui/:slug
+themeEditorRouter.get("/sdui/:slug", async c => {
+  const slug = c.req.param("slug");
+  const locale = (c.req.query("locale") || "id").toLowerCase();
+  const _platform = c.req.query("platform") || "web";
+
+  if (!slug) return c.json({ error: "Slug required" }, 400);
+
+  const direction = locale === "ar" ? "rtl" : "ltr";
+  const availableLocales = ["id", "en", "ar"];
+
+  try {
+    const db = getDb(c.env.DB);
+    const page = await db
+      .select({ title: pages.title, body: pages.body, status: pages.status })
+      .from(pages)
+      .where(eq(pages.slug, slug))
+      .get();
+
+    let rawBody = page?.body;
+
+    if (!rawBody && slug === "home") {
+      const defaultHomePuck = {
+        content: [
+          { type: "SiteHeader", props: { id: "SiteHeader-1" } },
+          { type: "Hero", props: { id: "Hero-1" } },
+          { type: "Partners", props: { id: "Partners-1" } },
+          { type: "FeatureGrid", props: { id: "FeatureGrid-1" } },
+          { type: "Testimonial", props: { id: "Testimonial-1" } },
+          { type: "RecentPosts", props: { id: "RecentPosts-1" } },
+          { type: "CallToAction", props: { id: "CallToAction-1" } },
+          { type: "SiteFooter", props: { id: "SiteFooter-1" } },
+        ],
+        root: { props: { title: "Beranda Utama" } },
+        zones: {},
+      };
+      rawBody = JSON.stringify(defaultHomePuck);
+    }
+
+    if (!rawBody) {
+      return c.json({ success: false, error: "Halaman kanvas tidak ditemukan" }, 404);
+    }
+
+    let parsed: any;
+    try {
+      parsed = typeof rawBody === "string" ? JSON.parse(rawBody) : rawBody;
+    } catch {
+      parsed = { content: [], root: { props: { title: page?.title || slug } }, zones: {} };
+    }
+
+    return c.json({
+      success: true,
+      slug,
+      locale,
+      direction,
+      availableLocales,
+      root: parsed.root || { props: { title: page?.title || slug } },
+      content: Array.isArray(parsed.content) ? parsed.content : [],
+      zones: parsed.zones || {},
+    });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
 
 // GET /api/theme-editor/page?slug=about
 themeEditorRouter.get("/page", async c => {
@@ -168,7 +273,7 @@ themeEditorRouter.post("/set-homepage", async c => {
       }
     } catch (e) {}
 
-    clearGlobalDataCache(c.env.WIKIMU_CACHE);
+    clearGlobalDataCache(c.env.CACHE || c.env.cmsmu_cache || c.env.WIKIMU_CACHE);
 
     return c.json({ success: true, homeSlug: slug, activeHomeSlug: slug });
   } catch (e: any) {
@@ -253,7 +358,7 @@ themeEditorRouter.post("/page", async c => {
     }
 
     // Bersihkan cache Edge & In-Memory agar perubahan langsung tampil di halaman live
-    clearGlobalDataCache(c.env.WIKIMU_CACHE);
+    clearGlobalDataCache(c.env.CACHE || c.env.cmsmu_cache || c.env.WIKIMU_CACHE);
 
     return c.json({ success: true });
   } catch (e: any) {

@@ -119,3 +119,16 @@ Expanded State (~250px)                     Collapsed State (68px Rail)
    * Listing berita dan antrean kurasi redaksi pada perangkat sentuh dilengkapi gestur tarik ke bawah (*pull-to-refresh*) dengan indikator warna primer (`#005A36`).
 3. **Mikro-Interaksi Tombol:**
    * Efek sentuh responsif: `active:scale-[0.98]`, transisi tombol `transition: transform 0.15s ease`.
+
+---
+
+## 5. Pedoman Tipografi Multi-Bahasa & Tata Letak RTL (Arab)
+
+1. **Arah Baca Dwi-Arah (Bi-Directional / RTL)**:
+   * Konten berbahasa Arab (`locale === 'ar'`) wajib menyematkan atribut `dir="rtl"` pada kontainer root atau `<main>`.
+   * Pada layout kanvas, margin dan padding horizontal membalik secara otomatis (`start` dan `end`, bukan `left` dan `right`).
+2. **Font Kaligrafi & Tipografi Arab**:
+   * Font standar Arab: **Amiri** atau **Noto Naskh Arabic** dengan rasio keterbacaan minimal `line-height: 1.8` dan `font-size: 1.125rem` (karena glif kaligrafi membutuhkan ruang vertikal lebih lega dibanding alfabet Latin).
+3. **Penyelarasan Ikon & Navigasi**:
+   * Ikon arah panah (`fa-arrow-right` ➔ `fa-arrow-left`) dan chevron navigasi membalik arah secara konsisten pada mode RTL.
+

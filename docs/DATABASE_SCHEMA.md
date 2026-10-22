@@ -214,3 +214,30 @@ export const ingestionLogs = sqliteTable('ingestion_logs', {
 2. **`articles` $\leftrightarrow$ `mediaAssets` (1:N):** Satu artikel memiliki banyak gambar yang disideload ke R2. Jika artikel dihapus permanen, relasi ber-cascade (`onDelete: 'cascade'`).
 3. **`articles` $\leftrightarrow$ `taxonomies` (M:N via `articleTaxonomies`):** Sebuah berita dapat bertema ganda, misal: Masuk kategori *"Pendidikan"*, Ortom *"IPM"*, dan Wilayah *"PWM Jawa Tengah"*.
 4. **`articles` $\leftrightarrow$ `comments` $\leftrightarrow$ `users` (1:N):** Komentar terikat ke artikel dan diverifikasi langsung ke `users` yang memiliki token valid dari **Muhammadiyah ID SSO**.
+
+---
+
+## 4. Skema Modular Multi-Language (i18n) & Translation Groups
+
+Untuk mendukung lokalisasi konten (ID, EN, AR) tanpa melanggar `core-lock.json`, skema i18n didefinisikan modular pada `packages/db/src/schema-i18n.ts`:
+
+```typescript
+import { sqliteTable, text, integer, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
+
+// 1. Tabel Master Bahasa (Locales)
+export const locales = sqliteTable('locales', {
+  code: text('code', { length: 10 }).primaryKey(), // 'id', 'en', 'ar'
+  name: text('name', { length: 50 }).notNull(),     // 'Bahasa Indonesia', 'English', 'العربية'
+  direction: text('direction', { length: 3 }).default('ltr'), // 'ltr' | 'rtl'
+  isDefault: integer('is_default').default(0),
+  isActive: integer('is_active').default(1),
+});
+
+// 2. Tabel Grup Terjemahan (Translation Groups)
+export const translationGroups = sqliteTable('translation_groups', {
+  id: text('id', { length: 36 }).primaryKey(),
+  type: text('type', { length: 20 }).notNull(), // 'post' | 'page' | 'block'
+  createdAt: text('created_at').notNull(),
+});
+```
+

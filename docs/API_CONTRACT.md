@@ -228,3 +228,62 @@ Redaktur memvalidasi berita agregasi dari antrean `pending_curation`.
   "message": "Berita sindikasi berhasil disetujui dan tayang di portal"
 }
 ```
+
+---
+
+## 5. Endpoint Multi-Client SDUI & Multi-Language (i18n)
+
+### 5.1 `GET /api/theme-editor/locales`
+Mengambil daftar bahasa yang didukung oleh sistem (ID, EN, AR) beserta arah baca (*direction*).
+
+* **Response 200 (OK):**
+```json
+{
+  "success": true,
+  "data": [
+    { "code": "id", "name": "Bahasa Indonesia", "direction": "ltr", "isDefault": 1 },
+    { "code": "en", "name": "English", "direction": "ltr", "isDefault": 0 },
+    { "code": "ar", "name": "العربية", "direction": "rtl", "isDefault": 0 }
+  ]
+}
+```
+
+---
+
+### 5.2 `GET /api/theme-editor/sdui/:slug`
+Mengambil blueprint tata letak Server-Driven UI (SDUI) untuk halaman kanvas tertentu (`home`, `about`, dll).
+
+* **Query Params:**
+  - `locale`: Kode bahasa (opsional, default: `id`)
+  - `platform`: `web` | `mobile` (opsional, default: `web`)
+* **Response 200 (OK):**
+```json
+{
+  "success": true,
+  "slug": "home",
+  "locale": "id",
+  "direction": "ltr",
+  "availableLocales": ["id", "en", "ar"],
+  "content": [
+    {
+      "type": "SiteHeader",
+      "props": { "title": "cmsMu Canvas", "headerBgColor": "#0a6134" }
+    },
+    {
+      "type": "Hero",
+      "props": { "title": "Membina Generasi", "badgeText": "cmsMu SDUI" }
+    }
+  ]
+}
+```
+
+---
+
+## 6. Daftar Client SDK Resmi cmsMu
+
+| Bahasa / Platform | Nama Paket / Lokasi | Fitur Utama |
+| :--- | :--- | :--- |
+| **TypeScript / JS** | `@cmsmu/sdk` (`packages/sdk`) | Fetch universal, Next.js Server Components, React Native |
+| **Flutter / Dart** | `cmsmu_sdk` (`packages/sdk-flutter`) | Sound Null Safety, Flutter Mobile & Web, SDUI models |
+| **Android Kotlin** | `dev.labmu.cmsmu.sdk` (`packages/sdk-kotlin`) | Coroutines (`suspend fun`), Jetpack Compose, type-safe POJO |
+| **Apple iOS Swift** | `CmsMuSDK` (`packages/sdk-swift`) | Swift Concurrency (`async/await`), SwiftUI, `Codable` |

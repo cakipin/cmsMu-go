@@ -159,6 +159,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [viewport, setViewport] = useState<"desktop" | "tablet" | "mobile">("desktop");
+  const [selectedLocale, setSelectedLocale] = useState<"id" | "en" | "ar">("id");
   const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "error" | "info" }>({
     show: false,
     message: "",
@@ -679,38 +680,81 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
           </div>
         </div>
 
-        {/* Center: Viewport Switcher (Icon-Only with Tooltips) */}
-        <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1">
-          <button
-            type="button"
-            onClick={() => setViewport("desktop")}
-            className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
-              viewport === "desktop" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
-            }`}
-            title="Tampilan Desktop (1024px+)"
-          >
-            <i className="fas fa-desktop text-xs"></i>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewport("tablet")}
-            className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
-              viewport === "tablet" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
-            }`}
-            title="Tampilan Tablet (768px)"
-          >
-            <i className="fas fa-tablet-alt text-xs"></i>
-          </button>
-          <button
-            type="button"
-            onClick={() => setViewport("mobile")}
-            className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
-              viewport === "mobile" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
-            }`}
-            title="Tampilan Mobile (375px)"
-          >
-            <i className="fas fa-mobile-alt text-xs"></i>
-          </button>
+        {/* Center: Viewport Switcher & Language Switcher */}
+        <div className="flex items-center gap-2">
+          {/* Viewport Switcher (Icon-Only with Tooltips) */}
+          <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1">
+            <button
+              type="button"
+              onClick={() => setViewport("desktop")}
+              className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
+                viewport === "desktop" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Tampilan Desktop (1024px+)"
+            >
+              <i className="fas fa-desktop text-xs"></i>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewport("tablet")}
+              className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
+                viewport === "tablet" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Tampilan Tablet (768px)"
+            >
+              <i className="fas fa-tablet-alt text-xs"></i>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewport("mobile")}
+              className={`w-8 h-8 rounded-md flex items-center justify-center cursor-pointer transition-all ${
+                viewport === "mobile" ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700" : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Tampilan Mobile (375px)"
+            >
+              <i className="fas fa-mobile-alt text-xs"></i>
+            </button>
+          </div>
+
+          {/* 🌐 Language Switcher (ID, EN, AR RTL) */}
+          <div className="flex items-center bg-slate-900 p-1 rounded-lg border border-slate-800 gap-1">
+            <button
+              type="button"
+              onClick={() => setSelectedLocale("id")}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                selectedLocale === "id"
+                  ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="Bahasa Indonesia (LTR)"
+            >
+              ID
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedLocale("en")}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                selectedLocale === "en"
+                  ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700 font-bold"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="English (LTR)"
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setSelectedLocale("ar")}
+              className={`px-2.5 py-1 rounded-md text-xs font-semibold cursor-pointer transition-all ${
+                selectedLocale === "ar"
+                  ? "bg-slate-800 text-emerald-400 shadow-xs border border-slate-700 font-bold font-serif"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
+              title="العربية (RTL - Kanan ke Kiri)"
+            >
+              العربية
+            </button>
+          </div>
         </div>
 
         {/* Right: Studio Feature Dropdown, Live Preview, and Save Button */}
@@ -1098,18 +1142,22 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
             }
           `}} />
 
-          {/* Viewport Width Indicator */}
+          {/* Viewport & Locale Width Indicator */}
           <div className="mb-3 px-3 py-1 rounded-full bg-slate-900 border border-slate-800 text-[10px] text-slate-400 font-mono flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span>
               {viewport === "desktop" ? "Desktop (Full Width / 1024px+)" : viewport === "tablet" ? "Tablet Frame (768px)" : "Mobile Frame (375px)"}
             </span>
+            <span className="text-slate-600">•</span>
+            <span className="text-emerald-400 font-bold uppercase">{selectedLocale} ({selectedLocale === "ar" ? "RTL" : "LTR"})</span>
           </div>
 
           <div
             className={`transition-all duration-300 bg-white text-slate-900 shadow-2xl rounded-xl border border-slate-800 overflow-hidden flex flex-col h-fit ${
               viewport === "desktop" ? "w-full max-w-5xl" : viewport === "tablet" ? "w-[768px]" : "w-[375px] cmsmu-viewport-mobile"
             }`}
+            dir={selectedLocale === "ar" ? "rtl" : "ltr"}
+            style={selectedLocale === "ar" ? { fontFamily: "'Amiri', serif" } : undefined}
           >
             {isLoading ? (
               <div className="p-16 text-center text-slate-400">
@@ -1310,9 +1358,12 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                     {field.type === "textarea" ? (
                       <textarea
                         rows={3}
+                        dir={selectedLocale === "ar" ? "rtl" : "ltr"}
                         value={curVal}
                         onChange={e => handlePropChange(fieldKey, e.target.value)}
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
+                        className={`w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 ${
+                          selectedLocale === "ar" ? "font-serif text-right" : "font-sans"
+                        }`}
                       />
                     ) : field.type === "select" ? (
                       <select
@@ -1356,6 +1407,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                     ) : (
                       <input
                         type={field.type === "number" ? "number" : "text"}
+                        dir={selectedLocale === "ar" && field.type !== "number" ? "rtl" : "ltr"}
                         value={curVal}
                         onChange={e =>
                           handlePropChange(
@@ -1363,7 +1415,9 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                             field.type === "number" ? parseInt(e.target.value, 10) || 0 : e.target.value
                           )
                         }
-                        className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
+                        className={`w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 ${
+                          selectedLocale === "ar" && field.type !== "number" ? "font-serif text-right" : "font-sans"
+                        }`}
                       />
                     )}
                   </div>

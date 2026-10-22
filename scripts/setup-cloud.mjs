@@ -73,10 +73,11 @@ async function main() {
   }
 
   console.log('\n📋 Konfigurasi Nama Resource Cloudflare:');
-  const d1Name = await ask('   Nama Database D1', 'cmsmu-db');
-  const r2BucketName = await ask('   Nama Bucket R2 Media', 'cmsmu-media');
-  const kvSessionName = await ask('   Nama KV Namespace Session', 'SESSION');
-  const kvCacheName = await ask('   Nama KV Namespace Cache', 'WIKIMU_CACHE');
+  const projectName = await ask('   Nama Project (slug)', 'cmsmu');
+  const d1Name = await ask('   Nama Database D1', `${projectName}_db`);
+  const r2BucketName = await ask('   Nama Bucket R2 Media', `${projectName}_media`);
+  const kvSessionName = await ask('   Nama KV Namespace Session', `${projectName}_session`);
+  const kvCacheName = await ask('   Nama KV Namespace Cache', `${projectName}_cache`);
 
   console.log('\n⏳ Membuat resource di Cloudflare (proses memerlukan beberapa detik)...');
 
@@ -184,7 +185,7 @@ async function main() {
     .replace(/"database_id":\s*"[^"]*"/, `"database_id": "${d1Id}"`)
     .replace(/"bucket_name":\s*"[^"]*"/g, `"bucket_name": "${r2BucketName}"`)
     .replace(/"binding":\s*"SESSION",\s*"id":\s*"[^"]*"/, `"binding": "SESSION",\n\t\t\t"id": "${kvSessionId}"`)
-    .replace(/"binding":\s*"WIKIMU_CACHE",\s*"id":\s*"[^"]*"/, `"binding": "WIKIMU_CACHE",\n\t\t\t"id": "${kvCacheId}"`)
+    .replace(/"binding":\s*"(?:CACHE|WIKIMU_CACHE)",\s*"id":\s*"[^"]*"/, `"binding": "CACHE",\n\t\t\t"id": "${kvCacheId}"`)
     .replace(/<YOUR_D1_DATABASE_ID>/g, d1Id)
     .replace(/<YOUR_R2_MEDIA_BUCKET>/g, r2BucketName)
     .replace(/<YOUR_KV_SESSION_ID>/g, kvSessionId)

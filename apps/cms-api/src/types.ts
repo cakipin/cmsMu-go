@@ -22,6 +22,8 @@ export interface Bindings {
 
   // AI & Vector Search
   AI: any;
+  CACHE?: KVNamespace;
+  cmsmu_cache?: KVNamespace;
   sa_cache?: KVNamespace;
   VECTORIZE_INDEX?: VectorizeIndex; // Untuk Tarjih CMS
   VECTOR_INDEX?: VectorizeIndex; // Untuk Quran (Opsional)

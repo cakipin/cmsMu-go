@@ -158,3 +158,65 @@ sequenceDiagram
         App-->>User: Tampilkan komentar langsung (Real-time update)
     end
 ```
+
+---
+
+## 4. Arsitektur Multi-Client, Server-Driven UI (SDUI) & Multi-Language (i18n)
+
+### 4.1 Server-Driven UI (SDUI) Universal Workflow
+Core cmsMu mendukung rendering multi-platform (*Astro SSR*, *Next.js App Router*, dan *React Native Mobile*) menggunakan satu sumber kebenaran blueprint JSON kanvas:
+
+```mermaid
+flowchart TD
+    STUDIO["Canvas Studio (apps/web)<br/>Admin menyusun blok visual"] --> SAVE["Simpan Blueprint JSON<br/>(D1: canvas_pages)"]
+    SAVE --> API["apps/cms-api<br/>GET /api/v2/sdui/:slug"]
+    
+    API --> C_WEB["Klien Next.js / Astro<br/>Render HTML / React Server Components"]
+    API --> C_MOB["Klien React Native / Flutter<br/>Render Native Yoga Views (No App Store Re-deploy)"]
+```
+
+### 4.2 Multi-Language (i18n) & Fallback Cascade Matrix
+Setiap entitas konten terikat pada `locales` (`id`, `en`, `ar`) dan dihubungkan oleh `translation_group_id`:
+1. **Bahasa Indonesia (`id`, LTR)**: Bahasa dasar (*Canonical default*).
+2. **Bahasa Inggris (`en`, LTR)**: Terjemahan internasional.
+3. **Bahasa Arab (`ar`, RTL)**: Terjemahan keislaman / PCIM internasional dengan arah baca dwi-arah Kanan-ke-Kiri (*Right-to-Left*) dan font kaligrafi.
+
+**Fallback Strategy**: Jika pengguna meminta `ar` atau `en` namun konten belum diterjemahkan, sistem secara otomatis (*zero crash*) menyajikan versi `id` disertai header informasi `X-CmsMu-Locale-Fallback: true`.
+
+### 4.3 Arsitektur Implementasi Klien Next.js (`apps/nextjs-portal`)
+1. **Pola Konsumsi SDK (`@cmsmu/sdk`)**: Next.js App Router menginisialisasi `createCmsMuClient({ baseUrl })` pada lapisan Server Component untuk menjaga performa rendering di sisi server (*React Server Components*).
+2. **Dynamic Locale Routing (`/[locale]/...`)**: Parameter locale (`id`, `en`, `ar`) menentukan konfigurasi layout, metadata SEO, serta orientasi arah baca:
+   - `id` & `en`: `<html lang="..." dir="ltr">` dengan font `Plus Jakarta Sans`.
+   - `ar`: `<html lang="ar" dir="rtl">` dengan font `Amiri` dan alignment teks kanan-ke-kiri.
+3. **Pola Render SDUI (`CmsMuBlockRenderer`)**: Menerima payload JSON dari `GET /api/theme-editor/sdui/:slug` dan memetakan array blok ke 8 komponen visual modular:
+   - `SiteHeader`: Navigasi responsif, logo, menu dinamis, CTA, dan pemilih bahasa.
+   - `Hero`: Header visual utama dengan headline, subheadline, dan tombol aksi.
+   - `Partners`: Logo mitra kerja sama persyarikatan.
+   - `FeatureGrid`: Grid fitur modular dengan ikon SVG kustom (tanpa emoji bawaan sistem).
+   - `Testimonial`: Kartu kutipan ulasan dan profil narasumber.
+   - `RecentPosts`: Daftar artikel warta terkini terintegrasi real-time via `client.posts.list()`.
+   - `CallToAction`: Banner konversi dan ajakan bergabung.
+   - `SiteFooter`: Navigasi kaki, hak cipta, dan jejaring sosial.
+
+### 4.4 Arsitektur Implementasi Klien Mobile React Native (`apps/mobile-react-native`)
+1. **Pola Server-Driven UI (Yoga Layout Engine)**:
+   - Aplikasi mobile mengonsumsi `cmsMuClient.sdui.getPage('home', { platform: 'mobile', locale })`.
+   - Komponen `NativeBlockRenderer` memetakan blok JSON ke komponen React Native: `View`, `Text`, `Image`, `ScrollView`, `TouchableOpacity`.
+   - Perubahan tata letak kanvas di Web Studio langsung aktif di aplikasi ponsel tanpa perlu kompilasi ulang APK/AAB ke Google Play Store (*Zero Store Redeployment*).
+2. **Kepatuhan Standar UI Mobile (SOP Aturan 9)**:
+   - **SafeArea & System Insets**: Menggunakan safe bottom padding ($\ge 32\text{px}$) agar elemen tombol dan konten tidak tertutup oleh navigasi sistem Android (3-button / gesture bar).
+   - **Pull-to-Refresh**: Seluruh layar dinamis (`HomeScreen`, `PostsScreen`) dibungkus `RefreshControl` bertema `#0a6134`.
+3. **Multi-Language & RTL Mirroring**:
+   - Mendukung bahasa Indonesia (`id`), Inggris (`en`), dan Arab (`ar`).
+
+### 4.5 Ekosistem SDK Mobile Native Resmi (Flutter, Android Kotlin, Apple iOS Swift)
+Untuk melayani pengembangan aplikasi mobile native lintas platform secara komprehensif, cmsMu menyediakan paket pustaka SDK resmi:
+1. **Flutter & Dart SDK (`packages/sdk-flutter` - `cmsmu_sdk`)**:
+   - Mendukung Flutter Mobile (Android & iOS) dan Web dengan Sound Null Safety.
+   - Menyediakan `CmsMuClient` dengan method `sdui.getPage()`, `posts.list()`, dan `locales.list()`.
+2. **Android Kotlin SDK (`packages/sdk-kotlin` - `dev.labmu.cmsmu.sdk`)**:
+   - Mendukung Android API 24+ dan Jetpack Compose berbasis Kotlin Coroutines (`suspend fun`).
+   - Data model `SDUIPage`, `SDUIBlock`, `PostItem`, dan `LocaleItem` siap konsumsi.
+3. **Apple iOS Swift SDK (`packages/sdk-swift` - `CmsMuSDK`)**:
+   - Mendukung iOS 15+, macOS 12+, dan SwiftUI dengan Swift Concurrency (`async/await`) berbasis SPM (*Swift Package Manager*).
+   - Seluruh model mengadopsi protokol `Codable`, `Sendable`, dan `Identifiable`.

@@ -1,0 +1,22 @@
+{
+  "name": "@cmsmu/mobile-react-native",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "main": "App.tsx",
+  "scripts": {
+    "check-types": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@cmsmu/schema-sdui": "workspace:*",
+    "@cmsmu/sdk": "workspace:*",
+    "react": "^19.2.8",
+    "react-native": "^0.78.0"
+  },
+  "devDependencies": {
+    "@types/react": "^19.2.18",
+    "@types/react-native": "^0.73.0",
+    "typescript": "^6.0.3"
+  }
+}

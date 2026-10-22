@@ -1,6 +1,9 @@
 # build output
 dist/
 dist-release/
+.next/
+**/.next/
+*.tsbuildinfo
 
 # generated types
 .astro/

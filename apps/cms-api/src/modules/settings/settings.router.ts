@@ -83,7 +83,7 @@ settings.post("/", authMiddleware, async c => {
 
     // Bersihkan Global Data Cache (In-Memory & KV) saat settings diperbarui
     clearGlobalDataCache(
-      (c.env as any).sa_cache || (c.env as any).cache || (c.env as any).CACHE
+      (c.env as any).CACHE || (c.env as any).cmsmu_cache || (c.env as any).sa_cache || (c.env as any).cache || (c.env as any).WIKIMU_CACHE
     );
 
     return c.json({ success: true, message: "Settings saved" });
@@ -99,8 +99,8 @@ settings.post("/purge-cache", authMiddleware, async c => {
     let clearedCount = 0;
     const env = c.env as any;
 
-    // 1. Purge Cloudflare KV Cache (sa_cache / cache / CACHE)
-    const kv = env.sa_cache || env.cache || env.CACHE;
+    // 1. Purge Cloudflare KV Cache (CACHE / cmsmu_cache / sa_cache / cache / WIKIMU_CACHE)
+    const kv = env.CACHE || env.cmsmu_cache || env.sa_cache || env.cache || env.WIKIMU_CACHE;
     if (kv && typeof kv.list === "function") {
       let cursor: string | undefined = undefined;
       do {

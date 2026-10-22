@@ -20,8 +20,14 @@
       "@cmsmu/core/*": ["packages/core/src/*"],
       "@cmsmu/ui": ["packages/ui/src/index.ts"],
       "@cmsmu/ui/*": ["packages/ui/src/*"],
+      "@cmsmu/schema-sdui": ["packages/schema-sdui/src/index.ts"],
+      "@cmsmu/schema-sdui/*": ["packages/schema-sdui/src/*"],
+      "@cmsmu/sdk": ["packages/sdk/src/index.ts"],
+      "@cmsmu/sdk/*": ["packages/sdk/src/*"],
       "@cmsmu/cms-api": ["apps/cms-api/src/index.ts"],
-      "@cmsmu/cms-api/*": ["apps/cms-api/src/*"]
+      "@cmsmu/cms-api/*": ["apps/cms-api/src/*"],
+      "@cmsmu/nextjs-portal/*": ["apps/nextjs-portal/src/*"],
+      "@cmsmu/mobile-react-native/*": ["apps/mobile-react-native/src/*"]
     }
   }
 }

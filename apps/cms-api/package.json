@@ -18,6 +18,7 @@
   "dependencies": {
     "@cmsmu/core": "workspace:*",
     "@cmsmu/db": "workspace:*",
+    "@cmsmu/schema-sdui": "workspace:*",
     "drizzle-orm": "^0.45.2",
     "hono": "^4.12.33",
     "@puckeditor/core": "^0.22.4",

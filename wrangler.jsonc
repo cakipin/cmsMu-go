@@ -7,23 +7,23 @@
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "cmsmu-db",
+			"database_name": "cmsmu_db",
 			"database_id": "00000000-0000-0000-0000-000000000000"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA_BUCKET",
-			"bucket_name": "cmsmu-media"
+			"bucket_name": "cmsmu_media"
 		},
 		{
 			"binding": "BUCKET",
-			"bucket_name": "cmsmu-media"
+			"bucket_name": "cmsmu_media"
 		}
 	],
 	"kv_namespaces": [
 		{
-			"binding": "WIKIMU_CACHE",
+			"binding": "CACHE",
 			"id": "00000000000000000000000000000000"
 		},
 		{
