@@ -263,8 +263,11 @@ ${customEditorCleanerMethods}
                 this.recalculateCounts();
             }
             this.autoFillSeo();
-            if (typeof window !== 'undefined' && window.__CMS_AUTOSAVE && this.form) {
-                window.__CMS_AUTOSAVE.trigger(this);
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new CustomEvent('trigger-autosave'));
+                if (window.__CMS_AUTOSAVE && this.form) {
+                    window.__CMS_AUTOSAVE.trigger(this);
+                }
             }
         },
         
@@ -276,8 +279,11 @@ ${customEditorCleanerMethods}
         initKeyboardAccessoryBar() {
             if (typeof window === 'undefined' || !window.visualViewport) return;
             const updateToolbarPos = () => {
-                if (window.innerWidth > 1023) {
-                    if (this.$refs.toolbar) this.$refs.toolbar.style.bottom = '';
+                if (window.innerWidth > 767) {
+                    if (this.$refs.toolbar) {
+                        this.$refs.toolbar.style.bottom = '';
+                        this.$refs.toolbar.style.position = '';
+                    }
                     return;
                 }
                 const toolbar = this.$refs.toolbar;

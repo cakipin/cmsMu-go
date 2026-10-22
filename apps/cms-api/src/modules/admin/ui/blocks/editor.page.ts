@@ -6,6 +6,7 @@ import { editorAutoSaveScript } from "./editor/editor-autosave";
 export const editorPage = `
 <div x-show="view === 'add' || view === 'edit'" class="animate-fade"
      @open-editor-media.window="openMediaForEditor($event)"
+     @trigger-autosave.window="triggerAutoSave()"
      style="padding-bottom:80px; position:relative;"
      x-data="{
          // ===============================================
@@ -17,23 +18,19 @@ export const editorPage = `
          isSaving: false,
          saveSuccess: false,
          saveError: '',      
-         
          mediaList: [],
          uniqueCategories: [], 
          uniqueTags: [],        
          managerItems: [],
          allPosts: [],          
-
          // STATE MEDIA
          mediaTab: 'library', 
          uploadFile: null,
          uploadPreview: null,
          selectedMedia: null,
          searchQuery: '',
-         
          // Form Metadata
          mediaForm: { title: '', alt: '', caption: '', description: '' },
-
          // State SEO & AI
          isGeneratingSeo: false,
          isOptimizingFull: false,

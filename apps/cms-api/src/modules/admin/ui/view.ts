@@ -227,14 +227,35 @@ export function renderAdmin(data: any): string {
                     }
                 };
 
-                // In-System Toast System (SOP 16)
+                // In-System Toast System (SOP 16 - Zero-Defect Hardened)
                 window.showToast = function(message, type, duration) {
                     type = type || 'info';
                     duration = duration || 3500;
                     var container = document.getElementById('cms-toast-container');
                     if (!container) return;
+
+                    // Batasi maksimal 3 toast aktif secara bersamaan agar tidak menumpuk
+                    while (container.children.length >= 3) {
+                        container.removeChild(container.firstChild);
+                    }
+
+                    // Ekstraksi & Sanitasi Pesan (Anti Kebocoran Objek/Array & Anti DoS Text Overflow)
+                    var textStr = '';
+                    if (message === null || message === undefined) {
+                        textStr = '';
+                    } else if (typeof message === 'object') {
+                        textStr = message.message || message.error || message.statusText || 'Pemberitahuan sistem';
+                    } else {
+                        textStr = String(message);
+                    }
+
+                    // Truncate maksimal 160 karakter agar tidak merusak layout desktop/mobile
+                    if (textStr.length > 160) {
+                        textStr = textStr.substring(0, 157) + '...';
+                    }
+
                     var toast = document.createElement('div');
-                    toast.className = 'pointer-events-auto flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg border text-sm font-medium transition-all transform translate-y-2 opacity-0 duration-200 max-w-md';
+                    toast.className = 'pointer-events-auto flex items-center justify-between gap-2.5 px-3.5 py-2.5 rounded-xl shadow-lg border text-xs sm:text-sm font-medium transition-all transform translate-y-2 opacity-0 duration-200 max-w-sm sm:max-w-md max-h-32 overflow-hidden break-words';
                     
                     var icon = 'fa-info-circle text-blue-500';
                     var bg = 'bg-white border-slate-200 text-slate-800 shadow-slate-200/50';
@@ -250,17 +271,42 @@ export function renderAdmin(data: any): string {
                     }
                     
                     toast.className += ' ' + bg;
-                    toast.innerHTML = '<i class="fas ' + icon + ' text-base shrink-0"></i><span class="flex-1">' + message + '</span>';
+
+                    // Struktur DOM Aman (Anti XSS via textContent)
+                    var iconEl = document.createElement('i');
+                    iconEl.className = 'fas ' + icon + ' text-base shrink-0';
+                    var spanEl = document.createElement('span');
+                    spanEl.className = 'flex-1 leading-snug';
+                    spanEl.textContent = textStr;
+                    var closeBtn = document.createElement('button');
+                    closeBtn.type = 'button';
+                    closeBtn.className = 'text-slate-400 hover:text-slate-700 ml-1 p-1 shrink-0 text-xs cursor-pointer transition-colors';
+                    closeBtn.innerHTML = '<i class="fas fa-times"></i>';
+                    closeBtn.title = 'Tutup';
+
+                    toast.appendChild(iconEl);
+                    toast.appendChild(spanEl);
+                    toast.appendChild(closeBtn);
                     container.appendChild(toast);
-                    
+
+                    var isClosed = false;
+                    function removeToast() {
+                        if (isClosed) return;
+                        isClosed = true;
+                        toast.classList.add('opacity-0', 'translate-y-2');
+                        setTimeout(function() { toast.remove(); }, 200);
+                    }
+
+                    closeBtn.onclick = function(e) {
+                        e.stopPropagation();
+                        removeToast();
+                    };
+
                     requestAnimationFrame(function() {
                         toast.classList.remove('translate-y-2', 'opacity-0');
                     });
                     
-                    setTimeout(function() {
-                        toast.classList.add('opacity-0', 'translate-y-2');
-                        setTimeout(function() { toast.remove(); }, 200);
-                    }, duration);
+                    setTimeout(removeToast, duration);
                 };
 
                 // In-System Confirmation Modal (SOP 16)
@@ -322,7 +368,9 @@ export function renderAdmin(data: any): string {
                 // Global Safety Net (SOP 16): Native Alert & Confirm Override
                 window.alert = function(msg) {
                     if (window.showToast) {
-                        window.showToast(String(msg), 'info');
+                        var str = (msg && typeof msg === 'object') ? (msg.message || msg.error || 'Pemberitahuan') : String(msg || '');
+                        if (str.length > 160) str = str.substring(0, 157) + '...';
+                        window.showToast(str, 'info');
                     }
                 };
 

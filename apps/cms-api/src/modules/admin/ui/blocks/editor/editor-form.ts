@@ -51,8 +51,8 @@ export const editorForm = `
         </div>
     </div>
 
-    <!-- Segmented Switcher Mobile: Tab 1 = Konten & Pengaturan Pos, Tab 2 = Khusus SEO (disembunyikan di desktop) -->
-    <div class="lg:hidden grid grid-cols-2 gap-1.5 p-1 mb-4 bg-slate-200/90 rounded-lg" role="tablist">
+    <!-- Segmented Switcher Mobile: Tab 1 = Konten & Pengaturan Pos, Tab 2 = Khusus SEO (hanya ponsel < 768px) -->
+    <div class="md:hidden grid grid-cols-2 gap-1.5 p-1 mb-4 bg-slate-200/90 rounded-lg" role="tablist">
         <button type="button" role="tab" @click="mobileTab = 'content'"
             :class="mobileTab === 'content' ? 'bg-white text-slate-900 shadow-sm font-bold' : 'text-slate-600 font-medium'"
             class="min-h-[44px] rounded-md text-xs sm:text-sm active:scale-95 transition-all cursor-pointer flex items-center justify-center gap-1.5">
@@ -65,7 +65,7 @@ export const editorForm = `
         </button>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 items-start pb-12 md:pb-6">
+    <div class="grid grid-cols-1 md:grid-cols-[1fr_280px] lg:grid-cols-[1fr_320px] gap-5 lg:gap-6 items-start pb-12 md:pb-6">
         <div style="min-width: 0;">
             <!-- Banner Pemulihan Draf Lokal (Crash Recovery) -->
             <div x-show="hasLocalDraft" 
@@ -528,10 +528,9 @@ export const editorForm = `
         </div>
     </div>
     </div>
-</div>
 
     <style>
-        @media (max-width: 1023px) {
+        @media (max-width: 767px) {
             .m-hide-content, .m-hide-seo { display: none !important; }
         }
         .comment-toggle-switch {

@@ -305,7 +305,7 @@ export const customEditorStyles = `
             .img-toolbar-delete { color: #f87171 !important; }
             .img-toolbar-delete:hover { background: rgba(239,68,68,0.2) !important; color: #fca5a5 !important; }
 
-            @media (max-width: 1023px) {
+            @media (max-width: 767px) {
                 .editor-top-bar {
                     flex-direction: row !important;
                     justify-content: space-between !important;
