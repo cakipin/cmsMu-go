@@ -3,7 +3,7 @@
 	"compatibility_date": "2026-08-01",
 	"compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
 	"name": "cmsmu",
-	"pages_build_output_dir": "./dist",
+	"pages_build_output_dir": "apps/web/dist",
 	"d1_databases": [
 		{
 			"binding": "DB",
