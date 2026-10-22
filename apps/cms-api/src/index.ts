@@ -40,7 +40,28 @@ const getBucket = (env: any) => {
 };
 
 // 1. GLOBAL MIDDLEWARE
-app.use("/*", cors());
+// CORS Hardened: Wildcard hanya untuk rute publik/uploads, dan scoped origin untuk API internal/admin
+app.use("/api/public/*", cors());
+app.use("/api/posts/*", cors());
+app.use("/uploads/*", cors());
+app.use(
+  "/api/*",
+  cors({
+    origin: origin => {
+      if (!origin) return "*";
+      if (
+        origin.includes("cms.labmu.dev") ||
+        origin.includes("localhost") ||
+        origin.includes("127.0.0.1") ||
+        origin.includes("cmsmu.pages.dev")
+      ) {
+        return origin;
+      }
+      return null;
+    },
+    credentials: true,
+  })
+);
 
 // 1B. SEO CANONICAL TRAILING SLASH REDIRECT (/slug/ -> /slug)
 app.use("*", async (c, next) => {
@@ -53,10 +74,17 @@ app.use("*", async (c, next) => {
   return await next();
 });
 
+// Edge Security Headers (OWASP Top 10 / Cloudflare Best Practices)
 app.use("*", async (c, next) => {
   await next();
   c.header("X-Frame-Options", "SAMEORIGIN");
   c.header("X-Content-Type-Options", "nosniff");
+  c.header("Referrer-Policy", "strict-origin-when-cross-origin");
+  c.header("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  c.header(
+    "Strict-Transport-Security",
+    "max-age=31536000; includeSubDomains; preload"
+  );
   c.header(
     "Content-Security-Policy",
     "default-src 'self' https: data: blob: 'unsafe-inline' 'unsafe-eval'; script-src 'self' 'unsafe-eval' 'unsafe-inline' https: data: blob:; style-src 'self' 'unsafe-inline' https:; img-src 'self' data: https: blob:; font-src 'self' https: data:; connect-src 'self' https:; frame-src 'self' https: data:; worker-src 'self' https: data: blob:;"

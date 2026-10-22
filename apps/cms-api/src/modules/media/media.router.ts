@@ -132,6 +132,37 @@ mediaRouter.post("/", async c => {
     const folder = `${sourceFolder}/${year}/${month}`;
 
     let fileBuffer: Uint8Array = new Uint8Array(await file.arrayBuffer());
+
+    // Batas ukuran file 10 MB (Anti Resource Exhaustion)
+    const MAX_FILE_SIZE = 10 * 1024 * 1024;
+    if (fileBuffer.length > MAX_FILE_SIZE) {
+      return c.json(
+        { error: "Ukuran berkas melebihi batas maksimal (10 MB)" },
+        400
+      );
+    }
+
+    // Sanitasi SVG dari injeksi script XSS
+    if (
+      (file.type && file.type.includes("svg")) ||
+      file.name.toLowerCase().endsWith(".svg")
+    ) {
+      const textContent = new TextDecoder().decode(fileBuffer);
+      if (
+        /<script[\s\S]*?>/i.test(textContent) ||
+        /on\w+\s*=/i.test(textContent) ||
+        /javascript:/i.test(textContent)
+      ) {
+        return c.json(
+          {
+            error:
+              "Berkas SVG ditolak: Memuat script berbahaya (XSS Protection)",
+          },
+          400
+        );
+      }
+    }
+
     let mimeType = file.type;
     let baseName =
       file.name

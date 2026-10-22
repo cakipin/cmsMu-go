@@ -52,7 +52,7 @@ export default defineConfig({
         remarkToc,
         [remarkCollapse, { test: "Table of contents" }],
       ],
-      rehypePlugins: [rehypeCallouts],
+      rehypePlugins: [rehypeCallouts as any],
     }),
     shikiConfig: {
       themes: { light: "min-light", dark: "night-owl" },

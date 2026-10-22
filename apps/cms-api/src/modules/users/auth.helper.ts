@@ -4,7 +4,14 @@ export const DEFAULT_JWT_SECRET =
   "cmsmu-core-secret-key-2026-auth-jwt-token-engine";
 
 export function getJwtSecret(env?: any): string {
-  return env?.JWT_SECRET || DEFAULT_JWT_SECRET;
+  const secret = env?.JWT_SECRET;
+  if (!secret || secret.trim() === "") {
+    console.warn(
+      "⚠️ [SECURITY WARNING] Variabel JWT_SECRET belum dikonfigurasi di Cloudflare! Harap pasang secret di Dashboard."
+    );
+    return DEFAULT_JWT_SECRET;
+  }
+  return secret;
 }
 
 export async function sha256(
