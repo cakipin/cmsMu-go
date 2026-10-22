@@ -14,11 +14,11 @@
 	"r2_buckets": [
 		{
 			"binding": "MEDIA_BUCKET",
-			"bucket_name": "cmsmu_media"
+			"bucket_name": "cmsmu-media"
 		},
 		{
 			"binding": "BUCKET",
-			"bucket_name": "cmsmu_media"
+			"bucket_name": "cmsmu-media"
 		}
 	],
 	"kv_namespaces": [
