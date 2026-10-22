@@ -1,6 +1,6 @@
 {
   "description": "LOCKED CORE FILES - DILARANG KERAS mengubah berkas di daftar ini saat memperbaiki modul fitur (Konten, Users, Media, Menus, Themes, Plugins, Settings).",
-  "lockedAt": "2026-10-22T04:59:36.697Z",
+  "lockedAt": "2026-10-22T05:00:48.343Z",
   "files": {
     "apps/cms-api/src/index.ts": "a8d488e1a9c59df7721050715638cb1edd9c8682923690c984738c8bec565a8b",
     "apps/cms-api/src/core/hooks.ts": "bf24d67ab9f6b012a137eea14563dba4f27fee2470583e10915b3cd0be5317dc",
@@ -14,8 +14,8 @@
     "apps/cms-api/src/modules/admin/ui/blocks/sidebar.ts": "fc7c60a37189699a174f01bfc942c9d3880b49c52d0da7469b4472035c0fc1ba",
     "apps/cms-api/src/modules/admin/ui/blocks/topbar.ts": "54f64c5d4a6759dfe1f84667709740f720c646b1168f2f473f4f0436d1a74380",
     "apps/cms-api/src/modules/admin/ui/blocks/custom-editor.ts": "7dda7193b730aff09be561f4a650bd2f5a4ae2d4ebf270028bc13ccd734eceb6",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor.page.ts": "54fd00df05c19cd68b42120e474c8e1475dedcda1d5e373f6973f3e962f2893d",
-    "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-form.ts": "c41a8c8050855c3739337f4c2274944b03ede5d23b74c51abe4c33ca468d8434",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor.page.ts": "28b47bef459f266c904d497549817068cce9673671264cd841729bcdbdce726f",
+    "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-form.ts": "4ec39e4b9d65b2f9d786ee5badb05b300948030d938311f0a8b278f31d616a06",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/editor-autosave.ts": "f682cc00c2b005ecff54d6692df56fe8d8d662441626a0fda88e59acba103061",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.cleaner.ts": "800970a735c3846658a1bee5d1b192888b13e2358e76c0084d320e9b544c868c",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.logic.ts": "b4436ef1d723d4978d6f4dead06fbcfee1e106e5f2286958d7d466b8dbff503d",
