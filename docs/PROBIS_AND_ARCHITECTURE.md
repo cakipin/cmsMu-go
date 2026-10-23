@@ -220,3 +220,65 @@ Untuk melayani pengembangan aplikasi mobile native lintas platform secara kompre
 3. **Apple iOS Swift SDK (`packages/sdk-swift` - `CmsMuSDK`)**:
    - Mendukung iOS 15+, macOS 12+, dan SwiftUI dengan Swift Concurrency (`async/await`) berbasis SPM (*Swift Package Manager*).
    - Seluruh model mengadopsi protokol `Codable`, `Sendable`, dan `Identifiable`.
+
+---
+
+## 5. Arsitektur 1-Click Cloudflare BYOC Deployer & Centralized Activity Monitoring
+
+Sistem kontrol terpusat di `cms.labmu.dev` dilengkapi dengan kapabilitas **BYOC (Bring Your Own Cloudflare)**:
+
+```
+  ┌────────────────────────────────────────────────────────────────────────┐
+  │                  CENTRAL CONTROL PLANE (cms.labmu.dev)                │
+  │                                                                        │
+  │   ┌───────────────────────┐             ┌──────────────────────────┐   │
+  │   │  1-Click Deployer UI  │             │ Activity Monitor Viewer  │   │
+  │   │  - 4-Step Wizard SPA  │             │ - Stream Logs & Metrics  │   │
+  │   │  - Cloudflare v4 REST │             │ - Health Pulse (Uptime)  │   │
+  │   └──────────┬────────────┘             └────────────▲─────────────┘   │
+  │              │ Orchestrate                           │ Ingest Telemetry │
+  └──────────────┼───────────────────────────────────────┼─────────────────┘
+                 │ Provision Resources                   │ (Non-blocking)
+                 ▼                                       │
+  ┌──────────────────────────────────────────────────────┴─────────────────┐
+  │             USER'S PERSONAL CLOUDFLARE ACCOUNT (BYOC EDGE)             │
+  │                                                                        │
+  │   ┌────────────────────────────────────────────────────────────────┐   │
+  │   │ Cloudflare Pages: https://${slug}.pages.dev                    │   │
+  │   │ - Serverless SSR Runtime (Core cmsMu-go)                       │   │
+  │   │ - Telemetry Middleware: Non-blocking c.executionCtx.waitUntil  │   │
+  │   └──────────┬──────────────────┬──────────────────┬───────────────┘   │
+  │              ▼                  ▼                  ▼                   │
+  │     ┌─────────────────┐┌─────────────────┐┌─────────────────┐         │
+  │     │   D1 Database   ││ R2 Media Bucket ││   KV Namespace  │         │
+  │     │  ${slug}_db     ││ ${slug}_media   ││  ${slug}_cache  │         │
+  │     └─────────────────┘└─────────────────┘└─────────────────┘         │
+  └────────────────────────────────────────────────────────────────────────┘
+```
+
+### 5.1 Alur Orkestrasi Provisioning Cloudflare
+1. **Verifikasi Token**: Melakukan uji coba koneksi token Bearer ke `GET /client/v4/user/tokens/verify` dan mengecek Account ID.
+2. **Alokasi Resource**: Membuat database D1 `${slug}_db`, bucket R2 `${slug}_media`, serta namespace KV `${slug}_cache` & `${slug}_session`.
+3. **Migrasi Skema & Seeding**: Menjalankan skrip DDL SQL lengkap ke D1 remote via Cloudflare REST API dan membuat akun superadmin awal ber-hash SHA-256.
+4. **Pendaftaran Pages Project (Git Upstream `cmsMu-go`)**: Mengonfigurasi proyek Cloudflare Pages yang terhubung langsung ke upstream GitHub `cakipin/cmsMu-go` (`branch: main`, `build_command: pnpm --filter=@cmsmu/web run build && ...`), menyematkan isolasi binding D1, R2, KV, serta menyuntikkan token telemetri `TELEMETRY_API_KEY`.
+5. **Pemicu Build Awal (Initial Build Trigger)**: Sistem memicu trigger deployment Cloudflare Pages via REST API (`POST /pages/projects/{name}/deployments`) untuk segera membangun dan mengaktifkan bundle serverless `cmsMu-go` secara instan.
+
+### 5.2 Alur Pemantauan Aktivitas (Telemetry Emitter Middleware)
+1. **Non-Blocking Telemetry Emitter**: Setiap instance yang dideploy memiliki middleware yang berjalan di background (`c.executionCtx.waitUntil`) untuk mencatat:
+   - `AUTH`: Login sukses/gagal pada panel admin.
+   - `CONTENT`: Pembuatan, pengeditan, atau penghapusan artikel berita.
+   - `THEME`: Perubahan layout canvas SDUI atau tema visual.
+   - `SETTINGS`: Pembaruan konfigurasi situs.
+   - `SYSTEM`: Peringatan error HTTP 500 atau runtime exceptions.
+### 5.3 Aturan Pembatasan Kuota & Isolasi Multi-Tenant BYOC Deployer
+1. **Akses Public User**:
+   - Menu *1-Click Deployer* dibuka untuk seluruh pengguna terdaftar (`superadmin`, `admin`, `editor`, `author`, `subscriber`, `user`).
+2. **Pembatasan Kuota Free / Demo (Maksimal 1 Website)**:
+   - Pengguna dengan paket `free`, `demo`, atau default (tanpa paket Pro/Enterprise berbayar dan bukan `superadmin`) hanya diizinkan memiliki **maksimal 1 proyek/website aktif**.
+   - Pada endpoint `POST /api/deployer/provision`, sistem memvalidasi jumlah proyek pengguna. Jika $\ge 1$, request diblokir dengan kode HTTP 403 (`quotaExceeded: true`).
+   - Di antarmuka UI, kartu indikator kuota menampilkan status pemakaian (contoh: `1 / 1 Website Digunakan`) dan menonaktifkan tombol deploy baru hingga proyek lama dihapus.
+3. **Isolasi Multi-Tenant & Kepemilikan Proyek**:
+   - `GET /api/deployer/projects`: Pengguna publik hanya dapat melihat proyek miliknya sendiri (`WHERE user_id = authUser.id`), sementara Superadmin/Admin dapat memantau seluruh proyek global.
+   - `GET /api/deployer/saved-credentials`: Pengguna hanya mendapatkan kredensial Cloudflare yang tersimpan pada proyek miliknya sendiri, mencegah kebocoran kredensial antar-pengguna.
+   - `PUT` & `DELETE`: Pengguna hanya diizinkan mengedit atau menghapus proyek miliknya sendiri. Setelah proyek dihapus, kuota kembali `0 / 1` sehingga pengguna dapat membuat website baru.
+
