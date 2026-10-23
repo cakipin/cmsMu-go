@@ -4,7 +4,7 @@ import { getDb } from "@cmsmu/db";
 import { posts as postsTable, pages as pagesTable } from "@cmsmu/db";
 import { eq, desc, asc, and, or, like, sql } from "drizzle-orm";
 import { translateTextWithAI } from "../../services/ai-translate";
-import { getGlobalData, getRenderer, formatPostForFrontend } from "./helpers";
+import { getGlobalData, getRenderer, formatPostForFrontend, getCachedPublishedPostCount } from "./helpers";
 import { isPuckJson, renderPuckHtml } from "../theme-builder/render";
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
@@ -32,12 +32,8 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
 
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);
 
-    const totalRow: any = await db
-      .select({ total: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(eq(postsTable.status, "publish"))
-      .get();
-    const totalItems = Number(totalRow?.total || 0);
+    // Gunakan counter cache bertingkat (Memory + KV) anti-full-table scan
+    const totalItems = await getCachedPublishedPostCount(c.env);
 
     const heroPosts = await db
       .select()
@@ -219,12 +215,7 @@ publicRouter.get("/berita", async c => {
     const db = c.env.DB;
     const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
-    const totalRow: any = await getDb(db)
-      .select({ total: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(eq(postsTable.status, "publish"))
-      .get();
-    const totalItems = totalRow?.total || 0;
+    const totalItems = await getCachedPublishedPostCount(c.env);
     const totalPages = Math.ceil(totalItems / limit);
     const posts = await getDb(db)
       .select()

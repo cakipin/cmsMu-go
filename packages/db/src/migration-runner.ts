@@ -334,6 +334,49 @@ export const MIGRATIONS: MigrationStep[] = [
         .run();
     },
   },
+  {
+    id: "2026_10_23_008_d1_performance_lock",
+    version: "0.2.0",
+    name: "D1 Performance Lock (Visitors Table & High-Traffic Composite Indexes)",
+    up: async (db: any) => {
+      // 1. Visitors table & index
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS visitors (
+            ip TEXT PRIMARY KEY,
+            last_seen TEXT DEFAULT CURRENT_TIMESTAMP
+          );`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);`
+        )
+        .run();
+
+      // 2. High-traffic composite indexes for posts, pages & options
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);`
+        )
+        .run();
+    },
+  },
 ];
 
 export async function ensureMigrationTable(db: any) {

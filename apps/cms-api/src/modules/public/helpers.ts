@@ -75,16 +75,22 @@ export async function ensureD1PerformanceIndexes(db: any) {
   d1IndexesEnsured = true;
   try {
     const stmts = [
+      "CREATE TABLE IF NOT EXISTS visitors (ip TEXT PRIMARY KEY, last_seen TEXT DEFAULT CURRENT_TIMESTAMP);",
+      "CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);",
       "CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts(status, category, created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);",
+      "CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);",
       "CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);",
       "CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);",
+      "CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);",
       "CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);",
       "CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);",
-      "CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);"
+      "CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);",
+      "CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);"
     ];
     for (const sql of stmts) {
       await db.prepare(sql).run().catch(() => {});
@@ -94,8 +100,64 @@ export async function ensureD1PerformanceIndexes(db: any) {
   }
 }
 
+// ─── COUNTER CACHE BERTINGKAT (ANTI-COUNT(*) FULL TABLE SCAN) ───────────────
+let memoryPostCountCache: { count: number; expiry: number } | null = null;
+const COUNT_CACHE_KEY = "cmsmu:count:published_posts";
+
+export async function getCachedPublishedPostCount(dbOrEnv: any, maybeKv?: any): Promise<number> {
+  let db: any = dbOrEnv;
+  let kv: any = maybeKv;
+
+  if (dbOrEnv && typeof dbOrEnv === "object" && dbOrEnv.DB) {
+    db = dbOrEnv.DB;
+    if (!kv) kv = dbOrEnv.CACHE || dbOrEnv.cache || dbOrEnv.sa_cache;
+  }
+
+  const now = Date.now();
+  // 1. RAM Isolate (< 0.1ms, 0 rows read)
+  if (memoryPostCountCache && memoryPostCountCache.expiry > now) {
+    return memoryPostCountCache.count;
+  }
+
+  // 2. Cloudflare KV Edge Cache (~15ms, 0 rows read ke D1)
+  if (kv && typeof kv.get === "function") {
+    try {
+      const cachedVal = await kv.get(COUNT_CACHE_KEY);
+      if (cachedVal !== null && !isNaN(Number(cachedVal))) {
+        const count = Number(cachedVal);
+        memoryPostCountCache = { count, expiry: now + 60 * 1000 };
+        return count;
+      }
+    } catch (errKv) {
+      console.warn("[KV getCachedPublishedPostCount error]:", errKv);
+    }
+  }
+
+  // 3. Fallback: D1 Database Query
+  try {
+    const row: any = await db.prepare("SELECT count(*) as total FROM posts WHERE status = 'publish'").first();
+    const count = Number(row?.total || 0);
+    memoryPostCountCache = { count, expiry: now + 60 * 1000 };
+
+    if (kv && typeof kv.put === "function") {
+      kv.put(COUNT_CACHE_KEY, String(count), { expirationTtl: 300 }).catch(() => {});
+    }
+    return count;
+  } catch (_) {
+    return 0;
+  }
+}
+
+export function clearPostCountCache(kv?: any) {
+  memoryPostCountCache = null;
+  if (kv && typeof kv.delete === "function") {
+    kv.delete(COUNT_CACHE_KEY).catch(() => {});
+  }
+}
+
 export function clearGlobalDataCache(kv?: any) {
   memoryGlobalCache = null;
+  clearPostCountCache(kv);
   if (kv && typeof kv.delete === "function") {
     kv.delete(GLOBAL_DATA_CACHE_KEY).catch((err: any) => {
       console.warn("[clearGlobalDataCache KV delete error]:", err);
@@ -257,7 +319,16 @@ export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
   return result;
 }
 
+let memoryActiveThemeCache: { themeId: string; expiry: number } | null = null;
+const THEME_CACHE_TTL_MS = 60 * 1000;
+
 export async function getRenderer(db: any) {
+  const now = Date.now();
+  if (memoryActiveThemeCache && memoryActiveThemeCache.expiry > now) {
+    const theme = getActiveTheme(memoryActiveThemeCache.themeId);
+    return { Renderer: theme || getActiveTheme("default"), themeId: memoryActiveThemeCache.themeId };
+  }
+
   try {
     const activeThemeRow = await getDb(db)
       .select({ id: themesTable.id })
@@ -265,6 +336,7 @@ export async function getRenderer(db: any) {
       .where(eq(themesTable.active, 1))
       .get();
     const themeId = activeThemeRow ? activeThemeRow.id : "default";
+    memoryActiveThemeCache = { themeId, expiry: now + THEME_CACHE_TTL_MS };
     const theme = getActiveTheme(themeId);
     return { Renderer: theme || getActiveTheme("default"), themeId };
   } catch (e) {

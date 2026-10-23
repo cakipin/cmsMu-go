@@ -241,3 +241,102 @@ export const translationGroups = sqliteTable('translation_groups', {
 });
 ```
 
+---
+
+## 5. Skema Control Plane: 1-Click BYOC Deployer & Centralized Activity Logs
+
+Untuk mendukung deployment instance cmsMu-go ke akun Cloudflare pengguna dan pemantauan aktivitas log terpusat di `cms.labmu.dev` (`packages/db/src/schema-deployer.ts`):
+
+```typescript
+import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core';
+
+// 1. Proyek Pengguna (user_projects)
+export const userProjects = sqliteTable('user_projects', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  userId: integer('user_id').notNull(),
+  name: text('name').notNull(),
+  slug: text('slug').notNull().unique(),
+  cfAccountId: text('cf_account_id').notNull(),
+  cfProjectName: text('cf_project_name').notNull(),
+  d1DatabaseId: text('d1_database_id').notNull(),
+  r2BucketName: text('r2_bucket_name').notNull(),
+  kvCacheId: text('kv_cache_id').notNull(),
+  kvSessionId: text('kv_session_id').notNull(),
+  productionUrl: text('production_url').notNull(),
+  customDomain: text('custom_domain'),
+  telemetryApiKey: text('telemetry_api_key').notNull().unique(),
+  status: text('status', { enum: ['provisioning', 'active', 'suspended', 'error'] }).default('provisioning').notNull(),
+  lastHeartbeatAt: text('last_heartbeat_at'),
+  createdAt: text('created_at').notNull(),
+  updatedAt: text('updated_at').notNull(),
+});
+
+// 2. Log Aktivitas Terpusat (instance_activity_logs)
+export const instanceActivityLogs = sqliteTable('instance_activity_logs', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  projectId: integer('project_id').notNull().references(() => userProjects.id, { onDelete: 'cascade' }),
+  eventCategory: text('event_category', { enum: ['AUTH', 'CONTENT', 'MEDIA', 'THEME', 'SETTINGS', 'SYSTEM', 'SECURITY'] }).notNull(),
+  action: text('action').notNull(),
+  severity: text('severity', { enum: ['INFO', 'WARN', 'ERROR', 'CRITICAL'] }).default('INFO').notNull(),
+  actorEmail: text('actor_email'),
+  ipAddress: text('ip_address'),
+  description: text('description').notNull(),
+  metadataJson: text('metadata_json'),
+  createdAt: text('created_at').notNull(),
+});
+
+// 3. Riwayat Detak Jantung Uptime (instance_heartbeats)
+export const instanceHeartbeats = sqliteTable('instance_heartbeats', {
+  id: integer('id').primaryKey({ autoIncrement: true }),
+  projectId: integer('project_id').notNull().references(() => userProjects.id, { onDelete: 'cascade' }),
+  coreVersion: text('core_version').notNull(),
+  postCount: integer('post_count').default(0).notNull(),
+  mediaCount: integer('media_count').default(0).notNull(),
+  memoryUsageMb: integer('memory_usage_mb'),
+  responseTimeMs: integer('response_time_ms'),
+  status: text('status').default('OK').notNull(),
+  recordedAt: text('recorded_at').notNull(),
+});
+```
+
+---
+
+## 6. Indeks Komposit Performa Tinggi & Proteksi Cloudflare D1 Rows Read (cmsMu-go Lock)
+
+Untuk memitigasi *Rows Read Exhaustion* pada tier gratis Cloudflare D1 (5 Juta rows read/hari), seluruh instance `cmsMu-go` (baru maupun existing) dikunci dengan indeks komposit berikut dan pembatasan query:
+
+### 6.1. Indeks Komposit & Tabel Visitors (`initial-schema.sql.ts` & `migration-runner.ts`)
+```sql
+-- 1. Pelacak Pengunjung Aktif (Mencegah Full Scan pada Dashboard Stats)
+CREATE TABLE IF NOT EXISTS visitors (
+  ip TEXT PRIMARY KEY,
+  last_seen TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);
+
+-- 2. Indeks Komposit Pencarian & Filter Konten Terbit
+CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);
+CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);
+CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);
+
+-- 3. Halaman & Opsi
+CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);
+CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);
+CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);
+```
+
+### 6.2. Aturan Pembatasan Query (Query Bounds & Counter Caching)
+1. **Multi-tier Counter Caching (`getCachedPublishedPostCount`)**: Query `COUNT(*)` pada rute publik (`/`, `/berita`, `/kegiatan`) dicache bertingkat:
+   - **Tingkat 1**: RAM Isolate Worker (60 detik, $<0.1\text{ms}$, 0 D1 row read).
+   - **Tingkat 2**: Cloudflare KV (`cmsmu:count:published_posts`, 300 detik, 0 D1 row read).
+   - **Tingkat 3**: Fallback D1 query dengan penulisan balik ke KV dan RAM.
+2. **Hard Limit Projection (`getD1Posts.ts`, `getD1Pages.ts`)**:
+   - Seluruh query RSS dan feed feed dibatasi maksimal `.limit(50)`.
+   - Proyeksi kolom hanya mengambil metadata (id, title, slug, excerpt, category, tags, author, createdAt), tidak mengambil kolom `body` (HTML penuh) untuk menghemat transfer bandwidth dan memori.
+3. **Agregasi Dashboard Caching (`stats.router.ts`)**:
+   - Hasil kalkulasi `SUM(posts.views)`, `COUNT(posts)`, dan `COUNT(media)` disimpan pada in-memory cache isolate selama 60 detik dengan header HTTP `Cache-Control: private, max-age=60`.
+
+

@@ -17,10 +17,21 @@ export async function getD1Posts(
   try {
     const db = getDb(d1);
     const results = await db
-      .select()
+      .select({
+        id: posts.id,
+        title: posts.title,
+        slug: posts.slug,
+        excerpt: posts.excerpt,
+        body: posts.body,
+        tags: posts.tags,
+        featuredImage: posts.featuredImage,
+        author: posts.author,
+        createdAt: posts.createdAt,
+      })
       .from(posts)
       .where(eq(posts.status, "publish"))
-      .orderBy(desc(posts.createdAt));
+      .orderBy(desc(posts.createdAt))
+      .limit(50);
     if (!results) return [];
 
     return results.map((row: any) => {

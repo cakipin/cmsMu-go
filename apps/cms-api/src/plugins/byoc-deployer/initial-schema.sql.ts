@@ -131,7 +131,7 @@ export function generateInitialSchemaSql(options: {
       active INTEGER DEFAULT 0
     );`,
 
-    // 8. Comments & Stats
+    // 8. Comments, Visitors & Stats
     `CREATE TABLE IF NOT EXISTS comments (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       post_id INTEGER NOT NULL,
@@ -141,6 +141,11 @@ export function generateInitialSchemaSql(options: {
       created_at TEXT DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (post_id) REFERENCES posts(id) ON DELETE CASCADE,
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );`,
+
+    `CREATE TABLE IF NOT EXISTS visitors (
+      ip TEXT PRIMARY KEY,
+      last_seen TEXT DEFAULT CURRENT_TIMESTAMP
     );`,
 
     `CREATE TABLE IF NOT EXISTS daily_stats (
@@ -173,13 +178,18 @@ export function generateInitialSchemaSql(options: {
     `CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts(status, category, created_at DESC);`,
     `CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);`,
     `CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);`,
+    `CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);`,
+    `CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);`,
     `CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);`,
     `CREATE INDEX IF NOT EXISTS idx_pages_slug ON pages(slug);`,
     `CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);`,
+    `CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);`,
+    `CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);`,
     `CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);`,
     `CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);`,
     `CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);`,
     `CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);`,
+    `CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);`,
 
     // 11. Seeding Data Awal (Settings, Locales, Admin User)
     `INSERT OR IGNORE INTO locales (code, name, direction, is_default, is_active) VALUES

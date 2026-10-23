@@ -78,8 +78,17 @@ statsRouter.get("/history", async c => {
   }
 });
 
-// 1.8 GET Dashboard Aggregate Stats
+// 1.8 GET Dashboard Aggregate Stats (Cached 60s to prevent full-table views SUM & counts)
+let memoryDashboardStatsCache: { data: any; expiry: number } | null = null;
+const DASHBOARD_CACHE_TTL_MS = 60 * 1000;
+
 statsRouter.get("/dashboard", async c => {
+  const now = Date.now();
+  if (memoryDashboardStatsCache && memoryDashboardStatsCache.expiry > now) {
+    c.header("Cache-Control", "private, max-age=60");
+    return c.json(memoryDashboardStatsCache.data);
+  }
+
   try {
     const db = getDb(c.env.DB);
     const postsCount = await db
@@ -103,13 +112,17 @@ statsRouter.get("/dashboard", async c => {
       .from(posts)
       .get();
 
-    return c.json({
+    const resultData = {
       posts: postsCount?.c || 0,
       pages: pagesCount?.c || 0,
       media: mediaCount?.c || 0,
       users: usersCount?.c || 0,
       totalViews: viewsResult?.total || 0,
-    });
+    };
+
+    memoryDashboardStatsCache = { data: resultData, expiry: now + DASHBOARD_CACHE_TTL_MS };
+    c.header("Cache-Control", "private, max-age=60");
+    return c.json(resultData);
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
