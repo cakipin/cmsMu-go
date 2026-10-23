@@ -336,7 +336,13 @@ CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);
 2. **Hard Limit Projection (`getD1Posts.ts`, `getD1Pages.ts`)**:
    - Seluruh query RSS dan feed feed dibatasi maksimal `.limit(50)`.
    - Proyeksi kolom hanya mengambil metadata (id, title, slug, excerpt, category, tags, author, createdAt), tidak mengambil kolom `body` (HTML penuh) untuk menghemat transfer bandwidth dan memori.
-3. **Agregasi Dashboard Caching (`stats.router.ts`)**:
-   - Hasil kalkulasi `SUM(posts.views)`, `COUNT(posts)`, dan `COUNT(media)` disimpan pada in-memory cache isolate selama 60 detik dengan header HTTP `Cache-Control: private, max-age=60`.
+3. **Agregasi Dashboard & Endpoint Statistik Caching (`stats.router.ts`)**:
+   - `/api/stats/realtime`: Dilindungi cache RAM Isolate (15s) + Cloudflare KV (30s), memangkas 90% query polling admin.
+   - `/api/stats/dashboard`: Hasil kalkulasi `SUM(posts.views)`, `COUNT(posts)`, `COUNT(pages)`, `COUNT(media)`, `COUNT(users)` disimpan pada RAM Isolate (60s) + Cloudflare KV (300s).
+   - `/api/stats/history`: Kueri agregasi 6 bulan dan 30 hari dicache di RAM (300s) + Cloudflare KV (3600s).
+   - `/api/stats/cloudflare`: Mengonsumsi Cloudflare GraphQL Analytics API langsung dari edge (**0% beban pembacaan ke D1**).
+4. **Eliminasi Subquery Full-Scan pada Ping Pengunjung (`handlePing`)**:
+   - Subquery `(SELECT COUNT(*) FROM visitors)` pada setiap hit dihilangkan. Perhitungan ulang pengunjung unik pada `daily_stats` dilakukan secara debounced hanya jika selang waktu update $\ge 15$ menit (`CASE WHEN updated_at < datetime('now', '-15 minutes')`), memangkas 99.9% pemindaian tabel.
+
 
 

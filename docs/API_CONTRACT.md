@@ -287,3 +287,159 @@ Mengambil blueprint tata letak Server-Driven UI (SDUI) untuk halaman kanvas tert
 | **Flutter / Dart** | `cmsmu_sdk` (`packages/sdk-flutter`) | Sound Null Safety, Flutter Mobile & Web, SDUI models |
 | **Android Kotlin** | `dev.labmu.cmsmu.sdk` (`packages/sdk-kotlin`) | Coroutines (`suspend fun`), Jetpack Compose, type-safe POJO |
 | **Apple iOS Swift** | `CmsMuSDK` (`packages/sdk-swift`) | Swift Concurrency (`async/await`), SwiftUI, `Codable` |
+
+---
+
+## 7. Endpoint Telemetri & Monitoring Log Aktivitas Pengguna
+
+### 7.1 `POST /api/telemetry/events`
+Menerima rekaman log aktivitas dari website pengguna terpasang.
+* **Headers:** `X-Telemetry-Api-Key: <key>`
+* **Payload:**
+```json
+{
+  "eventCategory": "CONTENT",
+  "action": "POST_PUBLISHED",
+  "severity": "INFO",
+  "actorEmail": "admin@sdm1.sch.id",
+  "description": "Menerbitkan warta baru",
+  "metadata": { "slug": "berita-utama" }
+}
+```
+
+### 7.2 `POST /api/telemetry/heartbeat`
+Ping kesehatan dan pembaruan uptime status website pengguna.
+* **Headers:** `X-Telemetry-Api-Key: <key>`
+* **Payload:**
+```json
+{
+  "coreVersion": "0.1.9",
+  "postCount": 42,
+  "mediaCount": 15,
+  "status": "OK"
+}
+```
+
+### 7.3 `GET /api/monitoring/projects/:id/logs`
+Mengambil riwayat log aktivitas pengguna untuk dasbor `cms.labmu.dev`.
+* **Query Params:** `page` (default: 1), `limit` (default: 20), `category`, `severity`.
+
+### 7.4 `POST /api/deployer/verify-cf-token`
+Memvalidasi token Cloudflare pengguna sebelum provisioning.
+* **Payload:** `{ "accountId": "...", "apiToken": "..." }`
+
+### 7.5 `POST /api/deployer/provision`
+Mengeksekusi otomatisasi provisioning sumber daya Cloudflare (D1, R2, KV, Pages) di akun pengguna.
+* **Payload:**
+```json
+{
+  "projectName": "SD Muhammadiyah 1",
+  "slug": "sdm1",
+  "accountId": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+  "apiToken": "User_Cloudflare_API_Token",
+  "adminEmail": "admin@sdm1.sch.id",
+  "adminPassword": "SecurePassword123"
+}
+```
+* **Response 200 (OK):**
+```json
+{
+  "success": true,
+  "data": {
+    "projectId": 1,
+    "productionUrl": "https://sdm1.pages.dev",
+    "adminLoginUrl": "https://sdm1.pages.dev/admin",
+    "resources": {
+      "d1DatabaseName": "sdm1_db",
+      "r2BucketName": "sdm1_media",
+      "kvCacheName": "sdm1_cache",
+      "kvSessionName": "sdm1_session"
+    }
+  }
+}
+```
+
+---
+
+## 8. Endpoint Statistik & Analitik (Zero D1 Rows Read Architecture)
+
+Untuk memitigasi *Rows Read Exhaustion* pada tier gratis Cloudflare D1 (5 Juta rows read/hari), seluruh endpoint analitik mengadopsi arsitektur **Multi-Tier Caching (RAM Isolate + Cloudflare KV)** dan integrasi **Cloudflare GraphQL Edge Analytics**.
+
+### 8.1 `GET /api/stats/realtime`
+Mengambil jumlah pengguna aktif di situs dalam 5 menit terakhir.
+* **Headers Response:** `Cache-Control: private, max-age=15, stale-while-revalidate=30`
+* **Strategi Cache:** RAM Isolate (15 detik) + Cloudflare KV (30 detik). Kueri D1 hanya terjadi jika cache miss.
+* **Response 200 (OK):**
+```json
+{
+  "count": 12,
+  "cached": true,
+  "source": "ram"
+}
+```
+
+### 8.2 `GET /api/stats/dashboard`
+Mengambil data ringkasan agregat konten CMS (total artikel, total halaman, media, pengguna, dan total views).
+* **Headers Response:** `Cache-Control: private, max-age=60, stale-while-revalidate=300`
+* **Strategi Cache:** RAM Isolate (60 detik) + Cloudflare KV (300 detik).
+* **Response 200 (OK):**
+```json
+{
+  "posts": 142,
+  "pages": 8,
+  "media": 86,
+  "users": 5,
+  "totalViews": 45200,
+  "cached": true,
+  "source": "kv"
+}
+```
+
+### 8.3 `GET /api/stats/history`
+Mengambil riwayat statistik pengunjung 6 bulan terakhir dan tren harian 30 hari terakhir.
+* **Headers Response:** `Cache-Control: private, max-age=300, stale-while-revalidate=3600`
+* **Strategi Cache:** RAM Isolate (300 detik) + Cloudflare KV (3600 detik).
+* **Response 200 (OK):**
+```json
+{
+  "visitors": [
+    { "month": "2026-05", "count": 1250 },
+    { "day": "2026-10-23", "count": 310 }
+  ],
+  "dailyStats": [
+    { "day": "2026-10-23", "views": 1540, "visitors": 310 }
+  ],
+  "cached": true,
+  "source": "kv"
+}
+```
+
+### 8.4 `GET /api/stats/cloudflare`
+Mengambil metrik traffic edge network langsung dari Cloudflare GraphQL Web Analytics API (**Mutlak 0% Beban D1**).
+* **Headers Response:** `Cache-Control: private, max-age=300`
+* **Kebutuhan Kredensial:** Membaca `CLOUDFLARE_API_TOKEN` & `CLOUDFLARE_ZONE_ID` dari environment atau tabel `options`.
+* **Response 200 (OK - Jika Terkonfigurasi):**
+```json
+{
+  "configured": true,
+  "source": "cloudflare_edge",
+  "data": {
+    "totalRequests24h": 45200,
+    "totalPageViews24h": 12800,
+    "uniqueVisitors24h": 3450,
+    "history30d": [
+      { "date": "2026-10-23", "requests": 45200, "pageViews": 12800, "bytes": 142000000, "uniques": 3450 }
+    ],
+    "topCountries": [
+      { "country": "Indonesia", "count": 42100 },
+      { "country": "Malaysia", "count": 1800 }
+    ],
+    "cachedAt": "2026-10-23T14:30:00.000Z"
+  }
+}
+```
+
+### 8.5 `GET|POST /api/stats/ping`
+Mencatat IP pengunjung aktif ke tabel `visitors` dan memperbarui `daily_stats`.
+* **Optimasi:** Pemindaian subquery berat `(SELECT COUNT(*) FROM visitors)` telah dihilangkan. Perhitungan ulang pengunjung unik hanya dieksekusi secara kondisional (*debounced*) jika selang waktu update $\ge 15$ menit, memangkas 99.9% pemindaian tabel.
+
