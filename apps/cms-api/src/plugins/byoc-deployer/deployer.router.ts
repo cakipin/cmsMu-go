@@ -116,6 +116,85 @@ deployerRouter.post("/verify-cf-token", async (c) => {
 });
 
 /**
+ * 🐙 Verifikasi Akun & Repositori GitHub Pengguna
+ * POST /api/deployer/verify-git
+ */
+deployerRouter.post("/verify-git", async (c) => {
+  try {
+    const authUser = await getAuthUser(c);
+    if (!authUser) {
+      return c.json({ error: "Autentikasi diperlukan. Silakan login terlebih dahulu." }, 401);
+    }
+
+    const body = (await c.req.json().catch(() => ({}))) as any;
+    const owner = typeof body.owner === "string" ? body.owner.trim() : "";
+    const repo = typeof body.repo === "string" ? body.repo.trim() : "";
+    const token = typeof body.token === "string" ? body.token.trim() : "";
+    const branch = typeof body.branch === "string" && body.branch.trim() ? body.branch.trim() : "main";
+
+    if (!owner || !repo) {
+      return c.json({ error: "Username/organisasi dan nama repository GitHub wajib diisi" }, 400);
+    }
+
+    const headers: Record<string, string> = {
+      "User-Agent": "cmsMu-BYOC-Deployer",
+      "Accept": "application/vnd.github.v3+json",
+    };
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
+    }
+
+    const ghRes = await fetch(
+      `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`,
+      { headers }
+    );
+
+    const ghData = (await ghRes.json().catch(() => ({}))) as any;
+
+    if (!ghRes.ok) {
+      const errMsg =
+        ghData.message === "Not Found"
+          ? "Repository tidak ditemukan atau berstatus privat (sertakan GitHub Personal Access Token jika privat)."
+          : ghData.message || "Gagal mengakses repository GitHub";
+      return c.json({ success: false, error: errMsg }, 400);
+    }
+
+    // Periksa branch target
+    let branchExists = true;
+    if (branch) {
+      try {
+        const branchRes = await fetch(
+          `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/branches/${encodeURIComponent(branch)}`,
+          { headers }
+        );
+        if (!branchRes.ok) {
+          branchExists = false;
+        }
+      } catch (_) {}
+    }
+
+    return c.json({
+      success: true,
+      valid: true,
+      owner: ghData.owner?.login || owner,
+      ownerId: String(ghData.owner?.id || ""),
+      repo: ghData.name || repo,
+      repoId: String(ghData.id || ""),
+      defaultBranch: ghData.default_branch || "main",
+      targetBranch: branch,
+      branchExists,
+      isPrivate: Boolean(ghData.private),
+      description: ghData.description || "",
+      htmlUrl: ghData.html_url || `https://github.com/${owner}/${repo}`,
+      message: `Repository ${ghData.full_name || `${owner}/${repo}`} valid dan siap dihubungkan!`,
+    });
+  } catch (err: any) {
+    console.error("[Verify Git Error]:", err);
+    return c.json({ error: err.message || "Internal server error saat memverifikasi Git" }, 500);
+  }
+});
+
+/**
  * 💾 Ambil Kredensial Cloudflare (Account ID & Token) Terakhir yang Tersimpan di Database
  * GET /api/deployer/saved-credentials
  */
@@ -190,6 +269,11 @@ deployerRouter.post("/provision", async (c) => {
       adminEmail,
       adminPassword,
       customDomain,
+      gitOwner,
+      gitRepo,
+      gitBranch,
+      gitOwnerId,
+      gitRepoId,
     } = body;
 
     // 1. Validasi Input
@@ -307,6 +391,10 @@ deployerRouter.post("/provision", async (c) => {
     const controlPlaneUrl = new URL(c.req.url).origin;
     const telemetryEndpoint = `${controlPlaneUrl}/api/telemetry`;
 
+    const effectiveGitOwner = gitOwner || "cakipin";
+    const effectiveGitRepo = gitRepo || "cmsMu-go";
+    const effectiveGitBranch = gitBranch || "main";
+
     const pagesResult = await CloudflareProvisioner.createOrUpdatePagesProject(
       accountId,
       apiToken,
@@ -319,13 +407,18 @@ deployerRouter.post("/provision", async (c) => {
         kvSessionId: kvSession.id,
         telemetryEndpoint,
         telemetryApiKey,
+        gitOwner: effectiveGitOwner,
+        gitRepo: effectiveGitRepo,
+        gitBranch: effectiveGitBranch,
+        gitOwnerId: gitOwnerId ? String(gitOwnerId) : undefined,
+        gitRepoId: gitRepoId ? String(gitRepoId) : undefined,
       }
     );
 
-    // 8b. Memicu Build & Deployment Awal dari cakipin/cmsMu-go
+    // 8b. Memicu Build & Deployment Awal dari Git Branch
     try {
-      console.log(`[5b/5] Triggering Initial Build from cakipin/cmsMu-go...`);
-      await CloudflareProvisioner.triggerPagesDeployment(accountId, apiToken, pagesProjectName);
+      console.log(`[5b/5] Triggering Initial Build from ${effectiveGitOwner}/${effectiveGitRepo}#${effectiveGitBranch}...`);
+      await CloudflareProvisioner.triggerPagesDeployment(accountId, apiToken, pagesProjectName, effectiveGitBranch);
     } catch (deployErr: any) {
       console.warn(`[Trigger Initial Deployment Warning]:`, deployErr.message);
     }
@@ -357,6 +450,7 @@ deployerRouter.post("/provision", async (c) => {
     const newProjectId = insertResult[0]?.id || 0;
 
     // 10. Catat Log Aktivitas Awal (Audit Trail)
+    const repoLabel = `${effectiveGitOwner}/${effectiveGitRepo} (${effectiveGitBranch})`;
     await db.insert(instanceActivityLogs).values({
       projectId: newProjectId,
       eventCategory: "SYSTEM",
@@ -364,7 +458,7 @@ deployerRouter.post("/provision", async (c) => {
       severity: "INFO",
       actorEmail: adminEmail || authUser.username,
       ipAddress: c.req.header("CF-Connecting-IP") || "127.0.0.1",
-      description: `Proyek '${projectName}' (${cleanSlug}) berhasil dideploy ke Cloudflare Pages dengan D1 (${d1Name}), R2 (${r2Name}), dan KV Cache (${kvCacheName}) oleh pengguna #${authUser.id}.`,
+      description: `Proyek '${projectName}' (${cleanSlug}) berhasil dideploy ke Cloudflare Pages dari repositori Git '${repoLabel}' dengan D1 (${d1Name}), R2 (${r2Name}), dan KV Cache (${kvCacheName}) oleh pengguna #${authUser.id}.`,
       createdAt: now,
     });
 
@@ -619,5 +713,77 @@ deployerRouter.delete("/projects/:id", async (c) => {
   } catch (err: any) {
     console.error("[Delete Project Error]:", err);
     return c.json({ error: err.message || "Gagal menghapus proyek" }, 500);
+  }
+});
+
+/**
+ * 🚀 Memicu Re-deploy / Build Baru dari Git ke Cloudflare Pages
+ * POST /api/deployer/projects/:id/deploy
+ */
+deployerRouter.post("/projects/:id/deploy", async (c) => {
+  try {
+    const authUser = await getAuthUser(c);
+    if (!authUser) {
+      return c.json({ error: "Autentikasi diperlukan. Silakan login terlebih dahulu." }, 401);
+    }
+    const isSuperAdmin = authUser.role === "superadmin";
+    const isAdmin = authUser.role === "admin" || isSuperAdmin;
+
+    const id = parseInt(c.req.param("id"), 10);
+    if (isNaN(id)) {
+      return c.json({ error: "ID proyek tidak valid" }, 400);
+    }
+
+    const db = getDb(c.env.DB);
+    const existing = await db
+      .select()
+      .from(userProjects)
+      .where(eq(userProjects.id, id))
+      .get();
+
+    if (!existing) {
+      return c.json({ error: "Proyek tidak ditemukan" }, 404);
+    }
+
+    // Hanya pemilik proyek atau admin yang boleh memicu redeploy
+    if (!isAdmin && existing.userId !== authUser.id) {
+      return c.json({ error: "Akses ditolak: Anda bukan pemilik proyek ini." }, 403);
+    }
+
+    if (!existing.cfAccountId || !existing.cfApiToken || !existing.cfProjectName) {
+      return c.json({ error: "Kredensial Cloudflare pada proyek ini belum lengkap." }, 400);
+    }
+
+    const body = (await c.req.json().catch(() => ({}))) as any;
+    const branch = (typeof body.branch === "string" && body.branch.trim()) ? body.branch.trim() : "main";
+
+    const deployment = await CloudflareProvisioner.triggerPagesDeployment(
+      existing.cfAccountId,
+      existing.cfApiToken,
+      existing.cfProjectName,
+      branch
+    );
+
+    // Catat log aktivitas
+    await db.insert(instanceActivityLogs).values({
+      projectId: existing.id,
+      eventCategory: "SYSTEM",
+      action: "REDEPLOY_TRIGGERED",
+      severity: "INFO",
+      actorEmail: authUser.username,
+      ipAddress: c.req.header("CF-Connecting-IP") || "127.0.0.1",
+      description: `Deployment ulang dari Git branch '${branch}' berhasil dipicu untuk proyek '${existing.name}'. Deployment ID: ${deployment?.id || "N/A"}.`,
+      createdAt: new Date().toISOString(),
+    });
+
+    return c.json({
+      success: true,
+      message: `Build dan deployment ulang untuk proyek '${existing.name}' berhasil dipicu di Cloudflare Pages!`,
+      deploymentId: deployment?.id,
+      url: deployment?.url,
+    });
+  } catch (err: any) {
+    console.error("[Redeploy Project Error]:", err);
+    return c.json({ error: err.message || "Gagal memicu deployment Cloudflare Pages" }, 500);
   }
 });

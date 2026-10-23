@@ -282,3 +282,20 @@ Sistem kontrol terpusat di `cms.labmu.dev` dilengkapi dengan kapabilitas **BYOC 
    - `GET /api/deployer/saved-credentials`: Pengguna hanya mendapatkan kredensial Cloudflare yang tersimpan pada proyek miliknya sendiri, mencegah kebocoran kredensial antar-pengguna.
    - `PUT` & `DELETE`: Pengguna hanya diizinkan mengedit atau menghapus proyek miliknya sendiri. Setelah proyek dihapus, kuota kembali `0 / 1` sehingga pengguna dapat membuat website baru.
 
+### 5.4 Integrasi Repositori Git Pengguna & Alur Redeploy Mandiri
+1. **Dua Mode Sumber Kode (Git Source)**:
+   - **Mode Template Resmi (`cakipin/cmsMu-go`)**: Mode instan default 1-klik yang menghubungkan instance Cloudflare Pages langsung ke repositori upstream resmi `cakipin/cmsMu-go` (branch `main`). Pengguna tidak perlu memiliki akun GitHub atau melakukan setup Git secara manual.
+   - **Mode Hubungkan Akun / Repositori Git Sendiri**: Pengguna memasukkan username/organisasi GitHub (`gitOwner`), nama repository (`gitRepo`), target branch (`gitBranch`, default: `main`), serta opsi Personal Access Token (PAT) untuk repositori privat.
+2. **Endpoint Verifikasi Repositori (`POST /api/deployer/verify-git`)**:
+   - Memvalidasi keterjangkauan repositori GitHub melalui GitHub REST API v3.
+   - Membaca metadata esensial: `owner_id`, `repo_id`, `default_branch`, visibilitas (publik vs privat), serta memvalidasi keberadaan target branch.
+   - Mengembalikan status verifikasi sukses beserta ID repositori yang dibutuhkan oleh Cloudflare Pages API.
+3. **Penyematan Binding Git Dinamis ke Cloudflare Pages**:
+   - Pada `CloudflareProvisioner.createOrUpdatePagesProject`, payload `source.config` dikonfigurasi secara dinamis menggunakan `owner_id` dan `repo_id` repositori pengguna (dengan fallback auto-resolusi via GitHub API jika ID belum disertakan).
+   - Seluruh webhook build commit dan pr-comments Cloudflare Pages otomatis terikat pada repositori pengguna.
+4. **Trigger Deployment Ulang Mandiri (`POST /api/deployer/projects/:id/deploy`)**:
+   - Pada tabel daftar proyek, pengguna dapat memicu tombol **"Redeploy Git"** kapan saja setelah melakukan commit atau push perubahan kode ke repository GitHub mereka.
+   - Control plane memvalidasi hak kepemilikan proyek pengguna, lalu memicu API Cloudflare Pages Deployment (`POST /pages/projects/{name}/deployments`), menarik kode commit terbaru dari branch target, dan membangun bundle serverless terbaru secara otomatis.
+   - Riwayat trigger redeploy dicatat secara transparan di tabel `instance_activity_logs` (`action: REDEPLOY_TRIGGERED`).
+
+

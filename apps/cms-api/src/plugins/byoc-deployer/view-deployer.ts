@@ -53,6 +53,18 @@ export const byocDeployerView = `
   accountId: localStorage.getItem('cmsmu_cf_account_id') || '',
   apiToken: localStorage.getItem('cmsmu_cf_api_token') || '',
 
+  // Konfigurasi Repositori Git (GitHub Account Integration)
+  gitSourceType: 'template',
+  gitOwner: localStorage.getItem('cmsmu_git_owner') || '',
+  gitRepo: localStorage.getItem('cmsmu_git_repo') || '',
+  gitBranch: localStorage.getItem('cmsmu_git_branch') || 'main',
+  gitToken: localStorage.getItem('cmsmu_git_token') || '',
+  showGitToken: false,
+  isTestingGit: false,
+  gitVerified: false,
+  verifiedGitData: null,
+  deployingProjectId: null,
+
   // Visibility & Guide Modal Toggles
   showAdminPassword: false,
   showAdminPasswordConfirm: false,
@@ -199,6 +211,78 @@ export const byocDeployerView = `
     }
   },
 
+  persistGitCredentialsLocal() {
+    if (this.gitOwner && this.gitOwner.trim()) {
+      localStorage.setItem('cmsmu_git_owner', this.gitOwner.trim());
+    }
+    if (this.gitRepo && this.gitRepo.trim()) {
+      localStorage.setItem('cmsmu_git_repo', this.gitRepo.trim());
+    }
+    if (this.gitBranch && this.gitBranch.trim()) {
+      localStorage.setItem('cmsmu_git_branch', this.gitBranch.trim());
+    }
+    if (this.gitToken && this.gitToken.trim()) {
+      localStorage.setItem('cmsmu_git_token', this.gitToken.trim());
+    }
+  },
+
+  async verifyGitRepo(silent = false) {
+    if (!this.gitOwner.trim() || !this.gitRepo.trim()) {
+      if (!silent) this.showToast('Username/organisasi dan nama repository GitHub wajib diisi!', 'error');
+      return;
+    }
+    this.persistGitCredentialsLocal();
+    this.isTestingGit = true;
+    try {
+      const res = await fetch('/api/deployer/verify-git', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          owner: this.gitOwner.trim(),
+          repo: this.gitRepo.trim(),
+          branch: this.gitBranch.trim() || 'main',
+          token: this.gitToken.trim() || undefined
+        })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Verifikasi repository GitHub gagal');
+      }
+      this.gitVerified = true;
+      this.verifiedGitData = data;
+      if (data.defaultBranch && (!this.gitBranch || this.gitBranch === 'main')) {
+        this.gitBranch = data.defaultBranch;
+      }
+      if (!silent) this.showToast('Repository GitHub ' + (data.owner + '/' + data.repo) + ' berhasil terverifikasi!', 'success');
+    } catch (err) {
+      this.gitVerified = false;
+      this.verifiedGitData = null;
+      if (!silent) this.showToast('Gagal memverifikasi Git: ' + err.message, 'error');
+    } finally {
+      this.isTestingGit = false;
+    }
+  },
+
+  async redeployProject(proj) {
+    this.deployingProjectId = proj.id;
+    try {
+      const res = await fetch('/api/deployer/projects/' + proj.id + '/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ branch: 'main' })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || 'Gagal memicu redeploy');
+      }
+      this.showToast('Deployment ulang berhasil dipicu! Cloudflare Pages sedang membuild commit terbaru.', 'success');
+    } catch (err) {
+      this.showToast('Gagal redeploy: ' + err.message, 'error');
+    } finally {
+      this.deployingProjectId = null;
+    }
+  },
+
   async loadSavedCredentials() {
     const localAcc = localStorage.getItem('cmsmu_cf_account_id');
     const localTok = localStorage.getItem('cmsmu_cf_api_token');
@@ -273,7 +357,7 @@ export const byocDeployerView = `
     }
   },
 
-  goToStep2() {
+  async goToStep2() {
     if (this.quota && this.quota.isLimitReached) {
       this.showToast('Batas kuota tercapai: Akun Free/Demo dibatasi maksimal 1 website Cloudflare BYOC!', 'error');
       this.activeTab = 'list';
@@ -294,6 +378,16 @@ export const byocDeployerView = `
     if (this.adminPassword !== this.adminPasswordConfirm) {
       this.showToast('Konfirmasi password tidak cocok!', 'error');
       return;
+    }
+    if (this.gitSourceType === 'custom') {
+      if (!this.gitOwner.trim() || !this.gitRepo.trim()) {
+        this.showToast('GitHub Owner dan Nama Repository wajib diisi jika memilih repositori kustom!', 'error');
+        return;
+      }
+      if (!this.gitVerified) {
+        await this.verifyGitRepo(false);
+        if (!this.gitVerified) return;
+      }
     }
     this.step = 2;
     if (this.accountId && this.apiToken && !this.tokenVerified && !this.isTestingToken) {
@@ -330,6 +424,7 @@ export const byocDeployerView = `
     this.errorMessage = '';
     this.successData = null;
     this.persistCredentialsLocal();
+    this.persistGitCredentialsLocal();
 
     // Reset checklist
     this.stepsProgress.forEach(s => s.status = 'pending');
@@ -347,7 +442,13 @@ export const byocDeployerView = `
           apiToken: this.apiToken.trim(),
           adminEmail: this.adminEmail.trim(),
           adminPassword: this.adminPassword,
-          adminName: this.adminName.trim()
+          adminName: this.adminName.trim(),
+          gitSourceType: this.gitSourceType,
+          gitOwner: this.gitSourceType === 'custom' ? this.gitOwner.trim() : 'cakipin',
+          gitRepo: this.gitSourceType === 'custom' ? this.gitRepo.trim() : 'cmsMu-go',
+          gitBranch: this.gitSourceType === 'custom' ? (this.gitBranch.trim() || 'main') : 'main',
+          gitOwnerId: this.gitSourceType === 'custom' && this.verifiedGitData ? this.verifiedGitData.ownerId : undefined,
+          gitRepoId: this.gitSourceType === 'custom' && this.verifiedGitData ? this.verifiedGitData.repoId : undefined,
         })
       });
 
@@ -356,7 +457,7 @@ export const byocDeployerView = `
         if (data.quotaExceeded && this.quota) {
           this.quota.isLimitReached = true;
         }
-        const errObj = new Error(data.error || 'Provisioning gagal dieksekusi');
+        const errObj = new Error(data.error || 'Provisioning gagal dieksekusi') as any;
         if (typeof data.failedStepIndex === 'number') {
           errObj.failedStepIndex = data.failedStepIndex;
         }
@@ -368,7 +469,7 @@ export const byocDeployerView = `
       this.successData = data.data || data;
       this.showToast('Selamat! Instance CMSMu berhasil dideploy ke Cloudflare Anda!', 'success');
       await this.loadProjects();
-    } catch (err) {
+    } catch (err: any) {
       this.errorMessage = err.message;
       const failedIdx = (typeof err.failedStepIndex === 'number') ? err.failedStepIndex : this.stepsProgress.findIndex(s => s.status === 'running');
       if (failedIdx !== -1 && failedIdx < this.stepsProgress.length) {
@@ -390,6 +491,9 @@ export const byocDeployerView = `
     this.adminEmail = '';
     this.adminPassword = '';
     this.adminPasswordConfirm = '';
+    this.gitSourceType = 'template';
+    this.gitVerified = false;
+    this.verifiedGitData = null;
     this.successData = null;
     this.errorMessage = '';
   }
@@ -605,6 +709,10 @@ export const byocDeployerView = `
                       <a :href="proj.productionUrl + '/admin'" target="_blank" class="px-2.5 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 rounded-lg font-bold text-[11px] transition-colors flex items-center gap-1" title="Masuk Panel Admin">
                         <i class="fas fa-user-shield"></i> Admin
                       </a>
+                      <button type="button" @click="redeployProject(proj)" :disabled="deployingProjectId === proj.id" class="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg font-bold text-[11px] transition-colors flex items-center gap-1" title="Tarik Commit Git Terbaru & Deploy Ulang">
+                        <i class="fas fa-sync-alt" :class="deployingProjectId === proj.id ? 'fa-spin' : ''"></i>
+                        <span x-text="deployingProjectId === proj.id ? 'Deploying...' : 'Redeploy'"></span>
+                      </button>
                       <button type="button" @click="openEditModal(proj)" class="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 rounded-lg font-bold text-[11px] transition-colors flex items-center gap-1" title="Edit Proyek">
                         <i class="fas fa-edit"></i> Edit
                       </button>
@@ -736,6 +844,100 @@ export const byocDeployerView = `
             <span x-show="!showAdminPasswordConfirm"><i class="fas fa-eye text-sm"></i></span>
             <span x-show="showAdminPasswordConfirm" x-cloak><i class="fas fa-eye-slash text-sm"></i></span>
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- SUMBER REPOSITORI GIT (OFFICIAL TEMPLATE VS CUSTOM GIT REPO) -->
+    <div class="pt-6 border-t border-slate-100 space-y-4">
+      <div>
+        <label class="block text-xs font-bold text-slate-800 m-0 flex items-center gap-2">
+          <i class="fab fa-github text-base text-slate-900"></i> Sumber Kode Git & Repositori Website
+        </label>
+        <p class="text-[11px] text-slate-500 m-0 mt-1">Pilih apakah ingin menggunakan template resmi cmsMu-go atau menghubungkan akun/repositori GitHub Anda sendiri.</p>
+      </div>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+        <!-- OPSI 1: TEMPLATE RESMI -->
+        <label class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 relative"
+               :class="gitSourceType === 'template' ? 'border-indigo-600 bg-indigo-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+          <input type="radio" name="gitSourceType" value="template" x-model="gitSourceType" class="mt-1 text-indigo-600 focus:ring-indigo-500">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold text-slate-800">Template Resmi</span>
+              <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-extrabold rounded-full">Rekomendasi</span>
+            </div>
+            <p class="text-[11px] font-mono text-indigo-600 font-bold mt-1 mb-0.5">cakipin/cmsMu-go (main)</p>
+            <p class="text-[11px] text-slate-500 leading-relaxed m-0">Upstream resmi standar tanpa perlu akun GitHub atau setup build manual. 1-klik siap pakai.</p>
+          </div>
+        </label>
+
+        <!-- OPSI 2: HUBUNGKAN REPO GIT SENDIRI -->
+        <label class="p-4 rounded-2xl border-2 cursor-pointer transition-all flex items-start gap-3.5 relative"
+               :class="gitSourceType === 'custom' ? 'border-indigo-600 bg-indigo-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'">
+          <input type="radio" name="gitSourceType" value="custom" x-model="gitSourceType" class="mt-1 text-indigo-600 focus:ring-indigo-500">
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-extrabold text-slate-800">Hubungkan Git Sendiri</span>
+              <span class="px-2 py-0.5 bg-purple-100 text-purple-800 text-[10px] font-extrabold rounded-full">Kustomisasi</span>
+            </div>
+            <p class="text-[11px] text-purple-700 font-semibold mt-1 mb-0.5">Custom GitHub Account / Repo</p>
+            <p class="text-[11px] text-slate-500 leading-relaxed m-0">Deploy langsung dari repository GitHub pribadi/organisasi Anda dengan CI/CD mandiri.</p>
+          </div>
+        </label>
+      </div>
+
+      <!-- FORM INPUT REPO GIT KUSTOM (JIKA MEMILIH OPSI 2) -->
+      <div x-show="gitSourceType === 'custom'" x-cloak class="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-4 animate-in fade-in duration-200">
+        <div class="flex items-center justify-between border-b border-slate-200/80 pb-3">
+          <div class="flex items-center gap-2">
+            <i class="fab fa-github text-slate-700 text-base"></i>
+            <h4 class="text-xs font-extrabold text-slate-800 m-0">Konfigurasi Repositori GitHub Pengguna</h4>
+          </div>
+          <template x-if="gitVerified">
+            <span class="px-2.5 py-1 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-lg text-[11px] font-bold flex items-center gap-1.5">
+              <i class="fas fa-check-circle text-emerald-600"></i> Terhubung: <span x-text="gitOwner + '/' + gitRepo"></span>
+            </span>
+          </template>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1.5">GitHub Owner / Akun <span class="text-rose-500">*</span></label>
+            <input type="text" x-model="gitOwner" @input="gitVerified = false; persistGitCredentialsLocal()" placeholder="Contoh: cakipin" class="w-full border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none bg-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Nama Repository <span class="text-rose-500">*</span></label>
+            <input type="text" x-model="gitRepo" @input="gitVerified = false; persistGitCredentialsLocal()" placeholder="Contoh: cmsMu-go" class="w-full border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none bg-white">
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Branch Target</label>
+            <input type="text" x-model="gitBranch" @input="persistGitCredentialsLocal()" placeholder="main" class="w-full border border-slate-200 px-3.5 py-2 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none bg-white">
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[11px] font-bold text-slate-700 mb-1.5">Personal Access Token (PAT) <span class="text-slate-400 font-normal">(Wajib jika repository private)</span></label>
+          <div class="relative flex items-center">
+            <input :type="showGitToken ? 'text' : 'password'" x-model="gitToken" @input="gitVerified = false; persistGitCredentialsLocal()" placeholder="ghp_xxxxxxxxxxxx (opsional untuk repo public)" class="w-full border border-slate-200 px-3.5 py-2 pr-10 rounded-xl text-xs font-mono focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600 outline-none bg-white">
+            <button type="button" @click="showGitToken = !showGitToken" class="absolute right-2.5 text-slate-400 hover:text-slate-600 p-1">
+              <span x-show="!showGitToken"><i class="fas fa-eye text-xs"></i></span>
+              <span x-show="showGitToken" x-cloak><i class="fas fa-eye-slash text-xs"></i></span>
+            </button>
+          </div>
+          <p class="text-[10px] text-slate-400 mt-1">Token hanya butuh izin <code class="font-mono font-bold">repo</code> read untuk memverifikasi dan mengunduh repositori.</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button type="button" @click="verifyGitRepo(false)" :disabled="isTestingGit" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 disabled:opacity-50">
+            <i class="fas fa-sync-alt" :class="isTestingGit ? 'fa-spin' : ''"></i>
+            <span x-text="isTestingGit ? 'Memverifikasi...' : 'Uji & Hubungkan Repository Git'"></span>
+          </button>
+          <template x-if="gitVerified && verifiedGitData">
+            <span class="text-xs text-emerald-700 font-bold flex items-center gap-1">
+              <i class="fas fa-check-circle"></i> Terverifikasi: <span class="font-mono" x-text="verifiedGitData.owner + '/' + verifiedGitData.repo"></span> (<span x-text="verifiedGitData.isPrivate ? 'Private' : 'Public'"></span>)
+            </span>
+          </template>
         </div>
       </div>
     </div>
@@ -898,6 +1100,18 @@ export const byocDeployerView = `
           <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider m-0">Cloudflare Pages</p>
           <p class="text-sm font-mono font-bold text-slate-800 m-0 mt-0.5" x-text="'https://' + slug + '.pages.dev'"></p>
           <p class="text-xs text-slate-500 m-0 mt-1">Runtime serverless SSR cmsMu-go yang berjalan di global network.</p>
+        </div>
+      </div>
+
+      <!-- Git Source -->
+      <div class="p-5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-4 md:col-span-2">
+        <div class="w-10 h-10 rounded-xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg">
+          <i class="fab fa-github"></i>
+        </div>
+        <div>
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider m-0">Sumber Repositori Git</p>
+          <p class="text-sm font-mono font-bold text-slate-800 m-0 mt-0.5" x-text="gitSourceType === 'custom' ? (gitOwner + '/' + gitRepo + ' (' + (gitBranch || 'main') + ')') : 'cakipin/cmsMu-go (main)'"></p>
+          <p class="text-xs text-slate-500 m-0 mt-1">Cloudflare Pages akan menarik source code dan otomatis membuild commit dari branch ini.</p>
         </div>
       </div>
     </div>

@@ -16,6 +16,8 @@ export interface PagesBindingsConfig {
   gitOwner?: string;
   gitRepo?: string;
   gitBranch?: string;
+  gitOwnerId?: string;
+  gitRepoId?: string;
 }
 
 export class CloudflareProvisioner {
@@ -190,6 +192,30 @@ export class CloudflareProvisioner {
     const gitOwner = config.gitOwner || "cakipin";
     const gitRepo = config.gitRepo || "cmsMu-go";
     const gitBranch = config.gitBranch || "main";
+    let ownerId = config.gitOwnerId || (gitOwner === "cakipin" && gitRepo === "cmsMu-go" ? "135562014" : "");
+    let repoId = config.gitRepoId || (gitOwner === "cakipin" && gitRepo === "cmsMu-go" ? "1381692254" : "");
+
+    // Jika custom Git repo dan ID belum disediakan, auto-resolve via GitHub REST API
+    if ((gitOwner !== "cakipin" || gitRepo !== "cmsMu-go") && (!ownerId || !repoId)) {
+      try {
+        const ghRes = await fetch(
+          `https://api.github.com/repos/${encodeURIComponent(gitOwner)}/${encodeURIComponent(gitRepo)}`,
+          {
+            headers: {
+              "User-Agent": "cmsMu-BYOC-Deployer",
+              "Accept": "application/vnd.github.v3+json",
+            },
+          }
+        );
+        if (ghRes.ok) {
+          const ghData = (await ghRes.json().catch(() => ({}))) as any;
+          if (ghData.owner?.id) ownerId = String(ghData.owner.id);
+          if (ghData.id) repoId = String(ghData.id);
+        }
+      } catch (err: any) {
+        console.warn("[Auto-resolve GitHub IDs Warning]:", err.message);
+      }
+    }
 
     const projectPayload = {
       name: config.projectName,
@@ -199,9 +225,9 @@ export class CloudflareProvisioner {
         type: "github",
         config: {
           owner: gitOwner,
-          owner_id: "135562014",
+          owner_id: ownerId || "135562014",
           repo_name: gitRepo,
-          repo_id: "1381692254",
+          repo_id: repoId || "1381692254",
           production_branch: gitBranch,
           pr_comments_enabled: true,
           deployments_enabled: true,
