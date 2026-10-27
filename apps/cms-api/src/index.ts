@@ -116,6 +116,8 @@ app.use("/api/*", async (c, next) => {
     path.startsWith("/api/addons/ota/clients/register") ||
     path.startsWith("/api/addons/ota/clients/heartbeat") ||
     path === "/api/health" ||
+    path === "/api/stats/ping" ||
+    path.startsWith("/api/stats/view/") ||
     // Media: Kecualikan /api/media/setup dari whitelist publik!
     ((method === "GET" || method === "HEAD") &&
       (path === "/api/media" ||

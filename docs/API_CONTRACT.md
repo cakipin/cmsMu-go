@@ -369,6 +369,15 @@ Mengambil metrik traffic edge network langsung dari Cloudflare GraphQL Web Analy
 ```
 
 ### 8.5 `GET|POST /api/stats/ping`
-Mencatat IP pengunjung aktif ke tabel `visitors` dan memperbarui `daily_stats`.
-* **Optimasi:** Pemindaian subquery berat `(SELECT COUNT(*) FROM visitors)` telah dihilangkan. Perhitungan ulang pengunjung unik hanya dieksekusi secara kondisional (*debounced*) jika selang waktu update $\ge 15$ menit, memangkas 99.9% pemindaian tabel.
+Endpoint publik untuk pelacakan lalu lintas web via jaringan global Cloudflare Edge.
+* **Arsitektur:** Murni Cloudflare Edge & GraphQL Analytics.
+* **Efisiensi Database:** 0% D1 Row Read & 0% D1 Row Write. Seluruh metrik dicatat secara otomatis oleh Cloudflare Edge Analytics tanpa menyentuh tabel `visitors` atau `daily_stats`.
+* **Response Payload:**
+  ```json
+  {
+    "success": true,
+    "tracking": "cloudflare_edge",
+    "recordedAt": "2026-10-27T02:29:27.484Z"
+  }
+  ```
 
