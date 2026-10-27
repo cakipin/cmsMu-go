@@ -78,6 +78,12 @@ importers:
       lucide-react:
         specifier: ^1.28.0
         version: 1.43.0(react@19.2.8)
+      react:
+        specifier: ^19.2.8
+        version: 19.2.8
+      react-dom:
+        specifier: ^19.2.8
+        version: 19.2.8(react@19.2.8)
       satori:
         specifier: ^0.26.0
         version: 0.26.0
@@ -13914,7 +13920,7 @@ snapshots:
   terser@5.51.2:
     dependencies:
       '@jridgewell/source-map': 0.3.11
-      acorn: 8.16.0
+      acorn: 8.19.0
       commander: 2.20.3
       source-map-support: 0.5.21
 

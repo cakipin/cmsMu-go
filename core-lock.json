@@ -1,6 +1,6 @@
 {
   "description": "LOCKED CORE FILES - DILARANG KERAS mengubah berkas di daftar ini saat memperbaiki modul fitur (Konten, Users, Media, Menus, Themes, Plugins, Settings).",
-  "lockedAt": "2026-10-27T08:58:02.187Z",
+  "lockedAt": "2026-10-27T11:24:49.394Z",
   "files": {
     "apps/cms-api/src/index.ts": "6b674942d5361c37727cc2b0d285f20b7d682a97f50aa58db8947ceaed853aa7",
     "apps/cms-api/src/core/hooks.ts": "bf24d67ab9f6b012a137eea14563dba4f27fee2470583e10915b3cd0be5317dc",
@@ -21,6 +21,6 @@
     "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.logic.ts": "b4436ef1d723d4978d6f4dead06fbcfee1e106e5f2286958d7d466b8dbff503d",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.styles.ts": "a79a8a4035a29df3b9a1793bcdb686c77b5d1d65ea97f811879a7c9c99a865b8",
     "apps/cms-api/src/modules/admin/ui/blocks/editor/custom-editor/custom-editor.template.ts": "405a34117b0aaa92b49808f47df42b21db3a11dfd024b104c75549bb7e60089b",
-    "packages/db/src/schema.ts": "94c26c5cb78ff69b8be96871f655ecf4c244d607a01043ecd60d30497eb8f5ee"
+    "packages/db/src/schema.ts": "1f6df1c1e6ac1a4887397110d75bbfdadcca2757eb8e0d7854b8f9e426b2d49d"
   }
 }

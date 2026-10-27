@@ -26,7 +26,9 @@
     "satori": "^0.26.0",
     "lucide-react": "^1.28.0",
     "cheerio": "^1.2.0",
-    "dayjs": "^1.11.21"
+    "dayjs": "^1.11.21",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
   },
   "devDependencies": {
     "@cloudflare/workers-types": "^5.20260801.1",

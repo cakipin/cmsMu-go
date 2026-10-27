@@ -84,13 +84,16 @@ export async function ensureD1PerformanceIndexes(db: any) {
       "CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);",
       "CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);",
       "CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);",
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_posts_slug ON posts(slug);",
       "CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);",
       "CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);",
       "CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);",
       "CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);",
       "CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);",
-      "CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);"
+      "CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);",
+      "CREATE UNIQUE INDEX IF NOT EXISTS idx_contents_slug ON contents(slug);",
+      "CREATE INDEX IF NOT EXISTS idx_contents_status_type_date ON contents(status, type, created_at DESC);"
     ];
     for (const sql of stmts) {
       await db.prepare(sql).run().catch(() => {});
@@ -322,6 +325,10 @@ export async function getGlobalData(dbOrEnv: any, maybeKv?: any) {
 let memoryActiveThemeCache: { themeId: string; expiry: number } | null = null;
 const THEME_CACHE_TTL_MS = 60 * 1000;
 
+export function invalidateActiveThemeCache() {
+  memoryActiveThemeCache = null;
+}
+
 export async function getRenderer(db: any) {
   const now = Date.now();
   if (memoryActiveThemeCache && memoryActiveThemeCache.expiry > now) {
@@ -343,3 +350,36 @@ export async function getRenderer(db: any) {
     return { Renderer: getActiveTheme("default"), themeId: "default" };
   }
 }
+
+// ─── CLOUDFLARE KV HTML CACHE HELPERS (ZERO D1 ROWS READ ON HIT) ───────────
+export function getPublicKv(env: any): any {
+  if (!env) return null;
+  return env.CACHE || env.cache || env.sa_cache || env.cmsmu_cache || null;
+}
+
+export async function getCachedHtml(kv: any, key: string): Promise<string | null> {
+  if (!kv || typeof kv.get !== "function") return null;
+  try {
+    return await kv.get(key);
+  } catch (err) {
+    console.warn("[getCachedHtml KV read warning]:", err);
+    return null;
+  }
+}
+
+export function setCachedHtml(
+  ctx: any,
+  kv: any,
+  key: string,
+  html: string,
+  ttlSeconds = 600
+): void {
+  if (!kv || typeof kv.put !== "function" || !html) return;
+  const promise = kv.put(key, html, { expirationTtl: ttlSeconds }).catch((err: any) => {
+    console.warn("[setCachedHtml KV write warning]:", err);
+  });
+  if (ctx && typeof ctx.waitUntil === "function") {
+    ctx.waitUntil(promise);
+  }
+}
+

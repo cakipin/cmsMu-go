@@ -4,7 +4,15 @@ import { getDb } from "@cmsmu/db";
 import { posts as postsTable, pages as pagesTable } from "@cmsmu/db";
 import { eq, desc, asc, and, or, like, sql } from "drizzle-orm";
 import { translateTextWithAI } from "../../services/ai-translate";
-import { getGlobalData, getRenderer, formatPostForFrontend, getCachedPublishedPostCount } from "./helpers";
+import {
+  getGlobalData,
+  getRenderer,
+  formatPostForFrontend,
+  getCachedPublishedPostCount,
+  getPublicKv,
+  getCachedHtml,
+  setCachedHtml,
+} from "./helpers";
 import { isPuckJson, renderPuckHtml } from "../theme-builder/render";
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
@@ -20,14 +28,25 @@ publicRouter.route("/", profileRouter);
 // 1. ROUTE HOMEPAGE (Multi-Language & Pagination)
 // ============================================================
 async function renderHomePage(c: any, lang?: "en" | "ar") {
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
+  const regionParam = c.req.query("region") || "all";
+  const kv = getPublicKv(c.env);
+  const homeCacheKey = `cmsmu:html:home:${lang || "id"}:p${page}:r${regionParam}`;
+
+  // 1. FAST PATH: Check Cloudflare KV Cache (0 D1 Rows Read on Hit)
+  const cachedHtml = await getCachedHtml(kv, homeCacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
+
   try {
     const { settings, menus, categories, topics, sources } =
       await getGlobalData(c.env);
     const { Renderer } = await getRenderer(c.env.DB);
 
     const db = getDb(c.env.DB);
-    const page = Math.max(1, parseInt(c.req.query("page") || "1"));
-    const regionParam = c.req.query("region") || "all";
     const limit = 12; // 12 artikel per halaman reguler
 
     const mapList = (list: any[]) => (list || []).map(formatPostForFrontend);
@@ -137,15 +156,17 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
             .all();
         } catch (e) {}
 
-        return c.html(
-          renderPuckHtml({
-            site: settings,
-            menus,
-            page: customHome,
-            canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : "/"),
-            latestPosts: (latestPosts || []).map(formatPostForFrontend),
-          })
-        );
+        const rendered = renderPuckHtml({
+          site: settings,
+          menus,
+          page: customHome,
+          canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : "/"),
+          latestPosts: (latestPosts || []).map(formatPostForFrontend),
+        });
+        setCachedHtml(c.executionCtx, kv, homeCacheKey, rendered, 600);
+        c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+        c.header("X-Cmsmu-Cache", "MISS");
+        return c.html(rendered);
       }
 
       // Jika administrator memilih halaman statis khusus non-Puck selain '__default__'
@@ -163,7 +184,11 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
             new URL(c.req.url).origin + "/default-og.jpg",
         };
         if (Renderer && typeof Renderer.renderPage === "function") {
-          return c.html(Renderer.renderPage(pageContext));
+          const rendered = Renderer.renderPage(pageContext);
+          setCachedHtml(c.executionCtx, kv, homeCacheKey, rendered, 600);
+          c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+          c.header("X-Cmsmu-Cache", "MISS");
+          return c.html(rendered);
         }
       }
     }
@@ -193,8 +218,11 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
       canonical: new URL(c.req.url).origin + (lang ? `/${lang}` : "/"),
       ogImage: new URL(c.req.url).origin + "/default-og.jpg",
     };
+    const rendered = Renderer.renderHome(context);
+    setCachedHtml(c.executionCtx, kv, homeCacheKey, rendered, 600);
     c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
-    return c.html(Renderer.renderHome(context));
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(rendered);
   } catch (e: any) {
     return c.text("Error: " + e.message, 500);
   }
@@ -208,9 +236,19 @@ publicRouter.get("/ar", async c => renderHomePage(c, "ar"));
 // 2. ROUTE BERITA & KEGIATAN
 // ============================================================
 publicRouter.get("/berita", async c => {
-  const page = parseInt(c.req.query("page") || "1");
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
   const limit = 12;
   const offset = (page - 1) * limit;
+  const kv = getPublicKv(c.env);
+  const cacheKey = `cmsmu:html:berita:p${page}`;
+
+  const cachedHtml = await getCachedHtml(kv, cacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
+
   try {
     const db = c.env.DB;
     const { settings, menus } = await getGlobalData(c.env);
@@ -238,39 +276,40 @@ publicRouter.get("/berita", async c => {
         baseUrl: "/berita",
       },
     };
+    const html = Renderer?.renderCategory
+      ? Renderer.renderCategory(context)
+      : Renderer.renderHome(context);
+
+    setCachedHtml(c.executionCtx, kv, cacheKey, html, 600);
     c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
-    if (Renderer?.renderCategory)
-      return c.html(Renderer.renderCategory(context));
-    return c.html(Renderer.renderHome(context));
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(html);
   } catch (e: any) {
     return c.text("Berita Error: " + e.message, 500);
   }
 });
 
 publicRouter.get("/kegiatan", async c => {
-  const page = parseInt(c.req.query("page") || "1");
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
   const limit = 10;
   const offset = (page - 1) * limit;
+  const kv = getPublicKv(c.env);
+  const cacheKey = `cmsmu:html:kegiatan:p${page}`;
+
+  const cachedHtml = await getCachedHtml(kv, cacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
+
   try {
     const db = c.env.DB;
     const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
-    const totalRow: any = await getDb(db)
-      .select({ total: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(
-        and(
-          eq(postsTable.status, "publish"),
-          or(
-            eq(postsTable.category, "kegiatan"),
-            eq(postsTable.type, "kegiatan")
-          )
-        )
-      )
-      .get();
-    const totalItems = totalRow?.total || 0;
-    const totalPages = Math.ceil(totalItems / limit);
-    const posts = await getDb(db)
+
+    // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*)
+    const postsRaw = await getDb(db)
       .select()
       .from(postsTable)
       .where(
@@ -283,8 +322,14 @@ publicRouter.get("/kegiatan", async c => {
         )
       )
       .orderBy(desc(postsTable.createdAt))
-      .limit(limit)
+      .limit(limit + 1)
       .offset(offset);
+
+    const hasNext = postsRaw.length > limit;
+    const posts = hasNext ? postsRaw.slice(0, limit) : postsRaw;
+    const totalPages = hasNext ? page + 1 : page;
+    const totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
+
     const context: any = {
       site: settings,
       menus,
@@ -294,30 +339,45 @@ publicRouter.get("/kegiatan", async c => {
         currentPage: page,
         totalPages,
         totalItems,
-        hasNext: page < totalPages,
+        hasNext,
         hasPrev: page > 1,
+        baseUrl: "/kegiatan",
       },
     };
+    const html = Renderer?.renderKegiatan
+      ? Renderer.renderKegiatan(context)
+      : Renderer?.renderCategory
+      ? Renderer.renderCategory(context)
+      : Renderer.renderHome(context);
+
+    setCachedHtml(c.executionCtx, kv, cacheKey, html, 600);
     c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
-    if (Renderer?.renderKegiatan)
-      return c.html(Renderer.renderKegiatan(context));
-    if (Renderer?.renderCategory)
-      return c.html(Renderer.renderCategory(context));
-    return c.html(Renderer.renderHome(context));
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(html);
   } catch (e: any) {
     return c.text("Kegiatan Error: " + e.message, 500);
   }
 });
 
 // ============================================================
-// 3. ROUTE PENCARIAN DENGAN PAGINATION
+// 3. ROUTE PENCARIAN DENGAN PAGINATION (Lookahead + KV Cache)
 // ============================================================
 publicRouter.get("/search", async c => {
   const query = c.req.query("q") || "";
-  const page = parseInt(c.req.query("page") || "1");
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
   const limit = 10;
   const offset = (page - 1) * limit;
   const cleanQuery = query.toLowerCase().trim();
+  const kv = getPublicKv(c.env);
+  const cacheKey = `cmsmu:html:search:q${encodeURIComponent(cleanQuery)}:p${page}`;
+
+  // 1. FAST PATH: Check Cloudflare KV Cache
+  const cachedHtml = await getCachedHtml(kv, cacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
 
   try {
     const db = c.env.DB;
@@ -339,33 +399,20 @@ publicRouter.get("/search", async c => {
           baseUrl: "/search",
         },
       };
-      if (Renderer && typeof Renderer.renderSearch === "function") {
-        return c.html(Renderer.renderSearch(context));
-      }
-      context.categoryName = "Pencarian Artikel";
-      if (Renderer && typeof Renderer.renderCategory === "function") {
-        return c.html(Renderer.renderCategory(context));
-      }
-      return c.html(Renderer.renderHome(context));
+      const html = Renderer && typeof Renderer.renderSearch === "function"
+        ? Renderer.renderSearch(context)
+        : Renderer && typeof Renderer.renderCategory === "function"
+        ? Renderer.renderCategory({ ...context, categoryName: "Pencarian Artikel" })
+        : Renderer.renderHome(context);
+
+      setCachedHtml(c.executionCtx, kv, cacheKey, html, 600);
+      c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+      c.header("X-Cmsmu-Cache", "MISS");
+      return c.html(html);
     }
 
-    const countSql = `
-      SELECT count(*) as total FROM posts 
-      WHERE status = 'publish' 
-      AND (
-        lower(title) LIKE ? 
-        OR lower(body) LIKE ? 
-        OR lower(tags) LIKE ?
-      )
-    `;
+    // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
     const bindVal = `%${cleanQuery}%`;
-    const totalRow: any = await db
-      .prepare(countSql)
-      .bind(bindVal, bindVal, bindVal)
-      .first();
-    const totalItems = totalRow?.total || 0;
-    const totalPages = Math.ceil(totalItems / limit);
-
     const sqlStr = `
       SELECT * FROM posts 
       WHERE status = 'publish' 
@@ -377,10 +424,15 @@ publicRouter.get("/search", async c => {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `;
-    const { results: posts } = await db
+    const { results: postsRaw } = await db
       .prepare(sqlStr)
-      .bind(bindVal, bindVal, bindVal, limit, offset)
+      .bind(bindVal, bindVal, bindVal, limit + 1, offset)
       .all();
+
+    const hasNext = (postsRaw || []).length > limit;
+    const posts = hasNext ? (postsRaw || []).slice(0, limit) : (postsRaw || []);
+    const totalPages = hasNext ? page + 1 : page;
+    const totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
 
     const context: any = {
       site: settings,
@@ -391,28 +443,33 @@ publicRouter.get("/search", async c => {
         currentPage: page,
         totalPages,
         totalItems,
-        hasNext: page < totalPages,
+        hasNext,
         hasPrev: page > 1,
         baseUrl: `/search?q=${encodeURIComponent(query)}`,
       },
     };
 
+    let html: string;
     if (Renderer && typeof Renderer.renderSearch === "function") {
-      return c.html(Renderer.renderSearch(context));
+      html = Renderer.renderSearch(context);
+    } else if (Renderer && typeof Renderer.renderCategory === "function") {
+      context.categoryName = `Pencarian: "${query}"`;
+      html = Renderer.renderCategory(context);
+    } else {
+      html = Renderer.renderHome(context);
     }
 
-    context.categoryName = `Pencarian: "${query}"`;
-    if (Renderer && typeof Renderer.renderCategory === "function") {
-      return c.html(Renderer.renderCategory(context));
-    }
-    return c.html(Renderer.renderHome(context));
+    setCachedHtml(c.executionCtx, kv, cacheKey, html, 600);
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(html);
   } catch (e: any) {
     return c.text("Search Error: " + e.message, 500);
   }
 });
 
 // ============================================================
-// 4. ROUTE TAGAR DENGAN PAGINATION (/tag/:slug)
+// 4. ROUTE TAGAR DENGAN PAGINATION (/tag/:slug) (Lookahead + KV Cache)
 // ============================================================
 publicRouter.get("/tag/:slug", async c => {
   const rawSlug = c.req.param("slug") || "";
@@ -420,11 +477,22 @@ publicRouter.get("/tag/:slug", async c => {
     .toLowerCase()
     .trim()
     .replace(/^#/, "");
-  const page = parseInt(c.req.query("page") || "1");
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
   const limit = 10;
   const offset = (page - 1) * limit;
 
   if (!cleanSlug) return c.redirect("/");
+
+  const kv = getPublicKv(c.env);
+  const cacheKey = `cmsmu:html:tag:${cleanSlug}:p${page}`;
+
+  // 1. FAST PATH: Check Cloudflare KV Cache (0 D1 Rows Read on Hit)
+  const cachedHtml = await getCachedHtml(kv, cacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
 
   try {
     const db = c.env.DB;
@@ -432,23 +500,10 @@ publicRouter.get("/tag/:slug", async c => {
     const { Renderer } = await getRenderer(db);
 
     const tagWithSpaces = cleanSlug.replace(/-/g, " ");
-    const countSql = `
-      SELECT count(*) as total FROM posts 
-      WHERE status = 'publish' 
-      AND (
-        lower(tags) LIKE ? 
-        OR lower(tags) LIKE ?
-      )
-    `;
     const bindPattern1 = `%${cleanSlug}%`;
     const bindPattern2 = `%${tagWithSpaces}%`;
-    const totalRow: any = await db
-      .prepare(countSql)
-      .bind(bindPattern1, bindPattern2)
-      .first();
-    const totalItems = totalRow?.total || 0;
-    const totalPages = Math.ceil(totalItems / limit);
 
+    // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
     const sqlStr = `
       SELECT * FROM posts 
       WHERE status = 'publish' 
@@ -459,10 +514,15 @@ publicRouter.get("/tag/:slug", async c => {
       ORDER BY created_at DESC
       LIMIT ? OFFSET ?
     `;
-    const { results: posts } = await db
+    const { results: postsRaw } = await db
       .prepare(sqlStr)
-      .bind(bindPattern1, bindPattern2, limit, offset)
+      .bind(bindPattern1, bindPattern2, limit + 1, offset)
       .all();
+
+    const hasNext = (postsRaw || []).length > limit;
+    const posts = hasNext ? (postsRaw || []).slice(0, limit) : (postsRaw || []);
+    const totalPages = hasNext ? page + 1 : page;
+    const totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
     const displayTagName = tagWithSpaces.replace(/\b\w/g, (l: string) =>
       l.toUpperCase()
     );
@@ -478,55 +538,54 @@ publicRouter.get("/tag/:slug", async c => {
         currentPage: page,
         totalPages,
         totalItems,
-        hasNext: page < totalPages,
+        hasNext,
         hasPrev: page > 1,
         baseUrl: `/tag/${encodeURIComponent(cleanSlug)}`,
       },
     };
 
-    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    let html: string;
     if (Renderer && typeof Renderer.renderTag === "function") {
-      return c.html(Renderer.renderTag(context));
+      html = Renderer.renderTag(context);
+    } else if (Renderer && typeof Renderer.renderCategory === "function") {
+      html = Renderer.renderCategory(context);
+    } else {
+      html = Renderer.renderHome(context);
     }
-    if (Renderer && typeof Renderer.renderCategory === "function") {
-      return c.html(Renderer.renderCategory(context));
-    }
-    return c.html(Renderer.renderHome(context));
+
+    setCachedHtml(c.executionCtx, kv, cacheKey, html, 1800);
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(html);
   } catch (e: any) {
     return c.text("Tag Error: " + e.message, 500);
   }
 });
 
 // ============================================================
-// 5. ROUTE /INFO (ARTIKEL DENGAN PAGINATION)
+// 5. ROUTE /INFO (ARTIKEL DENGAN PAGINATION) (Lookahead + KV Cache)
 // ============================================================
 publicRouter.get("/info", async c => {
-  const page = parseInt(c.req.query("page") || "1");
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
   const limit = 12;
   const offset = (page - 1) * limit;
+  const kv = getPublicKv(c.env);
+  const cacheKey = `cmsmu:html:info:p${page}`;
+
+  const cachedHtml = await getCachedHtml(kv, cacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
 
   try {
     const db = c.env.DB;
     const { settings, menus } = await getGlobalData(c.env);
     const { Renderer } = await getRenderer(db);
 
-    const totalRow: any = await getDb(db)
-      .select({ total: sql<number>`count(*)` })
-      .from(postsTable)
-      .where(
-        and(
-          eq(postsTable.status, "publish"),
-          or(
-            eq(postsTable.category, "kegiatan"),
-            eq(postsTable.type, "kegiatan")
-          )
-        )
-      )
-      .get();
-    const totalItems = totalRow?.total || 0;
-    const totalPages = Math.ceil(totalItems / limit);
-
-    const posts = await getDb(db)
+    // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
+    const postsRaw = await getDb(db)
       .select()
       .from(postsTable)
       .where(
@@ -539,8 +598,13 @@ publicRouter.get("/info", async c => {
         )
       )
       .orderBy(desc(postsTable.createdAt))
-      .limit(limit)
+      .limit(limit + 1)
       .offset(offset);
+
+    const hasNext = postsRaw.length > limit;
+    const posts = hasNext ? postsRaw.slice(0, limit) : postsRaw;
+    const totalPages = hasNext ? page + 1 : page;
+    const totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
 
     const context: any = {
       site: settings,
@@ -551,17 +615,20 @@ publicRouter.get("/info", async c => {
         currentPage: page,
         totalPages,
         totalItems,
-        hasNext: page < totalPages,
+        hasNext,
         hasPrev: page > 1,
         baseUrl: "/info",
       },
     };
 
+    const html = Renderer && typeof Renderer.renderCategory === "function"
+      ? Renderer.renderCategory(context)
+      : Renderer.renderHome(context);
+
+    setCachedHtml(c.executionCtx, kv, cacheKey, html, 600);
     c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
-    if (Renderer && typeof Renderer.renderCategory === "function") {
-      return c.html(Renderer.renderCategory(context));
-    }
-    return c.html(Renderer.renderHome(context));
+    c.header("X-Cmsmu-Cache", "MISS");
+    return c.html(html);
   } catch (e: any) {
     return c.text("Info Error: " + e.message, 500);
   }
@@ -580,6 +647,18 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
 
   if (slug.includes(".") || slug === "favicon.ico") return c.notFound();
 
+  const page = Math.max(1, parseInt(c.req.query("page") || "1"));
+  const kv = getPublicKv(c.env);
+  const singleCacheKey = `cmsmu:html:single:${slug}:${lang || "id"}:p${page}`;
+
+  // 1. FAST PATH: Check Cloudflare KV Cache (0 D1 Rows Read on Hit)
+  const cachedHtml = await getCachedHtml(kv, singleCacheKey);
+  if (cachedHtml) {
+    c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
+    c.header("X-Cmsmu-Cache", "HIT-KV");
+    return c.html(cachedHtml);
+  }
+
   try {
     const { settings, menus, categories, topics, sources } =
       await getGlobalData(c.env);
@@ -588,7 +667,6 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
 
     // A. Cek Kategori
     const slugSpace = slug.replace(/-/g, " ");
-    const page = parseInt(c.req.query("page") || "1");
     const limit = 12;
     const offset = (page - 1) * limit;
 
@@ -619,26 +697,26 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
         OR lower(title) LIKE '%komputer%' 
         OR lower(title) LIKE '%sistem informasi%'
       )`;
-      const countRow: any = await db.prepare(`SELECT count(*) as total FROM posts WHERE ${teknoWhere}`).first();
-      totalItems = countRow?.total || 0;
-      const res: any = await db.prepare(`SELECT * FROM posts WHERE ${teknoWhere} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(limit, offset).all();
-      catPosts = res?.results || [];
+      // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
+      const res: any = await db.prepare(`SELECT * FROM posts WHERE ${teknoWhere} ORDER BY created_at DESC LIMIT ? OFFSET ?`).bind(limit + 1, offset).all();
+      const raw = res?.results || [];
+      const hasNext = raw.length > limit;
+      catPosts = hasNext ? raw.slice(0, limit) : raw;
+      totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + catPosts.length;
       title = "Sains & Teknologi";
     } else {
-      const countSql = `SELECT count(*) as total FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish'`;
-      const countRow: any = await db
-        .prepare(countSql)
-        .bind(slug, slugSpace)
-        .first();
-      totalItems = countRow?.total || 0;
+      // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
+      const catQuery = `SELECT * FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish' ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+      const { results } = await db
+        .prepare(catQuery)
+        .bind(slug, slugSpace, limit + 1, offset)
+        .all();
+      const raw = results || [];
+      const hasNext = raw.length > limit;
+      catPosts = hasNext ? raw.slice(0, limit) : raw;
+      totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + catPosts.length;
 
-      if (totalItems > 0) {
-        const catQuery = `SELECT * FROM posts WHERE (lower(category) = ? OR lower(category) = ?) AND status='publish' ORDER BY created_at DESC LIMIT ? OFFSET ?`;
-        const { results } = await db
-          .prepare(catQuery)
-          .bind(slug, slugSpace, limit, offset)
-          .all();
-        catPosts = results || [];
+      if (catPosts.length > 0) {
         const realCategoryName = catPosts?.[0]?.category || slugSpace;
         title = realCategoryName.replace(/\b\w/g, (l: string) =>
           l.toUpperCase()
@@ -646,7 +724,7 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
       }
     }
 
-    if (totalItems > 0) {
+    if (catPosts.length > 0) {
       const totalPages = Math.ceil(totalItems / limit);
       if (lang === "en" || lang === "ar") {
         title = await translateTextWithAI(
@@ -674,11 +752,14 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
           baseUrl: `/${slug}`,
         },
       };
+      const html = Renderer && typeof Renderer.renderCategory === "function"
+        ? Renderer.renderCategory(context)
+        : Renderer.renderHome(context);
+
+      setCachedHtml(c.executionCtx, kv, singleCacheKey, html, 1800);
       c.header("Cache-Control", "public, max-age=60, s-maxage=300, stale-while-revalidate=600");
-      if (Renderer && typeof Renderer.renderCategory === "function") {
-        return c.html(Renderer.renderCategory(context));
-      }
-      return c.html(Renderer.renderHome(context));
+      c.header("X-Cmsmu-Cache", "MISS");
+      return c.html(html);
     }
 
     // A2. Cek Kategori Standar di Menu Dinamis atau Daftar Kategori DB (Zero Hardcode Policy)
@@ -851,29 +932,40 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
               .all();
           } catch (e) {}
 
+          const html = renderPuckHtml({
+            site: settings,
+            menus,
+            page: content,
+            canonical: canonicalUrl,
+            latestPosts: (latestPosts || []).map(formatPostForFrontend),
+          });
+          setCachedHtml(c.executionCtx, kv, singleCacheKey, html, 3600);
           c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
-          return c.html(
-            renderPuckHtml({
-              site: settings,
-              menus,
-              page: content,
-              canonical: canonicalUrl,
-              latestPosts: (latestPosts || []).map(formatPostForFrontend),
-            })
-          );
+          c.header("X-Cmsmu-Cache", "MISS");
+          return c.html(html);
         }
-        c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
-        if (Renderer.renderPage) return c.html(Renderer.renderPage(context));
+        if (Renderer.renderPage) {
+          const html = Renderer.renderPage(context);
+          setCachedHtml(c.executionCtx, kv, singleCacheKey, html, 3600);
+          c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
+          c.header("X-Cmsmu-Cache", "MISS");
+          return c.html(html);
+        }
       }
-      c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
+      let html: string;
       if (
         (contentType === "video" ||
           (content.video_url && content.video_url.trim() !== "")) &&
         Renderer.renderSingleVideo
       ) {
-        return c.html(Renderer.renderSingleVideo(context));
+        html = Renderer.renderSingleVideo(context);
+      } else {
+        html = Renderer.renderSingle(context);
       }
-      return c.html(Renderer.renderSingle(context));
+      setCachedHtml(c.executionCtx, kv, singleCacheKey, html, 3600);
+      c.header("Cache-Control", "public, max-age=180, s-maxage=1800, stale-while-revalidate=3600");
+      c.header("X-Cmsmu-Cache", "MISS");
+      return c.html(html);
     }
 
     return c.html(

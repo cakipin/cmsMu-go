@@ -1,4 +1,4 @@
-import { sqliteTable, integer, text, index } from "drizzle-orm/sqlite-core";
+import { sqliteTable, integer, text, index, uniqueIndex } from "drizzle-orm/sqlite-core";
 import { sql } from "drizzle-orm";
 
 export const users = sqliteTable("users", {
@@ -53,25 +53,38 @@ export const posts = sqliteTable(
       table.status,
       table.createdAt
     ),
+    statusTypeDateIdx: index("idx_posts_status_type_date").on(
+      table.status,
+      table.type,
+      table.createdAt
+    ),
+    slugIdx: uniqueIndex("idx_posts_slug").on(table.slug),
   })
 );
 
-export const pages = sqliteTable("pages", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title"),
-  slug: text("slug").unique(),
-  body: text("body"),
-  excerpt: text("excerpt"),
-  metaTitle: text("meta_title"),
-  metaDescription: text("meta_description"),
-  status: text("status").default("publish"),
-  featuredImage: text("featured_image"),
-  layout: text("layout").default("standard"),
-  views: integer("views").default(0),
-  authorId: integer("author_id").references(() => users.id),
-  createdAt: text("created_at").default(String(Date.now())),
-  updatedAt: text("updated_at").default(String(Date.now())),
-});
+export const pages = sqliteTable(
+  "pages",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    title: text("title"),
+    slug: text("slug").unique(),
+    body: text("body"),
+    excerpt: text("excerpt"),
+    metaTitle: text("meta_title"),
+    metaDescription: text("meta_description"),
+    status: text("status").default("publish"),
+    featuredImage: text("featured_image"),
+    layout: text("layout").default("standard"),
+    views: integer("views").default(0),
+    authorId: integer("author_id").references(() => users.id),
+    createdAt: text("created_at").default(String(Date.now())),
+    updatedAt: text("updated_at").default(String(Date.now())),
+  },
+  table => ({
+    statusSlugIdx: index("idx_pages_status_slug").on(table.status, table.slug),
+    viewsIdx: index("idx_pages_views").on(table.views),
+  })
+);
 
 export const mediaMeta = sqliteTable(
   "media_meta",
@@ -129,18 +142,28 @@ export const plugins = sqliteTable("plugins", {
   active: integer("active").default(0),
 });
 
-export const comments = sqliteTable("comments", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  postId: integer("post_id")
-    .notNull()
-    .references(() => posts.id, { onDelete: "cascade" }),
-  userId: integer("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  content: text("content").notNull(),
-  status: text("status").default("approved"),
-  createdAt: text("created_at").default(String(Date.now())),
-});
+export const comments = sqliteTable(
+  "comments",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    postId: integer("post_id")
+      .notNull()
+      .references(() => posts.id, { onDelete: "cascade" }),
+    userId: integer("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    content: text("content").notNull(),
+    status: text("status").default("approved"),
+    createdAt: text("created_at").default(String(Date.now())),
+  },
+  table => ({
+    postStatusIdx: index("idx_comments_post_status").on(
+      table.postId,
+      table.status,
+      table.createdAt
+    ),
+  })
+);
 
 export const visitors = sqliteTable("visitors", {
   ip: text("ip").primaryKey(),
@@ -171,21 +194,32 @@ export const notifications = sqliteTable("notifications", {
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`),
 });
 
-export const contents = sqliteTable("contents", {
-  id: integer("id").primaryKey({ autoIncrement: true }),
-  title: text("title"),
-  slug: text("slug").unique(),
-  body: text("body"),
-  type: text("type").default("post"),
-  status: text("status").default("draft"),
-  authorId: integer("author_id"),
-  category: text("category"),
-  tags: text("tags"),
-  featuredImage: text("featured_image"),
-  wpId: integer("wp_id"),
-  oldUrl: text("old_url"),
-  attributes: text("attributes"),
-  createdAt: text("created_at").default(String(Date.now())),
-  updatedAt: text("updated_at").default(String(Date.now())),
-});
+export const contents = sqliteTable(
+  "contents",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    title: text("title"),
+    slug: text("slug").unique(),
+    body: text("body"),
+    type: text("type").default("post"),
+    status: text("status").default("draft"),
+    authorId: integer("author_id"),
+    category: text("category"),
+    tags: text("tags"),
+    featuredImage: text("featured_image"),
+    wpId: integer("wp_id"),
+    oldUrl: text("old_url"),
+    attributes: text("attributes"),
+    createdAt: text("created_at").default(String(Date.now())),
+    updatedAt: text("updated_at").default(String(Date.now())),
+  },
+  table => ({
+    statusTypeDateIdx: index("idx_contents_status_type_date").on(
+      table.status,
+      table.type,
+      table.createdAt
+    ),
+    slugIdx: uniqueIndex("idx_contents_slug").on(table.slug),
+  })
+);
 
