@@ -220,3 +220,10 @@ Untuk melayani pengembangan aplikasi mobile native lintas platform secara kompre
 3. **Apple iOS Swift SDK (`packages/sdk-swift` - `CmsMuSDK`)**:
    - Mendukung iOS 15+, macOS 12+, dan SwiftUI dengan Swift Concurrency (`async/await`) berbasis SPM (*Swift Package Manager*).
    - Seluruh model mengadopsi protokol `Codable`, `Sendable`, dan `Identifiable`.
+
+---
+
+## 5. Batas Lingkup Repositori (Tenant Runtime vs Control Plane)
+
+- **`cakipin/cmsMu-go` (Repositori Ini)**: Adalah **Tenant Runtime Instance** murni. Berfungsi sebagai basis website Cloudflare Pages + D1 + R2 + KV untuk pengguna/organisasi/sekolah. Mengelola konten berita, halaman statis, media, tema, dan panel admin tenant.
+- **`core cmsMu` (Control Plane)**: Seluruh orkestrasi deployment Cloudflare (BYOC Deployer), kuota alokasi akun free/demo, verifikasi akun Git pengembang, dan pembuatan resource Cloudflare adalah kapabilitas eksklusif dari **Control Plane (`core cmsMu`)** di `cms.labmu.dev`. Modul BYOC sengaja tidak disertakan pada repositori ini demi menjaga isolasi keamanan, efisiensi ukuran bundle, dan pemisahan wewenang (*Separation of Concerns*).

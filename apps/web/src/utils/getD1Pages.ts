@@ -12,10 +12,18 @@ export async function getD1Pages(Astro: any): Promise<any[]> {
   try {
     const db = getDb(d1);
     const results = await db
-      .select()
+      .select({
+        id: pages.id,
+        slug: pages.slug,
+        title: pages.title,
+        body: pages.body,
+        featuredImage: pages.featuredImage,
+        createdAt: pages.createdAt,
+      })
       .from(pages)
       .where(eq(pages.status, "publish"))
-      .orderBy(desc(pages.createdAt));
+      .orderBy(desc(pages.createdAt))
+      .limit(50);
     if (!results) return [];
 
     return results.map((row: any) => {

@@ -5,10 +5,14 @@ import { eq, desc, inArray } from "drizzle-orm";
 
 const postsRouter = new Hono<{ Bindings: any }>();
 
-// 1. GET ALL POSTS
+// 1. GET ALL POSTS (With Safe Pagination to prevent D1 row exhaustion)
 postsRouter.get("/", async c => {
   try {
     const db = getDb(c.env.DB);
+    const page = Math.max(1, parseInt(c.req.query("page") || "1"));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query("limit") || "50")));
+    const offset = (page - 1) * limit;
+
     const results = await db
       .select({
         id: posts.id,
@@ -30,8 +34,11 @@ postsRouter.get("/", async c => {
         created_at: posts.createdAt,
       })
       .from(posts)
-      .orderBy(desc(posts.createdAt));
+      .orderBy(desc(posts.createdAt))
+      .limit(limit)
+      .offset(offset);
 
+    c.header("Cache-Control", "public, max-age=60, s-maxage=180, stale-while-revalidate=300");
     return c.json(results || []);
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
@@ -44,12 +51,13 @@ postsRouter.get("/categories/list", async c => {
     const db = c.env.DB;
     const rows = await db
       .prepare(
-        "SELECT DISTINCT category FROM posts WHERE status = 'publish' AND category IS NOT NULL AND TRIM(category) != '' ORDER BY category ASC"
+        "SELECT DISTINCT category FROM posts WHERE status = 'publish' AND category IS NOT NULL AND TRIM(category) != '' ORDER BY category ASC LIMIT 50"
       )
       .all();
     const cats = (rows.results || [])
       .map((r: any) => r.category.trim())
       .filter(Boolean);
+    c.header("Cache-Control", "public, max-age=300, s-maxage=600, stale-while-revalidate=1200");
     return c.json(cats);
   } catch (e: any) {
     return c.json([]);

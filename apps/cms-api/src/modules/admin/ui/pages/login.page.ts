@@ -6,6 +6,33 @@ export const loginPage = `
         isLoading: false,
         errorMsg: '',
         hasExistingSession: !!(window.getCmsToken ? window.getCmsToken() : ''),
+        siteLogo: '',
+        siteTitle: 'CMSMu',
+        siteDesc: 'Masuk ke Dashboard Pengelola',
+
+        async initLogin() {
+            try {
+                const res = await fetch('/api/settings?t=' + Date.now());
+                if (res.ok) {
+                    const json = await res.json();
+                    const config = json.data || json || {};
+                    const logo = config.site_logo || config.logo;
+                    if (logo && typeof logo === 'string' && logo.trim()) {
+                        this.siteLogo = logo.trim();
+                    }
+                    const title = config.site_title || config.site_name;
+                    if (title && typeof title === 'string' && title.trim()) {
+                        this.siteTitle = title.trim();
+                    }
+                    const desc = config.site_desc || config.site_description;
+                    if (desc && typeof desc === 'string' && desc.trim()) {
+                        this.siteDesc = desc.trim();
+                    }
+                }
+            } catch (e) {
+                console.warn('[Login Branding Warning]:', e);
+            }
+        },
         
         async submitLogin() {
             if (this.isLoading) return;
@@ -116,14 +143,23 @@ export const loginPage = `
                 this.isLoading = false;
             }
         }
-     }">
+     }"
+     x-init="initLogin()">
 
     <div style="position: relative; width: 100%; max-width: 420px; background: white; padding: 36px; border-radius: 16px; box-shadow: 0 20px 40px rgba(0,0,0,0.2); border: none; margin: 20px;">
         <div style="text-align:center; margin-bottom:24px;">
-             <a href="/" style="text-decoration:none;">
-                 <h2 style="color: #0d9488; margin: 0 0 6px 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em;">CMSMu</h2>
+             <a href="/" style="text-decoration:none; display:inline-flex; flex-direction:column; align-items:center; gap:8px;">
+                 <template x-if="siteLogo">
+                     <img :src="siteLogo" 
+                          :alt="siteTitle" 
+                          @error="siteLogo = ''"
+                          style="max-height: 64px; max-width: 220px; object-fit: contain; margin-bottom: 4px;">
+                 </template>
+                 <template x-if="!siteLogo">
+                     <h2 style="color: #0d9488; margin: 0 0 6px 0; font-size: 28px; font-weight: 900; letter-spacing: -0.03em;" x-text="siteTitle">CMSMu</h2>
+                 </template>
              </a>
-             <p style="color: #64748b; margin-top: 5px; font-size: 14px; font-weight: 500;">Masuk ke Dashboard Pengelola</p>
+             <p style="color: #64748b; margin-top: 5px; font-size: 14px; font-weight: 500;" x-text="siteDesc">Masuk ke Dashboard Pengelola</p>
         </div>
 
         <template x-if="hasExistingSession">

@@ -175,6 +175,107 @@ export const MIGRATIONS: MigrationStep[] = [
       } catch (e) {}
     },
   },
+  {
+    id: "2026_10_22_007_d1_performance_indexes",
+    version: "0.1.9",
+    name: "D1 Performance Composite Indexes (Anti-Full-Scan & Zero Rows Read Exhaustion)",
+    up: async (db: any) => {
+      // 1. Composite indexes for posts queries
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_cat_date ON posts(status, category, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(`CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);`)
+        .run();
+
+      // 2. Indexes for pages, media, comments, and menus
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_media_meta_key ON media_meta(key);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_media_meta_created ON media_meta(created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_comments_post_status ON comments(post_id, status, created_at DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_menus_order ON menus(order_num ASC);`
+        )
+        .run();
+    },
+  },
+  {
+    id: "2026_10_23_008_d1_performance_lock",
+    version: "0.2.0",
+    name: "D1 Performance Lock (Visitors Table & High-Traffic Composite Indexes)",
+    up: async (db: any) => {
+      // 1. Visitors table & index
+      await db
+        .prepare(
+          `CREATE TABLE IF NOT EXISTS visitors (
+            ip TEXT PRIMARY KEY,
+            last_seen TEXT DEFAULT CURRENT_TIMESTAMP
+          );`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);`
+        )
+        .run();
+
+      // 2. High-traffic composite indexes for posts, pages & options
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);`
+        )
+        .run();
+      await db
+        .prepare(
+          `CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);`
+        )
+        .run();
+    },
+  },
 ];
 
 export async function ensureMigrationTable(db: any) {

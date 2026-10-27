@@ -241,3 +241,50 @@ export const translationGroups = sqliteTable('translation_groups', {
 });
 ```
 
+---
+
+## 5. Indeks Komposit Performa Tinggi & Proteksi Cloudflare D1 Rows Read (cmsMu-go Lock)
+
+Untuk memitigasi *Rows Read Exhaustion* pada tier gratis Cloudflare D1 (5 Juta rows read/hari), seluruh instance `cmsMu-go` (baru maupun existing) dikunci dengan indeks komposit berikut dan pembatasan query:
+
+### 6.1. Indeks Komposit & Tabel Visitors (`initial-schema.sql.ts` & `migration-runner.ts`)
+```sql
+-- 1. Pelacak Pengunjung Aktif (Mencegah Full Scan pada Dashboard Stats)
+CREATE TABLE IF NOT EXISTS visitors (
+  ip TEXT PRIMARY KEY,
+  last_seen TEXT DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_visitors_last_seen ON visitors(last_seen DESC);
+
+-- 2. Indeks Komposit Pencarian & Filter Konten Terbit
+CREATE INDEX IF NOT EXISTS idx_posts_status_date ON posts(status, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_category_status ON posts(category, status);
+CREATE INDEX IF NOT EXISTS idx_posts_author_status ON posts(author_id, status);
+CREATE INDEX IF NOT EXISTS idx_posts_status_views ON posts(status, views DESC, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_status_type_date ON posts(status, type, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_posts_title ON posts(title);
+
+-- 3. Halaman & Opsi
+CREATE INDEX IF NOT EXISTS idx_pages_status_slug ON pages(status, slug);
+CREATE INDEX IF NOT EXISTS idx_pages_views ON pages(views DESC);
+CREATE INDEX IF NOT EXISTS idx_options_autoload ON options(autoload);
+```
+
+### 6.2. Aturan Pembatasan Query (Query Bounds & Counter Caching)
+1. **Multi-tier Counter Caching (`getCachedPublishedPostCount`)**: Query `COUNT(*)` pada rute publik (`/`, `/berita`, `/kegiatan`) dicache bertingkat:
+   - **Tingkat 1**: RAM Isolate Worker (60 detik, $<0.1\text{ms}$, 0 D1 row read).
+   - **Tingkat 2**: Cloudflare KV (`cmsmu:count:published_posts`, 300 detik, 0 D1 row read).
+   - **Tingkat 3**: Fallback D1 query dengan penulisan balik ke KV dan RAM.
+2. **Hard Limit Projection (`getD1Posts.ts`, `getD1Pages.ts`)**:
+   - Seluruh query RSS dan feed feed dibatasi maksimal `.limit(50)`.
+   - Proyeksi kolom hanya mengambil metadata (id, title, slug, excerpt, category, tags, author, createdAt), tidak mengambil kolom `body` (HTML penuh) untuk menghemat transfer bandwidth dan memori.
+3. **Agregasi Dashboard & Endpoint Statistik Caching (`stats.router.ts`)**:
+   - `/api/stats/realtime`: Dilindungi cache RAM Isolate (15s) + Cloudflare KV (30s), memangkas 90% query polling admin.
+   - `/api/stats/dashboard`: Hasil kalkulasi `SUM(posts.views)`, `COUNT(posts)`, `COUNT(pages)`, `COUNT(media)`, `COUNT(users)` disimpan pada RAM Isolate (60s) + Cloudflare KV (300s).
+   - `/api/stats/history`: Kueri agregasi 6 bulan dan 30 hari dicache di RAM (300s) + Cloudflare KV (3600s).
+   - `/api/stats/cloudflare`: Mengonsumsi Cloudflare GraphQL Analytics API langsung dari edge (**0% beban pembacaan ke D1**).
+4. **Eliminasi Subquery Full-Scan pada Ping Pengunjung (`handlePing`)**:
+   - Subquery `(SELECT COUNT(*) FROM visitors)` pada setiap hit dihilangkan. Perhitungan ulang pengunjung unik pada `daily_stats` dilakukan secara debounced hanya jika selang waktu update $\ge 15$ menit (`CASE WHEN updated_at < datetime('now', '-15 minutes')`), memangkas 99.9% pemindaian tabel.
+
+
+

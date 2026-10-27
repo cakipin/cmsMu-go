@@ -287,3 +287,88 @@ Mengambil blueprint tata letak Server-Driven UI (SDUI) untuk halaman kanvas tert
 | **Flutter / Dart** | `cmsmu_sdk` (`packages/sdk-flutter`) | Sound Null Safety, Flutter Mobile & Web, SDUI models |
 | **Android Kotlin** | `dev.labmu.cmsmu.sdk` (`packages/sdk-kotlin`) | Coroutines (`suspend fun`), Jetpack Compose, type-safe POJO |
 | **Apple iOS Swift** | `CmsMuSDK` (`packages/sdk-swift`) | Swift Concurrency (`async/await`), SwiftUI, `Codable` |
+
+---
+
+## 7. Endpoint Statistik & Analitik (Zero D1 Rows Read Architecture)
+
+Untuk memitigasi *Rows Read Exhaustion* pada tier gratis Cloudflare D1 (5 Juta rows read/hari), seluruh endpoint analitik mengadopsi arsitektur **Multi-Tier Caching (RAM Isolate + Cloudflare KV)** dan integrasi **Cloudflare GraphQL Edge Analytics**.
+
+### 8.1 `GET /api/stats/realtime`
+Mengambil jumlah pengguna aktif di situs dalam 5 menit terakhir.
+* **Headers Response:** `Cache-Control: private, max-age=15, stale-while-revalidate=30`
+* **Strategi Cache:** RAM Isolate (15 detik) + Cloudflare KV (30 detik). Kueri D1 hanya terjadi jika cache miss.
+* **Response 200 (OK):**
+```json
+{
+  "count": 12,
+  "cached": true,
+  "source": "ram"
+}
+```
+
+### 8.2 `GET /api/stats/dashboard`
+Mengambil data ringkasan agregat konten CMS (total artikel, total halaman, media, pengguna, dan total views).
+* **Headers Response:** `Cache-Control: private, max-age=60, stale-while-revalidate=300`
+* **Strategi Cache:** RAM Isolate (60 detik) + Cloudflare KV (300 detik).
+* **Response 200 (OK):**
+```json
+{
+  "posts": 142,
+  "pages": 8,
+  "media": 86,
+  "users": 5,
+  "totalViews": 45200,
+  "cached": true,
+  "source": "kv"
+}
+```
+
+### 8.3 `GET /api/stats/history`
+Mengambil riwayat statistik pengunjung 6 bulan terakhir dan tren harian 30 hari terakhir.
+* **Headers Response:** `Cache-Control: private, max-age=300, stale-while-revalidate=3600`
+* **Strategi Cache:** RAM Isolate (300 detik) + Cloudflare KV (3600 detik).
+* **Response 200 (OK):**
+```json
+{
+  "visitors": [
+    { "month": "2026-05", "count": 1250 },
+    { "day": "2026-10-23", "count": 310 }
+  ],
+  "dailyStats": [
+    { "day": "2026-10-23", "views": 1540, "visitors": 310 }
+  ],
+  "cached": true,
+  "source": "kv"
+}
+```
+
+### 8.4 `GET /api/stats/cloudflare`
+Mengambil metrik traffic edge network langsung dari Cloudflare GraphQL Web Analytics API (**Mutlak 0% Beban D1**).
+* **Headers Response:** `Cache-Control: private, max-age=300`
+* **Kebutuhan Kredensial:** Membaca `CLOUDFLARE_API_TOKEN` & `CLOUDFLARE_ZONE_ID` dari environment atau tabel `options`.
+* **Response 200 (OK - Jika Terkonfigurasi):**
+```json
+{
+  "configured": true,
+  "source": "cloudflare_edge",
+  "data": {
+    "totalRequests24h": 45200,
+    "totalPageViews24h": 12800,
+    "uniqueVisitors24h": 3450,
+    "history30d": [
+      { "date": "2026-10-23", "requests": 45200, "pageViews": 12800, "bytes": 142000000, "uniques": 3450 }
+    ],
+    "topCountries": [
+      { "country": "Indonesia", "count": 42100 },
+      { "country": "Malaysia", "count": 1800 }
+    ],
+    "cachedAt": "2026-10-23T14:30:00.000Z"
+  }
+}
+```
+
+### 8.5 `GET|POST /api/stats/ping`
+Mencatat IP pengunjung aktif ke tabel `visitors` dan memperbarui `daily_stats`.
+* **Optimasi:** Pemindaian subquery berat `(SELECT COUNT(*) FROM visitors)` telah dihilangkan. Perhitungan ulang pengunjung unik hanya dieksekusi secara kondisional (*debounced*) jika selang waktu update $\ge 15$ menit, memangkas 99.9% pemindaian tabel.
+

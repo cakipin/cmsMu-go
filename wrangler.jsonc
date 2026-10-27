@@ -3,22 +3,22 @@
 	"compatibility_date": "2026-08-01",
 	"compatibility_flags": ["global_fetch_strictly_public", "nodejs_compat"],
 	"name": "cmsmu",
-	"pages_build_output_dir": "./dist",
+	"pages_build_output_dir": "apps/web/dist",
 	"d1_databases": [
 		{
 			"binding": "DB",
-			"database_name": "cmsmu_db",
+			"database_name": "cmsmu-db",
 			"database_id": "00000000-0000-0000-0000-000000000000"
 		}
 	],
 	"r2_buckets": [
 		{
 			"binding": "MEDIA_BUCKET",
-			"bucket_name": "cmsmu_media"
+			"bucket_name": "cmsmu-media"
 		},
 		{
 			"binding": "BUCKET",
-			"bucket_name": "cmsmu_media"
+			"bucket_name": "cmsmu-media"
 		}
 	],
 	"kv_namespaces": [
@@ -31,9 +31,6 @@
 			"id": "00000000000000000000000000000001"
 		}
 	],
-	"ai": {
-		"binding": "AI"
-	},
 	"observability": {
 		"enabled": true
 	}

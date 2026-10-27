@@ -240,6 +240,11 @@ export const dashboardPage = `
         <div class="flex flex-wrap gap-2 mb-6 p-3 bg-slate-50 rounded-xl border border-slate-100 items-center">
             <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mr-2"><i class="fas fa-plug mr-1"></i> Hubungkan SEO & Analytics:</div>
             
+            <button @click="view='seo'" class="flex items-center gap-2 bg-white border border-slate-200 hover:border-amber-500 hover:shadow-sm px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 transition-all">
+                <i class="fas fa-cloud text-amber-500"></i>
+                Cloudflare Edge Analytics
+            </button>
+            
             <button @click="view='seo'" class="flex items-center gap-2 bg-white border border-slate-200 hover:border-blue-400 hover:shadow-sm px-3 py-1.5 rounded-lg text-[11px] font-bold text-slate-600 transition-all">
                 <i class="fab fa-google text-blue-500"></i>
                 Google Analytics
@@ -275,11 +280,11 @@ export const dashboardPage = `
                  </span>
                  <span class="text-emerald-400 text-xs font-bold uppercase tracking-wider">Live</span>
              </div>
-             
              <h4 class="text-slate-300 font-semibold mb-2">Realtime Users</h4>
              <div class="text-6xl font-black mb-4 flex items-baseline gap-2">
                 <span x-data="{ count: 0 }" x-init="
                     const fetchStats = async () => {
+                        if (document.hidden) return;
                         try {
                             const res = await fetch('/api/stats/realtime', { headers: { 'Authorization': 'Bearer ' + (localStorage.getItem('labmu_token') || localStorage.getItem('admin_token')) } });
                             const data = await res.json();
@@ -287,10 +292,17 @@ export const dashboardPage = `
                         } catch(e) {}
                     };
                     fetchStats();
-                    setInterval(fetchStats, 10000);
+                    setInterval(fetchStats, 30000);
+                    document.addEventListener('visibilitychange', () => {
+                        if (!document.hidden) fetchStats();
+                    });
                 " x-text="count">0</span>
              </div>
              <p class="text-slate-400 text-sm">Pengunjung aktif di situs saat ini.</p>
+             <div class="mt-2 flex items-center gap-2 text-[10px] text-emerald-400 font-mono">
+                 <span class="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                 <span>Zero-D1 Cache Guard (30s)</span>
+             </div>
              
              <!-- mini bar chart dummy -->
              <div class="mt-6 flex items-end gap-1 h-12 opacity-30">
