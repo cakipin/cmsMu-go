@@ -742,48 +742,34 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
     if (content) {
       if (type === "post") {
         try {
-          await orm
+          const updateViews = orm
             .update(postsTable)
             .set({ views: sql`views + 1` })
             .where(eq(postsTable.id, content.id))
             .run();
-          if (c.env?.DB) {
-            const p = c.env.DB.prepare(
-              `
-              INSERT INTO daily_stats (date, views, visitors, updated_at)
-              VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
-              ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
-            `
-            ).run();
-            if (
-              c.executionCtx &&
-              typeof (c.executionCtx as any).waitUntil === "function"
-            ) {
-              (c.executionCtx as any).waitUntil(p);
-            }
+          if (
+            c.executionCtx &&
+            typeof (c.executionCtx as any).waitUntil === "function"
+          ) {
+            (c.executionCtx as any).waitUntil(updateViews);
+          } else {
+            await updateViews;
           }
         } catch (err) {}
       } else if (type === "page") {
         try {
-          await orm
+          const updateViews = orm
             .update(pagesTable)
             .set({ views: sql`views + 1` })
             .where(eq(pagesTable.id, content.id))
             .run();
-          if (c.env?.DB) {
-            const p = c.env.DB.prepare(
-              `
-              INSERT INTO daily_stats (date, views, visitors, updated_at)
-              VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
-              ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
-            `
-            ).run();
-            if (
-              c.executionCtx &&
-              typeof (c.executionCtx as any).waitUntil === "function"
-            ) {
-              (c.executionCtx as any).waitUntil(p);
-            }
+          if (
+            c.executionCtx &&
+            typeof (c.executionCtx as any).waitUntil === "function"
+          ) {
+            (c.executionCtx as any).waitUntil(updateViews);
+          } else {
+            await updateViews;
           }
         } catch (err) {}
       }
@@ -914,6 +900,27 @@ publicRouter.get("/en/:slug", async c =>
 publicRouter.get("/ar/:slug", async c =>
   renderSinglePage(c, c.req.param("slug"), "ar")
 );
-publicRouter.get("/:slug", async c => renderSinglePage(c, c.req.param("slug")));
+const RESERVED_CORE_SLUGS = new Set([
+  "admin",
+  "login",
+  "api",
+  "sys",
+  "media",
+  "uploads",
+  "health",
+  "theme-editor",
+  "robots.txt",
+  "sitemap.xml",
+  "favicon.ico",
+  "favicon.svg",
+]);
+
+publicRouter.get("/:slug", async (c, next) => {
+  const slug = c.req.param("slug");
+  if (slug && RESERVED_CORE_SLUGS.has(slug.toLowerCase())) {
+    return await next();
+  }
+  return renderSinglePage(c, slug);
+});
 
 export default publicRouter;

@@ -1,12 +1,10 @@
 import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
 import {
-  visitors,
   posts,
   pages,
   mediaMeta,
   users,
-  dailyStats,
   options,
 } from "@cmsmu/db";
 import { sql, eq } from "drizzle-orm";
@@ -43,7 +41,47 @@ function getKv(env: any): KVNamespace | null {
   return env.CACHE || env.cmsmu_cache || env.SESSION || null;
 }
 
-// 1. GET Realtime Users (Active in last 5 minutes) - Multi-Tier Zero D1 Read
+let memoryCfCredsCache: { creds: { apiToken?: string; zoneId?: string }; expiry: number } | null = null;
+
+/**
+ * Mengambil Cloudflare API Token & Zone ID secara aman
+ * dari Environment Variables atau tabel options (dengan RAM cache 5 menit).
+ */
+async function getCloudflareCredentials(env: any): Promise<{ apiToken?: string; zoneId?: string }> {
+  let apiToken = env.CLOUDFLARE_API_TOKEN;
+  let zoneId = env.CLOUDFLARE_ZONE_ID;
+
+  if (apiToken && zoneId) {
+    return { apiToken, zoneId };
+  }
+
+  const now = Date.now();
+  if (memoryCfCredsCache && memoryCfCredsCache.expiry > now) {
+    return memoryCfCredsCache.creds;
+  }
+
+  if (!apiToken || !zoneId) {
+    try {
+      const db = getDb(env.DB);
+      const optRows = await db
+        .select()
+        .from(options)
+        .where(sql`${options.key} IN ('cf_api_token', 'cf_zone_id')`)
+        .all();
+
+      for (const row of optRows || []) {
+        if (row.key === "cf_api_token" && row.value) apiToken = row.value;
+        if (row.key === "cf_zone_id" && row.value) zoneId = row.value;
+      }
+    } catch (_) {}
+  }
+
+  const creds = { apiToken, zoneId };
+  memoryCfCredsCache = { creds, expiry: now + 300 * 1000 };
+  return creds;
+}
+
+// 1. GET Realtime Users (Active in last 15 minutes) - MURNI CLOUDFLARE EDGE & 0 D1 READ
 statsRouter.get("/realtime", async c => {
   const now = Date.now();
 
@@ -68,30 +106,57 @@ statsRouter.get("/realtime", async c => {
     } catch (_) {}
   }
 
-  // Tier 3: Fallback D1 Query (dengan index seek idx_visitors_last_seen)
-  try {
-    const db = getDb(c.env.DB);
-    const result = await db
-      .select({ count: sql<number>`COUNT(DISTINCT ${visitors.ip})` })
-      .from(visitors)
-      .where(sql`${visitors.lastSeen} > datetime('now', '-5 minutes')`)
-      .get();
-
-    const count = result?.count || 0;
-    memoryRealtimeCache = { count, expiry: now + TTL_REALTIME_MS };
-
-    if (kv && typeof kv.put === "function") {
-      await kv.put(KV_REALTIME_KEY, String(count), { expirationTtl: 30 }).catch(() => {});
-    }
-
-    c.header("Cache-Control", "private, max-age=15, stale-while-revalidate=30");
-    return c.json({ count, cached: false, source: "d1" });
-  } catch (e: any) {
-    return c.json({ error: e.message }, 500);
+  // Tier 3: Cloudflare GraphQL Edge Analytics (0 D1 read)
+  let count = 0;
+  const { apiToken, zoneId } = await getCloudflareCredentials(c.env);
+  if (apiToken && zoneId) {
+    try {
+      const date15m = new Date(Date.now() - 15 * 60 * 1000).toISOString();
+      const query = `
+        query GetRealtimeAnalytics($zoneTag: String!, $date15m: String!) {
+          viewer {
+            zones(filter: { zoneTag: $zoneTag }) {
+              httpRequestsAdaptiveGroups(
+                limit: 10
+                filter: { datetime_geq: $date15m }
+              ) {
+                count
+              }
+            }
+          }
+        }
+      `;
+      const cfRes = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiToken}`,
+        },
+        body: JSON.stringify({
+          query,
+          variables: { zoneTag: zoneId, date15m },
+        }),
+      });
+      if (cfRes.ok) {
+        const cfJson: any = await cfRes.json();
+        const groups = cfJson?.data?.viewer?.zones?.[0]?.httpRequestsAdaptiveGroups || [];
+        const totalRecentReqs = groups.reduce((acc: number, g: any) => acc + (g.count || 0), 0);
+        count = Math.max(1, Math.round(totalRecentReqs / 5));
+      }
+    } catch (_) {}
   }
+
+  memoryRealtimeCache = { count, expiry: now + TTL_REALTIME_MS };
+
+  if (kv && typeof kv.put === "function") {
+    await kv.put(KV_REALTIME_KEY, String(count), { expirationTtl: 30 }).catch(() => {});
+  }
+
+  c.header("Cache-Control", "private, max-age=15, stale-while-revalidate=30");
+  return c.json({ count, cached: false, source: "cloudflare_edge" });
 });
 
-// 1.5 GET History (6 months visitors & 30 days daily visitors & daily views) - Multi-Tier Zero D1 Read
+// 1.5 GET History (30 Days & Monthly Analytics) - MURNI CLOUDFLARE GRAPHQL & 0 D1 READ
 statsRouter.get("/history", async c => {
   const now = Date.now();
 
@@ -116,62 +181,80 @@ statsRouter.get("/history", async c => {
     } catch (_) {}
   }
 
-  // Tier 3: Fallback D1 Query
-  try {
-    const db = getDb(c.env.DB);
-    const monthResults = await db
-      .select({
-        month: sql<string>`strftime('%Y-%m', ${visitors.lastSeen})`,
-        count: sql<number>`COUNT(DISTINCT ${visitors.ip})`,
-      })
-      .from(visitors)
-      .where(sql`${visitors.lastSeen} >= date('now', '-6 months')`)
-      .groupBy(sql`strftime('%Y-%m', ${visitors.lastSeen})`)
-      .orderBy(sql`strftime('%Y-%m', ${visitors.lastSeen}) ASC`)
-      .all();
+  // Tier 3: Fetch directly from Cloudflare GraphQL API (0 D1 read)
+  const { apiToken, zoneId } = await getCloudflareCredentials(c.env);
+  let visitorsData: any[] = [];
+  let dailyStatsData: any[] = [];
 
-    const dayResults = await db
-      .select({
-        day: sql<string>`strftime('%Y-%m-%d', ${visitors.lastSeen})`,
-        count: sql<number>`COUNT(DISTINCT ${visitors.ip})`,
-      })
-      .from(visitors)
-      .where(sql`${visitors.lastSeen} >= date('now', '-30 days')`)
-      .groupBy(sql`strftime('%Y-%m-%d', ${visitors.lastSeen})`)
-      .orderBy(sql`strftime('%Y-%m-%d', ${visitors.lastSeen}) ASC`)
-      .all();
+  if (apiToken && zoneId) {
+    try {
+      const date30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
+      const query = `
+        query GetHistoryAnalytics($zoneTag: String!, $date30d: String!) {
+          viewer {
+            zones(filter: { zoneTag: $zoneTag }) {
+              httpRequests1dGroups(
+                limit: 30
+                filter: { date_geq: $date30d }
+                orderBy: [date_ASC]
+              ) {
+                dimensions { date }
+                sum { pageViews requests }
+                uniq { uniques }
+              }
+            }
+          }
+        }
+      `;
+      const cfRes = await fetch("https://api.cloudflare.com/client/v4/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiToken}`,
+        },
+        body: JSON.stringify({
+          query,
+          variables: { zoneTag: zoneId, date30d },
+        }),
+      });
 
-    const dailyStatsResults = await db
-      .select({
-        day: dailyStats.date,
-        views: dailyStats.views,
-        visitors: dailyStats.visitors,
-      })
-      .from(dailyStats)
-      .where(sql`${dailyStats.date} >= date('now', '-30 days')`)
-      .orderBy(sql`${dailyStats.date} ASC`)
-      .all();
-
-    const resultData = {
-      visitors: [...(monthResults || []), ...(dayResults || [])],
-      dailyStats: dailyStatsResults || [],
-    };
-
-    memoryHistoryCache = { data: resultData, expiry: now + TTL_HISTORY_MS };
-
-    if (kv && typeof kv.put === "function") {
-      await kv.put(KV_HISTORY_KEY, JSON.stringify(resultData), { expirationTtl: 3600 }).catch(() => {});
+      if (cfRes.ok) {
+        const cfJson: any = await cfRes.json();
+        const groups = cfJson?.data?.viewer?.zones?.[0]?.httpRequests1dGroups || [];
+        visitorsData = groups.map((g: any) => ({
+          day: g.dimensions?.date,
+          month: g.dimensions?.date ? g.dimensions.date.substring(0, 7) : "",
+          count: g.uniq?.uniques || 0,
+        }));
+        dailyStatsData = groups.map((g: any) => ({
+          day: g.dimensions?.date,
+          date: g.dimensions?.date,
+          views: g.sum?.pageViews || 0,
+          visitors: g.uniq?.uniques || 0,
+        }));
+      }
+    } catch (err) {
+      console.warn("[Cloudflare GraphQL History Warning]:", err);
     }
-
-    c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
-    return c.json({ ...resultData, cached: false, source: "d1" });
-  } catch (e: any) {
-    console.warn("[Stats History Warning]:", e.message);
-    return c.json({ visitors: [], dailyStats: [] });
   }
+
+  const resultData = {
+    visitors: visitorsData,
+    dailyStats: dailyStatsData,
+    source: "cloudflare_graphql",
+  };
+
+  memoryHistoryCache = { data: resultData, expiry: now + TTL_HISTORY_MS };
+
+  if (kv && typeof kv.put === "function") {
+    await kv.put(KV_HISTORY_KEY, JSON.stringify(resultData), { expirationTtl: 3600 }).catch(() => {});
+  }
+
+  c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+  return c.json({ ...resultData, cached: false, source: "cloudflare_edge" });
 });
 
-// 1.8 GET Dashboard Aggregate Stats (Cached in RAM & Cloudflare KV)
+// 1.8 GET Dashboard Aggregate Stats (Cached in RAM & Cloudflare KV - Zero Visitor Table Scans)
 statsRouter.get("/dashboard", async c => {
   const now = Date.now();
 
@@ -196,7 +279,7 @@ statsRouter.get("/dashboard", async c => {
     } catch (_) {}
   }
 
-  // Tier 3: Fallback D1 Query
+  // Tier 3: D1 Counts for Content Entities Only (Anti-Scan: No queries to visitors or daily_stats)
   try {
     const db = getDb(c.env.DB);
     const postsCount = await db
@@ -235,7 +318,7 @@ statsRouter.get("/dashboard", async c => {
     }
 
     c.header("Cache-Control", "private, max-age=60, stale-while-revalidate=300");
-    return c.json({ ...resultData, cached: false, source: "d1" });
+    return c.json({ ...resultData, cached: false, source: "d1_entities" });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
@@ -267,24 +350,7 @@ statsRouter.get("/cloudflare", async c => {
   }
 
   // Resolve API Token and Zone ID
-  let apiToken = c.env.CLOUDFLARE_API_TOKEN;
-  let zoneId = c.env.CLOUDFLARE_ZONE_ID;
-
-  if (!apiToken || !zoneId) {
-    try {
-      const db = getDb(c.env.DB);
-      const optRows = await db
-        .select()
-        .from(options)
-        .where(sql`${options.key} IN ('cf_api_token', 'cf_zone_id')`)
-        .all();
-
-      for (const row of optRows || []) {
-        if (row.key === "cf_api_token" && row.value) apiToken = row.value;
-        if (row.key === "cf_zone_id" && row.value) zoneId = row.value;
-      }
-    } catch (_) {}
-  }
+  const { apiToken, zoneId } = await getCloudflareCredentials(c.env);
 
   if (!apiToken || !zoneId) {
     return c.json({
@@ -393,72 +459,42 @@ statsRouter.get("/cloudflare", async c => {
   }
 });
 
-// 2. Ping (Track active user - Subquery Full-Scan REMOVED)
+// 2. Ping (MURNI CLOUDFLARE EDGE - 0% D1 WRITE & 0% D1 READ)
 const handlePing = async (c: any) => {
-  try {
-    const ip =
-      c.req.header("cf-connecting-ip") ||
-      c.req.header("x-forwarded-for") ||
-      "unknown";
-
-    if (ip !== "unknown") {
-      const db = getDb(c.env.DB);
-      await db
-        .insert(visitors)
-        .values({ ip, lastSeen: sql`datetime('now')` })
-        .onConflictDoUpdate({
-          target: visitors.ip,
-          set: { lastSeen: sql`datetime('now')` },
-        })
-        .run();
-
-      // Update daily_stats TANPA pemindaian subquery SELECT COUNT(*) pada setiap hit.
-      // Hanya menghitung ulang pengunjung jika selang waktu update > 15 menit.
-      try {
-        await c.env.DB.prepare(
-          `
-            INSERT INTO daily_stats (date, views, visitors, updated_at)
-            VALUES (date('now', '+7 hours'), 0, 1, datetime('now'))
-            ON CONFLICT(date) DO UPDATE SET 
-                visitors = CASE 
-                    WHEN updated_at < datetime('now', '-15 minutes') 
-                    THEN (SELECT COUNT(*) FROM visitors WHERE last_seen >= date('now', '+7 hours'))
-                    ELSE visitors 
-                END,
-                updated_at = datetime('now')
-          `
-        ).run();
-      } catch (e) {}
-    }
-    return c.json({ success: true });
-  } catch (e: any) {
-    return c.json({ error: e.message }, 500);
-  }
+  // Traffic analitik dicatat secara otomatis oleh jaringan global Cloudflare Edge.
+  // Tidak ada penulisan atau pembacaan ke D1 sama sekali.
+  c.header("Cache-Control", "no-store, no-cache, must-revalidate");
+  return c.json({
+    success: true,
+    tracking: "cloudflare_edge",
+    recordedAt: new Date().toISOString(),
+  });
 };
 statsRouter.post("/ping", handlePing);
 statsRouter.get("/ping", handlePing);
 
-// 3. POST Track Post View
+// 3. POST Track Post View (Asynchronous via waitUntil - 0 daily_stats write)
 statsRouter.post("/view/:id", async c => {
   const id = parseInt(c.req.param("id"), 10);
   try {
     const db = getDb(c.env.DB);
-    await db
-      .update(posts)
-      .set({ views: sql`${posts.views} + 1` })
-      .where(eq(posts.id, id))
-      .run();
+    const updateTask = async () => {
+      try {
+        await db
+          .update(posts)
+          .set({ views: sql`${posts.views} + 1` })
+          .where(eq(posts.id, id))
+          .run();
+      } catch (_) {}
+    };
 
-    try {
-      await c.env.DB.prepare(
-        `
-          INSERT INTO daily_stats (date, views, visitors, updated_at)
-          VALUES (date('now', '+7 hours'), 1, 0, datetime('now'))
-          ON CONFLICT(date) DO UPDATE SET views = views + 1, updated_at = datetime('now')
-        `
-      ).run();
-    } catch (e) {}
-    return c.json({ success: true });
+    if (c.executionCtx && typeof (c.executionCtx as any).waitUntil === "function") {
+      (c.executionCtx as any).waitUntil(updateTask());
+    } else {
+      await updateTask();
+    }
+
+    return c.json({ success: true, tracking: "post_counter" });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
   }
