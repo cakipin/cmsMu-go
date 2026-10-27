@@ -234,3 +234,28 @@ gantt
 2. **Fase 2 (Database Indexing):** Menambahkan 4 composite index strategis di `packages/db/src/schema.ts` dan mengeksekusi migrasi D1 di remote Cloudflare.
 3. **Fase 3 (Total KV Router):** Membungkus seluruh endpoint publik di `apps/cms-api/src/modules/public/public.router.ts` dengan perlindungan KV Cache & Lookahead pagination.
 4. **Fase 4 (Verifikasi & Rilis):** Menjalankan pengujian beban (*load test*) otomatis untuk memastikan 100% request publik berulang menghasilkan **0 D1 rows read**.
+
+---
+
+## 7. Alat Simulasi & Pengujian Beban Kuota (`scripts/simulate-quota-stress.mjs`)
+
+Untuk mempermudah verifikasi dan mencegah regresi di masa depan, CMSMu dilengkapi skrip simulasi kuota resmi:
+```bash
+# Menjalankan simulasi kuota standar (2 putaran pada host target):
+pnpm run simulate:quota --target=https://staging.cmsmu.pages.dev
+
+# Menjalankan melalui peran @qa-engineer:
+pnpm run qa:simulate-quota --target=https://staging.cmsmu.pages.dev --rounds=2
+```
+
+### Mekanisme Pengujian & Validasi Matematis:
+1. **Simulasi Bot Mesin Pencari:** Mengirim request HTTP dengan header User-Agent Googlebot (`compatible; Googlebot/2.1`) ke 15 rute publik acak (Home, Berita, Kategori, 6 Tag, dan 5 Query Pencarian).
+2. **Perhitungan Riil D1 Rows Read:**
+   - **`HIT-KV`**: Dihitung **$0\text{ rows read}$** (diserap penuh oleh KV Edge dalam $< 50\text{ ms}$).
+   - **`MISS`**: Dihitung **$\le 11\text{ rows read}$** (dilindungi oleh Lookahead Pagination `LIMIT 11`).
+   - Dibandingkan dengan kueri legacy (insiden Suara 'Aisyiyah) yang memindai $14.259\text{ rows}$ per request tanpa indeks.
+3. **Kriteria Ambang Batas Lolos (QA Gate):**
+   - Tingkat keberhasilan request wajib $100\%$ (HTTP 200).
+   - Pada putaran kedua (*Bot Crawl Re-visit*), tingkat `HIT-KV` wajib $\ge 90\%$.
+   - Hasil audit wajib berstatus: `[PASS: ZERO-OVERQUOTA SAFE]`.
+
