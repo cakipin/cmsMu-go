@@ -13,4 +13,5 @@ export * from "./schema";
 export * from "./schema-i18n";
 export * from "./migration-runner";
 export * from "./init";
+export * from "./hyperdrive";
 

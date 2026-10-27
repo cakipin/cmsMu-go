@@ -223,3 +223,17 @@ export const contents = sqliteTable(
   })
 );
 
+export const postTags = sqliteTable(
+  "post_tags",
+  {
+    id: integer("id").primaryKey({ autoIncrement: true }),
+    postId: integer("post_id").notNull().references(() => posts.id, { onDelete: "cascade" }),
+    tagSlug: text("tag_slug").notNull(),
+    createdAt: text("created_at").default(String(Date.now())),
+  },
+  table => ({
+    slugDateIdx: index("idx_post_tags_slug_date").on(table.tagSlug, table.createdAt),
+    postIdIdx: index("idx_post_tags_post_id").on(table.postId),
+  })
+);
+

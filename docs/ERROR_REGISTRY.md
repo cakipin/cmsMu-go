@@ -50,3 +50,30 @@ Setiap agen **WAJIB MEMATUHI** seluruh pantangan di bawah ini sebagai **Hard Con
 ### 🛡️ PANTANGAN KERAMAT (GUARDRAIL 1):
 1. Dilarang keras deploy ke Production dalam turn/langkah yang sama dengan Staging.
 2. Wajib **HARD STOP** di Staging dan menunggu persetujuan tertulis eksplisit dari User.
+
+---
+
+## 🚨 KESALAHAN FATAL #4: NEGOSIASI KRIPTO TLS BERULANG PADA CLOUDFLARE HYPERDRIVE (ERR-011)
+
+### Kronologi Masalah:
+* Driver MySQL (`mysql2`) diinisialisasi tanpa opsi `ssl: false`. Di runtime Workers V8 Isolate, client melakukan negosiasi TLS (RSA/ECDHE asymmetric crypto handshake) pada setiap request baru, membakar **86,2 Juta ms CPU Workers**.
+* **Akar Masalah:** Tidak memahami bahwa Cloudflare Hyperdrive sudah mengelola enkripsi TLS persisten ke database origin di layer jaringannya.
+
+### 🛡️ PANTANGAN KERAMAT:
+1. Seluruh inisialisasi koneksi MySQL ke Cloudflare Hyperdrive **WAJIB MENYERTAKAN `ssl: false`**.
+2. Gunakan selalu factory resmi: `createHyperdriveConfig(c.env.HYPERDRIVE)` dari `@cmsmu/db`.
+3. Verifikasi kepatuhan via: `pnpm run check:dual-db`.
+
+---
+
+## 🚨 KESALAHAN FATAL #5: KEBOCORAN DUAL-WRITE MUTASI TELEMETRI KE CLOUDFLARE D1 (ERR-012)
+
+### Kronologi Masalah:
+* Mutasi penambahan counter view artikel (`SET views = views + 1`), rekap `daily_stats`, atau log `visitors` secara keliru di-dual-write ke Cloudflare D1.
+* Pada trafik tinggi (ratusan ribu pengunjung), hal ini seketika menghabiskan batas kuota tulis harian D1 (100.000 writes/hari) dan memicu kegagalan sistemik *table lock contention* (`SQLITE_BUSY`).
+
+### 🛡️ PANTANGAN KERAMAT:
+1. Cloudflare D1 **DIHARAMKAN SECARA MUTLAK** menerima mutasi penulisan telemetri (`views + 1`, `daily_stats`, `visitors`).
+2. Mutasi telemetri hanya boleh ditulis ke MySQL eksternal atau ditampung di RAM/KV. Jika MySQL down, mutasi telemetri wajib di-drop secara aman (`rows_written: 0`) tanpa pernah menyentuh D1!
+3. Gunakan filter pelindung bawaan: `isTelemetryMutation(sqlQuery)` dari `@cmsmu/db`.
+
