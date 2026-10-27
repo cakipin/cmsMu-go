@@ -1,8 +1,8 @@
 {
   "description": "LOCKED CORE FILES - DILARANG KERAS mengubah berkas di daftar ini saat memperbaiki modul fitur (Konten, Users, Media, Menus, Themes, Plugins, Settings).",
-  "lockedAt": "2026-10-22T09:17:31.877Z",
+  "lockedAt": "2026-10-27T08:58:02.187Z",
   "files": {
-    "apps/cms-api/src/index.ts": "e397cc516318203f196014aa3d842f7c89a24d750169fea01207be2136da605c",
+    "apps/cms-api/src/index.ts": "6b674942d5361c37727cc2b0d285f20b7d682a97f50aa58db8947ceaed853aa7",
     "apps/cms-api/src/core/hooks.ts": "bf24d67ab9f6b012a137eea14563dba4f27fee2470583e10915b3cd0be5317dc",
     "apps/cms-api/src/middleware/auth.ts": "81c1babfed3a13945e3390578ab1515db18046db82ab5ee82eca0e5fa859d752",
     "apps/cms-api/src/modules/ai/ai.router.ts": "b84bc734e1816fece9b0c26bd8bb6d5672fcf8eb1bc11e896d22d1aa631221b1",

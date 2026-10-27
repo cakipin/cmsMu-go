@@ -9,6 +9,8 @@ import {
 } from "@cmsmu/db";
 import { sql, eq } from "drizzle-orm";
 
+import { fetchGA4Analytics, type GA4Credentials, type GA4AnalyticsData } from "./ga4.service";
+
 type Bindings = {
   DB: D1Database;
   CACHE?: KVNamespace;
@@ -17,6 +19,11 @@ type Bindings = {
   CLOUDFLARE_API_TOKEN?: string;
   CLOUDFLARE_ZONE_ID?: string;
   CLOUDFLARE_ACCOUNT_ID?: string;
+  GA4_PROPERTY_ID?: string;
+  GA_CLIENT_EMAIL?: string;
+  GA_PRIVATE_KEY?: string;
+  GOOGLE_CLIENT_EMAIL?: string;
+  GOOGLE_PRIVATE_KEY?: string;
 };
 
 const statsRouter = new Hono<{ Bindings: Bindings }>();
@@ -25,23 +32,29 @@ const statsRouter = new Hono<{ Bindings: Bindings }>();
 let memoryRealtimeCache: { count: number; expiry: number } | null = null;
 let memoryDashboardCache: { data: any; expiry: number } | null = null;
 let memoryHistoryCache: { data: any; expiry: number } | null = null;
+let memoryGA4HistoryCache: { data: any; expiry: number } | null = null;
 let memoryCloudflareAnalyticsCache: { data: any; expiry: number } | null = null;
+let memoryGA4AnalyticsCache: { data: any; expiry: number } | null = null;
 
 const TTL_REALTIME_MS = 15 * 1000;       // 15 detik di RAM
 const TTL_DASHBOARD_MS = 60 * 1000;      // 60 detik di RAM
 const TTL_HISTORY_MS = 300 * 1000;       // 5 menit di RAM
 const TTL_CF_ANALYTICS_MS = 300 * 1000;  // 5 menit di RAM
+const TTL_GA4_ANALYTICS_MS = 300 * 1000; // 5 menit di RAM
 
 const KV_REALTIME_KEY = "cmsmu:stats:realtime";
 const KV_DASHBOARD_KEY = "cmsmu:stats:dashboard";
 const KV_HISTORY_KEY = "cmsmu:stats:history";
+const KV_GA4_HISTORY_KEY = "cmsmu:stats:history:ga4";
 const KV_CF_ANALYTICS_KEY = "cmsmu:stats:cloudflare";
+const KV_GA4_ANALYTICS_KEY = "cmsmu:stats:ga4";
 
 function getKv(env: any): KVNamespace | null {
   return env.CACHE || env.cmsmu_cache || env.SESSION || null;
 }
 
 let memoryCfCredsCache: { creds: { apiToken?: string; zoneId?: string }; expiry: number } | null = null;
+let memoryGA4CredsCache: { creds: GA4Credentials; expiry: number } | null = null;
 
 /**
  * Mengambil Cloudflare API Token & Zone ID secara aman
@@ -78,6 +91,46 @@ async function getCloudflareCredentials(env: any): Promise<{ apiToken?: string; 
 
   const creds = { apiToken, zoneId };
   memoryCfCredsCache = { creds, expiry: now + 300 * 1000 };
+  return creds;
+}
+
+/**
+ * Mengambil Kredensial Google Analytics 4 secara aman
+ * dari Environment Variables atau tabel options (dengan RAM cache 5 menit).
+ */
+async function getGA4Credentials(env: any): Promise<GA4Credentials> {
+  let propertyId = env.GA4_PROPERTY_ID;
+  let clientEmail = env.GA_CLIENT_EMAIL || env.GOOGLE_CLIENT_EMAIL;
+  let privateKey = env.GA_PRIVATE_KEY || env.GOOGLE_PRIVATE_KEY;
+
+  if (propertyId && clientEmail && privateKey) {
+    return { propertyId, clientEmail, privateKey };
+  }
+
+  const now = Date.now();
+  if (memoryGA4CredsCache && memoryGA4CredsCache.expiry > now) {
+    return memoryGA4CredsCache.creds;
+  }
+
+  if (!propertyId || !clientEmail || !privateKey) {
+    try {
+      const db = getDb(env.DB);
+      const optRows = await db
+        .select()
+        .from(options)
+        .where(sql`${options.key} IN ('ga4_property_id', 'ga_client_email', 'ga_private_key')`)
+        .all();
+
+      for (const row of optRows || []) {
+        if (row.key === "ga4_property_id" && row.value) propertyId = row.value;
+        if (row.key === "ga_client_email" && row.value) clientEmail = row.value;
+        if (row.key === "ga_private_key" && row.value) privateKey = row.value;
+      }
+    } catch (_) {}
+  }
+
+  const creds: GA4Credentials = { propertyId, clientEmail, privateKey };
+  memoryGA4CredsCache = { creds, expiry: now + 300 * 1000 };
   return creds;
 }
 
@@ -156,10 +209,70 @@ statsRouter.get("/realtime", async c => {
   return c.json({ count, cached: false, source: "cloudflare_edge" });
 });
 
-// 1.5 GET History (30 Days & Monthly Analytics) - MURNI CLOUDFLARE GRAPHQL & 0 D1 READ
+// 1.5 GET History (30 Days & Monthly Analytics) - MURNI CLOUDFLARE GRAPHQL & GA4 & 0 D1 READ
 statsRouter.get("/history", async c => {
   const now = Date.now();
+  const source = c.req.query("source") || "cloudflare";
 
+  // Branch GA4 History
+  if (source === "ga4") {
+    // Tier 1: RAM Isolate (< 0.1ms)
+    if (memoryGA4HistoryCache && memoryGA4HistoryCache.expiry > now) {
+      c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+      return c.json({ ...memoryGA4HistoryCache.data, cached: true, source: "ram" });
+    }
+
+    const kv = getKv(c.env);
+
+    // Tier 2: Cloudflare KV (0 D1 read)
+    if (kv && typeof kv.get === "function") {
+      try {
+        const cachedVal = await kv.get(KV_GA4_HISTORY_KEY);
+        if (cachedVal !== null) {
+          const parsed = JSON.parse(cachedVal);
+          memoryGA4HistoryCache = { data: parsed, expiry: now + TTL_GA4_ANALYTICS_MS };
+          c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+          return c.json({ ...parsed, cached: true, source: "kv" });
+        }
+      } catch (_) {}
+    }
+
+    // Tier 3: Fetch directly from GA4 API (0 D1 read)
+    const creds = await getGA4Credentials(c.env);
+    const ga4Data = await fetchGA4Analytics(creds);
+
+    const visitorsData = (ga4Data.history30d || []).map(h => ({
+      day: h.date,
+      month: h.date ? h.date.substring(0, 7) : "",
+      count: h.activeUsers,
+    }));
+
+    const dailyStatsData = (ga4Data.history30d || []).map(h => ({
+      day: h.date,
+      date: h.date,
+      views: h.screenPageViews,
+      visitors: h.activeUsers,
+      sessions: h.sessions,
+    }));
+
+    const resultData = {
+      visitors: visitorsData,
+      dailyStats: dailyStatsData,
+      source: "google_analytics_4",
+      configured: ga4Data.configured,
+    };
+
+    memoryGA4HistoryCache = { data: resultData, expiry: now + TTL_GA4_ANALYTICS_MS };
+
+    if (kv && typeof kv.put === "function") {
+      await kv.put(KV_GA4_HISTORY_KEY, JSON.stringify(resultData), { expirationTtl: 3600 }).catch(() => {});
+    }
+
+    c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+    return c.json({ ...resultData, cached: false, source: "google_analytics_4" });
+  }
+
+  // Branch Cloudflare History
   // Tier 1: RAM Isolate (< 0.1ms)
   if (memoryHistoryCache && memoryHistoryCache.expiry > now) {
     c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
@@ -457,6 +570,47 @@ statsRouter.get("/cloudflare", async c => {
       data: null,
     }, 500);
   }
+});
+
+// 1.9 GET Google Analytics 4 (Audience Behavior & Engagement API - Multi-Tier Caching & 0 D1 Read)
+statsRouter.get("/ga4", async c => {
+  const now = Date.now();
+
+  // Tier 1: RAM Isolate (< 0.1ms, 0 D1 read)
+  if (memoryGA4AnalyticsCache && memoryGA4AnalyticsCache.expiry > now) {
+    c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+    return c.json({ ...memoryGA4AnalyticsCache.data, cached: true, source: "ram" });
+  }
+
+  const kv = getKv(c.env);
+
+  // Tier 2: Cloudflare KV (0 D1 read)
+  if (kv && typeof kv.get === "function") {
+    try {
+      const cachedVal = await kv.get(KV_GA4_ANALYTICS_KEY);
+      if (cachedVal !== null) {
+        const parsed = JSON.parse(cachedVal);
+        memoryGA4AnalyticsCache = { data: parsed, expiry: now + TTL_GA4_ANALYTICS_MS };
+        c.header("Cache-Control", "private, max-age=300, stale-while-revalidate=3600");
+        return c.json({ ...parsed, cached: true, source: "kv" });
+      }
+    } catch (_) {}
+  }
+
+  // Tier 3: Fetch directly from GA4 Data API (0 D1 read)
+  const creds = await getGA4Credentials(c.env);
+  const result = await fetchGA4Analytics(creds);
+
+  if (result.configured) {
+    memoryGA4AnalyticsCache = { data: result, expiry: now + TTL_GA4_ANALYTICS_MS };
+
+    if (kv && typeof kv.put === "function") {
+      await kv.put(KV_GA4_ANALYTICS_KEY, JSON.stringify(result), { expirationTtl: 900 }).catch(() => {});
+    }
+  }
+
+  c.header("Cache-Control", "private, max-age=300");
+  return c.json({ ...result, cached: false });
 });
 
 // 2. Ping (MURNI CLOUDFLARE EDGE - 0% D1 WRITE & 0% D1 READ)
