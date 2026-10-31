@@ -106,6 +106,8 @@ export async function ensureD1PerformanceIndexes(db: any) {
 // ─── COUNTER CACHE BERTINGKAT (ANTI-COUNT(*) FULL TABLE SCAN) ───────────────
 let memoryPostCountCache: { count: number; expiry: number } | null = null;
 const COUNT_CACHE_KEY = "cmsmu:count:published_posts";
+const POST_COUNT_KV_TTL_SECONDS = 2592000; // 30 hari di Cloudflare KV
+const POST_COUNT_MEMORY_TTL_MS = 3600_000;  // 1 jam di RAM Isolate
 
 export async function getCachedPublishedPostCount(dbOrEnv: any, maybeKv?: any): Promise<number> {
   let db: any = dbOrEnv;
@@ -113,7 +115,7 @@ export async function getCachedPublishedPostCount(dbOrEnv: any, maybeKv?: any): 
 
   if (dbOrEnv && typeof dbOrEnv === "object" && dbOrEnv.DB) {
     db = dbOrEnv.DB;
-    if (!kv) kv = dbOrEnv.CACHE || dbOrEnv.cache || dbOrEnv.sa_cache;
+    if (!kv) kv = dbOrEnv.CACHE || dbOrEnv.cache || dbOrEnv.sa_cache || dbOrEnv.cmsmu_cache;
   }
 
   const now = Date.now();
@@ -128,7 +130,7 @@ export async function getCachedPublishedPostCount(dbOrEnv: any, maybeKv?: any): 
       const cachedVal = await kv.get(COUNT_CACHE_KEY);
       if (cachedVal !== null && !isNaN(Number(cachedVal))) {
         const count = Number(cachedVal);
-        memoryPostCountCache = { count, expiry: now + 60 * 1000 };
+        memoryPostCountCache = { count, expiry: now + POST_COUNT_MEMORY_TTL_MS };
         return count;
       }
     } catch (errKv) {
@@ -136,20 +138,23 @@ export async function getCachedPublishedPostCount(dbOrEnv: any, maybeKv?: any): 
     }
   }
 
-  // 3. Fallback: D1 Database Query
+  // 3. Fallback: D1 Database Query (Hanya 1x per 30 hari, disimpan ke KV)
   try {
     const row: any = await db.prepare("SELECT count(*) as total FROM posts WHERE status = 'publish'").first();
     const count = Number(row?.total || 0);
-    memoryPostCountCache = { count, expiry: now + 60 * 1000 };
+    memoryPostCountCache = { count, expiry: now + POST_COUNT_MEMORY_TTL_MS };
 
     if (kv && typeof kv.put === "function") {
-      kv.put(COUNT_CACHE_KEY, String(count), { expirationTtl: 300 }).catch(() => {});
+      kv.put(COUNT_CACHE_KEY, String(count), { expirationTtl: POST_COUNT_KV_TTL_SECONDS }).catch(() => {});
     }
     return count;
   } catch (_) {
     return 0;
   }
 }
+
+export const getPublishedPostsCount = getCachedPublishedPostCount;
+
 
 export function clearPostCountCache(kv?: any) {
   memoryPostCountCache = null;

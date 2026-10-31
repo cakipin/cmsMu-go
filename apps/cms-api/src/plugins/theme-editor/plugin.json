@@ -1,0 +1,8 @@
+{
+  "id": "theme-editor-plugin",
+  "name": "Theme Editor & Canvas Visual Builder",
+  "version": "1.0.0",
+  "author": "CMSMu Core Team",
+  "description": "Modul visual drag-and-drop page builder berbasis Native Canvas, SDUI serialization, dan manajemen tata letak tema.",
+  "category": "Design"
+}

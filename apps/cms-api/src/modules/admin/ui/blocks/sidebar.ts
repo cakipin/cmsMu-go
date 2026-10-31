@@ -4,10 +4,11 @@ export const sidebarBlock = `
 
 <aside 
   :class="sidebarOpen ? 'translate-x-0 w-56' : '-translate-x-full w-56 lg:w-[64px] lg:translate-x-0'"
-  class="fixed left-0 top-0 z-50 flex h-screen flex-col overflow-y-hidden overflow-x-hidden bg-gradient-to-b from-[#2b323c] via-[#222730] to-[#1a1e24] border-r border-slate-700/60 duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] lg:static shrink-0 shadow-2xl transition-[width,transform]"
+  style="background: linear-gradient(180deg, #111722 0%, #0a0e15 50%, #05070a 100%);"
+  class="fixed left-0 top-0 z-50 flex h-screen flex-col overflow-y-hidden overflow-x-hidden backdrop-blur-xl border-r border-teal-500/30 rounded-tr-md rounded-br-md duration-250 ease-[cubic-bezier(0.4,0,0.2,1)] lg:static shrink-0 shadow-[4px_0_24px_rgba(0,0,0,0.35)] transition-[width,transform]"
 >
   <!-- SIDEBAR HEADER (Dynamic Brand synced with Settings) -->
-  <div class="flex items-center px-3.5 py-3 border-b border-slate-700/40" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
+  <div class="flex items-center px-3.5 py-3 border-b border-teal-500/25 bg-black/40 rounded-tr-md" :class="sidebarOpen ? 'justify-between' : 'justify-center'">
     <a href="/admin" class="flex items-center gap-2.5 overflow-hidden text-decoration-none group" :title="(settings && settings.site_title) ? settings.site_title : 'cmsMu Dashboard'">
       <!-- Logo Container -->
       <template x-if="settings && (settings.site_logo || settings.logo)">
@@ -28,7 +29,7 @@ export const sidebarBlock = `
         <span class="text-[10px] text-slate-400 font-normal tracking-wide mt-1 truncate max-w-[135px]" x-text="(settings && settings.site_desc) ? settings.site_desc : 'CMS Dashboard'"></span>
       </div>
     </a>
-    <button class="block lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-slate-700/50 transition-colors" @click.stop="sidebarOpen = false" x-show="sidebarOpen" title="Tutup Menu">
+    <button class="block lg:hidden text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/[0.08] transition-colors" @click.stop="sidebarOpen = false" x-show="sidebarOpen" title="Tutup Menu">
       <i class="fas fa-times text-sm"></i>
     </button>
   </div>
@@ -43,15 +44,15 @@ export const sidebarBlock = `
         <h3 class="mb-1 ml-2 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-show="sidebarOpen">MENU</h3>
         <ul class="mb-1.5 flex flex-col gap-0.5">
           <li class="relative group">
-            <a class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
-               :class="[view=='dash'?'bg-[#374151] text-white shadow-sm border-l-2 border-teal-400':'', sidebarOpen ? 'px-2.5 gap-2.5' : 'px-0 justify-center w-full']" 
+            <a class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-white/[0.06] hover:text-white transition-colors" 
+               :class="[view=='dash'?'bg-white/[0.08] text-white shadow-sm border-l-2 border-teal-400 backdrop-blur-sm':'', sidebarOpen ? 'px-2.5 gap-2.5' : 'px-0 justify-center w-full']" 
                @click="view='dash'; if(window.innerWidth < 1024) sidebarOpen = false;" title="Dashboard" href="javascript:void(0);">
               <i class="fas fa-tachometer-alt w-5 text-center text-sm transition-colors group-hover:text-teal-400" :class="view=='dash'?'text-teal-400':''"></i> 
               <span x-show="sidebarOpen" class="whitespace-nowrap transition-opacity">Dashboard</span>
             </a>
 
             <!-- Floating Tooltip saat sidebar ditutup (Icon-Only Rail) -->
-            <div x-show="!sidebarOpen" class="fixed left-[68px] px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-md shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap border border-slate-700/60 hidden lg:block">
+            <div x-show="!sidebarOpen" class="fixed left-[68px] px-2.5 py-1 bg-slate-900/90 backdrop-blur-md text-white text-xs font-medium rounded-md shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap border border-white/15 hidden lg:block">
               <span>Dashboard</span>
             </div>
           </li>
@@ -59,20 +60,20 @@ export const sidebarBlock = `
       </div>
 
       <!-- LOOP MENU GRUP -->
-      <template x-for="groupName in ['Content', 'Appearance', 'System']">
+      <template x-for="groupName in ['Content', 'Appearance', 'Cloudflare BYOC', 'System']">
         <div x-show="(window.adminMenus || []).some(m => m.group === groupName && (!m.role || m.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && m.role.includes('admin'))) && (!m.pluginId || isPluginActive(m.pluginId)))">
           <!-- Label Grup Saat Expanded -->
           <h3 class="mb-1 ml-2 mt-2.5 text-[10px] font-semibold uppercase tracking-wider text-slate-400/80" x-text="groupName" x-show="sidebarOpen"></h3>
           <!-- Garis Pemisah Halus Saat Rail Collapsed -->
-          <div class="border-t border-slate-700/40 my-1.5 mx-1 hidden lg:block" x-show="!sidebarOpen"></div>
+          <div class="border-t border-white/10 my-1.5 mx-1 hidden lg:block" x-show="!sidebarOpen"></div>
           
           <ul class="mb-1.5 flex flex-col gap-0.5">
             <template x-for="menu in (window.adminMenus || []).filter(m => m.group === groupName)">
               <template x-if="(!menu.role || menu.role.includes(userRole) || userRole === 'superadmin' || (userRole === 'admin' && menu.role.includes('admin'))) && (!menu.pluginId || isPluginActive(menu.pluginId))">
                 <li class="relative group">
                   <template x-if="!menu.href">
-                    <a class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
-                       :class="[(view == menu.view || (menu.view === 'settings' && ['settings', 'seo', 'plugins', 'sso-setup', 'ota'].includes(view))) ? 'bg-[#374151] text-white shadow-sm border-l-2 border-teal-400' : '', sidebarOpen ? 'px-2.5 gap-2.5' : 'px-0 justify-center w-full']" 
+                    <a class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-white/[0.06] hover:text-white transition-colors" 
+                       :class="[(view == menu.view || (menu.view === 'settings' && ['settings', 'seo', 'plugins', 'sso-setup', 'ota'].includes(view))) ? 'bg-white/[0.08] text-white shadow-sm border-l-2 border-teal-400 backdrop-blur-sm' : '', sidebarOpen ? 'px-2.5 gap-2.5' : 'px-0 justify-center w-full']" 
                        @click="view = menu.view; if(menu.action) menu.action(); if(window.innerWidth < 1024) sidebarOpen = false;" 
                        :title="menu.title" href="javascript:void(0);">
                       <i :class="[menu.icon + ' w-5 text-center text-sm transition-colors group-hover:text-teal-400', (view == menu.view || (menu.view === 'settings' && ['settings', 'seo', 'plugins', 'sso-setup', 'ota'].includes(view))) ? 'text-teal-400' : '']"></i> 
@@ -91,7 +92,7 @@ export const sidebarBlock = `
                   </template>
 
                   <template x-if="menu.href">
-                    <a :href="menu.href" class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-[#323a46] hover:text-white transition-colors" 
+                    <a :href="menu.href" class="relative flex items-center rounded-xl py-2 min-h-[38px] text-[13px] font-medium text-slate-300 duration-150 ease-in-out hover:bg-white/[0.06] hover:text-white transition-colors" 
                        :class="sidebarOpen ? 'px-2.5 gap-2.5' : 'px-0 justify-center w-full'"
                        :title="menu.title">
                       <i :class="menu.icon + ' w-5 text-center text-sm transition-colors group-hover:text-teal-400'"></i> 
@@ -100,7 +101,7 @@ export const sidebarBlock = `
                   </template>
 
                   <!-- Floating Tooltip saat Icon-Only Rail -->
-                  <div x-show="!sidebarOpen" class="fixed left-[68px] px-2.5 py-1 bg-slate-900 text-white text-xs font-medium rounded-md shadow-xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap border border-slate-700/60 hidden lg:block">
+                  <div x-show="!sidebarOpen" class="fixed left-[68px] px-2.5 py-1 bg-slate-900/90 backdrop-blur-md text-white text-xs font-medium rounded-md shadow-2xl pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity z-50 whitespace-nowrap border border-white/15 hidden lg:block">
                     <span x-text="menu.title"></span>
                   </div>
 
@@ -114,7 +115,7 @@ export const sidebarBlock = `
   </div>
 
   <!-- USER PROFILE STRIP (Bottom Rail / Expanded) dengan Safe-Area Navigation Gestures -->
-  <div class="border-t border-slate-700/40 p-2.5 pb-6 lg:pb-2.5 bg-black/20">
+  <div class="border-t border-teal-500/25 p-2.5 pb-6 lg:pb-2.5 bg-black/40 rounded-br-md">
     <div class="flex items-center gap-2.5" :class="sidebarOpen ? 'px-1' : 'justify-center'">
       <div @click="view='profile'; if(window.innerWidth < 1024) sidebarOpen = false;" 
            class="h-9 w-9 rounded-full bg-teal-600 text-white flex items-center justify-center font-bold text-xs ring-1 ring-white/10 shrink-0 cursor-pointer hover:ring-teal-400 transition-all">

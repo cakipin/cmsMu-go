@@ -1,0 +1,8 @@
+{
+  "id": "analytics-plugin",
+  "name": "Analytics & Traffic Intelligence",
+  "version": "1.0.0",
+  "author": "CMSMu Core Team",
+  "description": "Modul analitik trafik pengunjung, grafik realtime, Cloudflare GraphQL analytics, dan histori statistik harian.",
+  "category": "Intelligence"
+}

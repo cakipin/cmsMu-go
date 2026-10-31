@@ -192,7 +192,12 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
       setIsLoading(true);
       try {
         const token = getAuthToken();
-        const authHeader: Record<string, string> = token ? { Authorization: `Bearer ${token}` } : {};
+        if (!token) {
+          const redirectTarget = `/admin/login?redirect=${encodeURIComponent(window.location.pathname + window.location.search)}`;
+          window.location.href = redirectTarget;
+          return;
+        }
+        const authHeader: Record<string, string> = { Authorization: `Bearer ${token}` };
 
         // 0. Muat daftar seluruh halaman untuk Dropdown Page Switcher
         try {
@@ -1016,7 +1021,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
           <aside className="w-72 bg-slate-950 border-r border-slate-800 flex flex-col shrink-0">
             <div className="p-3 border-b border-slate-800 flex items-center justify-between">
               <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Susunan Blok</span>
-              <span className="text-[11px] font-mono text-slate-500">{blocks.length} blok</span>
+              <span className="text-[11px] font-mono text-slate-400">{blocks.length} blok</span>
             </div>
 
           {/* List Blok Aktif */}
@@ -1308,6 +1313,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                                           />
                                         ) : subField.type === "select" ? (
                                           <select
+                                            aria-label={subField.label}
                                             value={subVal}
                                             onChange={e => {
                                               const nextArr = [...arrVal];
@@ -1325,6 +1331,7 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                                         ) : (
                                           <input
                                             type="text"
+                                            aria-label={subField.label}
                                             value={subVal}
                                             placeholder={subField.placeholder || ""}
                                             onChange={e => {
@@ -1353,10 +1360,12 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
 
                 return (
                   <div key={fieldKey} className="space-y-1.5">
-                    <label className="text-xs font-semibold text-slate-300 block">{field.label}</label>
+                    <label htmlFor={`field-${fieldKey}`} className="text-xs font-semibold text-slate-300 block">{field.label}</label>
 
                     {field.type === "textarea" ? (
                       <textarea
+                        id={`field-${fieldKey}`}
+                        aria-label={field.label}
                         rows={3}
                         dir={selectedLocale === "ar" ? "rtl" : "ltr"}
                         value={curVal}
@@ -1367,6 +1376,8 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                       />
                     ) : field.type === "select" ? (
                       <select
+                        id={`field-${fieldKey}`}
+                        aria-label={field.label}
                         value={curVal}
                         onChange={e => handlePropChange(fieldKey, e.target.value)}
                         className="w-full px-3 py-2 bg-slate-900 border border-slate-800 rounded-lg text-xs text-white focus:outline-none focus:border-emerald-500 font-sans"
@@ -1380,6 +1391,8 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                     ) : field.type === "color" ? (
                       <div className="flex items-center gap-2">
                         <input
+                          id={`field-${fieldKey}-picker`}
+                          aria-label={`${field.label} color picker`}
                           type="color"
                           value={typeof curVal === "string" && curVal.startsWith("#") && curVal.length === 7 ? curVal : "#ffffff"}
                           onChange={e => handlePropChange(fieldKey, e.target.value)}
@@ -1387,6 +1400,8 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                           title="Pilih Warna"
                         />
                         <input
+                          id={`field-${fieldKey}`}
+                          aria-label={field.label}
                           type="text"
                           value={curVal}
                           placeholder={fieldKey === "headerTextColor" ? "Otomatis (Adaptif)" : "#ffffff"}
@@ -1406,6 +1421,8 @@ export default function CmsMuCanvasApp({ slug: initialSlug }: CmsMuCanvasAppProp
                       </div>
                     ) : (
                       <input
+                        id={`field-${fieldKey}`}
+                        aria-label={field.label}
                         type={field.type === "number" ? "number" : "text"}
                         dir={selectedLocale === "ar" && field.type !== "number" ? "rtl" : "ltr"}
                         value={curVal}

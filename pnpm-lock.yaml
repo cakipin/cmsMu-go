@@ -330,6 +330,16 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
+  packages/theme-editor:
+    dependencies:
+      '@cmsmu/schema-sdui':
+        specifier: workspace:*
+        version: link:../schema-sdui
+    devDependencies:
+      typescript:
+        specifier: ^6.0.3
+        version: 6.0.3
+
   packages/ui:
     dependencies:
       '@puckeditor/core':

@@ -412,16 +412,6 @@ export function renderAdmin(data: any): string {
 
             <script>
                 window.adminMenus = [
-                    { group: 'Content', title: 'All Posts', view: 'posts', icon: 'fas fa-thumbtack', action: () => typeof loadPosts === 'function' && loadPosts() },
-                    { group: 'Content', title: 'Add Post', view: 'add', icon: 'fas fa-plus-circle', action: () => { window.editingId = null; } },
-                    { group: 'Content', title: 'Pages', view: 'pages', icon: 'fas fa-copy', action: () => typeof loadPages === 'function' && loadPages() },
-                    { group: 'Content', title: 'Add Page', view: 'add-page', icon: 'fas fa-plus-square', action: () => { window.editingPageId = null; } },
-                    { group: 'Content', title: 'Media', view: 'media', icon: 'fas fa-photo-video', action: () => typeof loadMedia === 'function' && loadMedia() },
-                    { group: 'Content', title: 'Komentar', view: 'comments', icon: 'fas fa-comments', role: ['admin', 'editor'] },
-                    { group: 'Appearance', title: 'Themes', view: 'themes', icon: 'fas fa-paint-brush', role: ['admin', 'editor'] },
-                    { group: 'Appearance', title: 'Theme Editor', action: () => window.location.href = '/theme-editor?slug=home', icon: 'fas fa-laptop-code', role: ['admin'] },
-                    { group: 'Appearance', title: 'Menus', view: 'menus', icon: 'fas fa-bars', role: ['admin', 'editor'] },
-                    
                     { group: 'System', title: 'Users', view: 'users', icon: 'fas fa-users', role: ['admin'], action: () => typeof loadUsers === 'function' && loadUsers() },
                     { group: 'System', title: 'Settings', view: 'settings', icon: 'fas fa-cog', role: ['admin'] }
                 ];
@@ -543,10 +533,10 @@ export function renderAdmin(data: any): string {
 
                                     <!-- Bell Icon -->
                                     <div class="relative">
-                                        <button @click="notifOpen = !notifOpen" @click.outside="notifOpen = false" class="relative flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
+                                        <button @click="notifOpen = !notifOpen" @click.outside="notifOpen = false" aria-label="Buka Notifikasi Sistem" title="Notifikasi" class="relative flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-full border border-slate-200 bg-slate-50 text-slate-500 hover:text-primary hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-primary/20">
                                             <span x-show="unreadCount > 0" class="absolute -top-1 -right-1 z-10 min-w-[18px] h-[18px] px-1 rounded-full bg-rose-500 flex items-center justify-center text-[10px] text-white font-black shadow-sm" x-text="unreadCount">
                                             </span>
-                                            <i class="far fa-bell text-sm"></i>
+                                            <i class="far fa-bell text-sm" aria-hidden="true"></i>
                                         </button>
                                         
                                         <!-- Notif Dropdown -->
@@ -569,8 +559,8 @@ export function renderAdmin(data: any): string {
                                                             <p class="text-[11px] text-slate-500 leading-tight" x-text="n.message"></p>
                                                             <p class="text-[9px] text-slate-400 mt-1" x-text="new Date(n.created_at).toLocaleString('id-ID')"></p>
                                                         </div>
-                                                        <button @click.stop="markAsRead(n.id)" class="absolute right-2 top-2 text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none" title="Tandai sudah dibaca">
-                                                            <i class="fas fa-times text-xs"></i>
+                                                        <button @click.stop="markAsRead(n.id)" aria-label="Tandai notifikasi sudah dibaca" class="absolute right-2 top-2 text-slate-300 hover:text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none" title="Tandai sudah dibaca">
+                                                            <i class="fas fa-times text-xs" aria-hidden="true"></i>
                                                         </button>
                                                     </div>
                                                 </template>
@@ -586,7 +576,7 @@ export function renderAdmin(data: any): string {
 
                                     <!-- User Avatar & Dropdown -->
                                     <div class="relative">
-                                        <button @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false" class="flex items-center gap-2 focus:outline-none">
+                                        <button @click="dropdownOpen = !dropdownOpen" @click.outside="dropdownOpen = false" aria-label="Buka Menu Pengguna" :aria-expanded="dropdownOpen ? 'true' : 'false'" class="flex items-center gap-2 focus:outline-none">
                                             <span class="hidden text-right lg:block">
                                                 <span class="block text-sm font-semibold text-slate-800" x-text="userName ? userName : (userRole === 'admin' ? 'Administrator' : (userRole || 'Admin'))"></span>
                                             </span>

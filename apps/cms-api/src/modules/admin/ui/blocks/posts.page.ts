@@ -224,8 +224,8 @@ export const postsPage = `
         <button @click="loadData()" class="btn min-h-[38px] px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-md border border-slate-300 transition-colors" title="Refresh Data">
             <i class="fas fa-sync" :class="isLoading ? 'fa-spin' : ''"></i>
         </button>
-        <button @click="openEditorCerdas(null)" class="btn min-h-[38px] px-3 sm:px-4 bg-[#2271b1] hover:bg-[#135e96] text-white font-medium rounded-md shadow-sm transition-colors flex items-center gap-1.5">
-            <i class="fas fa-plus"></i> <span class="hidden xs:inline">Add New</span>
+        <button @click="openEditorCerdas(null)" aria-label="Tambah Artikel Baru" class="btn min-h-[38px] px-3 sm:px-4 bg-[#2271b1] hover:bg-[#135e96] text-white font-medium rounded-md shadow-sm transition-colors flex items-center gap-1.5">
+            <i class="fas fa-plus" aria-hidden="true"></i> <span class="hidden xs:inline">Add New</span>
         </button>
     </div>
   </div>
@@ -275,7 +275,7 @@ export const postsPage = `
       <!-- Filter Kategori & Status Grid -->
       <div class="grid grid-cols-2 sm:flex sm:items-center gap-2 flex-1">
         <select class="input w-full sm:w-auto py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white" 
-                x-model="filterCategory" @change="currentPage = 1">
+                x-model="filterCategory" @change="currentPage = 1" aria-label="Filter berdasarkan Kategori Artikel">
             <option value="">Semua Kategori</option>
             <template x-for="cat in uniqueCategories" :key="cat">
                 <option :value="cat" x-text="cat"></option>
@@ -283,7 +283,7 @@ export const postsPage = `
         </select>
 
         <select class="input w-full sm:w-auto py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white" 
-                x-model="filterStatus" @change="currentPage = 1">
+                x-model="filterStatus" @change="currentPage = 1" aria-label="Filter berdasarkan Status Artikel">
             <option value="">Semua Status</option>
             <option value="publish">Published</option>
             <option value="draft">Draft</option>
@@ -293,7 +293,7 @@ export const postsPage = `
 
       <!-- Bulk Actions Bar -->
       <div class="flex items-center gap-1.5 pt-1 sm:pt-0 border-t sm:border-t-0 border-slate-100">
-        <select x-model="bulkAction" class="input flex-1 sm:flex-initial py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white">
+        <select x-model="bulkAction" aria-label="Pilih Aksi Massal Artikel" class="input flex-1 sm:flex-initial py-1.5 px-2.5 text-xs rounded-md border border-slate-300 bg-white">
             <option value="">Bulk Actions</option>
             <option value="delete">Hapus</option>
         </select>
@@ -311,7 +311,7 @@ export const postsPage = `
         <thead>
           <tr style="background:#f8f9fa; border-bottom:2px solid #ddd;">
             <th width="30" style="text-align:center; padding:12px;">
-              <input type="checkbox" @click="toggleAll()" :checked="selectAll">
+              <input type="checkbox" @click="toggleAll()" :checked="selectAll" aria-label="Pilih semua artikel">
             </th>
             <th style="text-align:left; padding:12px;">Title</th>
             <th style="text-align:left; width:140px;">Date</th>
@@ -328,7 +328,7 @@ export const postsPage = `
                 :style="selectedIds.includes(p.id) ? 'background:#f0f7ff' : ''">
               
               <td style="text-align:center; padding:12px;">
-                  <input type="checkbox" :value="p.id" x-model="selectedIds">
+                  <input type="checkbox" :value="p.id" x-model="selectedIds" :aria-label="'Pilih artikel ' + p.title">
               </td>
               
               <td style="padding:12px;">
@@ -396,7 +396,7 @@ export const postsPage = `
       <!-- Select All Mobile Bar -->
       <div class="p-3 bg-slate-50 flex items-center justify-between text-xs text-slate-600 border-b border-slate-200">
         <label class="flex items-center gap-2 cursor-pointer font-medium">
-          <input type="checkbox" @click="toggleAll()" :checked="selectAll" class="rounded text-blue-600">
+          <input type="checkbox" @click="toggleAll()" :checked="selectAll" aria-label="Pilih semua artikel di halaman ini" class="rounded text-blue-600">
           <span>Pilih Semua di Halaman Ini</span>
         </label>
         <span x-show="selectedIds.length > 0" class="font-semibold text-blue-600" x-text="selectedIds.length + ' dipilih'"></span>
@@ -406,7 +406,7 @@ export const postsPage = `
       <template x-for="p in paginatedPosts" :key="p.id">
         <div class="p-3.5 transition-colors" :class="selectedIds.includes(p.id) ? 'bg-blue-50/60' : 'bg-white'">
           <div class="flex items-start gap-2.5">
-            <input type="checkbox" :value="p.id" x-model="selectedIds" class="mt-1 rounded text-blue-600 flex-shrink-0">
+            <input type="checkbox" :value="p.id" x-model="selectedIds" :aria-label="'Pilih artikel ' + p.title" class="mt-1 rounded text-blue-600 flex-shrink-0">
             <div class="flex-1 min-w-0">
               <!-- Judul & Badge -->
               <div class="flex items-center gap-1.5 flex-wrap mb-1">

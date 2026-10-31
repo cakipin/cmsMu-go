@@ -176,34 +176,39 @@ export const loginPage = `
 
         <form @submit.prevent="submitLogin">
             <div style="margin-bottom: 18px;">
-                <label style="display:block; font-weight:600; margin-bottom:6px; font-size:13px; color:#334155;">Username / Email</label>
-                <input type="text" 
+                <label for="login-username" style="display:block; font-weight:600; margin-bottom:6px; font-size:13px; color:#334155;">Username / Email</label>
+                <input id="login-username" 
+                       type="text" 
                        x-model="loginForm.username" 
+                       autocomplete="username"
                        style="width:100%; padding:11px 14px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:14px;" 
                        required 
                        placeholder="Username, email, atau nama...">
             </div>
             <div style="margin-bottom: 25px;">
-                <label style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Password</label>
+                <label for="login-password" style="display:block; font-weight:600; margin-bottom:8px; font-size:14px; color:#334155;">Password</label>
                 <div style="position: relative;">
-                    <input :type="showPassword ? 'text' : 'password'" 
+                    <input id="login-password" 
+                           :type="showPassword ? 'text' : 'password'" 
                            x-model="loginForm.password" 
-                           style="width:100%; padding:12px 42px 12px 14px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;" 
+                           autocomplete="current-password"
+                           style="width:100%; padding:12px 48px 12px 14px; border:1px solid #cbd5e1; border-radius:8px; box-sizing:border-box; font-size:15px;" 
                            required 
                            placeholder="••••••••">
                     <button type="button" 
                             @click="showPassword = !showPassword"
-                            style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; font-size: 15px;"
+                            aria-label="Tampilkan atau sembunyikan password"
+                            style="position: absolute; right: 4px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #475569; cursor: pointer; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; font-size: 15px;"
                             :title="showPassword ? 'Sembunyikan password' : 'Lihat password'">
-                        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'"></i>
+                        <i :class="showPassword ? 'fas fa-eye-slash' : 'fas fa-eye'" aria-hidden="true"></i>
                     </button>
                 </div>
             </div>
             <button type="submit" 
                     :disabled="isLoading"
-                    style="background:#0284c7;"
-                    class="w-full py-3.5 px-4 rounded-xl hover:bg-sky-700 text-white font-bold transition-all shadow-md shadow-sky-500/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer border-0 flex items-center justify-center gap-2 text-sm">
-                <i x-show="isLoading" class="fas fa-spinner fa-spin"></i>
+                    style="background:#0369a1;"
+                    class="w-full py-3.5 px-4 rounded-xl hover:bg-sky-800 text-white font-bold transition-all shadow-md shadow-sky-600/30 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer border-0 flex items-center justify-center gap-2 text-sm">
+                <i x-show="isLoading" class="fas fa-spinner fa-spin" aria-hidden="true"></i>
                 <span x-text="isLoading ? 'Memproses...' : 'Masuk'"></span>
             </button>
         </form>

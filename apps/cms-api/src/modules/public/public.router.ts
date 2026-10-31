@@ -17,6 +17,8 @@ import { isPuckJson, renderPuckHtml } from "../theme-builder/render";
 // Import Modular Sub-Routers
 import seoRouter from "./routes/seo.router";
 import profileRouter, { handleUserProfile } from "./routes/profile.router";
+import { recordBufferedView } from "../stats/view-buffer";
+
 
 const publicRouter = new Hono<{ Bindings: Bindings }>();
 
@@ -136,12 +138,15 @@ async function renderHomePage(c: any, lang?: "en" | "ar") {
       .get();
 
     if (customHome && customHome.body) {
-      try {
-        await db
-          .update(pagesTable)
-          .set({ views: sql`${pagesTable.views} + 1` })
-          .where(eq(pagesTable.id, customHome.id));
-      } catch (err) {}
+      const isAnalyticsOn = settings?.analytics_enabled !== "0" && settings?.analytics_enabled !== "false";
+      if (isAnalyticsOn) {
+        if (c.executionCtx && typeof (c.executionCtx as any).waitUntil === "function") {
+          (c.executionCtx as any).waitUntil(recordBufferedView(c.env, "page", customHome.id));
+        } else {
+          recordBufferedView(c.env, "page", customHome.id).catch(() => {});
+        }
+      }
+
 
       // Jika halaman berformat visual Puck
       if (isPuckJson(customHome.body)) {
@@ -411,28 +416,59 @@ publicRouter.get("/search", async c => {
       return c.html(html);
     }
 
-    // Lookahead Pagination (LIMIT limit + 1) - Zero live count(*) scan
-    const bindVal = `%${cleanQuery}%`;
-    const sqlStr = `
-      SELECT * FROM posts 
-      WHERE status = 'publish' 
-      AND (
-        lower(title) LIKE ? 
-        OR lower(body) LIKE ? 
-        OR lower(tags) LIKE ?
-      )
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `;
-    const { results: postsRaw } = await db
-      .prepare(sqlStr)
-      .bind(bindVal, bindVal, bindVal, limit + 1, offset)
-      .all();
+    // Tier 2: Cloudflare KV Edge Cache (~15ms, 0 D1 reads)
+    const kvSearchKey = `cmsmu:search:data:${encodeURIComponent(cleanQuery)}:${page}`;
+    let totalItems = 0;
+    let posts: any[] = [];
+    let isFromCache = false;
 
-    const hasNext = (postsRaw || []).length > limit;
-    const posts = hasNext ? (postsRaw || []).slice(0, limit) : (postsRaw || []);
+    if (kv) {
+      try {
+        const cachedData = await kv.get(kvSearchKey, "json");
+        if (cachedData && typeof cachedData.totalItems === "number" && Array.isArray(cachedData.posts)) {
+          totalItems = cachedData.totalItems;
+          posts = cachedData.posts;
+          isFromCache = true;
+        }
+      } catch (_) {}
+    }
+
+    // Tier 3: Query D1 Database (Fallback with Lookahead Pagination - 0 Full Scan, 0 body scan)
+    let hasNext = false;
+    if (!isFromCache) {
+      const sqlStr = `
+        SELECT id, title, slug, excerpt, featured_image, category, tags, author_id, created_at, views 
+        FROM posts 
+        WHERE status = 'publish' 
+        AND (
+          lower(title) LIKE ? 
+          OR lower(tags) LIKE ?
+        )
+        ORDER BY created_at DESC
+        LIMIT ? OFFSET ?
+      `;
+      const bindVal = `%${cleanQuery}%`;
+      const { results: rawPosts } = await db
+        .prepare(sqlStr)
+        .bind(bindVal, bindVal, limit + 1, offset)
+        .all();
+      const items = (rawPosts || []) as any[];
+      hasNext = items.length > limit;
+      posts = hasNext ? items.slice(0, limit) : items;
+      totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
+
+      // Simpan di KV selama 24 jam (86400 detik) untuk melindungi D1 dari bot/repetitive query
+      if (kv) {
+        try {
+          await kv.put(kvSearchKey, JSON.stringify({ totalItems, posts, hasNext }), { expirationTtl: 86400 });
+        } catch (_) {}
+      }
+    } else {
+      hasNext = totalItems > page * limit;
+    }
+
     const totalPages = hasNext ? page + 1 : page;
-    const totalItems = hasNext ? page * limit + 1 : (page - 1) * limit + posts.length;
+
 
     const context: any = {
       site: settings,
@@ -821,39 +857,15 @@ async function renderSinglePage(c: any, rawSlug: string, lang?: "en" | "ar") {
     }
 
     if (content) {
-      if (type === "post") {
-        try {
-          const updateViews = orm
-            .update(postsTable)
-            .set({ views: sql`views + 1` })
-            .where(eq(postsTable.id, content.id))
-            .run();
-          if (
-            c.executionCtx &&
-            typeof (c.executionCtx as any).waitUntil === "function"
-          ) {
-            (c.executionCtx as any).waitUntil(updateViews);
-          } else {
-            await updateViews;
-          }
-        } catch (err) {}
-      } else if (type === "page") {
-        try {
-          const updateViews = orm
-            .update(pagesTable)
-            .set({ views: sql`views + 1` })
-            .where(eq(pagesTable.id, content.id))
-            .run();
-          if (
-            c.executionCtx &&
-            typeof (c.executionCtx as any).waitUntil === "function"
-          ) {
-            (c.executionCtx as any).waitUntil(updateViews);
-          } else {
-            await updateViews;
-          }
-        } catch (err) {}
+      const isAnalyticsOn = settings?.analytics_enabled !== "0" && settings?.analytics_enabled !== "false";
+      if (isAnalyticsOn) {
+        if (c.executionCtx && typeof (c.executionCtx as any).waitUntil === "function") {
+          (c.executionCtx as any).waitUntil(recordBufferedView(c.env, type as any, content.id));
+        } else {
+          recordBufferedView(c.env, type as any, content.id).catch(() => {});
+        }
       }
+
 
       let relatedPosts: any[] = [];
       if (type === "post" && content.category) {

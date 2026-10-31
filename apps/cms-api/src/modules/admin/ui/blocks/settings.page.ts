@@ -8,8 +8,8 @@ export const settingsPage = `
             <p class="text-xs text-slate-500 m-0 mt-0.5 hidden sm:block">Kelola identitas situs, logo, dan konfigurasi umum.</p>
         </div>
         <button @click="saveSettings()" :disabled="isSaving" 
-                class="min-h-[40px] px-4 py-2 bg-teal-600 hover:bg-teal-700 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold shadow flex items-center gap-2 cursor-pointer transition-all shrink-0">
-            <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'"></i>
+                class="min-h-[40px] px-4 py-2 bg-teal-700 hover:bg-teal-800 active:scale-95 text-white rounded-lg text-xs sm:text-sm font-semibold shadow flex items-center gap-2 cursor-pointer transition-all shrink-0">
+            <i class="fas" :class="isSaving ? 'fa-spinner fa-spin' : 'fa-save'" aria-hidden="true"></i>
             <span x-text="isSaving ? 'Menyimpan...' : 'Simpan Perubahan'">Simpan Perubahan</span>
         </button>
     </div>
@@ -18,35 +18,35 @@ export const settingsPage = `
     <div class="grid grid-cols-1 lg:grid-cols-[2fr_1fr] gap-6">
         
         <div style="background:white; padding:25px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
-            <h4 style="margin-top:0; margin-bottom:20px; font-size:15px; font-weight:700; color:#1f2937;">Identitas Situs</h4>
+            <h3 style="margin-top:0; margin-bottom:20px; font-size:15px; font-weight:700; color:#1f2937;">Identitas Situs</h3>
             
             <div style="margin-bottom:15px;">
-                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Judul Situs (Site Title)</label>
-                <input type="text" x-model="settings.site_title" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
+                <label for="site-title-input" style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Judul Situs (Site Title)</label>
+                <input id="site-title-input" type="text" x-model="settings.site_title" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
             </div>
 
             <div style="margin-bottom:15px;">
-                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Slogan / Deskripsi (Tagline)</label>
-                <input type="text" x-model="settings.site_desc" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
+                <label for="site-tagline-input" style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Slogan / Deskripsi (Tagline)</label>
+                <input id="site-tagline-input" type="text" x-model="settings.site_desc" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
             </div>
 
             <div style="margin-bottom:15px;">
                 <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
-                    <label style="font-size:13px; font-weight:600; color:#4b5563;">Meta Deskripsi (Deskripsi Singkat SEO)</label>
-                    <span style="font-size:11px; color:#9ca3af;" x-text="(settings.site_meta_desc ? settings.site_meta_desc.length : 0) + ' / 160 karakter'"></span>
+                    <label for="site-meta-desc-input" style="font-size:13px; font-weight:600; color:#4b5563;">Meta Deskripsi (Deskripsi Singkat SEO)</label>
+                    <span style="font-size:11px; color:#475569;" x-text="(settings.site_meta_desc ? settings.site_meta_desc.length : 0) + ' / 160 karakter'"></span>
                 </div>
-                <textarea x-model="settings.site_meta_desc" rows="3" placeholder="Tuliskan deskripsi ringkas situs untuk mesin pencari Google & cuplikan sosial media (120-160 karakter)..." class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; font-size:13px; resize:vertical;"></textarea>
+                <textarea id="site-meta-desc-input" x-model="settings.site_meta_desc" rows="3" placeholder="Tuliskan deskripsi ringkas situs untuk mesin pencari Google & cuplikan sosial media (120-160 karakter)..." class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; font-size:13px; resize:vertical;"></textarea>
             </div>
 
             <div style="margin-bottom:15px;">
-                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Email Administrator</label>
-                <input type="email" x-model="settings.admin_email" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
+                <label for="site-admin-email-input" style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Email Administrator</label>
+                <input id="site-admin-email-input" type="email" x-model="settings.admin_email" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box;">
             </div>
 
             <div style="margin-bottom:15px; border-top: 1px solid #e5e7eb; padding-top: 15px;">
-                <label style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Halaman Utama (Homepage)</label>
+                <label for="site-homepage-select" style="display:block; font-size:13px; font-weight:600; margin-bottom:5px; color:#4b5563;">Halaman Utama (Homepage)</label>
                 <p style="font-size:12px; color:#6b7280; margin-bottom:10px;">Pilih halaman yang akan ditampilkan sebagai Beranda situs Anda.</p>
-                <select x-model="settings.site_homepage_slug" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; background:white;">
+                <select id="site-homepage-select" aria-label="Pilih Halaman Utama Situs" x-model="settings.site_homepage_slug" class="focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all outline-none" style="width:100%; padding:10px; border:1px solid #d1d5db; border-radius:8px; box-sizing:border-box; background:white;">
                     <option value="home">Beranda Utama Visual (/home)</option>
                     <option value="__default__">Default Portal Berita (Editorial News Grid)</option>
                     <template x-for="p in (pagesList || []).filter(function(p){ return p.slug !== 'home'; })" :key="p.id">
@@ -61,37 +61,37 @@ export const settingsPage = `
             <div style="background:white; padding:20px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                 <h4 style="margin-top:0; font-size:14px; font-weight:700; color:#1f2937;">Logo Situs</h4>
                 <div style="background:#f9fafb; padding:15px; text-align:center; margin:10px 0; border:1px dashed #d1d5db; border-radius:8px; min-height:80px; display:flex; align-items:center; justify-content:center;">
-                    <img x-show="settings.site_logo" :src="settings.site_logo" style="max-width:100%; max-height:80px; object-fit:contain;">
+                    <img x-show="settings.site_logo" :src="settings.site_logo" alt="Pratinjau Logo Situs" style="max-width:100%; max-height:80px; object-fit:contain;">
                     <span x-show="!settings.site_logo" style="color:#9ca3af; font-size:12px;">Belum Ada Logo</span>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button @click="openMediaSelector('logo')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white border-0 py-2 px-3 rounded-lg text-xs font-medium cursor-pointer transition-colors shadow-xs flex items-center justify-center gap-1.5">
-                        <i class="fas fa-image text-xs"></i>
+                    <button @click="openMediaSelector('logo')" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white border-0 py-2 px-3 rounded-lg text-xs font-medium cursor-pointer transition-colors shadow-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-image text-xs" aria-hidden="true"></i>
                         <span>Pilih Logo</span>
                     </button>
-                    <button @click="settings.site_logo = ''" class="bg-red-50 hover:bg-red-100 text-red-600 border-0 py-2 px-3 rounded-lg text-xs cursor-pointer transition-colors" title="Hapus Logo">
-                        <i class="fas fa-trash"></i>
+                    <button @click="settings.site_logo = ''" class="bg-red-50 hover:bg-red-100 text-red-600 border-0 py-2 px-3 rounded-lg text-xs cursor-pointer transition-colors" title="Hapus Logo" aria-label="Hapus Logo">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
                     </button>
                 </div>
-                <input type="text" x-model="settings.site_logo" placeholder="https://..." style="width:100%; margin-top:10px; padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; outline:none; box-sizing:border-box;">
+                <input type="text" x-model="settings.site_logo" placeholder="https://..." aria-label="URL Logo Situs" style="width:100%; margin-top:10px; padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; outline:none; box-sizing:border-box;">
             </div>
 
             <div style="background:white; padding:20px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">
                 <h4 style="margin-top:0; font-size:14px; font-weight:700; color:#1f2937;">Favicon</h4>
                 <div style="background:#f9fafb; padding:15px; text-align:center; margin:10px 0; border:1px dashed #d1d5db; border-radius:8px; min-height:60px; display:flex; align-items:center; justify-content:center;">
-                    <img x-show="settings.site_favicon" :src="settings.site_favicon" style="width:32px; height:32px; object-fit:contain;">
+                    <img x-show="settings.site_favicon" :src="settings.site_favicon" alt="Pratinjau Favicon Situs" style="width:32px; height:32px; object-fit:contain;">
                     <span x-show="!settings.site_favicon" style="color:#9ca3af; font-size:12px;">Belum Ada Icon</span>
                 </div>
                 <div style="display:flex; gap:8px;">
-                    <button @click="openMediaSelector('favicon')" class="flex-1 bg-teal-600 hover:bg-teal-700 text-white border-0 py-2 px-3 rounded-lg text-xs font-medium cursor-pointer transition-colors shadow-xs flex items-center justify-center gap-1.5">
-                        <i class="fas fa-icons text-xs"></i>
+                    <button @click="openMediaSelector('favicon')" class="flex-1 bg-teal-700 hover:bg-teal-800 text-white border-0 py-2 px-3 rounded-lg text-xs font-medium cursor-pointer transition-colors shadow-xs flex items-center justify-center gap-1.5">
+                        <i class="fas fa-icons text-xs" aria-hidden="true"></i>
                         <span>Pilih Favicon</span>
                     </button>
-                    <button @click="settings.site_favicon = ''" class="bg-red-50 hover:bg-red-100 text-red-600 border-0 py-2 px-3 rounded-lg text-xs cursor-pointer transition-colors" title="Hapus Favicon">
-                        <i class="fas fa-trash"></i>
+                    <button @click="settings.site_favicon = ''" class="bg-red-50 hover:bg-red-100 text-red-600 border-0 py-2 px-3 rounded-lg text-xs cursor-pointer transition-colors" title="Hapus Favicon" aria-label="Hapus Favicon">
+                        <i class="fas fa-trash" aria-hidden="true"></i>
                     </button>
                 </div>
-                <input type="text" x-model="settings.site_favicon" placeholder="https://..." style="width:100%; margin-top:10px; padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; outline:none; box-sizing:border-box;">
+                <input type="text" x-model="settings.site_favicon" placeholder="https://..." aria-label="URL Favicon Situs" style="width:100%; margin-top:10px; padding:6px 10px; font-size:11px; border:1px solid #e2e8f0; border-radius:6px; outline:none; box-sizing:border-box;">
             </div>
 
             <div style="background:white; padding:20px; border:1px solid #e5e7eb; border-radius:12px; box-shadow:0 1px 3px rgba(0,0,0,0.02);">

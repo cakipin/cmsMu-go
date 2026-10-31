@@ -1,0 +1,8 @@
+{
+  "id": "content-plugin",
+  "name": "CMS Content & Public Website Engine",
+  "version": "1.0.0",
+  "author": "CMSMu Core Team",
+  "description": "Modul penerbitan konten artikel, berita, halaman statis, galeri media, komentar, dan rendering website publik.",
+  "category": "Publishing"
+}

@@ -12,86 +12,135 @@ export const dashboardPage = `
 
      <!-- Top Action Buttons: Full width on mobile, ergonomis 44px+ tap target -->
      <div class="relative z-10 flex items-center gap-2.5 w-full md:w-auto shrink-0">
-        <button @click="openEditor()" class="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-[0.98] px-4 py-2.5 min-h-[44px] text-xs font-bold text-white transition-all shadow-sm">
-            <i class="fas fa-plus text-xs"></i>
+        <button @click="openEditor()" class="flex-1 md:flex-initial inline-flex items-center justify-center gap-2 rounded-xl bg-teal-700 hover:bg-teal-800 active:scale-[0.98] px-4 py-2.5 min-h-[44px] text-xs font-bold text-white transition-all shadow-sm">
+            <i class="fas fa-plus text-xs" aria-hidden="true"></i>
             <span>Tulis Artikel Baru</span>
         </button>
-        <a href="/" target="_blank" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] px-3.5 py-2.5 min-h-[44px] text-xs font-semibold text-slate-700 transition-all shadow-sm">
-            <i class="fas fa-external-link-alt text-xs text-slate-400"></i>
+        <a href="/" target="_blank" aria-label="Lihat Website Publik" class="inline-flex items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 hover:text-slate-900 active:scale-[0.98] px-3.5 py-2.5 min-h-[44px] text-xs font-semibold text-slate-700 transition-all shadow-sm">
+            <i class="fas fa-external-link-alt text-xs text-slate-400" aria-hidden="true"></i>
             <span class="hidden sm:inline">Lihat Website</span>
         </a>
      </div>
   </div>
 
-  <!-- METRIC CARDS TITLE -->
-  <div class="mb-3 flex items-center justify-between">
-      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
-          <span class="inline-flex h-2 w-2 rounded-full bg-teal-500"></span>
-          <span>Ringkasan Konten & Media</span>
-      </div>
+  <!-- CONTENT METRIC CARDS (Ketika content-plugin Aktif) -->
+  <div x-show="isPluginActive('content-plugin')">
+    <div class="mb-3 flex items-center justify-between">
+        <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+            <span class="inline-flex h-2 w-2 rounded-full bg-teal-500"></span>
+            <span>Ringkasan Konten & Media</span>
+        </div>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
+        <!-- Card Item 1: Articles -->
+        <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-teal-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='posts'; loadPosts()">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
+              <i class="fas fa-pen-nib text-xs" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.posts || posts.length">0</h3>
+              <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-1 block truncate">Artikel Terbit</span>
+          </div>
+        </div>
+
+        <!-- Card Item 2: Total Views (Real D1 Database SUM) -->
+        <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:-translate-y-0.5 hover:shadow-md hover:border-rose-400 transition-all duration-200 group flex items-center gap-3.5">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
+              <i class="fas fa-eye text-xs" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="(Number(dashboardStats?.totalViews) || 0).toLocaleString('id-ID')">0</h3>
+              <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-1 block truncate">Total Tayangan</span>
+          </div>
+        </div>
+        
+        <!-- Card Item 3: Pages -->
+        <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='pages'; loadPages()">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+             <i class="fas fa-file-alt text-xs" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.pages || (pages ? pages.length : 0)">0</h3>
+              <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-1 block truncate">Halaman Statis</span>
+          </div>
+        </div>
+
+        <!-- Card Item 3: Media Gallery -->
+        <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='media'; loadMedia()">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
+             <i class="fas fa-images text-xs" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.media || (typeof mediaList !== 'undefined' ? mediaList.length : 0)">0</h3>
+              <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-1 block truncate">Galeri Media</span>
+          </div>
+        </div>
+
+        <!-- Card Item 4: Media Sumber (Menggantikan Theme) -->
+        <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-sky-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='aggregator'">
+          <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-colors">
+             <i class="fas fa-satellite-dish text-xs" aria-hidden="true"></i>
+          </div>
+          <div class="min-w-0 flex-1">
+              <h3 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.sources || 0">0</h3>
+              <span class="text-[11px] font-bold text-slate-600 uppercase tracking-wider mt-1 block truncate">Media Sumber</span>
+          </div>
+        </div>
+    </div>
   </div>
 
-  <!-- METRIC CARDS -->
-  <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-5">
-      
-      <!-- Card Item 1: Articles -->
-      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-teal-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='posts'; loadPosts()">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600 group-hover:bg-teal-600 group-hover:text-white transition-colors">
-            <i class="fas fa-pen-nib text-xs"></i>
+  <!-- PLATFORM SYSTEM METRICS (Ketika content-plugin Non-Aktif - Odoo Headless Mode) -->
+  <div x-show="!isPluginActive('content-plugin')" class="mb-5">
+    <div class="mb-3 flex items-center justify-between">
+      <div class="flex items-center gap-2 text-xs font-semibold text-slate-500">
+        <span class="inline-flex h-2 w-2 rounded-full bg-indigo-500"></span>
+        <span>Status Platform Universal (Headless Core)</span>
+      </div>
+      <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 border border-indigo-200 px-2.5 py-0.5 rounded-full">Odoo-Style Modular Architecture</span>
+    </div>
+    <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
+      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs flex items-center gap-3.5 cursor-pointer hover:border-indigo-400 transition-colors" @click="view='users'; loadUsers()">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+          <i class="fas fa-users text-xs"></i>
         </div>
         <div class="min-w-0 flex-1">
-            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.posts || posts.length">0</h4>
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Artikel Terbit</span>
+          <h4 class="font-black text-slate-800 text-xl leading-none" x-text="users ? users.length : 1">1</h4>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Total Pengguna</span>
         </div>
       </div>
-
-      <!-- Card Item 2: Total Views (Real D1 Database SUM) -->
-      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs hover:-translate-y-0.5 hover:shadow-md hover:border-rose-400 transition-all duration-200 group flex items-center gap-3.5">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-600 group-hover:bg-rose-600 group-hover:text-white transition-colors">
-            <i class="fas fa-eye text-xs"></i>
+      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs flex items-center gap-3.5 cursor-pointer hover:border-teal-400 transition-colors" @click="view='plugins'">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-teal-50 text-teal-600">
+          <i class="fas fa-puzzle-piece text-xs"></i>
         </div>
         <div class="min-w-0 flex-1">
-            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="(Number(dashboardStats?.totalViews) || 0).toLocaleString('id-ID')">0</h4>
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Total Tayangan</span>
+          <h4 class="font-black text-slate-800 text-xl leading-none" x-text="(availablePlugins || []).filter(p => Number(p.active) === 1).length || 'Active'">Aktif</h4>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Modul Aktif</span>
         </div>
       </div>
-      
-      <!-- Card Item 3: Pages -->
-      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-indigo-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='pages'; loadPages()">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
-           <i class="fas fa-file-alt text-xs"></i>
+      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs flex items-center gap-3.5">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
+          <i class="fas fa-server text-xs"></i>
         </div>
         <div class="min-w-0 flex-1">
-            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.pages || (pages ? pages.length : 0)">0</h4>
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Halaman Statis</span>
+          <h4 class="font-black text-emerald-600 text-xl leading-none">Online</h4>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Platform Kernel</span>
         </div>
       </div>
-
-      <!-- Card Item 3: Media Gallery -->
-      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-emerald-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='media'; loadMedia()">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600 group-hover:bg-emerald-600 group-hover:text-white transition-colors">
-           <i class="fas fa-images text-xs"></i>
+      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs flex items-center gap-3.5">
+        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+          <i class="fas fa-shield-alt text-xs"></i>
         </div>
         <div class="min-w-0 flex-1">
-            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.media || (typeof mediaList !== 'undefined' ? mediaList.length : 0)">0</h4>
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Galeri Media</span>
+          <h4 class="font-black text-slate-800 text-xl leading-none">Zero Reads</h4>
+          <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">DB Shielding</span>
         </div>
       </div>
-
-      <!-- Card Item 4: Media Sumber (Menggantikan Theme) -->
-      <div class="rounded-xl border border-slate-200/80 bg-white p-3.5 sm:p-4 shadow-xs cursor-pointer hover:-translate-y-0.5 hover:shadow-md hover:border-sky-400 transition-all duration-200 group flex items-center gap-3.5" @click="view='aggregator'">
-        <div class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-sky-50 text-sky-600 group-hover:bg-sky-600 group-hover:text-white transition-colors">
-           <i class="fas fa-satellite-dish text-xs"></i>
-        </div>
-        <div class="min-w-0 flex-1">
-            <h4 class="font-black text-slate-800 text-xl sm:text-2xl leading-none tracking-tight" x-text="dashboardStats?.sources || 0">0</h4>
-            <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mt-1 block truncate">Media Sumber</span>
-        </div>
-      </div>
+    </div>
   </div>
   
-  <!-- ANALYTICS ROW 1 -->
-  <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
+  <!-- ANALYTICS ROW 1 (Ketika analytics-plugin Aktif) -->
+  <div x-show="isPluginActive('analytics-plugin')">
+    <div class="mt-6 grid grid-cols-1 gap-6 xl:grid-cols-3">
      
      <!-- Traffic Statistics Chart -->
      <div class="xl:col-span-2 rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-7"
@@ -355,7 +404,7 @@ export const dashboardPage = `
                 </div>
             </div>
 
-            <!-- Footer Status Note -->
+             <!-- Footer Status Note -->
             <div class="mt-5 pt-4 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                 <span class="flex items-center gap-1.5 font-medium">
                     <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -366,9 +415,99 @@ export const dashboardPage = `
          </div>
      </div>
   </div>
+  </div> <!-- END x-show analytics-plugin -->
 
-  <!-- ANALYTICS ROW 2: ARTIKEL TERBARU & POPULER (FULL WIDTH) -->
-  <div class="mt-6">
+  <!-- UNIVERSAL APP LAUNCHER (Ketika analytics-plugin Non-Aktif - Odoo Style Hub) -->
+  <div x-show="!isPluginActive('analytics-plugin')" class="mt-6 bg-white rounded-2xl border border-slate-200/80 shadow-sm p-6 sm:p-7">
+    <div class="flex items-center justify-between mb-5 pb-3 border-b border-slate-100 flex-wrap gap-3">
+      <div>
+        <h3 class="text-base font-black text-slate-800 tracking-tight flex items-center gap-2">
+          <i class="fas fa-th text-teal-600"></i> Platform Applications & Modules Hub
+        </h3>
+        <p class="text-xs text-slate-500">Pusat peluncuran aplikasi dan modul terpasang di ekosistem CMSMu Universal.</p>
+      </div>
+      <button @click="view='plugins'" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 text-xs font-bold transition-colors">
+        <i class="fas fa-plus"></i> Kelola Modul (App Store)
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <!-- App Card: Content & Publishing -->
+      <div class="rounded-xl border border-slate-200/80 p-4 hover:shadow-md hover:border-teal-400 transition-all flex flex-col justify-between bg-slate-50/40">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-teal-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fas fa-newspaper text-base"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">CMS & Public Web</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Penerbitan berita, artikel, halaman statis & tema web publik.</p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+          <span :class="isPluginActive('content-plugin') ? 'bg-emerald-100 text-emerald-800 border-emerald-300' : 'bg-slate-100 text-slate-700 border-slate-300'" class="text-[10px] font-bold px-2 py-0.5 rounded-full border">
+            <span x-text="isPluginActive('content-plugin') ? 'AKTIF' : 'NON-AKTIF'"></span>
+          </span>
+          <button @click="isPluginActive('content-plugin') ? (view='posts') : (view='plugins')" class="text-xs font-semibold text-teal-700 hover:text-teal-800">
+            <span x-text="isPluginActive('content-plugin') ? 'Buka Modul &rarr;' : 'Kelola &rarr;'"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- App Card: Analytics & Traffic -->
+      <div class="rounded-xl border border-slate-200/80 p-4 hover:shadow-md hover:border-teal-400 transition-all flex flex-col justify-between bg-slate-50/40">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-indigo-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fas fa-chart-line text-base"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">Analytics Engine</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Monitoring statistik pengunjung & analitik edge.</p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-slate-100 text-slate-700 border-slate-300">NON-AKTIF</span>
+          <button @click="view='plugins'" class="text-xs font-semibold text-teal-700 hover:text-teal-800">Aktifkan &rarr;</button>
+        </div>
+      </div>
+
+      <!-- App Card: Users & Access Control -->
+      <div class="rounded-xl border border-slate-200/80 p-4 hover:shadow-md hover:border-teal-400 transition-all flex flex-col justify-between bg-slate-50/40">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-sky-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fas fa-users-cog text-base"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">Identity & RBAC</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Manajemen pengguna, hak akses peran & sesi platform.</p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300">CORE PLATFORM</span>
+          <button @click="view='users'; loadUsers()" class="text-xs font-semibold text-teal-700 hover:text-teal-800">Buka Modul &rarr;</button>
+        </div>
+      </div>
+
+      <!-- App Card: Settings & Options -->
+      <div class="rounded-xl border border-slate-200/80 p-4 hover:shadow-md hover:border-teal-400 transition-all flex flex-col justify-between bg-slate-50/40">
+        <div class="flex items-start gap-3">
+          <div class="w-10 h-10 rounded-xl bg-slate-700 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fas fa-sliders-h text-base"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-slate-800 text-sm">System Settings</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5">Konfigurasi platform, identitas sistem & parameter global.</p>
+          </div>
+        </div>
+        <div class="mt-4 pt-3 border-t border-slate-200/60 flex items-center justify-between">
+          <span class="text-[10px] font-bold px-2 py-0.5 rounded-full border bg-emerald-100 text-emerald-800 border-emerald-300">CORE PLATFORM</span>
+          <button @click="view='settings'" class="text-xs font-semibold text-teal-700 hover:text-teal-800">Buka Modul &rarr;</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANALYTICS ROW 2: ARTIKEL TERBARU & POPULER (Hanya Ketika content-plugin Aktif) -->
+  <div x-show="isPluginActive('content-plugin')" class="mt-6">
       
       <!-- Top 10 Popular / Latest Posts -->
       <div class="rounded-2xl border border-slate-100 bg-white shadow-[0_2px_10px_rgba(0,0,0,0.02)] p-6 sm:p-7">
@@ -407,8 +546,8 @@ export const dashboardPage = `
              <!-- Kontrol Kanan: Sinkronisasi Periode & Lihat Semua -->
              <div class="flex items-center justify-between sm:justify-end gap-2.5 w-full md:w-auto pt-1 sm:pt-0">
                  <div class="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-lg px-2.5 py-1.5" x-show="dashboardTab === 'popular'">
-                     <span class="text-[10px] sm:text-[11px] font-bold text-slate-400 uppercase tracking-wider">Periode:</span>
-                     <select x-model="chartPeriod" class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
+                     <label for="chart-period-select" class="text-[10px] sm:text-[11px] font-bold text-slate-600 uppercase tracking-wider">Periode:</label>
+                     <select id="chart-period-select" x-model="chartPeriod" aria-label="Pilih Periode Grafik" class="text-xs font-bold text-slate-700 bg-transparent outline-none cursor-pointer">
                          <option value="7d">7 Hari Terakhir</option>
                          <option value="daily">Harian (14 Hari)</option>
                          <option value="monthly">Bulanan (6 Bulan)</option>
@@ -418,9 +557,9 @@ export const dashboardPage = `
                  </div>
 
                  <!-- Link Lihat Semua -->
-                 <button type="button" @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-600 hover:text-teal-700 hover:underline flex items-center gap-1.5 cursor-pointer py-1.5 px-2">
+                 <button type="button" @click="view='posts'; loadPosts()" class="text-xs font-semibold text-teal-700 hover:text-teal-800 hover:underline flex items-center gap-1.5 cursor-pointer py-1.5 px-2">
                      <span>Semua Artikel</span>
-                     <i class="fas fa-arrow-right text-[10px]"></i>
+                     <i class="fas fa-arrow-right text-[10px]" aria-hidden="true"></i>
                  </button>
              </div>
          </div>

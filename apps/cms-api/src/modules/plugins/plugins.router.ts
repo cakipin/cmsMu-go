@@ -2,10 +2,11 @@ import { Hono } from "hono";
 import { getDb } from "@cmsmu/db";
 import { plugins as pluginsTable } from "@cmsmu/db";
 import { eq } from "drizzle-orm";
+import { availablePlugins, invalidatePluginCache } from "../../plugins";
 
 const plugins = new Hono<{ Bindings: any }>();
 
-const defaultPlugins = [
+const systemPlugins = [
   {
     id: "sso-muhammadiyah",
     name: "Single Sign-On (Muhammadiyah ID SSO)",
@@ -26,18 +27,47 @@ const defaultPlugins = [
   },
 ];
 
-// GET: List Plugins (with auto-seeding default plugins if empty)
+// GET: List Plugins (Auto-reconciles system plugins and auto-discovered codebase plugins into D1)
 plugins.get("/", async c => {
   try {
     const db = getDb(c.env.DB);
     let results = await db.select().from(pluginsTable);
 
-    // Auto seed default plugins jika masih kosong
-    if (!results || results.length === 0) {
-      for (const p of defaultPlugins) {
+    // Gabungkan plugin sistem dengan plugin yang terdeteksi otomatis dari kode
+    const allDiscovered = [
+      ...systemPlugins,
+      ...availablePlugins.map(p => ({
+        id: p.id,
+        name: p.name,
+        description: p.description || "",
+        author: p.author || "CMSMu Core Team",
+        version: p.version || "1.0.0",
+        active: 1,
+      })),
+    ];
+
+    // Auto-reconcile: daftarkan plugin baru ke D1 jika belum tercatat di tabel
+    const missing = allDiscovered.filter(
+      p => !results?.some((r: any) => r.id === p.id)
+    );
+
+    if (missing.length > 0) {
+      for (const p of missing) {
         try {
-          await db.insert(pluginsTable).values(p).run();
-        } catch (seedErr) {}
+          await db
+            .insert(pluginsTable)
+            .values({
+              id: p.id,
+              name: p.name,
+              description: p.description,
+              author: p.author,
+              version: p.version,
+              active: p.active ?? 1,
+            })
+            .run();
+        } catch (insertErr) {
+          // Ignore if concurrently inserted
+        }
       }
       results = await db.select().from(pluginsTable);
     }
@@ -64,6 +94,8 @@ plugins.post("/toggle", async c => {
       .set({ active })
       .where(eq(pluginsTable.id, targetId))
       .run();
+
+    invalidatePluginCache();
 
     if (result.success) {
       return c.json({
@@ -95,6 +127,8 @@ plugins.post("/toggle/:id", async c => {
       .set({ active })
       .where(eq(pluginsTable.id, targetId))
       .run();
+
+    invalidatePluginCache();
 
     if (result.success) {
       return c.json({
@@ -229,6 +263,8 @@ plugins.post("/upload", async c => {
         .run();
     }
 
+    invalidatePluginCache();
+
     return c.json({
       success: true,
       message: `Plugin "${pluginData.name}" berhasil diinstal dan diintegrasikan ke sistem!`,
@@ -270,6 +306,9 @@ plugins.post("/", async c => {
         active: body.active ? 1 : 0,
       })
       .run();
+
+    invalidatePluginCache();
+
     return c.json({
       success: true,
       message: "Plugin baru berhasil didaftarkan",
@@ -295,6 +334,9 @@ plugins.delete("/:id", async c => {
     }
     const db = getDb(c.env.DB);
     await db.delete(pluginsTable).where(eq(pluginsTable.id, id)).run();
+
+    invalidatePluginCache();
+
     return c.json({
       success: true,
       message: "Plugin berhasil dihapus dari sistem",
